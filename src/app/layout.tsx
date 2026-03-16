@@ -34,19 +34,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-AU">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="font-[family-name:var(--font-body)] bg-navy-950 text-slate-200 antialiased">
+      <body className="bg-navy-950 text-slate-200 antialiased">
         <Navbar />
         <main className="min-h-screen">{children}</main>
         <Footer />

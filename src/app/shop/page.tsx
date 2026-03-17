@@ -1,89 +1,58 @@
 "use client";
 
-import { useState, useRef, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  SlidersHorizontal, ChevronDown, ShieldCheck, Lock, Search, X,
-  UserPlus, ArrowRight, Package,
+  Search, ChevronRight, ChevronDown, ShieldCheck, Lock,
+  Flame, Wrench, Shield, Bell, Disc3, Droplets, Lightbulb,
+  Signpost, Radio, Droplet, BrickWall, Heart, LockKeyhole,
 } from "lucide-react";
-import { products, categories, type Product } from "@/data/products";
+import { categories, products, type Product, type Category } from "@/data/products";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
-function FadeIn({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
-  return (
-    <motion.div ref={ref} initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }} transition={{ duration: 0.6, delay, ease: [0.25, 0.1, 0.25, 1] }} className={className}>
-      {children}
-    </motion.div>
-  );
-}
-
-function ProductCard({ product, index }: { product: Product; index: number }) {
-  return (
-    <FadeIn delay={Math.min(index * 0.04, 0.4)}>
-      <motion.div whileHover={{ y: -4 }} className="bg-white rounded-2xl border border-gray-100 overflow-hidden group h-full flex flex-col hover:border-red-200 hover:shadow-xl hover:shadow-red-600/[0.04] transition-all duration-500">
-        {/* Image */}
-        <div className="relative h-48 bg-gray-50 overflow-hidden">
-          <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
-          {/* Category badge */}
-          <span className="absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase bg-white/90 backdrop-blur text-gray-700 rounded-md border border-gray-200">
-            {product.subcategory}
-          </span>
-          {product.badge && (
-            <span className="absolute top-3 right-3 px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase bg-red-600 text-white rounded-md">
-              {product.badge}
-            </span>
-          )}
-        </div>
-
-        {/* Details */}
-        <div className="p-5 flex flex-col flex-1">
-          <h3 className="text-sm font-semibold text-black mb-1.5 leading-snug group-hover:text-red-600 transition-colors duration-300">
-            {product.name}
-          </h3>
-
-          {product.certifications.length > 0 && (
-            <div className="flex items-center gap-1.5 mb-3">
-              <ShieldCheck className="w-3.5 h-3.5 text-red-600 shrink-0" />
-              <span className="text-xs font-medium text-red-600">{product.certifications.join(", ")}</span>
-            </div>
-          )}
-
-          <p className="text-sm text-gray-500 leading-relaxed mb-5 flex-1">{product.description}</p>
-
-          <div className="flex items-center justify-between mt-auto">
-            <div className="flex items-center gap-1.5 text-gray-400">
-              <Lock className="w-4 h-4" />
-              <span className="text-sm font-medium">Register for pricing</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </FadeIn>
-  );
-}
+const iconMap: Record<string, React.ElementType> = {
+  flame: Flame, wrench: Wrench, shield: Shield, bell: Bell,
+  disc: Disc3, droplets: Droplets, lightbulb: Lightbulb,
+  signpost: Signpost, radio: Radio, droplet: Droplet,
+  brickwall: BrickWall, heart: Heart, lock: LockKeyhole,
+};
 
 function ShopContent() {
   const searchParams = useSearchParams();
-  const initialCategory = searchParams.get("category") || "All";
+  const initialCategory = searchParams.get("category") || "";
 
-  const [activeCategory, setActiveCategory] = useState(initialCategory);
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortOpen, setSortOpen] = useState(false);
-  const [sort, setSort] = useState<"name-asc" | "name-desc" | "category">("category");
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(
+    new Set(initialCategory ? [initialCategory] : [])
+  );
 
-  useEffect(() => {
-    const cat = searchParams.get("category");
-    if (cat) setActiveCategory(cat);
-  }, [searchParams]);
+  const toggleExpand = (catName: string) => {
+    setExpandedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(catName)) next.delete(catName);
+      else next.add(catName);
+      return next;
+    });
+  };
 
-  const categoryNames = ["All", ...categories.map((c) => c.name)];
+  const selectCategory = (catName: string) => {
+    setSelectedCategory(catName);
+    setSelectedSubcategory("");
+    setExpandedCats((prev) => new Set(prev).add(catName));
+  };
 
-  const filtered = useMemo(() => {
-    let items = activeCategory === "All" ? [...products] : products.filter((p) => p.category === activeCategory);
+  const selectSubcategory = (catName: string, sub: string) => {
+    setSelectedCategory(catName);
+    setSelectedSubcategory(sub);
+  };
+
+  const filteredProducts = useMemo(() => {
+    let items = [...products];
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -91,131 +60,79 @@ function ShopContent() {
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.description.toLowerCase().includes(q) ||
-          p.subcategory.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
+          p.category.toLowerCase().includes(q) ||
+          p.subcategory.toLowerCase().includes(q)
       );
-    }
-
-    switch (sort) {
-      case "name-asc":
-        items.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "name-desc":
-        items.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case "category":
-        items.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
-        break;
+    } else if (selectedSubcategory) {
+      items = items.filter((p) => p.subcategory === selectedSubcategory);
+    } else if (selectedCategory) {
+      items = items.filter((p) => p.category === selectedCategory);
     }
     return items;
-  }, [activeCategory, searchQuery, sort]);
+  }, [selectedCategory, selectedSubcategory, searchQuery]);
 
-  const sortOptions = [
-    { label: "Category", value: "category" as const },
-    { label: "Name A\u2013Z", value: "name-asc" as const },
-    { label: "Name Z\u2013A", value: "name-desc" as const },
-  ];
-
-  const currentSortLabel = sortOptions.find((o) => o.value === sort)?.label ?? "Sort";
+  const activeCat = categories.find((c) => c.name === selectedCategory);
 
   return (
     <>
-      {/* Hero */}
-      <section className="relative pt-32 pb-16 bg-white overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[400px] rounded-full bg-red-50 blur-[100px] opacity-50" />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-            <h1 className="font-[family-name:var(--font-heading)] text-4xl sm:text-5xl lg:text-6xl font-800 text-black tracking-tight">
-              Product Catalogue
-            </h1>
-            <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-              {products.length} products across {categories.length} categories. All AS/NZS certified.{" "}
-              <Link href="/register" className="text-red-600 font-medium hover:underline">Register</Link> to view pricing.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Filters & Grid */}
-      <section className="relative pb-24 bg-gray-50">
+      {/* Header */}
+      <section className="pt-24 pb-8 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Search */}
-          <div className="relative max-w-lg mx-auto mb-8 -mt-4">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products..."
-              className="w-full pl-12 pr-10 py-3.5 bg-white border border-gray-200 rounded-xl text-black placeholder-gray-400 focus:outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100 transition-all"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2">
-                <X className="w-4 h-4 text-gray-400 hover:text-black" />
-              </button>
-            )}
-          </div>
-
-          {/* Category filters */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-8">
-            <div className="flex flex-wrap gap-2">
-              {categoryNames.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200 cursor-pointer ${
-                    activeCategory === cat
-                      ? "bg-red-600 text-white border-red-600 shadow-md shadow-red-600/20"
-                      : "text-gray-600 border-gray-200 hover:border-red-200 hover:text-red-600 bg-white"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="font-[family-name:var(--font-heading)] text-2xl sm:text-3xl font-800 text-black">
+                {selectedSubcategory || (selectedCategory ? selectedCategory : "All Products")}
+              </h1>
+              {selectedCategory && !selectedSubcategory && activeCat && (
+                <p className="mt-1 text-sm text-gray-500">{activeCat.description}</p>
+              )}
             </div>
-
-            {/* Sort */}
-            <div className="relative">
-              <button onClick={() => setSortOpen(!sortOpen)} className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors cursor-pointer">
-                <SlidersHorizontal className="w-4 h-4" />
-                {currentSortLabel}
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {sortOpen && (
-                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }} className="absolute right-0 mt-2 w-44 rounded-xl bg-white border border-gray-200 shadow-xl z-30 overflow-hidden">
-                    {sortOptions.map((opt) => (
-                      <button key={opt.value} onClick={() => { setSort(opt.value); setSortOpen(false); }} className={`block w-full text-left px-4 py-3 text-sm cursor-pointer ${sort === opt.value ? "text-red-600 bg-red-50" : "text-gray-600 hover:bg-gray-50"}`}>
-                        {opt.label}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            {/* Search */}
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value) {
+                    setSelectedCategory("");
+                    setSelectedSubcategory("");
+                  }
+                }}
+                className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-red-300 focus:ring-1 focus:ring-red-300 bg-white"
+              />
             </div>
           </div>
 
-          {/* Count */}
-          <p className="text-sm text-gray-500 mb-6">
-            Showing {filtered.length} product{filtered.length !== 1 ? "s" : ""}
-            {activeCategory !== "All" && <> in <span className="text-black font-medium">{activeCategory}</span></>}
-            {searchQuery && <> matching &ldquo;<span className="text-black font-medium">{searchQuery}</span>&rdquo;</>}
-          </p>
-
-          {/* Grid */}
-          <AnimatePresence mode="wait">
-            <motion.div key={activeCategory + sort + searchQuery} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filtered.map((product, i) => (
-                <ProductCard key={product.id} product={product} index={i} />
-              ))}
-            </motion.div>
-          </AnimatePresence>
-
-          {filtered.length === 0 && (
-            <div className="text-center py-20">
-              <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-lg text-gray-500">No products found. Try a different search or category.</p>
-            </div>
+          {/* Breadcrumb */}
+          {(selectedCategory || searchQuery) && (
+            <nav className="mt-3 flex items-center gap-1.5 text-sm text-gray-400">
+              <button onClick={() => { setSelectedCategory(""); setSelectedSubcategory(""); setSearchQuery(""); }} className="hover:text-red-600 transition-colors">
+                All Products
+              </button>
+              {selectedCategory && (
+                <>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                  <button onClick={() => { selectCategory(selectedCategory); }} className="hover:text-red-600 transition-colors">
+                    {selectedCategory}
+                  </button>
+                </>
+              )}
+              {selectedSubcategory && (
+                <>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                  <span className="text-gray-700 font-medium">{selectedSubcategory}</span>
+                </>
+              )}
+              {searchQuery && (
+                <>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                  <span className="text-gray-700 font-medium">Search: &ldquo;{searchQuery}&rdquo;</span>
+                </>
+              )}
+            </nav>
           )}
 
           {/* Register CTA */}
@@ -233,6 +150,234 @@ function ShopContent() {
           </div>
         </div>
       </section>
+
+      {/* Main content */}
+      <section className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex gap-8">
+            {/* Sidebar - Desktop */}
+            <aside className="hidden lg:block w-64 shrink-0">
+              <div className="sticky top-24 bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="p-4 border-b border-gray-100">
+                  <h3 className="text-sm font-semibold text-black">Categories</h3>
+                </div>
+                <nav className="p-2 max-h-[calc(100vh-140px)] overflow-y-auto">
+                  {/* All Products */}
+                  <button
+                    onClick={() => { setSelectedCategory(""); setSelectedSubcategory(""); setSearchQuery(""); }}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors mb-1 ${
+                      !selectedCategory && !searchQuery
+                        ? "bg-red-50 text-red-700 font-semibold"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    All Products
+                  </button>
+
+                  {categories.map((cat) => {
+                    const Icon = iconMap[cat.icon] || Flame;
+                    const isExpanded = expandedCats.has(cat.name);
+                    const isActive = selectedCategory === cat.name && !selectedSubcategory;
+
+                    return (
+                      <div key={cat.slug} className="mb-0.5">
+                        <div className="flex items-center">
+                          <button
+                            onClick={() => selectCategory(cat.name)}
+                            className={`flex-1 flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors text-left ${
+                              isActive
+                                ? "bg-red-50 text-red-700 font-semibold"
+                                : selectedCategory === cat.name
+                                ? "text-red-600 font-medium"
+                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            }`}
+                          >
+                            <Icon className="w-4 h-4 shrink-0 opacity-60" />
+                            <span className="truncate">{cat.name}</span>
+                          </button>
+                          <button
+                            onClick={() => toggleExpand(cat.name)}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 rounded"
+                          >
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          </button>
+                        </div>
+
+                        {/* Subcategories */}
+                        {isExpanded && (
+                          <div className="ml-6 mt-0.5 mb-1 space-y-0.5">
+                            {cat.subcategories.map((sub) => (
+                              <button
+                                key={sub}
+                                onClick={() => selectSubcategory(cat.name, sub)}
+                                className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-colors ${
+                                  selectedSubcategory === sub
+                                    ? "bg-red-50 text-red-700 font-semibold"
+                                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                                }`}
+                              >
+                                {sub}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </nav>
+              </div>
+            </aside>
+
+            {/* Mobile category pills */}
+            <div className="lg:hidden w-full">
+              <div className="flex flex-wrap gap-2 mb-6">
+                <button
+                  onClick={() => { setSelectedCategory(""); setSelectedSubcategory(""); }}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+                    !selectedCategory ? "bg-red-600 text-white border-red-600" : "text-gray-600 border-gray-200 hover:border-red-200"
+                  }`}
+                >
+                  All
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.slug}
+                    onClick={() => selectCategory(cat.name)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+                      selectedCategory === cat.name ? "bg-red-600 text-white border-red-600" : "text-gray-600 border-gray-200 hover:border-red-200"
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Product grid */}
+            <div className="flex-1 min-w-0">
+              {/* Category cards if no category selected */}
+              {!selectedCategory && !searchQuery && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
+                  {categories.map((cat) => {
+                    const Icon = iconMap[cat.icon] || Flame;
+                    const count = products.filter((p) => p.category === cat.name).length;
+                    return (
+                      <button
+                        key={cat.slug}
+                        onClick={() => selectCategory(cat.name)}
+                        className="group text-left bg-white rounded-xl border border-gray-100 p-5 hover:border-red-200 hover:shadow-lg hover:shadow-red-600/[0.04] transition-all duration-300"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center shrink-0 group-hover:bg-red-100 transition-colors">
+                            <Icon className="w-5 h-5 text-red-600" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-sm font-semibold text-black group-hover:text-red-600 transition-colors">{cat.name}</h3>
+                            <p className="mt-0.5 text-xs text-gray-400">{count} products</p>
+                            <p className="mt-1.5 text-xs text-gray-500 line-clamp-2">{cat.description}</p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Subcategory pills when viewing a category */}
+              {selectedCategory && !selectedSubcategory && !searchQuery && activeCat && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {activeCat.subcategories.map((sub) => {
+                    const count = products.filter((p) => p.subcategory === sub).length;
+                    return (
+                      <button
+                        key={sub}
+                        onClick={() => selectSubcategory(selectedCategory, sub)}
+                        className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-full hover:border-red-200 hover:text-red-600 hover:bg-red-50/50 transition-colors"
+                      >
+                        {sub} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Product list */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={selectedCategory + selectedSubcategory + searchQuery}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {(selectedCategory || searchQuery) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {filteredProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))}
+                    </div>
+                  )}
+
+                  {filteredProducts.length === 0 && (selectedCategory || searchQuery) && (
+                    <div className="text-center py-20">
+                      <p className="text-gray-500">No products found. Try a different search or category.</p>
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function ProductCard({ product }: { product: Product }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-5 hover:border-red-200 hover:shadow-md transition-all duration-300 flex flex-col h-full group">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded">
+          {product.subcategory}
+        </span>
+        {product.badge && (
+          <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
+            {product.badge}
+          </span>
+        )}
+      </div>
+
+      <h3 className="text-sm font-semibold text-black leading-snug mb-2 group-hover:text-red-600 transition-colors">
+        {product.name}
+      </h3>
+
+      {product.certifications.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-2">
+          <ShieldCheck className="w-3.5 h-3.5 text-green-600 shrink-0" />
+          <span className="text-[11px] font-medium text-green-700">{product.certifications.join(", ")}</span>
+        </div>
+      )}
+
+      <p className="text-xs text-gray-500 leading-relaxed mb-4 flex-1">
+        {product.description}
+      </p>
+
+      <div className="flex items-center gap-1.5 pt-3 border-t border-gray-50 text-xs text-gray-400">
+        <Lock className="w-3.5 h-3.5" />
+        <span>Register for trade pricing</span>
+      </div>
+    </div>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <>
+      <Navbar />
+      <Suspense fallback={<div className="pt-32 text-center text-gray-400">Loading...</div>}>
+        <ShopContent />
+      </Suspense>
+      <Footer />
     </>
   );
 }

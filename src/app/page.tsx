@@ -2,287 +2,221 @@
 
 import { useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import {
-  ShieldCheck,
-  FlameKindling,
-  Siren,
-  Construction,
-  Lightbulb,
-  RectangleEllipsis,
-  SignpostBig,
-  Award,
-  Users,
-  CheckCircle2,
-  ShoppingCart,
-  Star,
-  AlertTriangle,
-  ArrowRight,
-  Package,
-  Truck,
-  Headphones,
+  ShieldCheck, FlameKindling, Siren, Construction, Lightbulb,
+  SignpostBig, Award, Users, CheckCircle2, ArrowRight,
+  Truck, Headphones, UserPlus, Package, Lock, Star,
+  Zap, Heart, Building2,
 } from "lucide-react";
+import { categories } from "@/data/products";
 
-/* ------------------------------------------------------------------ */
-/*  Reusable scroll-animated wrapper                                  */
-/* ------------------------------------------------------------------ */
-function FadeInSection({
-  children,
-  className = "",
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
+/* ── Reusable scroll-animated wrapper ── */
+function FadeIn({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
-
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-      transition={{ duration: 0.7, delay, ease: [0.25, 0.1, 0.25, 1] }}
-      className={className}
-    >
+    <motion.div ref={ref} initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }} transition={{ duration: 0.7, delay, ease: [0.25, 0.1, 0.25, 1] }} className={className}>
       {children}
     </motion.div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Ember particles (CSS-based)                                       */
-/* ------------------------------------------------------------------ */
-function EmberParticles() {
-  const particles = Array.from({ length: 18 }, (_, i) => ({
-    id: i,
-    left: `${Math.random() * 100}%`,
-    size: 2 + Math.random() * 4,
-    duration: 6 + Math.random() * 10,
-    delay: Math.random() * 8,
-    opacity: 0.25 + Math.random() * 0.4,
-  }));
+/* ── Category icons map ── */
+const categoryIcons: Record<string, React.ElementType> = {
+  "Fire Extinguishers": FlameKindling,
+  "Fire Blankets": ShieldCheck,
+  "Smoke Alarms & Detectors": Siren,
+  "Fire Hose Reels": Construction,
+  "Fire Hydrant Equipment": Construction,
+  "Emergency & Exit Lighting": Lightbulb,
+  "Fire Safety Signage": SignpostBig,
+  "Fire Cabinets & Brackets": Package,
+  "First Aid": Heart,
+  "Fire Warden Equipment": Users,
+  "Fire Door Hardware": Lock,
+  "Sprinkler Components": Zap,
+};
 
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      {particles.map((p) => (
-        <span
-          key={p.id}
-          className="fire-particle absolute rounded-full"
-          style={{
-            left: p.left,
-            bottom: "-10px",
-            width: p.size,
-            height: p.size,
-            background: `radial-gradient(circle, #fb923c 0%, #ea580c 100%)`,
-            opacity: p.opacity,
-            animationDuration: `${p.duration}s`,
-            animationDelay: `${p.delay}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Hero section                                                      */
-/* ------------------------------------------------------------------ */
+/* ═══════════════════════════════════════════════════════════════ */
+/*  HERO SECTION                                                   */
+/* ═══════════════════════════════════════════════════════════════ */
 function HeroSection() {
   return (
-    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-navy-950 via-navy-900 to-navy-950 animate-gradient" />
-      <div className="noise-overlay absolute inset-0" />
+    <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden bg-white">
+      {/* Subtle background accents */}
+      <div className="absolute top-0 right-0 w-[700px] h-[700px] rounded-full bg-red-50 blur-[120px] opacity-60" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full bg-orange-50 blur-[100px] opacity-60" />
 
-      {/* Subtle radial glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] rounded-full bg-cyan-500/[0.04] blur-[120px]" />
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left: Text */}
+          <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}>
+            <span className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 text-xs font-semibold tracking-widest uppercase text-red-600 border border-red-200 rounded-full bg-red-50">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+              Wholesale Fire Safety Supplier
+            </span>
 
-      <EmberParticles />
-
-      {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: [0.25, 0.1, 0.25, 1] }}
-        >
-          <span className="inline-block mb-6 px-4 py-1.5 text-xs font-semibold tracking-widest uppercase text-cyan-400 border border-cyan-500/30 rounded-full bg-cyan-500/[0.06]">
-            Trusted across NSW since 2024
-          </span>
-
-          <h1 className="font-[family-name:var(--font-heading)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] max-w-4xl mx-auto">
-            Unwavering Fire Safety for Every Australian Property
-          </h1>
-
-          <p className="mt-6 text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Expert-curated, Australian Standards certified fire safety equipment.
-            From smoke alarms to complete building compliance kits &mdash; delivered to
-            your door.
-          </p>
-
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/shop"
-              className="inline-flex items-center px-8 py-4 text-base font-semibold text-navy-950 bg-cyan-400 rounded-xl hover:bg-cyan-300 transition-all duration-300 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-400/40 hover:-translate-y-0.5"
-            >
-              <ShoppingCart className="w-5 h-5 mr-2" />
-              Shop Equipment
-            </Link>
-            <Link
-              href="/build-your-kit"
-              className="inline-flex items-center px-8 py-4 text-base font-semibold text-white border border-white/20 rounded-xl hover:border-white/40 hover:bg-white/[0.04] transition-all duration-300 hover:-translate-y-0.5"
-            >
-              Build Your Kit
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Link>
-          </div>
-        </motion.div>
-
-        {/* Stats bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.5 }}
-          className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto"
-        >
-          {[
-            { icon: Package, label: "10,000+ Products Shipped" },
-            { icon: ShieldCheck, label: "100% AS/NZS Certified" },
-            { icon: Truck, label: "Same-Day Sydney Dispatch" },
-            { icon: Headphones, label: "Expert Support" },
-          ].map(({ icon: Icon, label }) => (
-            <div
-              key={label}
-              className="flex flex-col items-center gap-2 text-center"
-            >
-              <Icon className="w-6 h-6 text-cyan-400" />
-              <span className="text-sm font-medium text-slate-300">
-                {label}
+            <h1 className="font-[family-name:var(--font-heading)] text-4xl sm:text-5xl md:text-6xl lg:text-[64px] font-800 text-black leading-[1.05] tracking-tight">
+              Every fire safety product.{" "}
+              <span className="bg-gradient-to-r from-red-600 via-orange-500 to-red-600 bg-clip-text text-transparent animate-gradient">
+                One supplier.
               </span>
+            </h1>
+
+            <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-xl leading-relaxed">
+              Australia&apos;s trusted wholesale source for AS/NZS certified fire extinguishers, alarms, hose reels, emergency lighting, signage and more. Register for trade pricing.
+            </p>
+
+            <div className="mt-8 flex flex-col sm:flex-row items-start gap-4">
+              <Link href="/shop" className="inline-flex items-center px-8 py-4 text-base font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-all duration-300 shadow-lg shadow-red-600/20 hover:shadow-red-700/30 hover:-translate-y-0.5">
+                Browse Products
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+              <Link href="/register" className="inline-flex items-center px-8 py-4 text-base font-semibold text-black border-2 border-gray-200 rounded-xl hover:border-red-300 hover:bg-red-50 transition-all duration-300 hover:-translate-y-0.5">
+                <UserPlus className="w-5 h-5 mr-2" />
+                Register for Pricing
+              </Link>
             </div>
-          ))}
-        </motion.div>
+
+            {/* Stats */}
+            <div className="mt-12 flex flex-wrap gap-8">
+              {[
+                { value: "100+", label: "Products" },
+                { value: "12", label: "Categories" },
+                { value: "AS/NZS", label: "Certified" },
+              ].map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <div className="text-2xl font-800 font-[family-name:var(--font-heading)] text-black">{stat.value}</div>
+                  <div className="text-sm text-gray-500 mt-0.5">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Right: Featured image / visual */}
+          <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }} className="relative hidden lg:block">
+            <div className="relative aspect-square max-w-lg mx-auto">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-red-100 via-orange-50 to-red-50 border border-red-100/50" />
+              <div className="absolute inset-4 rounded-2xl overflow-hidden">
+                <Image
+                  src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=600&fit=crop"
+                  alt="Fire safety equipment"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+              {/* Floating badge */}
+              <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} className="absolute -top-4 -right-4 bg-white rounded-2xl p-4 shadow-xl border border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-black">AS/NZS Certified</p>
+                    <p className="text-xs text-gray-500">Every product</p>
+                  </div>
+                </div>
+              </motion.div>
+              {/* Floating badge 2 */}
+              <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="absolute -bottom-4 -left-4 bg-white rounded-2xl p-4 shadow-xl border border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                    <Truck className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-black">Australia-Wide</p>
+                    <p className="text-xs text-gray-500">Fast delivery</p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-navy-950 to-transparent" />
+      {/* Bottom divider */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
     </section>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Bento grid section                                                */
-/* ------------------------------------------------------------------ */
-const bentoItems = [
-  {
-    title: "Fire Extinguishers",
-    description:
-      "ABE, CO2, Wet Chemical & more. Every type certified to AS/NZS 1841.",
-    icon: FlameKindling,
-    gradient: "from-red-600/20 to-orange-600/10",
-    large: true,
-  },
-  {
-    title: "Smoke & Fire Alarms",
-    description:
-      "Photoelectric, smart IoT, interconnected wireless. Compliant with AS 3786.",
-    icon: Siren,
-    gradient: "from-cyan-600/20 to-blue-600/10",
-    large: true,
-  },
-  {
-    title: "Fire Hose Reels",
-    description:
-      "Complete hose reel systems, nozzles, and fittings for commercial properties.",
-    icon: Construction,
-    gradient: "from-emerald-600/20 to-teal-600/10",
-    large: false,
-  },
-  {
-    title: "Emergency & Exit Lighting",
-    description:
-      "LED exit signs, emergency lights. Certified to AS 2293.",
-    icon: Lightbulb,
-    gradient: "from-yellow-600/20 to-amber-600/10",
-    large: false,
-  },
-  {
-    title: "Fire Blankets",
-    description:
-      "AS/NZS 3504 certified blankets for kitchens, workshops, and vehicles.",
-    icon: RectangleEllipsis,
-    gradient: "from-purple-600/20 to-violet-600/10",
-    large: false,
-  },
-  {
-    title: "Safety Signage",
-    description:
-      "Full range of AS 1319 compliant safety and evacuation signage.",
-    icon: SignpostBig,
-    gradient: "from-pink-600/20 to-rose-600/10",
-    large: false,
-  },
-];
+/* ═══════════════════════════════════════════════════════════════ */
+/*  TRUST MARQUEE                                                  */
+/* ═══════════════════════════════════════════════════════════════ */
+function TrustMarquee() {
+  const items = [
+    "AS/NZS 1841 Certified", "AS 3786 Compliant", "AS 2293 Compliant", "AS 1319 Signage",
+    "AS/NZS 3504 Blankets", "AS 1221 Hose Reels", "AS 2419 Hydrants", "100+ Products",
+    "12 Categories", "Wholesale Pricing", "Australia-Wide Delivery", "Sydney Based",
+  ];
 
-function BentoGridSection() {
+  return (
+    <section className="py-5 bg-black text-white overflow-hidden">
+      <div className="animate-marquee flex whitespace-nowrap">
+        {[...items, ...items].map((item, i) => (
+          <span key={i} className="mx-8 text-sm font-medium text-gray-300 flex items-center gap-2">
+            <span className="w-1 h-1 rounded-full bg-red-500" />
+            {item}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  PRODUCT CATEGORIES GRID                                        */
+/* ═══════════════════════════════════════════════════════════════ */
+function CategoriesSection() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <section ref={ref} className="relative py-28 overflow-hidden">
+    <section ref={ref} className="relative py-24 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FadeInSection className="text-center mb-16">
-          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-cyan-400">
-            Our Range
-          </span>
-          <h2 className="mt-4 font-[family-name:var(--font-heading)] text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-            Everything You Need. Expertly Curated.
+        <FadeIn className="text-center mb-16">
+          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-red-600">Full Product Range</span>
+          <h2 className="mt-3 font-[family-name:var(--font-heading)] text-3xl sm:text-4xl lg:text-5xl font-800 text-black tracking-tight">
+            12 Categories. Hundreds of Products.
           </h2>
-        </FadeInSection>
+          <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
+            Everything you need from a single wholesale supplier. All AS/NZS certified.
+          </p>
+        </FadeIn>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {bentoItems.map((item, i) => {
-            const Icon = item.icon;
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {categories.map((cat, i) => {
+            const Icon = categoryIcons[cat.name] || Package;
             return (
               <motion.div
-                key={item.title}
+                key={cat.slug}
                 initial={{ opacity: 0, y: 30 }}
                 animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-                transition={{
-                  duration: 0.6,
-                  delay: i * 0.1,
-                  ease: [0.25, 0.1, 0.25, 1],
-                }}
-                whileHover={{ scale: 1.03 }}
-                className={`group relative rounded-2xl overflow-hidden cursor-pointer ${
-                  item.large ? "lg:col-span-2 min-h-[280px]" : "min-h-[220px]"
-                }`}
+                transition={{ duration: 0.5, delay: i * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
               >
-                {/* Background gradient */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${item.gradient}`}
-                />
-                <div className="absolute inset-0 glass" />
-
-                {/* Content */}
-                <div className="relative z-10 flex flex-col justify-end h-full p-6 sm:p-8">
-                  <div className="mb-4 w-12 h-12 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center group-hover:bg-cyan-500/10 group-hover:border-cyan-500/20 transition-colors duration-300">
-                    <Icon className="w-6 h-6 text-cyan-400" />
+                <Link href={`/shop?category=${encodeURIComponent(cat.name)}`} className="group block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-red-200 hover:shadow-xl hover:shadow-red-600/[0.04] transition-all duration-500 h-full">
+                  {/* Image */}
+                  <div className="relative h-40 overflow-hidden bg-gray-100">
+                    <Image src={cat.image} alt={cat.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    <div className="absolute bottom-3 left-3">
+                      <div className="w-9 h-9 rounded-lg bg-white/90 backdrop-blur flex items-center justify-center">
+                        <Icon className="w-5 h-5 text-red-600" />
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm text-slate-400 leading-relaxed">
-                    {item.description}
-                  </p>
-
-                  <div className="mt-4 flex items-center text-sm font-medium text-cyan-400 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                    Shop now
-                    <ArrowRight className="w-4 h-4 ml-1" />
+                  {/* Text */}
+                  <div className="p-5">
+                    <h3 className="text-base font-semibold text-black group-hover:text-red-600 transition-colors duration-300">{cat.name}</h3>
+                    <p className="mt-1.5 text-sm text-gray-500 leading-relaxed line-clamp-2">{cat.description}</p>
+                    <div className="mt-3 flex items-center text-sm font-medium text-red-600 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                      View Products <ArrowRight className="w-4 h-4 ml-1" />
+                    </div>
                   </div>
-                </div>
+                </Link>
               </motion.div>
             );
           })}
@@ -292,63 +226,42 @@ function BentoGridSection() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Why Flaro section                                                 */
-/* ------------------------------------------------------------------ */
-const whyFlaroCards = [
-  {
-    icon: Award,
-    title: "Certified to Australian Standards",
-    description:
-      "Every product we sell meets or exceeds the relevant Australian and New Zealand Standards. No exceptions, no compromises.",
-  },
-  {
-    icon: Users,
-    title: "Expert-Curated Selection",
-    description:
-      "Our range is hand-selected by fire safety professionals with decades of industry experience across NSW.",
-  },
-  {
-    icon: CheckCircle2,
-    title: "Compliance Made Simple",
-    description:
-      "From individual smoke alarms to complete building compliance kits, we make meeting your obligations straightforward.",
-  },
+/* ═══════════════════════════════════════════════════════════════ */
+/*  WHY FLARO                                                      */
+/* ═══════════════════════════════════════════════════════════════ */
+const whyCards = [
+  { icon: Award, title: "100% AS/NZS Certified", description: "Every product meets or exceeds Australian and New Zealand Standards. No exceptions." },
+  { icon: Users, title: "Wholesale Pricing", description: "Register for exclusive trade pricing. Competitive rates for resellers, contractors and property managers." },
+  { icon: CheckCircle2, title: "Massive Range", description: "12 categories, 100+ products. Fire extinguishers to sprinkler components — all from one supplier." },
+  { icon: Truck, title: "Australia-Wide Delivery", description: "Fast dispatch from our Sydney warehouse. Same-day dispatch on orders placed before 12pm AEST." },
+  { icon: Headphones, title: "Expert Support", description: "Our team of fire safety professionals are available to help with product selection and compliance questions." },
+  { icon: Building2, title: "Trusted by Industry", description: "Strata managers, facility managers, contractors and resellers trust Flaro for reliable supply." },
 ];
 
 function WhyFlaroSection() {
   return (
-    <section className="relative py-28 overflow-hidden">
-      {/* Background accent */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-ember-500/[0.03] blur-[100px]" />
-
+    <section className="relative py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FadeInSection className="text-center mb-16">
-          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-ember-400">
-            Why Flaro
-          </span>
-          <h2 className="mt-4 font-[family-name:var(--font-heading)] text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-            The Standard You Deserve
+        <FadeIn className="text-center mb-16">
+          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-red-600">Why Flaro</span>
+          <h2 className="mt-3 font-[family-name:var(--font-heading)] text-3xl sm:text-4xl lg:text-5xl font-800 text-black tracking-tight">
+            Your wholesale fire safety partner
           </h2>
-        </FadeInSection>
+        </FadeIn>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {whyFlaroCards.map((card, i) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {whyCards.map((card, i) => {
             const Icon = card.icon;
             return (
-              <FadeInSection key={card.title} delay={i * 0.15}>
-                <div className="glass rounded-2xl p-8 h-full hover:border-cyan-500/20 transition-colors duration-300">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/10 flex items-center justify-center mb-6">
-                    <Icon className="w-7 h-7 text-cyan-400" />
+              <FadeIn key={card.title} delay={i * 0.08}>
+                <div className="bg-gray-50 rounded-2xl p-8 h-full hover:bg-red-50/50 border border-transparent hover:border-red-100 transition-all duration-500 group">
+                  <div className="w-14 h-14 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center mb-6 group-hover:bg-red-100 transition-colors duration-300">
+                    <Icon className="w-7 h-7 text-red-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">
-                    {card.title}
-                  </h3>
-                  <p className="text-slate-400 leading-relaxed">
-                    {card.description}
-                  </p>
+                  <h3 className="text-lg font-semibold text-black mb-2">{card.title}</h3>
+                  <p className="text-gray-500 leading-relaxed text-sm">{card.description}</p>
                 </div>
-              </FadeInSection>
+              </FadeIn>
             );
           })}
         </div>
@@ -357,158 +270,79 @@ function WhyFlaroSection() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Featured products section                                         */
-/* ------------------------------------------------------------------ */
-const featuredProducts = [
-  {
-    name: "4.5kg ABE Dry Powder Fire Extinguisher",
-    price: 89.95,
-    description:
-      "Suitable for Class A, B, and E fires. Ideal for offices, workshops, and vehicles.",
-    gradient: "from-red-700/40 to-orange-600/20",
-    icon: FlameKindling,
-  },
-  {
-    name: "Photoelectric Smoke Alarm \u2014 10 Year Battery",
-    price: 49.95,
-    description:
-      "Australian-made. Compliant with AS 3786-2014. No wiring required.",
-    gradient: "from-cyan-700/40 to-blue-600/20",
-    icon: Siren,
-  },
-  {
-    name: "1.2m x 1.8m Fire Blanket \u2014 Commercial Grade",
-    price: 34.95,
-    description:
-      "AS/NZS 3504 certified. Essential for commercial kitchens and workshops.",
-    gradient: "from-purple-700/40 to-violet-600/20",
-    icon: RectangleEllipsis,
-  },
-  {
-    name: "LED Emergency Exit Sign \u2014 Maintained",
-    price: 129.95,
-    description:
-      "AS 2293 compliant. Energy-efficient LED with 3-hour battery backup.",
-    gradient: "from-yellow-700/40 to-amber-600/20",
-    icon: Lightbulb,
-  },
-];
-
-function FeaturedProductsSection() {
+/* ═══════════════════════════════════════════════════════════════ */
+/*  REGISTER CTA                                                   */
+/* ═══════════════════════════════════════════════════════════════ */
+function RegisterCTA() {
   return (
-    <section className="relative py-28 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FadeInSection className="text-center mb-16">
-          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-cyan-400">
-            Popular Picks
-          </span>
-          <h2 className="mt-4 font-[family-name:var(--font-heading)] text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-            Best Sellers
+    <section className="relative py-24 bg-black text-white overflow-hidden">
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-red-600/10 blur-[120px]" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-orange-500/10 blur-[100px]" />
+
+      <FadeIn>
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 text-xs font-semibold tracking-widest uppercase text-orange-400 border border-orange-500/30 rounded-full bg-orange-500/10">
+            <Lock className="w-3.5 h-3.5" />
+            Trade Pricing
+          </div>
+          <h2 className="font-[family-name:var(--font-heading)] text-3xl sm:text-4xl lg:text-5xl font-800 text-white tracking-tight leading-tight">
+            Register to unlock wholesale pricing
           </h2>
-        </FadeInSection>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product, i) => {
-            const Icon = product.icon;
-            return (
-              <FadeInSection key={product.name} delay={i * 0.12}>
-                <div className="glass rounded-2xl overflow-hidden group hover:border-cyan-500/20 transition-all duration-300">
-                  {/* Image placeholder */}
-                  <div
-                    className={`relative h-48 bg-gradient-to-br ${product.gradient} flex items-center justify-center`}
-                  >
-                    <Icon className="w-16 h-16 text-white/30 group-hover:text-white/50 transition-colors duration-300" />
-                  </div>
-
-                  {/* Details */}
-                  <div className="p-5">
-                    <h3 className="text-base font-semibold text-white mb-2 leading-snug">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-slate-400 mb-4 leading-relaxed">
-                      {product.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold text-white">
-                        ${product.price.toFixed(2)}
-                      </span>
-                      <button className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-navy-950 bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-all duration-300 shadow-md shadow-cyan-500/15 hover:shadow-cyan-400/25">
-                        <ShoppingCart className="w-4 h-4" />
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </FadeInSection>
-            );
-          })}
+          <p className="mt-6 text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            Create a free account to view exclusive trade pricing on our entire range. Ideal for contractors, resellers, strata managers and facility managers.
+          </p>
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/register" className="inline-flex items-center px-8 py-4 text-base font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-all duration-300 shadow-lg shadow-red-600/20 hover:shadow-red-700/30 hover:-translate-y-0.5">
+              <UserPlus className="w-5 h-5 mr-2" />
+              Create Free Account
+            </Link>
+            <Link href="/shop" className="inline-flex items-center px-8 py-4 text-base font-semibold text-white border border-white/20 rounded-xl hover:border-white/40 hover:bg-white/5 transition-all duration-300">
+              Browse Products
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Link>
+          </div>
         </div>
-      </div>
+      </FadeIn>
     </section>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Testimonials section                                              */
-/* ------------------------------------------------------------------ */
+/* ═══════════════════════════════════════════════════════════════ */
+/*  TESTIMONIALS                                                   */
+/* ═══════════════════════════════════════════════════════════════ */
 const testimonials = [
-  {
-    quote:
-      "Flaro made our strata compliance upgrade painless. Every product arrived certified and ready to install. Highly recommend for any building manager.",
-    name: "Sarah M.",
-    role: "Strata Manager, Drummoyne",
-  },
-  {
-    quote:
-      "We outfitted our entire restaurant with Flaro equipment. The compliance kit tool saved us hours of research. Everything met Australian Standards.",
-    name: "James K.",
-    role: "Restaurant Owner, Breakfast Point",
-  },
-  {
-    quote:
-      "As a facility manager overseeing multiple sites, I need a supplier I can trust. Flaro\u2019s expert curation and fast dispatch are unmatched.",
-    name: "David L.",
-    role: "Facility Manager, Parramatta",
-  },
+  { quote: "Flaro made our strata compliance upgrade seamless. Every product certified and delivered on time. Our go-to fire safety supplier now.", name: "Sarah M.", role: "Strata Manager, Drummoyne" },
+  { quote: "We outfitted three restaurant locations with Flaro. The wholesale pricing and product range saved us thousands compared to retail suppliers.", name: "James K.", role: "Restaurant Group Owner" },
+  { quote: "As a fire safety contractor, I need reliable wholesale supply. Flaro's range, pricing and fast dispatch make them the best in the business.", name: "David L.", role: "Fire Safety Contractor, Parramatta" },
 ];
 
 function TestimonialsSection() {
   return (
-    <section className="relative py-28 overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full bg-cyan-500/[0.02] blur-[100px]" />
-
+    <section className="relative py-24 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FadeInSection className="text-center mb-16">
-          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-cyan-400">
-            Testimonials
-          </span>
-          <h2 className="mt-4 font-[family-name:var(--font-heading)] text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-            Trusted by Professionals
+        <FadeIn className="text-center mb-16">
+          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-red-600">Testimonials</span>
+          <h2 className="mt-3 font-[family-name:var(--font-heading)] text-3xl sm:text-4xl lg:text-5xl font-800 text-black tracking-tight">
+            Trusted by professionals
           </h2>
-        </FadeInSection>
+        </FadeIn>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {testimonials.map((t, i) => (
-            <FadeInSection key={t.name} delay={i * 0.15}>
-              <div className="glass rounded-2xl p-8 h-full flex flex-col">
+            <FadeIn key={t.name} delay={i * 0.12}>
+              <div className="bg-white rounded-2xl border border-gray-100 p-8 h-full flex flex-col hover:shadow-lg transition-shadow duration-500">
                 <div className="flex gap-1 mb-5">
                   {Array.from({ length: 5 }).map((_, j) => (
-                    <Star
-                      key={j}
-                      className="w-4 h-4 fill-amber-400 text-amber-400"
-                    />
+                    <Star key={j} className="w-4 h-4 fill-orange-400 text-orange-400" />
                   ))}
                 </div>
-                <p className="text-slate-300 leading-relaxed flex-1 italic">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div className="mt-6 pt-5 border-t border-white/[0.06]">
-                  <p className="font-semibold text-white">{t.name}</p>
-                  <p className="text-sm text-slate-400">{t.role}</p>
+                <p className="text-gray-600 leading-relaxed flex-1">&ldquo;{t.quote}&rdquo;</p>
+                <div className="mt-6 pt-5 border-t border-gray-100">
+                  <p className="font-semibold text-black">{t.name}</p>
+                  <p className="text-sm text-gray-500">{t.role}</p>
                 </div>
               </div>
-            </FadeInSection>
+            </FadeIn>
           ))}
         </div>
       </div>
@@ -516,96 +350,18 @@ function TestimonialsSection() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  CTA banner                                                        */
-/* ------------------------------------------------------------------ */
-function CtaBanner() {
-  return (
-    <section className="relative py-28 overflow-hidden">
-      <FadeInSection>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl overflow-hidden">
-            {/* Background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-navy-800 via-navy-900 to-navy-800" />
-            <div className="absolute inset-0 noise-overlay" />
-            {/* Ember glow */}
-            <div className="absolute -top-20 right-20 w-60 h-60 rounded-full bg-ember-500/10 blur-[80px]" />
-            <div className="absolute -bottom-20 left-20 w-60 h-60 rounded-full bg-cyan-500/10 blur-[80px]" />
-
-            <div className="relative z-10 py-16 px-8 sm:px-16 text-center">
-              <h2 className="font-[family-name:var(--font-heading)] text-3xl sm:text-4xl font-bold text-white mb-4">
-                Not Sure What You Need?
-              </h2>
-              <p className="text-lg text-slate-400 max-w-xl mx-auto mb-8">
-                Use our free Compliance Kit Builder to get a personalised
-                recommendation based on your property type and size.
-              </p>
-              <Link
-                href="/build-your-kit"
-                className="inline-flex items-center px-8 py-4 text-base font-semibold text-navy-950 bg-cyan-400 rounded-xl hover:bg-cyan-300 transition-all duration-300 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-400/40 hover:-translate-y-0.5"
-              >
-                Build Your Kit
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </FadeInSection>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Regulatory alert banner                                           */
-/* ------------------------------------------------------------------ */
-function RegulatoryAlertBanner() {
-  return (
-    <section className="relative py-12 overflow-hidden">
-      <FadeInSection>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-2xl border border-ember-500/30 bg-ember-500/[0.04] p-6 sm:p-8 flex flex-col sm:flex-row items-start gap-5">
-            <div className="shrink-0 w-12 h-12 rounded-xl bg-ember-500/10 border border-ember-500/20 flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-ember-400" />
-            </div>
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-3 mb-2">
-                <span className="inline-block px-3 py-1 text-xs font-bold tracking-wide uppercase text-ember-400 bg-ember-500/10 border border-ember-500/20 rounded-full">
-                  2026 AS 1851 Update
-                </span>
-              </div>
-              <p className="text-slate-300 leading-relaxed">
-                New mandatory maintenance requirements under AS 1851-2012 are
-                now in effect across NSW. Ensure your fire protection equipment
-                meets the latest standards.
-              </p>
-              <Link
-                href="/resources"
-                className="inline-flex items-center mt-3 text-sm font-semibold text-ember-400 hover:text-ember-300 transition-colors duration-200"
-              >
-                Learn More
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </FadeInSection>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Homepage                                                          */
-/* ------------------------------------------------------------------ */
+/* ═══════════════════════════════════════════════════════════════ */
+/*  HOMEPAGE                                                       */
+/* ═══════════════════════════════════════════════════════════════ */
 export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <BentoGridSection />
+      <TrustMarquee />
+      <CategoriesSection />
       <WhyFlaroSection />
-      <FeaturedProductsSection />
+      <RegisterCTA />
       <TestimonialsSection />
-      <CtaBanner />
-      <RegulatoryAlertBanner />
     </>
   );
 }

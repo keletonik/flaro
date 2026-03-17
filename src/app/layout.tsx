@@ -4,26 +4,28 @@ import { Footer } from "@/components/Footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Flaro | Premium Fire Safety Equipment | Sydney",
+  title: "Flaro Fire Supplies | Wholesale Fire Safety Equipment | Australia",
   description:
-    "Expert-curated fire safety equipment for Australian homes and businesses. Premium fire extinguishers, blankets, alarms and safety kits. Serving Breakfast Point, Sydney and all of NSW.",
+    "Australia's trusted wholesale fire safety supplier. Fire extinguishers, blankets, alarms, hose reels, emergency lighting, signage and more. AS/NZS certified. Register for trade pricing.",
   keywords: [
-    "fire safety",
-    "fire extinguisher",
-    "fire blanket",
-    "smoke alarm",
-    "fire safety equipment Sydney",
-    "Australian Standards",
+    "fire safety wholesale",
+    "fire extinguisher wholesale Australia",
+    "fire blanket supplier",
+    "smoke alarm wholesale",
+    "fire hose reel",
+    "emergency lighting",
+    "fire safety signage",
     "AS/NZS certified",
-    "fire safety kit",
+    "fire safety equipment Sydney",
+    "wholesale fire products",
   ],
   openGraph: {
-    title: "Flaro | Premium Fire Safety Equipment | Sydney",
+    title: "Flaro Fire Supplies | Wholesale Fire Safety Equipment",
     description:
-      "Expert-curated fire safety equipment for Australian homes and businesses.",
+      "Australia's trusted wholesale fire safety supplier. Full product range. AS/NZS certified. Register for trade pricing.",
     locale: "en_AU",
     type: "website",
-    siteName: "Flaro",
+    siteName: "Flaro Fire Supplies",
   },
 };
 
@@ -38,11 +40,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="bg-navy-950 text-slate-200 antialiased">
+      <body className="bg-white text-charcoal antialiased">
         <Navbar />
         <main className="min-h-screen">{children}</main>
         <Footer />

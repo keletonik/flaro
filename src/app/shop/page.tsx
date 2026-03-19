@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, ChevronRight, ChevronDown, ShieldCheck, Lock,
+  Search, ChevronRight, ChevronDown, ShieldCheck, Lock, UserPlus,
   Flame, Wrench, Shield, Bell, Disc3, Droplets, Lightbulb,
   Signpost, Radio, Droplet, BrickWall, Heart, LockKeyhole,
 } from "lucide-react";
@@ -382,10 +382,3 @@ export default function ShopPage() {
   );
 }
 
-export default function ShopPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-gray-400">Loading products...</p></div>}>
-      <ShopContent />
-    </Suspense>
-  );
-}

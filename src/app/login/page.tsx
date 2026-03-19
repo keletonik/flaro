@@ -1,74 +1,39 @@
-"use client";
-
-import { useState } from "react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Mail, Lock, LogIn, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const v: Record<string, string> = {};
-    if (!formData.email.trim()) v.email = "Required";
-    if (!formData.password) v.password = "Required";
-    if (Object.keys(v).length > 0) { setErrors(v); return; }
-    setErrors({});
-    alert("Login functionality coming soon. Please register for an account.");
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
-    if (errors[name]) setErrors((p) => { const n = { ...p }; delete n[name]; return n; });
-  };
-
-  const inputCls = "w-full pl-11 pr-4 py-3.5 rounded-xl bg-white border border-gray-200 text-black placeholder-gray-400 focus:outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100 transition-all";
-
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <section className="relative w-full max-w-md mx-auto px-4 sm:px-6 py-32">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-5">
-            <LogIn className="w-8 h-8 text-red-600" />
+    <>
+      <Navbar />
+      <section className="pt-28 pb-20 bg-gray-50 min-h-screen">
+        <div className="max-w-md mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8">
+            <h1 className="font-[family-name:var(--font-heading)] text-2xl sm:text-3xl font-800 text-black">
+              Sign In
+            </h1>
+            <p className="mt-2 text-sm text-gray-500">Access your wholesale account and trade pricing.</p>
           </div>
-          <h1 className="font-[family-name:var(--font-heading)] text-3xl sm:text-4xl font-800 text-black tracking-tight">Sign In</h1>
-          <p className="mt-3 text-gray-500">Access your account to view wholesale pricing.</p>
-        </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form className="bg-white rounded-xl border border-gray-100 p-6 sm:p-8 space-y-4 shadow-sm">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@company.com" className={inputCls} />
-              </div>
-              {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+              <label className="block text-sm font-medium text-black mb-1">Email</label>
+              <input type="email" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-red-300 focus:ring-1 focus:ring-red-300" />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Your password" className={inputCls} />
-              </div>
-              {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+              <label className="block text-sm font-medium text-black mb-1">Password</label>
+              <input type="password" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-red-300 focus:ring-1 focus:ring-red-300" />
             </div>
-
-            <button type="submit" className="w-full py-4 text-base font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-all duration-300 shadow-lg shadow-red-600/20 hover:shadow-red-700/30">
+            <button type="submit" className="w-full px-4 py-3 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
               Sign In
             </button>
-
             <p className="text-center text-sm text-gray-500">
-              Don&apos;t have an account?{" "}
-              <Link href="/register" className="text-red-600 font-medium hover:underline">Register</Link>
+              Need an account? <Link href="/register" className="text-red-600 font-medium hover:underline">Register for pricing</Link>
             </p>
           </form>
-        </motion.div>
+        </div>
       </section>
-    </div>
+      <Footer />
+    </>
   );
 }

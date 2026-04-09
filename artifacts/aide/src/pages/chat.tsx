@@ -43,22 +43,114 @@ interface Attachment {
 // ─── Email HTML parsing ───────────────────────────────────────────────────────
 
 function extractEmailMeta(html: string): { from: string; subject: string; date: string } {
-  const getMetaField = (label: string) => {
-    const patterns = [
-      new RegExp(`<b>${label}[: ]*<\\/b>([^<]{1,120})`, "i"),
-      new RegExp(`${label}[: ]+([^\\n<]{1,120})`, "i"),
-      new RegExp(`<td[^>]*>${label}[: ]*<\\/td><td[^>]*>([^<]{1,120})`, "i"),
+  // Convert to plain text first — much more reliable than HTML regex
+  const plain = htmlToText(html);
+
+  const getField = (label: string): string => {
+    // Match "Label: value" or "Label value" at start of line (case-insensitive)
+    const re = new RegExp(`^${label}[:\\s]+(.{1,200})`, "im");
+    const m = plain.match(re);
+    if (m?.[1]) return m[1].trim().replace(/\r/g, "");
+
+    // Also try raw HTML patterns as fallback (Outlook bold/span/td patterns)
+    const htmlPatterns = [
+      new RegExp(`<b[^>]*>\\s*${label}[:\\s]*<\\/b>\\s*([^<]{1,120})`, "i"),
+      new RegExp(`<span[^>]*>\\s*${label}[:\\s]*<\\/span>\\s*([^<]{1,120})`, "i"),
+      new RegExp(`<td[^>]*>\\s*${label}[:\\s]*<\\/td>\\s*<td[^>]*>\\s*([^<]{1,120})`, "i"),
+      new RegExp(`${label}[:\\s]+([^\\n<]{1,120})`, "i"),
     ];
-    for (const p of patterns) {
-      const m = html.match(p);
-      if (m?.[1]) return m[1].trim().replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    for (const p of htmlPatterns) {
+      const hm = html.match(p);
+      if (hm?.[1]) return hm[1].trim().replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
     }
     return "";
   };
+
   return {
-    from: getMetaField("From"),
-    subject: getMetaField("Subject"),
-    date: getMetaField("Date") || getMetaField("Sent"),
+    from: getField("From") || getField("De"),
+    subject: getField("Subject") || getField("Objet"),
+    date: getField("Sent") || getField("Date") || getField("Envoyé le"),
+  };
+}
+
+// Detect if plain text looks like an email (has standard headers)
+function looksLikeEmail(text: string): boolean {
+  const t = text.trim();
+  return (
+    (/^From:\s*.+/im.test(t) && /^Subject:\s*.+/im.test(t)) ||
+    (/^De\s*:/im.test(t) && /^Objet\s*:/im.test(t)) ||   // French Outlook
+    (/^From\s*:/im.test(t) && /^Sent\s*:/im.test(t))
+  );
+}
+
+// Parse .eml (RFC 822) file content into an Attachment
+function parseEmlContent(raw: string, fileName: string): Attachment | null {
+  const lines = raw.split(/\r?\n/);
+  const headers: Record<string, string> = {};
+  let i = 0;
+
+  // Parse headers
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.trim() === "") { i++; break; }
+    const colonIdx = line.indexOf(":");
+    if (colonIdx > 0) {
+      const key = line.slice(0, colonIdx).trim().toLowerCase();
+      let val = line.slice(colonIdx + 1).trim();
+      // Fold multi-line header values
+      while (i + 1 < lines.length && /^[\t ]/.test(lines[i + 1])) {
+        i++;
+        val += " " + lines[i].trim();
+      }
+      headers[key] = val;
+    }
+    i++;
+  }
+
+  const body = lines.slice(i).join("\n").trim();
+  const contentType = headers["content-type"] || "text/plain";
+
+  let htmlBody = "";
+  let textBody = "";
+
+  if (contentType.toLowerCase().includes("multipart")) {
+    // Extract boundary
+    const bm = contentType.match(/boundary=["']?([^"';\s]+)["']?/i);
+    if (bm) {
+      const boundary = bm[1];
+      const parts = body.split(new RegExp(`--${boundary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:--)?`));
+      for (const part of parts) {
+        const partLower = part.toLowerCase();
+        if (partLower.includes("content-type: text/html")) {
+          const pBodyStart = part.indexOf("\n\n");
+          if (pBodyStart !== -1) htmlBody = part.slice(pBodyStart + 2).trim();
+        } else if (partLower.includes("content-type: text/plain") && !htmlBody) {
+          const pBodyStart = part.indexOf("\n\n");
+          if (pBodyStart !== -1) textBody = part.slice(pBodyStart + 2).trim();
+        }
+      }
+    }
+  } else if (contentType.toLowerCase().includes("text/html")) {
+    htmlBody = body;
+  } else {
+    textBody = body;
+  }
+
+  const finalHtml = htmlBody || `<div><pre style="font-family:sans-serif;white-space:pre-wrap">${textBody.replace(/</g, "&lt;")}</pre></div>`;
+  if (!finalHtml.trim()) return null;
+
+  const from    = headers["from"]    || headers["reply-to"] || "";
+  const subject = headers["subject"] || fileName.replace(/\.eml$/i, "") || "Email";
+  const date    = headers["date"]    || "";
+
+  const parts = [from && `From: ${from}`, subject && `Subject: ${subject}`, date].filter(Boolean);
+
+  return {
+    id: crypto.randomUUID(),
+    type: "email",
+    name: `Email: ${subject.slice(0, 50)}`,
+    emailHtml: finalHtml,
+    emailSummary: parts.join(" · ").slice(0, 120),
   };
 }
 
@@ -282,30 +374,36 @@ export default function Chat() {
     return new Promise(resolve => {
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
-        reader.onload = e => {
-          resolve({
-            id: crypto.randomUUID(),
-            type: "image",
-            name: file.name,
-            preview: e.target?.result as string,
-            size: file.size,
-          });
-        };
-        reader.readAsDataURL(file);
-      } else {
-        // Non-image file — treat as generic attachment (read as text if possible)
-        resolve({
-          id: crypto.randomUUID(),
-          type: "file",
-          name: file.name,
-          size: file.size,
+        reader.onload = e => resolve({
+          id: crypto.randomUUID(), type: "image",
+          name: file.name, preview: e.target?.result as string, size: file.size,
         });
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      } else if (
+        file.name.toLowerCase().endsWith(".eml") ||
+        file.type === "message/rfc822" ||
+        file.type === "message/rfc2822" ||
+        file.type === "application/octet-stream" && file.name.toLowerCase().endsWith(".eml")
+      ) {
+        // Parse .eml files as RFC 822 email content
+        const reader = new FileReader();
+        reader.onload = e => {
+          const text = e.target?.result as string;
+          const att = parseEmlContent(text, file.name);
+          resolve(att);
+        };
+        reader.onerror = () => resolve(null);
+        reader.readAsText(file);
+      } else {
+        // Unknown file type — skip silently (don't add useless chips)
+        resolve(null);
       }
     });
   }, []);
 
   const processHtmlEmail = useCallback((html: string): Attachment | null => {
-    if (!html || html.length < 50) return null;
+    if (!html || html.trim().length < 20) return null;
     const meta = extractEmailMeta(html);
     const plainText = htmlToText(html).slice(0, 200);
     const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date && meta.date].filter(Boolean);
@@ -320,6 +418,21 @@ export default function Chat() {
 
   // ── Drag & Drop handlers ─────────────────────────────────────────────────────
 
+  const resetDragCounter = useCallback(() => {
+    dragCounter.current = 0;
+    setDragOver(false);
+  }, []);
+
+  // Reset stuck overlay if user cancels drag (ESC, window blur, etc.)
+  useEffect(() => {
+    window.addEventListener("dragend", resetDragCounter);
+    window.addEventListener("blur", resetDragCounter);
+    return () => {
+      window.removeEventListener("dragend", resetDragCounter);
+      window.removeEventListener("blur", resetDragCounter);
+    };
+  }, [resetDragCounter]);
+
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -331,7 +444,10 @@ export default function Chat() {
     e.preventDefault();
     e.stopPropagation();
     dragCounter.current--;
-    if (dragCounter.current === 0) setDragOver(false);
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setDragOver(false);
+    }
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -348,9 +464,9 @@ export default function Chat() {
 
     const newAttachments: Attachment[] = [];
 
-    // 1. Check for HTML (Outlook email drag)
+    // 1. text/html — richest source, works for Outlook desktop drag & OWA drag
     const html = e.dataTransfer.getData("text/html");
-    if (html && html.length > 100) {
+    if (html && html.trim().length > 20) {
       const emailAtt = processHtmlEmail(html);
       if (emailAtt) {
         newAttachments.push(emailAtt);
@@ -358,22 +474,43 @@ export default function Chat() {
       }
     }
 
-    // 2. Check for files (images, docs)
+    // 2. Files (images and .eml files)
     if (e.dataTransfer.files.length > 0) {
       const filePromises = Array.from(e.dataTransfer.files).map(processFile);
       const results = await Promise.all(filePromises);
-      results.forEach(r => { if (r) newAttachments.push(r); });
-      if (results.some(r => r?.type === "image")) {
-        toast({ title: `${results.filter(r => r?.type === "image").length} image(s) attached`, description: "Claude will analyse them when you send." });
-      }
+      const valid = results.filter((r): r is Attachment => r !== null);
+      valid.forEach(r => {
+        // Don't double-add if we already captured an email via text/html
+        if (r.type === "email" && newAttachments.some(a => a.type === "email")) return;
+        newAttachments.push(r);
+      });
+      const imageCount = valid.filter(r => r.type === "image").length;
+      const emlCount   = valid.filter(r => r.type === "email").length;
+      if (imageCount > 0) toast({ title: `${imageCount} image${imageCount > 1 ? "s" : ""} attached`, description: "Claude will analyse them when you send." });
+      if (emlCount > 0) toast({ title: "Email file captured", description: "AIDE will triage it automatically when you send." });
     }
 
-    // 3. Plain text fallback (if no HTML/files)
+    // 3. text/plain — fallback: detect email-like plain text or put in input
     if (newAttachments.length === 0) {
       const text = e.dataTransfer.getData("text/plain");
-      if (text) {
-        setInput(prev => prev ? `${prev}\n${text}` : text);
-        textareaRef.current?.focus();
+      if (text && text.trim()) {
+        if (looksLikeEmail(text)) {
+          // Plain text that looks like an email header block
+          const meta = { from: text.match(/^From:\s*(.+)/im)?.[1]?.trim() || "",
+                         subject: text.match(/^Subject:\s*(.+)/im)?.[1]?.trim() || "Email",
+                         date: text.match(/^(?:Date|Sent):\s*(.+)/im)?.[1]?.trim() || "" };
+          const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
+          newAttachments.push({
+            id: crypto.randomUUID(), type: "email",
+            name: `Email: ${meta.subject.slice(0, 50)}`,
+            emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text.replace(/</g, "&lt;")}</pre>`,
+            emailSummary: parts.join(" · ").slice(0, 120),
+          });
+          toast({ title: "Email captured", description: "AIDE will triage it automatically when you send." });
+        } else {
+          setInput(prev => prev ? `${prev}\n${text}` : text);
+          textareaRef.current?.focus();
+        }
       }
     }
 
@@ -381,6 +518,62 @@ export default function Chat() {
       setAttachments(prev => [...prev, ...newAttachments]);
       textareaRef.current?.focus();
     }
+  }, [processHtmlEmail, processFile, toast]);
+
+  // ── Paste handler (Ctrl+V email paste support) ──────────────────────────────
+  // IMPORTANT: use synchronous getData() — getAsString is async and can't preventDefault
+
+  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items);
+
+    // 1. Pasted image — check synchronously via getAsFile()
+    const imageItem = items.find(item => item.type.startsWith("image/"));
+    if (imageItem) {
+      const file = imageItem.getAsFile();
+      if (file) {
+        e.preventDefault();
+        const att = await processFile(file);
+        if (att) {
+          setAttachments(prev => [...prev, att]);
+          toast({ title: "Image pasted", description: "Claude will analyse it when you send." });
+        }
+        return;
+      }
+    }
+
+    // 2. Pasted HTML — only treat as email if the plain-text version has email headers
+    const html = e.clipboardData.getData("text/html");
+    if (html && html.trim().length > 20 && looksLikeEmail(htmlToText(html))) {
+      const emailAtt = processHtmlEmail(html);
+      if (emailAtt) {
+        e.preventDefault();
+        setAttachments(prev => [...prev, emailAtt]);
+        toast({ title: "Email pasted", description: "AIDE will triage it automatically when you send." });
+        return;
+      }
+    }
+
+    // 3. Pasted plain text — only intercept if it looks like an email
+    const text = e.clipboardData.getData("text/plain");
+    if (text && looksLikeEmail(text)) {
+      e.preventDefault();
+      const meta = {
+        from:    text.match(/^From:\s*(.+)/im)?.[1]?.trim() || "",
+        subject: text.match(/^Subject:\s*(.+)/im)?.[1]?.trim() || "Email",
+        date:    text.match(/^(?:Date|Sent):\s*(.+)/im)?.[1]?.trim() || "",
+      };
+      const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
+      setAttachments(prev => [...prev, {
+        id: crypto.randomUUID(), type: "email",
+        name: `Email: ${meta.subject.slice(0, 50)}`,
+        emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text.replace(/</g, "&lt;")}</pre>`,
+        emailSummary: parts.join(" · ").slice(0, 120),
+      }]);
+      toast({ title: "Email pasted", description: "AIDE will triage it automatically when you send." });
+      return;
+    }
+
+    // Otherwise: let the browser handle it normally (text into textarea)
   }, [processHtmlEmail, processFile, toast]);
 
   const removeAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id));
@@ -458,6 +651,7 @@ export default function Chat() {
 
     const userMsg: Message = { id: `opt-${Date.now()}`, role: "user", content: displayContent, createdAt: new Date().toISOString() };
     setOptimisticMessages(prev => [...prev, userMsg]);
+    // Clear attachments now — local vars (emailAtt, imageAtts) already hold the data
     setAttachments([]);
     setStreaming(true);
     setStreamingContent("");
@@ -466,9 +660,10 @@ export default function Chat() {
 
     try {
       const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
-      const body: Record<string, unknown> = { content: msg || (emailAtt ? "" : `Please analyse the attached content.`) };
+      // Always supply non-empty content — backend will merge with email HTML
+      const body: Record<string, unknown> = { content: msg || "Please triage and analyse the attached content." };
       if (emailAtt?.emailHtml) body.emailHtml = emailAtt.emailHtml;
-      if (imageAtts.length > 0) body.images = imageAtts.map(a => a.preview!);
+      if (imageAtts.length > 0) body.images = imageAtts.map(a => a.preview as string);
 
       const res = await fetch(`${base}/api/anthropic/conversations/${CONVERSATION_ID}/messages`, {
         method: "POST",
@@ -553,6 +748,7 @@ export default function Chat() {
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      onPaste={handlePaste}
     >
       {/* ── Drop Overlay ── */}
       {dragOver && (
@@ -601,18 +797,23 @@ export default function Chat() {
       </div>
 
       {/* ── Drop hint bar ── */}
-      <div className="flex items-center gap-3 px-4 sm:px-6 py-1.5 border-b border-border bg-muted/20 flex-shrink-0">
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+      <div className="flex items-center gap-3 px-4 sm:px-6 py-1.5 border-b border-border bg-muted/20 flex-shrink-0 overflow-x-auto">
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium whitespace-nowrap">
           <Mail size={10} className="text-amber-500" />
-          <span>Drag Outlook emails here</span>
+          <span>Drag or paste Outlook emails</span>
         </div>
         <span className="text-muted-foreground/30">·</span>
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium whitespace-nowrap">
+          <Paperclip size={10} className="text-violet-500" />
+          <span>Drop .eml files</span>
+        </div>
+        <span className="text-muted-foreground/30">·</span>
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium whitespace-nowrap">
           <Image size={10} className="text-blue-500" />
-          <span>Drop images for vision analysis</span>
+          <span>Drop images for vision</span>
         </div>
         <span className="text-muted-foreground/30">·</span>
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium whitespace-nowrap">
           <Zap size={10} className="text-primary" />
           <span>AIDE acts automatically</span>
         </div>

@@ -37,6 +37,8 @@ interface Attachment {
   preview?: string;       // data URL for images
   emailHtml?: string;     // raw HTML for emails
   emailSummary?: string;  // "From: x | Subject: y"
+  emailBody?: string;     // user-pasted body (when drag-drop only captured header)
+  emailHasBody?: boolean; // true if body was captured automatically (not just header)
   size?: number;
 }
 
@@ -151,6 +153,7 @@ function parseEmlContent(raw: string, fileName: string): Attachment | null {
     name: `Email: ${subject.slice(0, 50)}`,
     emailHtml: finalHtml,
     emailSummary: parts.join(" · ").slice(0, 120),
+    emailHasBody: true,  // .eml files always include the full body
   };
 }
 
@@ -234,33 +237,86 @@ function EmailTriageCard({ data }: { data: Record<string, string | boolean | nul
   );
 }
 
-function AttachmentChip({ att, onRemove }: { att: Attachment; onRemove: () => void }) {
+function AttachmentChip({
+  att, onRemove, onBodyChange,
+}: {
+  att: Attachment;
+  onRemove: () => void;
+  onBodyChange?: (body: string) => void;
+}) {
+  const [bodyInput, setBodyInput] = useState(att.emailBody || "");
+
+  if (att.type === "email") {
+    return (
+      <div className="w-full bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl overflow-hidden">
+        {/* ── Header row ── */}
+        <div className="flex items-center gap-2 px-3 py-2">
+          <div className="w-7 h-7 bg-amber-100 dark:bg-amber-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Mail size={14} className="text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-foreground truncate">{att.name}</p>
+            {att.emailSummary && (
+              <p className="text-[10px] text-muted-foreground truncate">{att.emailSummary}</p>
+            )}
+          </div>
+          <button onClick={onRemove} className="p-1 text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0">
+            <X size={12} />
+          </button>
+        </div>
+
+        {/* ── Body area ── */}
+        {att.emailHasBody ? (
+          <div className="border-t border-amber-200 dark:border-amber-800 px-3 py-1.5">
+            <div className="flex items-center gap-1">
+              <Check size={10} className="text-emerald-500 flex-shrink-0" />
+              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Full email captured — ready to triage</p>
+            </div>
+          </div>
+        ) : (
+          <div className="border-t border-amber-200 dark:border-amber-800">
+            {!bodyInput && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100/60 dark:bg-amber-900/20">
+                <AlertTriangle size={10} className="text-amber-600 dark:text-amber-500 flex-shrink-0" />
+                <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
+                  Body not in drag payload — paste it below for full triage
+                </p>
+              </div>
+            )}
+            <textarea
+              placeholder={`Open the email → Ctrl+A → Ctrl+C → paste here…`}
+              value={bodyInput}
+              onChange={e => {
+                setBodyInput(e.target.value);
+                onBodyChange?.(e.target.value);
+              }}
+              onPaste={e => e.stopPropagation()}
+              className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground/60 resize-none focus:outline-none px-3 py-2 leading-relaxed min-h-[60px] max-h-[160px]"
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Image / file chips ──
   return (
     <div className={cn(
       "group flex items-center gap-2 rounded-xl border overflow-hidden max-w-xs",
-      att.type === "email" ? "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800" :
-      att.type === "image" ? "bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800" :
-      "bg-muted border-border"
+      att.type === "image" ? "bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800" : "bg-muted border-border"
     )}>
       {att.type === "image" && att.preview ? (
         <img src={att.preview} alt={att.name} className="w-10 h-10 object-cover flex-shrink-0" />
       ) : (
-        <div className={cn(
-          "w-10 h-10 flex items-center justify-center flex-shrink-0",
-          att.type === "email" ? "bg-amber-100 dark:bg-amber-900/20" : "bg-muted"
-        )}>
-          {att.type === "email" ? <Mail size={16} className="text-amber-600 dark:text-amber-400" /> : <Paperclip size={16} className="text-muted-foreground" />}
+        <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 bg-muted">
+          <Paperclip size={16} className="text-muted-foreground" />
         </div>
       )}
       <div className="flex-1 min-w-0 py-1.5 pr-1">
         <p className="text-xs font-semibold text-foreground truncate">{att.name}</p>
-        {att.emailSummary && <p className="text-[10px] text-muted-foreground truncate">{att.emailSummary}</p>}
         {att.size && <p className="text-[10px] text-muted-foreground">{(att.size / 1024).toFixed(0)} KB</p>}
       </div>
-      <button
-        onClick={onRemove}
-        className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
-      >
+      <button onClick={onRemove} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0">
         <X size={12} />
       </button>
     </div>
@@ -405,14 +461,21 @@ export default function Chat() {
   const processHtmlEmail = useCallback((html: string): Attachment | null => {
     if (!html || html.trim().length < 20) return null;
     const meta = extractEmailMeta(html);
-    const plainText = htmlToText(html).slice(0, 200);
-    const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date && meta.date].filter(Boolean);
+    const plain = htmlToText(html);
+    const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
+
+    // Detect if there's real body content beyond the header fields
+    const headerLineRe = /^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To|De|Objet)\s*[:\s]/i;
+    const nonHeaderContent = plain.split("\n").filter(l => l.trim() && !headerLineRe.test(l.trim()));
+    const emailHasBody = nonHeaderContent.join("").replace(/\s/g, "").length > 120;
+
     return {
       id: crypto.randomUUID(),
       type: "email",
       name: meta.subject ? `Email: ${meta.subject.slice(0, 50)}` : "Email dropped",
       emailHtml: html,
-      emailSummary: parts.join(" · ") || plainText.slice(0, 80),
+      emailSummary: parts.join(" · ") || plain.slice(0, 80),
+      emailHasBody,
     };
   }, []);
 
@@ -577,6 +640,8 @@ export default function Chat() {
   }, [processHtmlEmail, processFile, toast]);
 
   const removeAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id));
+  const updateAttachmentBody = (id: string, body: string) =>
+    setAttachments(prev => prev.map(a => a.id === id ? { ...a, emailBody: body } : a));
 
   // ── Action execution ─────────────────────────────────────────────────────────
 
@@ -662,7 +727,13 @@ export default function Chat() {
       const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
       // Always supply non-empty content — backend will merge with email HTML
       const body: Record<string, unknown> = { content: msg || "Please triage and analyse the attached content." };
-      if (emailAtt?.emailHtml) body.emailHtml = emailAtt.emailHtml;
+      if (emailAtt?.emailHtml) {
+        // Merge user-pasted body into the emailHtml if provided
+        const pastedBody = emailAtt.emailBody?.trim();
+        body.emailHtml = pastedBody
+          ? emailAtt.emailHtml + `\n<hr/>\n<div style="white-space:pre-wrap">${pastedBody.replace(/</g, "&lt;")}</div>`
+          : emailAtt.emailHtml;
+      }
       if (imageAtts.length > 0) body.images = imageAtts.map(a => a.preview as string);
 
       const res = await fetch(`${base}/api/anthropic/conversations/${CONVERSATION_ID}/messages`, {
@@ -882,9 +953,14 @@ export default function Chat() {
       <div className="border-t border-border bg-background/80 backdrop-blur-md px-4 sm:px-6 py-3 flex-shrink-0">
         {/* Attachment chips */}
         {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2.5">
+          <div className="flex flex-col gap-2 mb-2.5">
             {attachments.map(att => (
-              <AttachmentChip key={att.id} att={att} onRemove={() => removeAttachment(att.id)} />
+              <AttachmentChip
+                key={att.id}
+                att={att}
+                onRemove={() => removeAttachment(att.id)}
+                onBodyChange={att.type === "email" ? (body) => updateAttachmentBody(att.id, body) : undefined}
+              />
             ))}
           </div>
         )}
@@ -898,13 +974,14 @@ export default function Chat() {
             <Paperclip size={16} />
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.eml,message/rfc822"
               multiple
               className="hidden"
               onChange={async e => {
                 if (!e.target.files) return;
                 const results = await Promise.all(Array.from(e.target.files).map(processFile));
-                setAttachments(prev => [...prev, ...results.filter(Boolean) as Attachment[]]);
+                const valid = results.filter(Boolean) as Attachment[];
+                if (valid.length > 0) setAttachments(prev => [...prev, ...valid]);
                 e.target.value = "";
               }}
             />

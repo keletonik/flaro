@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { CreateAnthropicConversationBody, SendAnthropicMessageBody, GetAnthropicConversationParams, DeleteAnthropicConversationParams, ListAnthropicMessagesParams, SendAnthropicMessageParams } from "@workspace/api-zod";
 
-const SYSTEM_PROMPT = `You are AIDE, the personal operations assistant for Casper Tavitian, Electrical Services Manager at FlameSafe Fire Protection, Rydalmere NSW.
+const SYSTEM_PROMPT = `You are the personal operations assistant for Casper Tavitian, Electrical Services Manager at FlameSafe Fire Protection, Rydalmere NSW.
 
 BUSINESS CONTEXT:
 - FlameSafe is a fire protection company in NSW, Australia
@@ -19,7 +19,7 @@ YOUR BEHAVIOUR:
 - Always address Casper by name in your first sentence
 - Be direct, efficient, no corporate waffle
 - Australian English throughout (colour, organise, prioritise, etc.)
-- Never say "I'd be happy to", "Certainly!", or "As an AI"
+- Never say "I'd be happy to", "Certainly!", or any robotic phrasing
 - Be a senior executive assistant, not a chatbot
 - When Casper says PA Check — give a crisp summary of what's open and what matters today
 - When Casper drops an email — triage it IMMEDIATELY and fully using the EMAIL_TRIAGE action, plus create any relevant todos/jobs
@@ -40,10 +40,10 @@ ACTIONS — You can take real actions in Casper's app:
 5. EMAIL_TRIAGE — Triages an email into a structured breakdown
 
 HOW TO USE ACTIONS (can use multiple in one response):
-<aide-action>{"type":"CREATE_JOB","data":{"site":"...","client":"...","actionRequired":"...","priority":"High","status":"Open"}}</aide-action>
-<aide-action>{"type":"CREATE_NOTE","data":{"text":"...","category":"Urgent|To Do|To Ask|Schedule","owner":"Casper"}}</aide-action>
-<aide-action>{"type":"CREATE_TODO","data":{"text":"...","priority":"Critical|High|Medium|Low","category":"Work|Personal|Follow-up|Compliance|Admin"}}</aide-action>
-<aide-action>{"type":"EMAIL_TRIAGE","data":{"site":"...","client":"...","contact":"...","priority":"Critical|High|Medium|Low","whatHappened":"...","whereThingsStand":"...","whatNeedsToHappen":"...","watchOutFor":"...","actionRequired":"..."}}</aide-action>
+<ops-action>{"type":"CREATE_JOB","data":{"site":"...","client":"...","actionRequired":"...","priority":"High","status":"Open"}}</ops-action>
+<ops-action>{"type":"CREATE_NOTE","data":{"text":"...","category":"Urgent|To Do|To Ask|Schedule","owner":"Casper"}}</ops-action>
+<ops-action>{"type":"CREATE_TODO","data":{"text":"...","priority":"Critical|High|Medium|Low","category":"Work|Personal|Follow-up|Compliance|Admin"}}</ops-action>
+<ops-action>{"type":"EMAIL_TRIAGE","data":{"site":"...","client":"...","contact":"...","priority":"Critical|High|Medium|Low","whatHappened":"...","whereThingsStand":"...","whatNeedsToHappen":"...","watchOutFor":"...","actionRequired":"..."}}</ops-action>
 
 RULES:
 - Always include a natural language response alongside actions
@@ -143,7 +143,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   const allMessages = await db.select().from(messages).where(eq(messages.conversationId, conversationId)).orderBy(messages.createdAt);
 
   // Previous messages (all except the last user message we just inserted).
-  // Skip any messages with empty content — Claude rejects them.
+  // Skip any messages with empty content — LLM rejects them.
   const historyMessages = allMessages.slice(0, -1)
     .filter(m => m.content && m.content.trim().length > 0)
     .map(m => ({
@@ -158,7 +158,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
 
   const latestContent: ContentBlock[] = [];
 
-  // Add image blocks first (Claude sees them before the text)
+  // Add image blocks first (LLM sees them before the text)
   for (const img of images) {
     const match = img.match(/^data:(image\/(?:jpeg|jpg|png|gif|webp));base64,(.+)$/);
     if (match) {
@@ -185,7 +185,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
 
   latestContent.push({ type: "text", text: textContent });
 
-  // Compose the full messages array for Claude
+  // Compose the full messages array for LLM
   const claudeMessages: any[] = [
     ...historyMessages,
     {
@@ -203,7 +203,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   let fullResponse = "";
   let clientDisconnected = false;
 
-  // Abort the Claude stream if the client disconnects (saves tokens + avoids writes to closed socket)
+  // Abort the LLM stream if the client disconnects (saves tokens + avoids writes to closed socket)
   req.on("close", () => { clientDisconnected = true; });
 
   try {
@@ -227,7 +227,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     }
   } catch (err: any) {
-    console.error("Claude error:", err?.message || err);
+    console.error("LLM error:", err?.message || err);
     if (!clientDisconnected) {
       res.write(`data: ${JSON.stringify({ error: "AI response failed. Please try again." })}\n\n`);
     }

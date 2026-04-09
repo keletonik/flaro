@@ -14,13 +14,13 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const migrated = localStorage.getItem("aide-theme-dark-default");
+    const migrated = localStorage.getItem("ops-theme-dark-default");
     if (!migrated) {
-      localStorage.setItem("aide-theme-dark-default", "1");
-      localStorage.setItem("aide-theme", "dark");
+      localStorage.setItem("ops-theme-dark-default", "1");
+      localStorage.setItem("ops-theme", "dark");
       return "dark";
     }
-    const existing = localStorage.getItem("aide-theme");
+    const existing = localStorage.getItem("ops-theme");
     if (existing) return existing as Theme;
     return "dark";
   });
@@ -32,7 +32,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       root.classList.remove("dark");
     }
-    localStorage.setItem("aide-theme", theme);
+    localStorage.setItem("ops-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {

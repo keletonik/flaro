@@ -38,7 +38,7 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 
 ### Frontend Pages
 - `/` — KPI Dashboard: greeting, 6 metric cards (active jobs, completed today, weekly revenue, outstanding, WIP, pending quotes), focus points, operations pipeline bars, tech workload grid, contextual analyst chat
-- `/chat` — PA chat with Claude (claude-sonnet-4-6) via SSE streaming; email triage, image analysis, todo/job creation actions
+- `/chat` — PA chat with LLM (sonnet-4-6) via SSE streaming; email triage, image analysis, todo/job creation actions
 - `/operations` — Operations Hub with 4 sub-tabs:
   - **WIP**: Uptick CSV import, data table with filters/search/status-change, summary bar, export CSV
   - **Quotes**: Quote management, CSV import, status tracking, conversion analytics
@@ -55,7 +55,7 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - `/toolbox` — Toolbox briefing notes with TB-XXX refs, mark briefed, export/copy to clipboard
 
 ### Design System
-- **Themes**: Light (default) + Dark mode via `.dark` class on `<html>`; toggled by sidebar button, persisted in `localStorage["aide-theme"]`
+- **Themes**: Light (default) + Dark mode via `.dark` class on `<html>`; toggled by sidebar button, persisted in `localStorage["ops-theme"]`
 - **Theme provider**: `src/lib/theme.tsx` → `ThemeProvider` + `useTheme()` hook
 - **Font**: Inter (body), JetBrains Mono (code)
 - **Primary**: Purple `hsl(250 70% 56%)` light / `hsl(250 70% 65%)` dark
@@ -71,7 +71,7 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 ### API Routes
 **Dashboard & KPI:**
 - `GET /api/dashboard/summary` — job counts (critical/high/open/doneToday)
-- `GET /api/dashboard/focus` — Claude-generated focus bullet points
+- `GET /api/dashboard/focus` — LLM-generated focus bullet points
 - `GET /api/kpi/metrics` — comprehensive KPI metrics (jobs, WIP, quotes, defects, invoices, todos)
 
 **Jobs:**
@@ -114,7 +114,7 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - `POST /api/anthropic/conversations/:id/messages` — Main PA chat with SSE streaming
 
 ### AI Features
-- **Main PA Chat**: Claude Sonnet, FlameSafe business context, email triage, image analysis, job/todo creation
+- **Main PA Chat**: LLM Sonnet, FlameSafe business context, email triage, image analysis, job/todo creation
 - **Contextual Analyst**: Per-section chatbot that reads actual data from the section and provides analytics
   - WIP: scheduling optimisation, revenue analysis, workload distribution
   - Quotes: conversion rates, high-value opportunities, follow-ups

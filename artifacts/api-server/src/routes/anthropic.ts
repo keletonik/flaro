@@ -22,174 +22,176 @@ YOUR BEHAVIOUR:
 - Never say "I'd be happy to", "Certainly!", or "As an AI"
 - Be a senior executive assistant, not a chatbot
 - When Casper says PA Check — give a crisp summary of what's open and what matters today
-- When Casper drops an email — triage it automatically using the EMAIL_TRIAGE action
+- When Casper drops an email — triage it IMMEDIATELY and fully using the EMAIL_TRIAGE action, plus create any relevant todos/jobs
+- When Casper drops an image — describe what you see and extract any relevant information (job details, site names, dates, issues, compliance items, etc.)
 - When Casper mentions needing to do something — proactively offer to log it as a todo or job
-- Generate Uptick notes in dated dot-point format when asked
 
-ACTIONS — You can take real actions in Casper's app. Use these when it would clearly help:
+DROPPED CONTENT — When Casper drops an email or file:
+1. Emails: ALWAYS produce an EMAIL_TRIAGE action block, extract ALL action items as CREATE_TODO actions, and create a CREATE_JOB if a site visit is needed
+2. Images: Describe what you see. If it's a job site photo, document, report or certificate — extract the relevant info and create appropriate jobs/notes/todos
+3. Documents/text: Extract all relevant data, create appropriate records
+
+ACTIONS — You can take real actions in Casper's app:
 
 1. CREATE_JOB — Creates a new job in the Jobs page
-   Use when: Casper describes a new site, client issue, or task that needs tracking
-   Trigger phrases: "log a job", "add a job for...", "new job at...", email describes a site visit needed
-
 2. CREATE_NOTE — Creates a note in the Notes page
-   Use when: Casper says "note this", "remind me", "don't forget", or drops a thought
-   Trigger phrases: "note:", "remember to", "add a note"
-
 3. CREATE_TODO — Creates a to-do checklist item
-   Use when: Casper has a personal action item or task to track
-   Trigger phrases: "add to my list", "todo:", "I need to", quick tasks
-
 4. UPDATE_JOB_STATUS — Changes a job's status
-   Use when: Casper says a job is done, booked, blocked, waiting, etc.
-   
 5. EMAIL_TRIAGE — Triages an email into a structured breakdown
-   Use when: Casper pastes an email or describes a client email
 
-HOW TO USE ACTIONS:
-Include them in your response using this exact format (can include multiple):
+HOW TO USE ACTIONS (can use multiple in one response):
 <aide-action>{"type":"CREATE_JOB","data":{"site":"...","client":"...","actionRequired":"...","priority":"High","status":"Open"}}</aide-action>
 <aide-action>{"type":"CREATE_NOTE","data":{"text":"...","category":"Urgent|To Do|To Ask|Schedule","owner":"Casper"}}</aide-action>
-<aide-action>{"type":"CREATE_TODO","data":{"text":"...","priority":"High","category":"Work|Personal|Follow-up|Compliance|Admin"}}</aide-action>
-<aide-action>{"type":"UPDATE_JOB_STATUS","data":{"jobId":"...","status":"Done|In Progress|Booked|Blocked|Waiting|Open"}}</aide-action>
-<aide-action>{"type":"EMAIL_TRIAGE","data":{"site":"...","client":"...","contact":"...","priority":"High","whatHappened":"...","whereThingsStand":"...","whatNeedsToHappen":"...","watchOutFor":"...","actionRequired":"..."}}</aide-action>
+<aide-action>{"type":"CREATE_TODO","data":{"text":"...","priority":"Critical|High|Medium|Low","category":"Work|Personal|Follow-up|Compliance|Admin"}}</aide-action>
+<aide-action>{"type":"EMAIL_TRIAGE","data":{"site":"...","client":"...","contact":"...","priority":"Critical|High|Medium|Low","whatHappened":"...","whereThingsStand":"...","whatNeedsToHappen":"...","watchOutFor":"...","actionRequired":"..."}}</aide-action>
 
-RULES FOR ACTIONS:
-- Always include a natural language response alongside actions — never just an action block
-- Confirm what action you took in your text (e.g. "I've logged that as a High priority job for Becton Dickinson.")
-- Only use UPDATE_JOB_STATUS if the user clearly references a specific job by name/ID
-- For CREATE_JOB: always include site, client, actionRequired, priority, status
-- For CREATE_NOTE: always include text, category, owner="Casper"
-- For CREATE_TODO: always include text. Priority defaults to Medium
-- Never invent job IDs — only use IDs the user provides
+RULES:
+- Always include a natural language response alongside actions
+- For dropped emails: EMAIL_TRIAGE is mandatory. Also create todos for each action item
+- For dropped images: describe what you see, then create relevant records
+- Always confirm in your text what actions you've taken
+- Priority assessment: Critical = safety/compliance risk, regulatory deadline; High = client impact, this week; Medium = this fortnight; Low = when convenient`;
 
-EXAMPLES:
-User: "Log a job for Westfield Parramatta — Scentre Group. Smoke detector in Zone 3 failed inspection. High priority."
-→ Reply with: brief confirmation text + <aide-action>{"type":"CREATE_JOB","data":{...}}</aide-action>
-
-User: "Note: call Jamie tomorrow re Q2 resource allocation"
-→ Reply with: acknowledgement text + <aide-action>{"type":"CREATE_NOTE","data":{...}}</aide-action>
-
-User: "Add to my list: chase up the Becton Dickinson AFSS report"
-→ Reply with: confirmation + <aide-action>{"type":"CREATE_TODO","data":{...}}</aide-action>
-
-User: "[pastes email]"
-→ Reply with: EMAIL_TRIAGE action + your plain-text take on what Casper should do next`;
+// Strip HTML tags and decode basic entities for email text extraction
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<\/tr>/gi, "\n")
+    .replace(/<\/td>/gi, " | ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 const router = Router();
 
 router.get("/anthropic/conversations", async (req, res) => {
   const result = await db.select().from(conversations).orderBy(conversations.createdAt);
-  res.json(result.map(c => ({
-    ...c,
-    createdAt: c.createdAt.toISOString(),
-  })));
+  res.json(result.map(c => ({ ...c, createdAt: c.createdAt.toISOString() })));
 });
 
 router.post("/anthropic/conversations", async (req, res) => {
   const parsed = CreateAnthropicConversationBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body" });
-    return;
-  }
-
-  const [conv] = await db.insert(conversations).values({
-    title: parsed.data.title,
-  }).returning();
-
-  res.status(201).json({
-    ...conv,
-    createdAt: conv.createdAt.toISOString(),
-  });
+  if (!parsed.success) { res.status(400).json({ error: "Invalid request body" }); return; }
+  const [conv] = await db.insert(conversations).values({ title: parsed.data.title }).returning();
+  res.status(201).json({ ...conv, createdAt: conv.createdAt.toISOString() });
 });
 
 router.get("/anthropic/conversations/:id", async (req, res) => {
   const parsed = GetAnthropicConversationParams.safeParse(req.params);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid params" });
-    return;
-  }
-
+  if (!parsed.success) { res.status(400).json({ error: "Invalid params" }); return; }
   const [conv] = await db.select().from(conversations).where(eq(conversations.id, parsed.data.id));
-  if (!conv) {
-    res.status(404).json({ error: "Conversation not found" });
-    return;
-  }
-
+  if (!conv) { res.status(404).json({ error: "Conversation not found" }); return; }
   const msgs = await db.select().from(messages).where(eq(messages.conversationId, parsed.data.id)).orderBy(messages.createdAt);
-
-  res.json({
-    ...conv,
-    createdAt: conv.createdAt.toISOString(),
-    messages: msgs.map(m => ({
-      ...m,
-      createdAt: m.createdAt.toISOString(),
-    })),
-  });
+  res.json({ ...conv, createdAt: conv.createdAt.toISOString(), messages: msgs.map(m => ({ ...m, createdAt: m.createdAt.toISOString() })) });
 });
 
 router.delete("/anthropic/conversations/:id", async (req, res) => {
   const parsed = DeleteAnthropicConversationParams.safeParse(req.params);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid params" });
-    return;
-  }
-
+  if (!parsed.success) { res.status(400).json({ error: "Invalid params" }); return; }
   const [conv] = await db.select().from(conversations).where(eq(conversations.id, parsed.data.id));
-  if (!conv) {
-    res.status(404).json({ error: "Conversation not found" });
-    return;
-  }
-
+  if (!conv) { res.status(404).json({ error: "Conversation not found" }); return; }
   await db.delete(conversations).where(eq(conversations.id, parsed.data.id));
   res.status(204).end();
 });
 
 router.get("/anthropic/conversations/:id/messages", async (req, res) => {
   const parsed = ListAnthropicMessagesParams.safeParse(req.params);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid params" });
-    return;
-  }
-
+  if (!parsed.success) { res.status(400).json({ error: "Invalid params" }); return; }
   const msgs = await db.select().from(messages).where(eq(messages.conversationId, parsed.data.id)).orderBy(messages.createdAt);
-  res.json(msgs.map(m => ({
-    ...m,
-    createdAt: m.createdAt.toISOString(),
-  })));
+  res.json(msgs.map(m => ({ ...m, createdAt: m.createdAt.toISOString() })));
 });
 
 router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   const paramsParsed = SendAnthropicMessageParams.safeParse(req.params);
-  if (!paramsParsed.success) {
-    res.status(400).json({ error: "Invalid params" });
-    return;
-  }
+  if (!paramsParsed.success) { res.status(400).json({ error: "Invalid params" }); return; }
 
   const bodyParsed = SendAnthropicMessageBody.safeParse(req.body);
-  if (!bodyParsed.success) {
-    res.status(400).json({ error: "Invalid request body" });
-    return;
-  }
+  if (!bodyParsed.success) { res.status(400).json({ error: "Invalid request body" }); return; }
 
   const conversationId = paramsParsed.data.id;
   const [conv] = await db.select().from(conversations).where(eq(conversations.id, conversationId));
-  if (!conv) {
-    res.status(404).json({ error: "Conversation not found" });
-    return;
+  if (!conv) { res.status(404).json({ error: "Conversation not found" }); return; }
+
+  // Extract multimodal fields (not in Zod schema — accessed directly)
+  const images: string[] = Array.isArray(req.body.images) ? req.body.images : [];
+  const emailHtml: string | null = typeof req.body.emailHtml === "string" ? req.body.emailHtml : null;
+  const hasAttachments = images.length > 0 || emailHtml;
+
+  // Build a text-only version of the user message for DB storage
+  let dbContent = bodyParsed.data.content;
+  if (emailHtml) {
+    const emailText = htmlToPlainText(emailHtml);
+    dbContent = `[EMAIL DROPPED]\n${emailText}${bodyParsed.data.content ? `\n\nCasper's note: ${bodyParsed.data.content}` : ""}`;
+  } else if (images.length > 0) {
+    dbContent = `[${images.length} image(s) attached]${bodyParsed.data.content ? ` — ${bodyParsed.data.content}` : ""}`;
   }
 
-  await db.insert(messages).values({
-    conversationId,
-    role: "user",
-    content: bodyParsed.data.content,
-  });
+  await db.insert(messages).values({ conversationId, role: "user", content: dbContent });
 
+  // Build conversation history (all previous messages as plain text)
   const allMessages = await db.select().from(messages).where(eq(messages.conversationId, conversationId)).orderBy(messages.createdAt);
-  const chatMessages = allMessages.map(m => ({
+
+  // Previous messages (all except the last user message we just inserted)
+  const historyMessages = allMessages.slice(0, -1).map(m => ({
     role: m.role as "user" | "assistant",
     content: m.content,
   }));
+
+  // Build the latest user message content (multimodal if needed)
+  type ContentBlock =
+    | { type: "text"; text: string }
+    | { type: "image"; source: { type: "base64"; media_type: string; data: string } };
+
+  const latestContent: ContentBlock[] = [];
+
+  // Add image blocks first (Claude sees them before the text)
+  for (const img of images) {
+    const match = img.match(/^data:(image\/(?:jpeg|jpg|png|gif|webp));base64,(.+)$/);
+    if (match) {
+      latestContent.push({
+        type: "image",
+        source: { type: "base64", media_type: match[1], data: match[2] },
+      });
+    }
+  }
+
+  // Build text content
+  let textContent = "";
+  if (emailHtml) {
+    const emailText = htmlToPlainText(emailHtml);
+    textContent = `[EMAIL DROPPED BY CASPER — TRIAGE THIS IMMEDIATELY]\n\n${emailText}`;
+    if (bodyParsed.data.content) textContent += `\n\nCasper's note: ${bodyParsed.data.content}`;
+  } else if (images.length > 0) {
+    textContent = bodyParsed.data.content
+      ? `Casper has attached ${images.length} image(s). His note: ${bodyParsed.data.content}`
+      : `Casper has dropped ${images.length} image(s) for you to analyse. Describe what you see and extract any relevant job/site/compliance information.`;
+  } else {
+    textContent = bodyParsed.data.content;
+  }
+
+  latestContent.push({ type: "text", text: textContent });
+
+  // Compose the full messages array for Claude
+  const claudeMessages: any[] = [
+    ...historyMessages,
+    {
+      role: "user",
+      content: latestContent.length === 1 && latestContent[0].type === "text"
+        ? latestContent[0].text   // plain string for simple text messages
+        : latestContent,          // array for multimodal
+    },
+  ];
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -202,7 +204,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
       model: "claude-sonnet-4-6",
       max_tokens: 8192,
       system: SYSTEM_PROMPT,
-      messages: chatMessages,
+      messages: claudeMessages,
     });
 
     for await (const event of stream) {
@@ -212,14 +214,10 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
       }
     }
 
-    await db.insert(messages).values({
-      conversationId,
-      role: "assistant",
-      content: fullResponse,
-    });
-
+    await db.insert(messages).values({ conversationId, role: "assistant", content: fullResponse });
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-  } catch (err) {
+  } catch (err: any) {
+    console.error("Claude error:", err?.message || err);
     res.write(`data: ${JSON.stringify({ error: "AI response failed. Please try again." })}\n\n`);
   }
 

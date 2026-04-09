@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AIDE"
+version = "1.0.0"
+id = "artifacts/aide"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19190
+
+[services.development]
+run = "pnpm --filter @workspace/aide run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/aide", "run", "build" ]
+publicDir = "artifacts/aide/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19190"
+BASE_PATH = "/"

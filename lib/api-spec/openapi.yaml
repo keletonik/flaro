@@ -1,0 +1,1312 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: AIDE Personal Operations Assistant API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: anthropic
+    description: Anthropic AI chat operations
+  - name: jobs
+    description: Job management
+  - name: notes
+    description: Notes management
+  - name: toolbox
+    description: Toolbox notes management
+  - name: dashboard
+    description: Dashboard summary data
+  - name: todos
+    description: To-do checklist management
+  - name: projects
+    description: Project and task management
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /anthropic/conversations:
+    get:
+      operationId: listAnthropicConversations
+      tags: [anthropic]
+      summary: List all conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnthropicConversation"
+    post:
+      operationId: createAnthropicConversation
+      tags: [anthropic]
+      summary: Create a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAnthropicConversationBody"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicConversation"
+  /anthropic/conversations/{id}:
+    get:
+      operationId: getAnthropicConversation
+      tags: [anthropic]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteAnthropicConversation
+      tags: [anthropic]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /anthropic/conversations/{id}/messages:
+    get:
+      operationId: listAnthropicMessages
+      tags: [anthropic]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnthropicMessage"
+    post:
+      operationId: sendAnthropicMessage
+      tags: [anthropic]
+      summary: Send a message and receive an AI response (SSE stream)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendAnthropicMessageBody"
+      responses:
+        "200":
+          description: SSE stream of assistant response chunks
+          content:
+            text/event-stream: {}
+
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List all jobs
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: priority
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+    post:
+      operationId: createJob
+      tags: [jobs]
+      summary: Create a new job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateJobBody"
+      responses:
+        "201":
+          description: Created job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+  /jobs/{id}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      summary: Get a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updateJob
+      tags: [jobs]
+      summary: Update a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateJobBody"
+      responses:
+        "200":
+          description: Updated job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteJob
+      tags: [jobs]
+      summary: Delete a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /notes:
+    get:
+      operationId: listNotes
+      tags: [notes]
+      summary: List all notes
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Note"
+    post:
+      operationId: createNote
+      tags: [notes]
+      summary: Create a new note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNoteBody"
+      responses:
+        "201":
+          description: Created note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+  /notes/{id}:
+    get:
+      operationId: getNote
+      tags: [notes]
+      summary: Get a note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updateNote
+      tags: [notes]
+      summary: Update a note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNoteBody"
+      responses:
+        "200":
+          description: Updated note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteNote
+      tags: [notes]
+      summary: Delete a note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /toolbox:
+    get:
+      operationId: listToolboxNotes
+      tags: [toolbox]
+      summary: List all toolbox notes
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of toolbox notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ToolboxNote"
+    post:
+      operationId: createToolboxNote
+      tags: [toolbox]
+      summary: Create a toolbox note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateToolboxNoteBody"
+      responses:
+        "201":
+          description: Created toolbox note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolboxNote"
+  /toolbox/{id}:
+    patch:
+      operationId: updateToolboxNote
+      tags: [toolbox]
+      summary: Update a toolbox note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateToolboxNoteBody"
+      responses:
+        "200":
+          description: Updated toolbox note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolboxNote"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteToolboxNote
+      tags: [toolbox]
+      summary: Delete a toolbox note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /todos:
+    get:
+      operationId: listTodos
+      tags: [todos]
+      summary: List all todos
+      responses:
+        "200":
+          description: List of todos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Todo"
+    post:
+      operationId: createTodo
+      tags: [todos]
+      summary: Create a todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTodoBody"
+      responses:
+        "201":
+          description: Created todo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+  /todos/{id}:
+    patch:
+      operationId: updateTodo
+      tags: [todos]
+      summary: Update a todo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTodoBody"
+      responses:
+        "200":
+          description: Updated todo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteTodo
+      tags: [todos]
+      summary: Delete a todo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectBody"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /projects/{id}:
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectBody"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /projects/{projectId}/tasks:
+    get:
+      operationId: listProjectTasks
+      tags: [projects]
+      summary: List tasks for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectTask"
+    post:
+      operationId: createProjectTask
+      tags: [projects]
+      summary: Create a task in a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectTaskBody"
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectTask"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /projects/{projectId}/tasks/{taskId}:
+    patch:
+      operationId: updateProjectTask
+      tags: [projects]
+      summary: Update a task
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectTaskBody"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectTask"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteProjectTask
+      tags: [projects]
+      summary: Delete a task
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/focus:
+    get:
+      operationId: getDashboardFocus
+      tags: [dashboard]
+      summary: Get AI-generated today's focus points
+      responses:
+        "200":
+          description: Focus points
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardFocus"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    AnthropicConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - createdAt
+    AnthropicMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - conversationId
+        - role
+        - content
+        - createdAt
+    CreateAnthropicConversationBody:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+    SendAnthropicMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+    AnthropicConversationWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnthropicMessage"
+      required:
+        - id
+        - title
+        - createdAt
+        - messages
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+        taskNumber:
+          type: ["string", "null"]
+        site:
+          type: string
+        address:
+          type: ["string", "null"]
+        client:
+          type: string
+        contactName:
+          type: ["string", "null"]
+        contactNumber:
+          type: ["string", "null"]
+        contactEmail:
+          type: ["string", "null"]
+        actionRequired:
+          type: string
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        status:
+          type: string
+          enum: [Open, "In Progress", Booked, Blocked, Waiting, Done]
+        assignedTech:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        uptickNotes:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - site
+        - client
+        - actionRequired
+        - priority
+        - status
+        - uptickNotes
+        - createdAt
+        - updatedAt
+    CreateJobBody:
+      type: object
+      properties:
+        taskNumber:
+          type: string
+        site:
+          type: string
+        address:
+          type: string
+        client:
+          type: string
+        contactName:
+          type: string
+        contactNumber:
+          type: string
+        contactEmail:
+          type: string
+        actionRequired:
+          type: string
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        status:
+          type: string
+          enum: [Open, "In Progress", Booked, Blocked, Waiting, Done]
+        assignedTech:
+          type: string
+        dueDate:
+          type: string
+        notes:
+          type: string
+      required:
+        - site
+        - client
+        - actionRequired
+        - priority
+        - status
+    UpdateJobBody:
+      type: object
+      properties:
+        taskNumber:
+          type: string
+        site:
+          type: string
+        address:
+          type: string
+        client:
+          type: string
+        contactName:
+          type: string
+        contactNumber:
+          type: string
+        contactEmail:
+          type: string
+        actionRequired:
+          type: string
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        status:
+          type: string
+          enum: [Open, "In Progress", Booked, Blocked, Waiting, Done]
+        assignedTech:
+          type: string
+        dueDate:
+          type: string
+        notes:
+          type: string
+        uptickNote:
+          type: string
+
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        category:
+          type: string
+          enum: [Urgent, "To Do", "To Ask", Schedule, Done]
+        owner:
+          type: string
+        status:
+          type: string
+          enum: [Open, Done]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - text
+        - category
+        - owner
+        - status
+        - createdAt
+    CreateNoteBody:
+      type: object
+      properties:
+        text:
+          type: string
+        category:
+          type: string
+          enum: [Urgent, "To Do", "To Ask", Schedule, Done]
+        owner:
+          type: string
+      required:
+        - text
+        - category
+        - owner
+    UpdateNoteBody:
+      type: object
+      properties:
+        text:
+          type: string
+        category:
+          type: string
+          enum: [Urgent, "To Do", "To Ask", Schedule, Done]
+        owner:
+          type: string
+        status:
+          type: string
+          enum: [Open, Done]
+
+    ToolboxNote:
+      type: object
+      properties:
+        id:
+          type: string
+        ref:
+          type: string
+        text:
+          type: string
+        status:
+          type: string
+          enum: [Active, Briefed]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - ref
+        - text
+        - status
+        - createdAt
+    CreateToolboxNoteBody:
+      type: object
+      properties:
+        text:
+          type: string
+      required:
+        - text
+    UpdateToolboxNoteBody:
+      type: object
+      properties:
+        text:
+          type: string
+        status:
+          type: string
+          enum: [Active, Briefed]
+
+    DashboardSummary:
+      type: object
+      properties:
+        critical:
+          type: integer
+        high:
+          type: integer
+        open:
+          type: integer
+        doneToday:
+          type: integer
+        totalJobs:
+          type: integer
+        openNotes:
+          type: integer
+      required:
+        - critical
+        - high
+        - open
+        - doneToday
+        - totalJobs
+        - openNotes
+    DashboardFocus:
+      type: object
+      properties:
+        points:
+          type: array
+          items:
+            type: string
+        generatedAt:
+          type: string
+          format: date-time
+      required:
+        - points
+        - generatedAt
+
+    Todo:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        completed:
+          type: boolean
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        category:
+          type: ["string", "null"]
+          enum: [Work, Personal, "Follow-up", Compliance, Admin, null]
+        dueDate:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - text
+        - completed
+        - priority
+        - createdAt
+        - updatedAt
+    CreateTodoBody:
+      type: object
+      properties:
+        text:
+          type: string
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        category:
+          type: string
+          enum: [Work, Personal, "Follow-up", Compliance, Admin]
+        dueDate:
+          type: string
+      required:
+        - text
+    UpdateTodoBody:
+      type: object
+      properties:
+        text:
+          type: string
+        completed:
+          type: boolean
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        category:
+          type: string
+          enum: [Work, Personal, "Follow-up", Compliance, Admin]
+        dueDate:
+          type: string
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [Active, "On Hold", Completed, Archived]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        colour:
+          type: string
+        dueDate:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - status
+        - priority
+        - createdAt
+        - updatedAt
+    CreateProjectBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [Active, "On Hold", Completed, Archived]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        colour:
+          type: string
+        dueDate:
+          type: string
+      required:
+        - name
+    UpdateProjectBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [Active, "On Hold", Completed, Archived]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        colour:
+          type: string
+        dueDate:
+          type: string
+    ProjectTask:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: ["To Do", "In Progress", Review, Done]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        assignee:
+          type: string
+          nullable: true
+        dueDate:
+          type: string
+          nullable: true
+        position:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - projectId
+        - title
+        - status
+        - priority
+        - position
+        - createdAt
+        - updatedAt
+    CreateProjectTaskBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: ["To Do", "In Progress", Review, Done]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        assignee:
+          type: string
+        dueDate:
+          type: string
+        position:
+          type: integer
+      required:
+        - title
+    UpdateProjectTaskBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: ["To Do", "In Progress", Review, Done]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        assignee:
+          type: string
+        dueDate:
+          type: string
+        position:
+          type: integer
+
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

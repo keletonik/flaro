@@ -1,3 +1,14 @@
 node_modules/
-.next/
-*.tsbuildinfo
+dist/
+.cache/
+.local/
+.replit
+replit.nix
+.config/
+.upm/
+.breakpoints
+.pythonlibs/
+snippets/
+*.log
+.env
+.env.local

@@ -1,0 +1,525 @@
+════════════════════════════════════════════════════════════════
+REPLIT BUILD SPECIFICATION
+AIDE — Intelligent Personal Operations Assistant
+Author: Casper Tavitian / Mentaris
+Version: 1.0
+════════════════════════════════════════════════════════════════
+
+OVERVIEW
+────────────────────────────────────────────────────────────────
+Build AIDE — a premium personal operations assistant web and 
+mobile app. It functions as an intelligent PA that the user 
+talks to conversationally, drops emails into, and uses to 
+manage jobs, notes, and actions — all from one interface.
+
+The app combines a command centre dashboard (at-a-glance 
+status of everything) with a conversational AI chat interface 
+(the primary interaction method). Everything the user types 
+or drops into the chat is automatically categorised, logged, 
+and surfaced in the dashboard.
+
+The user's name is Casper. The AI should always address him 
+by name and behave as a senior personal assistant who knows 
+his business context deeply.
+
+════════════════════════════════════════════════════════════════
+TECH STACK
+════════════════════════════════════════════════════════════════
+
+Framework:        React Native with Expo (web + iOS + Android)
+Navigation:       Expo Router (file-based routing)
+Styling:          NativeWind (Tailwind for React Native)
+Backend:          Node.js + Express (hosted on Replit)
+Database:         Replit KV Database (persistent)
+AI:               Anthropic Claude API (claude-sonnet-4-20250514)
+Icons:            Expo Vector Icons
+Fonts:            Inter via Google Fonts / Expo Google Fonts
+Animations:       React Native Reanimated
+Notifications:    Expo Notifications
+
+════════════════════════════════════════════════════════════════
+DESIGN SYSTEM
+════════════════════════════════════════════════════════════════
+
+COLOURS:
+  Background:       #0F0F13  (near-black base)
+  Surface:          #1A1A24  (card / panel background)
+  Surface 2:        #242433  (elevated elements)
+  Border:           #2E2E45  (subtle borders)
+  Primary:          #7C3AED  (electric purple)
+  Primary Light:    #A855F7  (lighter purple for hover/active)
+  Primary Glow:     rgba(124, 58, 237, 0.15) (glow effect)
+  Accent:           #E2E8F0  (near-white text)
+  Text Primary:     #F8FAFC  (white text)
+  Text Secondary:   #94A3B8  (muted text)
+  Text Muted:       #475569  (very muted)
+  Success:          #10B981  (green)
+  Warning:          #F59E0B  (amber)
+  Danger:           #EF4444  (red)
+  Info:             #3B82F6  (blue)
+
+GRADIENTS:
+  Primary gradient: linear from #7C3AED to #A855F7
+  Card gradient:    linear from #1A1A24 to #242433
+  Glow:             radial from rgba(124,58,237,0.2) to transparent
+
+TYPOGRAPHY:
+  Font family:      Inter
+  Display:          32px / 700 weight
+  Heading:          24px / 600 weight
+  Subheading:       18px / 600 weight
+  Body:             15px / 400 weight
+  Small:            13px / 400 weight
+  Micro:            11px / 500 weight / uppercase / tracked
+
+COMPONENTS:
+  Border radius:    16px cards, 12px buttons, 8px inputs
+  Shadow:           0 4px 24px rgba(0,0,0,0.4)
+  Purple shadow:    0 4px 24px rgba(124,58,237,0.25)
+  Card border:      1px solid #2E2E45
+  Active border:    1px solid #7C3AED
+
+PRIORITY BADGES:
+  Critical:   bg #EF4444 / text white
+  High:       bg #F59E0B / text black
+  Medium:     bg #3B82F6 / text white
+  Low:        bg #475569 / text white
+
+STATUS BADGES:
+  Open:         bg #1A1A24 border #7C3AED text #A855F7
+  In Progress:  bg #1A1A24 border #F59E0B text #F59E0B
+  Booked:       bg #1A1A24 border #10B981 text #10B981
+  Blocked:      bg #1A1A24 border #EF4444 text #EF4444
+  Done:         bg #1A1A24 border #475569 text #475569
+  Waiting:      bg #1A1A24 border #3B82F6 text #3B82F6
+
+════════════════════════════════════════════════════════════════
+APP STRUCTURE — SCREENS
+════════════════════════════════════════════════════════════════
+
+BOTTOM TAB NAVIGATION (mobile) / SIDEBAR (web):
+  Tab 1:  🏠  Home (Dashboard)
+  Tab 2:  💬  AIDE (Chat / PA Interface)
+  Tab 3:  📋  Jobs
+  Tab 4:  📝  Notes
+  Tab 5:  📣  Toolbox
+
+Active tab: purple underline + icon glow effect
+
+════════════════════════════════════════════════════════════════
+SCREEN 1 — HOME / DASHBOARD
+════════════════════════════════════════════════════════════════
+
+PURPOSE:
+Command centre. Everything at a glance. No interaction needed 
+— just read and tap through to detail.
+
+LAYOUT (scroll vertically):
+
+── HEADER ──────────────────────────────────────────────────
+  Left:  "Good morning, Casper" (time-aware greeting)
+         Today's date in full: Wednesday, 8 April 2026
+  Right: Purple circle avatar "CT"
+         PA Check button (purple, pill shape, glowing)
+
+── SUMMARY STRIP (horizontal scroll) ───────────────────────
+  Pill cards showing live counts:
+  🔴 [N] Critical    🟡 [N] High    🔵 [N] Open    ✅ [N] Done today
+
+── TODAY'S FOCUS (AI-generated) ────────────────────────────
+  Single card with subtle purple left border
+  Heading: "TODAY'S FOCUS"
+  AI generates 3-5 bullet points of the most urgent actions
+  based on all open jobs and notes.
+  Refreshes on load.
+  Micro label: "Generated by AIDE · tap to regenerate"
+
+── OPEN JOBS (card list) ────────────────────────────────────
+  Heading: "OPEN JOBS" + "See all →" link
+  Show top 5 by priority. Each card:
+    - Job # + Site name (bold)
+    - Client name (muted)
+    - Priority badge + Status badge
+    - Assigned tech (avatar initials)
+    - Due date (red if overdue)
+  Tap card → opens Job Detail screen
+
+── RECENT NOTES ─────────────────────────────────────────────
+  Heading: "RECENT NOTES" + "See all →"
+  Show last 4 notes. Each row:
+    - Category badge + note text (truncated)
+    - Date + owner
+  Tap → opens Note detail
+
+── ON-CALL THIS WEEK ────────────────────────────────────────
+  Heading: "ON-CALL THIS WEEK"
+  Horizontal scroll of day cards (Mon-Sun):
+    - Day name + date
+    - Tech name
+    - Highlight today in purple
+
+════════════════════════════════════════════════════════════════
+SCREEN 2 — AIDE CHAT (PRIMARY INTERFACE)
+════════════════════════════════════════════════════════════════
+
+PURPOSE:
+The main way Casper interacts with AIDE. Conversational.
+Drop emails in, give verbal instructions, ask questions,
+log notes — the AI handles everything automatically.
+
+LAYOUT:
+
+── HEADER ──────────────────────────────────────────────────
+  "AIDE" with small purple pulse indicator (online)
+  Subtitle: "Your personal operations assistant"
+
+── CHAT WINDOW ─────────────────────────────────────────────
+  Full height scrollable message thread.
+  
+  USER MESSAGES:
+    Right-aligned
+    Purple gradient bubble
+    White text
+    Timestamp below (small, muted)
+
+  AIDE MESSAGES:
+    Left-aligned
+    Surface colour bubble (#1A1A24)
+    White text
+    Purple "AIDE" label above first message in sequence
+    Timestamp below
+    
+  AIDE TYPING INDICATOR:
+    Three purple animated dots
+
+  SPECIAL MESSAGE TYPES (rendered as rich cards inside chat):
+  
+  → EMAIL TRIAGE CARD:
+    Purple header bar: "EMAIL TRIAGE"
+    Fields: Site | Client | Contact | Priority badge
+    Four sections collapsed by default, tap to expand:
+    What's Happened / Where Things Stand / 
+    What Needs to Happen / Watch Out For
+    Footer: ACTION REQUIRED badge
+    Buttons: "Save to Jobs" | "Copy" | "Dismiss"
+
+  → JOB CREATED CARD:
+    Green header: "JOB LOGGED"
+    Job # | Site | Priority | Status
+    Button: "View Job"
+
+  → NOTE LOGGED CARD:
+    Shows category badge + note text
+    Button: "View Notes"
+
+  → PA CHECK CARD:
+    Purple header: "PA CHECK COMPLETE"
+    Bulleted list of flags
+    Scrollable if long
+
+  → ACTION LIST CARD:
+    Numbered list of actions identified
+    Each with checkbox (tap to mark done)
+
+── QUICK ACTION BAR (above input) ──────────────────────────
+  Horizontal pill buttons:
+  📧 Triage Email  |  ➕ Log Job  |  📝 Drop Note  |  ✅ PA Check
+
+── INPUT BAR ───────────────────────────────────────────────
+  Large rounded input field
+  Placeholder: "Talk to AIDE..."
+  Paperclip icon (paste large text / email)
+  Send button (purple arrow, glows on active)
+  Multiline — expands as user types
+
+AI SYSTEM PROMPT FOR CHAT:
+────────────────────────────────────────────────────────────
+"You are AIDE, the personal operations assistant for Casper 
+Tavitian, Electrical Services Manager at FlameSafe Fire 
+Protection, Rydalmere NSW. You have deep knowledge of his 
+business context:
+
+BUSINESS CONTEXT:
+- FlameSafe is a fire protection company in NSW Australia
+- Casper manages the Electrical Services / Dry Fire division
+- His team: Darren Brailey, Gordon Jenkins, Haider Al-Heyoury,
+  John Minai, Nu Unasa
+- Key contacts: Jamie Wright (Service Manager, 0419 272 210),
+  Jade Ogony (Operations Support), Killian Jordan (Operations 
+  Manager), Patricia Mazzotta (Compliance Manager)
+- Primary systems: Uptick (field service management), 
+  Australian Standards AS 1851, AS 1670.1, AS 1670.4
+- NSW legislative framework: EP&A Act 1979, EP&A Regulation 
+  2021, AFSS/EFSM compliance
+
+YOUR BEHAVIOUR:
+- Always address Casper by name
+- Be direct, efficient, no corporate waffle
+- Australian English throughout
+- When Casper drops an email, automatically triage it and 
+  return a structured EMAIL TRIAGE response
+- When Casper mentions a job, task, or action to do — 
+  automatically offer to log it
+- When Casper drops a note — log it and confirm category
+- When Casper says PA Check — review everything open and 
+  flag what's been missed
+- Generate Uptick notes in dated dot-point format when asked
+- Never say 'I'd be happy to' or 'Certainly' or 'As an AI'
+- Be a senior PA, not a chatbot
+
+RESPONSE FORMAT:
+For email triage: return JSON wrapped in [EMAIL_TRIAGE]...[/EMAIL_TRIAGE]
+For new job: return JSON wrapped in [NEW_JOB]...[/NEW_JOB]
+For new note: return JSON wrapped in [NEW_NOTE]...[/NEW_NOTE]
+For PA check: return text wrapped in [PA_CHECK]...[/PA_CHECK]
+For action list: return JSON array wrapped in [ACTIONS]...[/ACTIONS]
+For normal conversation: plain text response
+
+Parse these tags on the frontend to render rich cards."
+────────────────────────────────────────────────────────────
+
+CHAT PERSISTENCE:
+Save full conversation to Replit DB key: "chat_history"
+Load on app open. Last 100 messages kept.
+Button in header: "Clear Chat" with confirmation.
+
+════════════════════════════════════════════════════════════════
+SCREEN 3 — JOBS
+════════════════════════════════════════════════════════════════
+
+PURPOSE:
+Full job tracker. View, filter, add, edit all jobs.
+
+LAYOUT:
+
+── HEADER ──────────────────────────────────────────────────
+  "JOBS" heading
+  Right: + Add Job button (purple)
+
+── FILTER BAR (horizontal scroll) ──────────────────────────
+  All | Critical | Open | In Progress | Blocked | Done
+  Active filter: purple pill, others: ghost
+
+── SEARCH BAR ──────────────────────────────────────────────
+  Search by site, client, job number, tech
+
+── JOB LIST ─────────────────────────────────────────────────
+  Each card:
+  ┌─────────────────────────────────────────────┐
+  │ T-38908          [CRITICAL] [IN PROGRESS]   │
+  │ Becton Dickinson — 66 Waterloo Road         │
+  │ Gordon Jenkins · Fri 10 Apr                 │
+  │ Veronica Peharda · 0438 759 191             │
+  └─────────────────────────────────────────────┘
+  Purple left border = Critical
+  Amber left border = High
+  Blue left border = Medium
+  Grey left border = Low
+  
+  Swipe left on card → reveals Delete (red) + Edit (purple)
+
+── JOB DETAIL SCREEN (tap card) ────────────────────────────
+  Full screen overlay / modal:
+  - All job fields displayed
+  - Status dropdown (tap to change inline)
+  - Timeline of Uptick notes for this job
+  - Button: "Generate Uptick Note" → goes to chat
+  - Button: "Edit Job"
+  - Button: "Mark Complete" (green, bottom)
+
+ADD / EDIT JOB MODAL:
+  Fields:
+  - Task Number (Uptick ref)
+  - Site Name *
+  - Address
+  - Client *
+  - Contact Name
+  - Contact Number
+  - Contact Email
+  - Action Required *
+  - Priority * (Critical/High/Medium/Low)
+  - Status * (Open/In Progress/Booked/Blocked/Waiting/Done)
+  - Assigned Tech (Darren/Gordon/Haider/John/Nuu/Unassigned)
+  - Due Date
+  - Notes
+  * = required
+
+════════════════════════════════════════════════════════════════
+SCREEN 4 — NOTES
+════════════════════════════════════════════════════════════════
+
+PURPOSE:
+All logged notes. Add, categorise, mark done.
+
+LAYOUT:
+
+── HEADER ──────────────────────────────────────────────────
+  "NOTES" heading
+  Right: + Add Note (purple)
+
+── FILTER BAR ──────────────────────────────────────────────
+  All | Urgent | To Do | To Ask | Schedule | Done
+
+── NOTE LIST ────────────────────────────────────────────────
+  Each row:
+  ┌──────────────────────────────────────────────┐
+  │ [URGENT]  Call Veronica re BD isolation      │
+  │ Casper · 8 Apr 2026                          │
+  └──────────────────────────────────────────────┘
+  Tap → expand full note
+  Long press → Edit / Delete / Mark Done
+
+── QUICK ADD ────────────────────────────────────────────────
+  Floating + button (bottom right, purple, glowing)
+  Tapping opens a bottom sheet:
+    - Text input
+    - Category selector (pill buttons)
+    - Owner field
+    - Save button
+
+════════════════════════════════════════════════════════════════
+SCREEN 5 — TOOLBOX
+════════════════════════════════════════════════════════════════
+
+PURPOSE:
+Running log of tech briefing notes.
+
+LAYOUT:
+
+── HEADER ──────────────────────────────────────────────────
+  "TOOLBOX" heading
+  Right: + Add Note | Export Briefing (icon)
+
+── FILTER ──────────────────────────────────────────────────
+  All | Active | Briefed
+
+── TOOLBOX LIST ────────────────────────────────────────────
+  Each card:
+  ┌──────────────────────────────────────────────┐
+  │ TB-001                           8 Apr 2026  │
+  │ Photos on ALL defects — mandatory in Uptick  │
+  │                    [Mark Briefed] [Delete]   │
+  └──────────────────────────────────────────────┘
+
+── EXPORT BRIEFING ─────────────────────────────────────────
+  Generates a clean text summary of all Active notes
+  Share sheet (copy / send via message / email)
+
+════════════════════════════════════════════════════════════════
+DATABASE STRUCTURE
+════════════════════════════════════════════════════════════════
+
+Replit KV keys:
+
+  chat_history          → array of message objects (last 100)
+  jobs_index            → array of job IDs
+  job_[id]              → individual job JSON
+  notes_index           → array of note IDs
+  note_[id]             → individual note JSON
+  toolbox_index         → array of toolbox IDs
+  toolbox_[id]          → individual toolbox note JSON
+  oncall_roster         → weekly roster JSON (manual entry)
+  settings              → app config JSON
+
+JOB OBJECT SCHEMA:
+{
+  id: string,
+  task_number: string,
+  site: string,
+  address: string,
+  client: string,
+  contact_name: string,
+  contact_number: string,
+  contact_email: string,
+  action_required: string,
+  priority: 'Critical' | 'High' | 'Medium' | 'Low',
+  status: 'Open' | 'In Progress' | 'Booked' | 'Blocked' | 
+          'Waiting' | 'Done',
+  assigned_tech: string,
+  due_date: string,
+  notes: string,
+  uptick_notes: array of strings,
+  created_at: timestamp,
+  updated_at: timestamp
+}
+
+NOTE OBJECT SCHEMA:
+{
+  id: string,
+  text: string,
+  category: string,
+  owner: string,
+  status: 'Open' | 'Done',
+  created_at: timestamp
+}
+
+════════════════════════════════════════════════════════════════
+ANIMATIONS & INTERACTIONS
+════════════════════════════════════════════════════════════════
+
+- Cards fade in on load (staggered, 50ms apart)
+- Purple glow pulse on PA Check button (2s loop)
+- Smooth slide-up for modals and bottom sheets
+- Haptic feedback on mobile for:
+  · Sending a message
+  · Saving a job/note
+  · Marking complete
+- Chat messages animate in from bottom
+- Swipe-to-delete with spring animation
+- Tab bar icons scale up on press (spring)
+- Loading skeleton screens while data fetches
+  (pulsing grey bars, not spinners)
+
+════════════════════════════════════════════════════════════════
+CRITICAL BUILD RULES
+════════════════════════════════════════════════════════════════
+
+1.  Anthropic API key stored as Replit Secret: ANTHROPIC_API_KEY
+    Never hardcoded anywhere in the codebase.
+
+2.  All AI calls routed through the Express backend.
+    Frontend never calls Claude directly.
+
+3.  All errors show user-friendly messages. Never raw errors.
+
+4.  All destructive actions require confirmation.
+
+5.  All saves show a green toast: "Saved" (bottom, 2.5s).
+
+6.  App must be fully responsive:
+    Mobile: bottom tab navigation
+    Web/tablet: left sidebar navigation (240px wide)
+
+7.  On first load with empty database:
+    Show welcome screen with AIDE intro message in chat:
+    "Hi Casper — I'm AIDE, your personal operations assistant. 
+    Drop an email in here, give me a note to log, or ask me 
+    anything about your jobs. I'll handle the rest."
+
+8.  Use claude-sonnet-4-20250514 for all AI.
+    Temperature: 0.3 for structured outputs (triage, jobs)
+    Temperature: 0.6 for conversational responses
+    Max tokens: 2000
+
+9.  The chat is the PRIMARY interface. 
+    Everything else is a view of what the chat has logged.
+    Design around this — chat is the hero, dashboard is 
+    the reference layer.
+
+10. Build for Expo Go compatibility so Casper can test 
+    on his phone immediately by scanning a QR code.
+
+11. The app name throughout is AIDE — no FlameSafe branding 
+    in the app itself (this is a Mentaris product).
+
+12. Use Expo Router for navigation. 
+    app/(tabs)/index.tsx      → Dashboard
+    app/(tabs)/chat.tsx       → AIDE Chat
+    app/(tabs)/jobs.tsx       → Jobs
+    app/(tabs)/notes.tsx      → Notes
+    app/(tabs)/toolbox.tsx    → Toolbox
+    app/job/[id].tsx          → Job Detail
+
+════════════════════════════════════════════════════════════════
+END OF SPECIFICATION — BUILD AIDE v1.0
+════════════════════════════════════════════════════════════════

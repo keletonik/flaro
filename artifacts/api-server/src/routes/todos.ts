@@ -37,6 +37,8 @@ router.post("/todos", async (req, res, next) => {
     const safePriority: Priority = VALID_PRIORITIES.includes(priority) ? priority : "Medium";
     const safeCategory: Category = VALID_CATEGORIES.includes(category) ? category : "Work";
 
+    const { assignee, urgencyTag, colorCode, notes: todoNotes, nextSteps } = req.body;
+
     const [todo] = await db.insert(todos).values({
       id: randomUUID(),
       text: String(text).trim(),
@@ -44,6 +46,12 @@ router.post("/todos", async (req, res, next) => {
       priority: safePriority,
       category: safeCategory,
       dueDate: typeof dueDate === "string" && dueDate ? dueDate : null,
+      assignee: typeof assignee === "string" && assignee ? assignee : null,
+      urgencyTag: typeof urgencyTag === "string" && urgencyTag ? urgencyTag : null,
+      colorCode: typeof colorCode === "string" && colorCode ? colorCode : null,
+      notes: typeof todoNotes === "string" && todoNotes ? todoNotes : null,
+      nextSteps: typeof nextSteps === "string" && nextSteps ? nextSteps : null,
+      dependencies: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     }).returning();
@@ -61,7 +69,7 @@ router.patch("/todos/:id", async (req, res, next) => {
       return;
     }
 
-    const { text, completed, priority, category, dueDate } = req.body;
+    const { text, completed, priority, category, dueDate, assignee, urgencyTag, colorCode, notes: todoNotes, nextSteps } = req.body;
 
     const updates: Partial<typeof todos.$inferInsert> = { updatedAt: new Date() };
     if (text !== undefined) updates.text = String(text).trim();
@@ -69,6 +77,11 @@ router.patch("/todos/:id", async (req, res, next) => {
     if (priority !== undefined && VALID_PRIORITIES.includes(priority)) updates.priority = priority;
     if (category !== undefined && VALID_CATEGORIES.includes(category)) updates.category = category;
     if (dueDate !== undefined) updates.dueDate = dueDate || null;
+    if (assignee !== undefined) updates.assignee = assignee || null;
+    if (urgencyTag !== undefined) updates.urgencyTag = urgencyTag || null;
+    if (colorCode !== undefined) updates.colorCode = colorCode || null;
+    if (todoNotes !== undefined) updates.notes = todoNotes || null;
+    if (nextSteps !== undefined) updates.nextSteps = nextSteps || null;
 
     const [updated] = await db.update(todos)
       .set(updates)

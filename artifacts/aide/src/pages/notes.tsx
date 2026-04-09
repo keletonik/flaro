@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Plus, Search, X, Pin, Grid3X3, List, ChevronDown, Check } from "lucide-react";
+import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { useListNotes, useCreateNote, useUpdateNote, useDeleteNote, getListNotesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -381,6 +382,8 @@ export default function Notes() {
       </button>
 
       {showAdd && <AddNoteSheet onClose={() => setShowAdd(false)} onSave={handleSave} />}
+
+      <AnalyticsPanel section="tasks" title="Notes Analyst" />
     </div>
   );
 }

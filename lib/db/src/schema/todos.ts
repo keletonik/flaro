@@ -9,6 +9,12 @@ export const todos = pgTable("todos", {
   priority: text("priority").notNull().$type<"Critical" | "High" | "Medium" | "Low">().default("Medium"),
   category: text("category").$type<"Work" | "Personal" | "Follow-up" | "Compliance" | "Admin">().default("Work"),
   dueDate: text("due_date"),
+  assignee: text("assignee"),
+  urgencyTag: text("urgency_tag"),
+  colorCode: text("color_code"),
+  notes: text("notes"),
+  nextSteps: text("next_steps"),
+  dependencies: text("dependencies").array().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [

@@ -173,7 +173,7 @@ function htmlToText(html: string): string {
 
 function parseActions(text: string): { cleanText: string; actions: AideAction[] } {
   const actions: AideAction[] = [];
-  const cleanText = text.replace(/<aide-action>([\s\S]*?)<\/aide-action>/g, (_, json) => {
+  const cleanText = text.replace(/<ops-action>([\s\S]*?)<\/ops-action>/g, (_, json) => {
     try { actions.push(JSON.parse(json.trim())); } catch {}
     return "";
   }).trim();
@@ -495,7 +495,7 @@ function MessageBubble({ msg, executedActions }: { msg: Message; executedActions
     );
   }
 
-  // ── Assistant message — Claude-like clean layout ──
+  // ── Assistant message — clean layout ──
   return (
     <div className="fade-in">
       <div className="flex items-start gap-3">
@@ -665,7 +665,7 @@ export default function Chat() {
       const emailAtt = processHtmlEmail(html);
       if (emailAtt) {
         newAttachments.push(emailAtt);
-        toast({ title: "Email captured", description: "AIDE will triage it automatically when you send." });
+        toast({ title: "Email captured", description: "Will be triaged automatically when you send." });
       }
     }
 
@@ -681,8 +681,8 @@ export default function Chat() {
       });
       const imageCount = valid.filter(r => r.type === "image").length;
       const emlCount   = valid.filter(r => r.type === "email").length;
-      if (imageCount > 0) toast({ title: `${imageCount} image${imageCount > 1 ? "s" : ""} attached`, description: "Claude will analyse them when you send." });
-      if (emlCount > 0) toast({ title: "Email file captured", description: "AIDE will triage it automatically when you send." });
+      if (imageCount > 0) toast({ title: `${imageCount} image${imageCount > 1 ? "s" : ""} attached`, description: "Will be analysed when you send." });
+      if (emlCount > 0) toast({ title: "Email file captured", description: "Will be triaged automatically when you send." });
     }
 
     // 3. text/plain — fallback: detect email-like plain text or put in input
@@ -701,7 +701,7 @@ export default function Chat() {
             emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text.replace(/</g, "&lt;")}</pre>`,
             emailSummary: parts.join(" · ").slice(0, 120),
           });
-          toast({ title: "Email captured", description: "AIDE will triage it automatically when you send." });
+          toast({ title: "Email captured", description: "Will be triaged automatically when you send." });
         } else {
           setInput(prev => prev ? `${prev}\n${text}` : text);
           textareaRef.current?.focus();
@@ -730,7 +730,7 @@ export default function Chat() {
         const att = await processFile(file);
         if (att) {
           setAttachments(prev => [...prev, att]);
-          toast({ title: "Image pasted", description: "Claude will analyse it when you send." });
+          toast({ title: "Image pasted", description: "Will be analysed when you send." });
         }
         return;
       }
@@ -789,7 +789,7 @@ export default function Chat() {
           emailSummary: parts.join(" · ").slice(0, 120),
           emailHasBody: true,
         }]);
-        toast({ title: "Email pasted", description: "AIDE will triage it automatically when you send." });
+        toast({ title: "Email pasted", description: "Will be triaged automatically when you send." });
         return;
       }
     }
@@ -824,7 +824,7 @@ export default function Chat() {
         case "CREATE_NOTE": {
           const d = action.data as Record<string, string>;
           await createNote.mutateAsync({ data: {
-            text: d.text || "Note from AIDE",
+            text: d.text || "Auto-generated note",
             category: (d.category as "Urgent" | "To Do" | "To Ask" | "Schedule" | "Done") || "To Do",
             owner: d.owner || "Casper",
           }});
@@ -834,7 +834,7 @@ export default function Chat() {
         case "CREATE_TODO": {
           const d = action.data as Record<string, string>;
           await createTodo.mutateAsync({ data: {
-            text: d.text || "To-do from AIDE",
+            text: d.text || "Auto-generated task",
             priority: (d.priority as Todo["priority"]) || "Medium",
             category: (d.category as Todo["category"]) || "Work",
           }});
@@ -940,7 +940,7 @@ export default function Chat() {
           const key = `msg-${msgIndex + 1}`;
           setActionResults(prev => ({ ...prev, [key]: results }));
           const succeeded = results.filter(r => r.success);
-          if (succeeded.length > 0) toast({ title: `AIDE completed ${succeeded.length} action${succeeded.length > 1 ? "s" : ""}` });
+          if (succeeded.length > 0) toast({ title: `Completed ${succeeded.length} action${succeeded.length > 1 ? "s" : ""}` });
         }
       }
     } catch {
@@ -984,7 +984,7 @@ export default function Chat() {
             </div>
             <p className="text-foreground font-bold text-lg">Drop it here</p>
             <p className="text-muted-foreground text-sm text-center max-w-xs">
-              Drop emails from Outlook, images, or any file — AIDE will analyse and act on them
+              Drop emails from Outlook, images, or any file — they'll be analysed and actioned automatically
             </p>
             <div className="flex gap-2 mt-1">
               {[{ icon: Mail, label: "Emails" }, { icon: Image, label: "Images" }, { icon: Paperclip, label: "Files" }].map(({ icon: Icon, label }) => (
@@ -1004,10 +1004,10 @@ export default function Chat() {
             <Zap size={13} className="text-white" />
           </div>
           <div>
-            <p className="text-foreground font-semibold text-sm tracking-tight">AIDE</p>
+            <p className="text-foreground font-semibold text-sm tracking-tight">Assistant</p>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot" />
-              <p className="text-[10px] text-muted-foreground/60">claude-sonnet-4-6 · Vision enabled</p>
+              <p className="text-[10px] text-muted-foreground/60">Vision enabled · Streaming</p>
             </div>
           </div>
         </div>
@@ -1042,7 +1042,7 @@ export default function Chat() {
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-5 shadow-lg">
               <Zap size={22} className="text-white" />
             </div>
-            <h2 className="text-foreground font-bold text-lg mb-1.5">Hi Casper, I'm AIDE</h2>
+            <h2 className="text-foreground font-bold text-lg mb-1.5">What can I help with?</h2>
             <p className="text-muted-foreground text-sm max-w-sm mb-6 leading-relaxed">
               Drop an Outlook email, paste content, or ask me anything — I'll triage it, log jobs, and handle the rest.
             </p>
@@ -1121,7 +1121,7 @@ export default function Chat() {
               value={input}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={attachments.length > 0 ? "Add a note (optional) then send…" : "Message AIDE…"}
+              placeholder={attachments.length > 0 ? "Add a note (optional) then send…" : "Type a message…"}
               rows={1}
               disabled={streaming}
               className="flex-1 bg-transparent text-[13.5px] text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none leading-relaxed min-h-[20px] max-h-[140px] disabled:opacity-60"

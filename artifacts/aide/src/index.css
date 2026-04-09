@@ -388,6 +388,11 @@
 .chat-assistant {
   max-width: 720px;
 }
+.chat-markdown > *:first-child { margin-top: 0 !important; }
+.chat-markdown > *:last-child { margin-bottom: 0 !important; }
+.chat-markdown li > p { margin: 0; }
+.chat-markdown li > ul,
+.chat-markdown li > ol { margin-top: 4px; margin-bottom: 4px; }
 .chat-input-bar {
   border: none;
   border-radius: 24px;

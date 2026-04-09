@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Download, X, Clipboard } from "lucide-react";
+import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { useListToolboxNotes, useCreateToolboxNote, useUpdateToolboxNote, useDeleteToolboxNote, getListToolboxNotesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -259,6 +260,8 @@ function ToolboxNoteCard({ note, index, onMarkBriefed, onDelete }: {
           Delete
         </button>
       </div>
+
+      <AnalyticsPanel section="tasks" title="Toolbox Analyst" />
     </div>
   );
 }

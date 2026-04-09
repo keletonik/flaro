@@ -484,12 +484,12 @@ function MessageBubble({ msg, executedActions }: { msg: Message; executedActions
               {isEmailDrop ? <><Mail size={10} /> Email dropped</> : <><Image size={10} /> Image attached</>}
             </div>
           )}
-          <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-2.5 text-[13.5px] leading-relaxed">
+          <div className="chat-user-bubble text-[13.5px] leading-relaxed">
             {cleanText.split("\n").map((line, i, arr) => (
               <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
             ))}
           </div>
-          <span className="text-[10px] text-muted-foreground/50 mt-1 mr-1">{ts}</span>
+          <span className="text-[10px] text-muted-foreground/40 mt-1 mr-1">{ts}</span>
         </div>
       </div>
     );
@@ -498,9 +498,9 @@ function MessageBubble({ msg, executedActions }: { msg: Message; executedActions
   // ── Assistant message — clean layout ──
   return (
     <div className="fade-in">
-      <div className="flex items-start gap-3">
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
-          <Zap size={12} className="text-white" />
+      <div className="flex items-start gap-3 chat-assistant">
+        <div className="w-6 h-6 rounded-full bg-primary/12 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <Zap size={12} className="text-primary" />
         </div>
         <div className="flex-1 min-w-0 group">
           <div className="text-[13.5px] text-foreground/90 leading-[1.75]">
@@ -747,7 +747,7 @@ export default function Chat() {
           const existingIdx = prev.findIndex(a => a.type === "email" && !a.emailHasBody);
           if (existingIdx >= 0) {
             const updated = [...prev];
-            updated[existingIdx] = { ...updated[existingIdx], emailHtml: (updated[existingIdx].emailHtml || "") + "\n" + (emailAtt.emailHtml || ""), emailHasBody: true };
+            updated[existingIdx] = { ...updated[existingIdx], emailHtml: emailAtt.emailHtml || updated[existingIdx].emailHtml, emailHasBody: true };
             return updated;
           }
           return [...prev, emailAtt];
@@ -766,7 +766,7 @@ export default function Chat() {
         e.preventDefault();
         setAttachments(prev => prev.map(a =>
           a.type === "email" && !a.emailHasBody
-            ? { ...a, emailHtml: (a.emailHtml || "") + `\n<hr/>\n<div style="white-space:pre-wrap">${text.replace(/</g, "&lt;")}</div>`, emailHasBody: true }
+            ? { ...a, emailHtml: `<div>${a.emailHtml || ""}</div><div style="white-space:pre-wrap;margin-top:12px">${text.replace(/</g, "&lt;")}</div>`, emailHasBody: true }
             : a
         ));
         toast({ title: "Email body merged", description: "Full email ready — send to triage." });
@@ -977,53 +977,35 @@ export default function Chat() {
     >
       {/* ── Drop Overlay ── */}
       {dragOver && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-primary/8 backdrop-blur-sm border-4 border-dashed border-primary/50 rounded-none pointer-events-none">
-          <div className="bg-card border-2 border-primary/30 rounded-2xl px-8 py-6 flex flex-col items-center gap-3 shadow-xl">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Mail size={28} className="text-primary" />
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-md pointer-events-none">
+          <div className="bg-card border-2 border-dashed border-primary/40 rounded-3xl px-10 py-8 flex flex-col items-center gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Mail size={24} className="text-primary" />
             </div>
-            <p className="text-foreground font-bold text-lg">Drop it here</p>
+            <p className="text-foreground font-semibold text-lg">Drop to attach</p>
             <p className="text-muted-foreground text-sm text-center max-w-xs">
-              Drop emails from Outlook, images, or any file — they'll be analysed and actioned automatically
+              Emails, images, or .eml files
             </p>
-            <div className="flex gap-2 mt-1">
-              {[{ icon: Mail, label: "Emails" }, { icon: Image, label: "Images" }, { icon: Paperclip, label: "Files" }].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] font-semibold">
-                  <Icon size={11} />{label}
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       )}
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between px-5 sm:px-8 py-3 border-b border-border/60 bg-background/95 backdrop-blur-md flex-shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
-            <Zap size={13} className="text-white" />
+      {/* ── Header — minimal ── */}
+      <div className="flex items-center justify-between px-5 sm:px-8 py-2.5 border-b border-border/40 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-primary/12 flex items-center justify-center">
+            <Zap size={11} className="text-primary" />
           </div>
-          <div>
-            <p className="text-foreground font-semibold text-sm tracking-tight">Assistant</p>
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot" />
-              <p className="text-[10px] text-muted-foreground/60">Vision enabled · Streaming</p>
-            </div>
-          </div>
+          <span className="text-sm font-medium text-foreground">Chat</span>
+          {streaming && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
         </div>
         <div className="flex items-center gap-1">
-          <div className="hidden sm:flex items-center gap-2 mr-2 text-[10px] text-muted-foreground/40">
-            <span className="flex items-center gap-1"><Mail size={9} /> Drag emails</span>
-            <span>·</span>
-            <span className="flex items-center gap-1"><Image size={9} /> Drop images</span>
-            <span>·</span>
-            <span className="flex items-center gap-1"><Paperclip size={9} /> .eml files</span>
-          </div>
+          <span className="hidden sm:inline text-[10px] text-muted-foreground/40">Drop emails · images · .eml files</span>
           <button
             data-testid="button-clear-chat"
             onClick={() => { if (confirm("Clear this conversation?")) { setOptimisticMessages([]); setAttachments([]); queryClient.setQueryData(getGetAnthropicConversationQueryKey(CONVERSATION_ID), null); } }}
-            className="text-muted-foreground/40 hover:text-foreground p-1.5 rounded-lg hover:bg-muted/60 transition-all"
-            title="Clear chat"
+            className="text-muted-foreground/40 hover:text-foreground p-1.5 rounded-lg hover:bg-muted/60 transition-all ml-2"
+            title="New conversation"
           >
             <RefreshCw size={13} />
           </button>
@@ -1038,18 +1020,18 @@ export default function Chat() {
             <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : allMessages.length === 0 && !streaming ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-5 shadow-lg">
-              <Zap size={22} className="text-white" />
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Zap size={20} className="text-primary" />
             </div>
-            <h2 className="text-foreground font-bold text-lg mb-1.5">What can I help with?</h2>
-            <p className="text-muted-foreground text-sm max-w-sm mb-6 leading-relaxed">
-              Drop an Outlook email, paste content, or ask me anything — I'll triage it, log jobs, and handle the rest.
+            <h2 className="text-foreground font-semibold text-xl mb-2 tracking-tight">How can I help today?</h2>
+            <p className="text-muted-foreground text-sm max-w-md mb-8 leading-relaxed">
+              Drop an Outlook email, paste content, or just ask — jobs get logged, emails triaged, and tasks created automatically.
             </p>
-            <div className="flex flex-col gap-2 w-full max-w-sm">
-              {SUGGESTIONS.map(s => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+              {SUGGESTIONS.slice(0, 4).map(s => (
                 <button key={s} onClick={() => handleSend(s)}
-                  className="text-left px-4 py-3 text-[13.5px] text-foreground bg-card border border-border rounded-xl hover:bg-muted/60 transition-all hover:border-primary/30 leading-snug">
+                  className="text-left px-4 py-3 text-[13px] text-muted-foreground bg-card border border-border rounded-2xl hover:text-foreground hover:bg-muted/40 transition-all hover:border-primary/20 leading-snug">
                   {s}
                 </button>
               ))}
@@ -1065,8 +1047,8 @@ export default function Chat() {
                 <MessageBubble msg={{ id: "streaming", role: "assistant", content: streamingContent, createdAt: new Date().toISOString() }} />
               ) : (
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
-                    <Zap size={12} className="text-white" />
+                  <div className="w-6 h-6 rounded-full bg-primary/12 flex items-center justify-center flex-shrink-0">
+                    <Zap size={12} className="text-primary" />
                   </div>
                   <TypingIndicator />
                 </div>
@@ -1079,7 +1061,7 @@ export default function Chat() {
       </div>
 
       {/* ── Input area ── */}
-      <div className="border-t border-border/50 bg-background/95 backdrop-blur-md px-4 sm:px-6 py-3 flex-shrink-0">
+      <div className="px-4 sm:px-6 py-3 flex-shrink-0">
         <div className="max-w-3xl mx-auto">
           {attachments.length > 0 && (
             <div className="flex flex-col gap-2 mb-2.5">
@@ -1095,11 +1077,11 @@ export default function Chat() {
           )}
 
           <div className={cn(
-            "flex items-end gap-2.5 bg-card border rounded-2xl px-4 py-2.5 transition-all shadow-sm",
-            dragOver ? "border-primary ring-2 ring-primary/20" : "border-border/70 focus-within:border-border focus-within:ring-1 focus-within:ring-ring/30"
+            "chat-input-bar flex items-end gap-2.5 px-4 py-3",
+            dragOver && "border-primary ring-2 ring-primary/10"
           )}>
-            <label className="flex-shrink-0 p-1 text-muted-foreground/50 hover:text-foreground transition-colors cursor-pointer" title="Attach image">
-              <Paperclip size={16} />
+            <label className="flex-shrink-0 p-1 text-muted-foreground/40 hover:text-foreground transition-colors cursor-pointer" title="Attach file">
+              <Paperclip size={17} />
               <input
                 type="file"
                 accept="image/*,.eml,message/rfc822"
@@ -1121,24 +1103,24 @@ export default function Chat() {
               value={input}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={attachments.length > 0 ? "Add a note (optional) then send…" : "Type a message…"}
+              placeholder={attachments.length > 0 ? "Add a note then send..." : "Message..."}
               rows={1}
               disabled={streaming}
-              className="flex-1 bg-transparent text-[13.5px] text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none leading-relaxed min-h-[20px] max-h-[140px] disabled:opacity-60"
+              className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none leading-relaxed min-h-[22px] max-h-[140px] disabled:opacity-60"
             />
             <button
               data-testid="button-send-message"
               onClick={() => handleSend()}
               disabled={!canSend}
               className={cn(
-                "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all",
-                canSend ? "bg-foreground text-background hover:opacity-80" : "bg-muted text-muted-foreground/40 cursor-not-allowed"
+                "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
+                canSend ? "bg-foreground text-background hover:opacity-80" : "bg-muted text-muted-foreground/30 cursor-not-allowed"
               )}
             >
-              <Send size={13} strokeWidth={2.5} />
+              <Send size={14} strokeWidth={2.5} />
             </button>
           </div>
-          <p className="text-[10px] text-muted-foreground/30 text-center mt-1.5">
+          <p className="text-[10px] text-muted-foreground/25 text-center mt-2">
             Enter to send · Shift+Enter for new line · Drag emails or images anywhere
           </p>
         </div>

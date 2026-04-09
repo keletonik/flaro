@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   Briefcase, TrendingUp, AlertTriangle, CheckCircle2, Clock, DollarSign,
-  FileText, BarChart3, ArrowUpRight, ArrowDownRight, Activity, Zap
+  FileText, BarChart3, ArrowUpRight, ArrowDownRight, Activity, Zap,
+  Plus, Circle, Check, X, StickyNote
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface KpiMetrics {
   overview: {
@@ -87,18 +89,64 @@ function FocusCard({ points, loading }: { points: string[]; loading: boolean }) 
   );
 }
 
+interface QuickTodo { id: string; text: string; completed: boolean; priority: string; }
+interface QuickNote { id: string; text: string; category: string; status: string; }
+
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [kpi, setKpi] = useState<KpiMetrics | null>(null);
   const [focus, setFocus] = useState<FocusData | null>(null);
   const [focusLoading, setFocusLoading] = useState(true);
+  const [todos, setTodos] = useState<QuickTodo[]>([]);
+  const [notes, setNotes] = useState<QuickNote[]>([]);
+  const [newTodo, setNewTodo] = useState("");
+  const [newNote, setNewNote] = useState("");
+  const { toast } = useToast();
 
-  useEffect(() => {
+  const fetchAll = () => {
     apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(() => {});
     apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(() => {});
     apiFetch<FocusData>("/dashboard/focus").then(d => { setFocus(d); setFocusLoading(false); }).catch(() => setFocusLoading(false));
-  }, []);
+    apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 8))).catch(() => {});
+    apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 6))).catch(() => {});
+  };
+
+  useEffect(() => { fetchAll(); }, []);
+
+  const addTodo = async () => {
+    if (!newTodo.trim()) return;
+    try {
+      await apiFetch("/todos", { method: "POST", body: JSON.stringify({ text: newTodo.trim(), priority: "Medium", category: "Work" }) });
+      setNewTodo("");
+      fetchAll();
+      toast({ title: "Task added" });
+    } catch { toast({ title: "Failed to add task", variant: "destructive" }); }
+  };
+
+  const toggleTodo = async (id: string, completed: boolean) => {
+    try {
+      await apiFetch(`/todos/${id}`, { method: "PATCH", body: JSON.stringify({ completed: !completed }) });
+      fetchAll();
+    } catch {}
+  };
+
+  const addNote = async () => {
+    if (!newNote.trim()) return;
+    try {
+      await apiFetch("/notes", { method: "POST", body: JSON.stringify({ text: newNote.trim(), category: "To Do", owner: "Casper" }) });
+      setNewNote("");
+      fetchAll();
+      toast({ title: "Note added" });
+    } catch { toast({ title: "Failed to add note", variant: "destructive" }); }
+  };
+
+  const markNoteDone = async (id: string) => {
+    try {
+      await apiFetch(`/notes/${id}`, { method: "PATCH", body: JSON.stringify({ status: "Done" }) });
+      fetchAll();
+    } catch {}
+  };
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -186,6 +234,71 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* Quick Tasks & Notes */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Quick Tasks */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={14} className="text-primary" />
+                <span className="text-xs font-bold text-foreground uppercase tracking-wide">Tasks</span>
+                <span className="text-[10px] text-muted-foreground">{todos.length} active</span>
+              </div>
+              <button onClick={() => setLocation("/todos")} className="text-[10px] text-primary font-medium hover:underline">View all</button>
+            </div>
+            <div className="flex gap-2 mb-3">
+              <input value={newTodo} onChange={e => setNewTodo(e.target.value)} onKeyDown={e => e.key === "Enter" && addTodo()}
+                placeholder="Quick add task..." className="flex-1 bg-muted/40 border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <button onClick={addTodo} disabled={!newTodo.trim()} className={cn("w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0", newTodo.trim() ? "bg-primary text-white hover:opacity-90" : "bg-muted text-muted-foreground/30")}>
+                <Plus size={14} />
+              </button>
+            </div>
+            <div className="space-y-1">
+              {todos.map(t => (
+                <div key={t.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/40 transition-colors group">
+                  <button onClick={() => toggleTodo(t.id, t.completed)} className="shrink-0">
+                    <Circle size={16} className="text-muted-foreground/30 hover:text-primary transition-colors" />
+                  </button>
+                  <span className="text-[13px] text-foreground flex-1 truncate">{t.text}</span>
+                  <span className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded", t.priority === "Critical" ? "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20" : t.priority === "High" ? "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20" : "text-muted-foreground bg-muted")}>{t.priority}</span>
+                </div>
+              ))}
+              {todos.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No active tasks</p>}
+            </div>
+          </div>
+
+          {/* Quick Notes */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <StickyNote size={14} className="text-primary" />
+                <span className="text-xs font-bold text-foreground uppercase tracking-wide">Notes</span>
+                <span className="text-[10px] text-muted-foreground">{notes.length} open</span>
+              </div>
+              <button onClick={() => setLocation("/notes")} className="text-[10px] text-primary font-medium hover:underline">View all</button>
+            </div>
+            <div className="flex gap-2 mb-3">
+              <input value={newNote} onChange={e => setNewNote(e.target.value)} onKeyDown={e => e.key === "Enter" && addNote()}
+                placeholder="Quick add note..." className="flex-1 bg-muted/40 border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <button onClick={addNote} disabled={!newNote.trim()} className={cn("w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0", newNote.trim() ? "bg-primary text-white hover:opacity-90" : "bg-muted text-muted-foreground/30")}>
+                <Plus size={14} />
+              </button>
+            </div>
+            <div className="space-y-1">
+              {notes.map(n => (
+                <div key={n.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/40 transition-colors group">
+                  <span className={cn("text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0", n.category === "Urgent" ? "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20" : "text-muted-foreground bg-muted")}>{n.category}</span>
+                  <span className="text-[13px] text-foreground flex-1 truncate">{n.text}</span>
+                  <button onClick={() => markNoteDone(n.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-emerald-500 transition-all" title="Mark done">
+                    <Check size={12} />
+                  </button>
+                </div>
+              ))}
+              {notes.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No open notes</p>}
+            </div>
+          </div>
+        </div>
       </div>
 
       <AnalyticsPanel section="dashboard" title="Dashboard Analyst" />

@@ -102,7 +102,7 @@ function SidebarNav() {
       {/* Logo */}
       <div className={cn("flex items-center pt-5 pb-4", collapsed ? "px-3 justify-center" : "px-4")}>
         <button onClick={() => setLocation("/")} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-[hsl(280,70%,50%)] flex items-center justify-center shadow-md shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shrink-0">
             <BarChart3 size={15} className="text-white" strokeWidth={2.5} />
           </div>
           {!collapsed && (

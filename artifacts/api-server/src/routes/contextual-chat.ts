@@ -90,8 +90,9 @@ router.post("/chat/contextual", async (req, res, next) => {
       return;
     }
 
-    const systemPrompt = SECTION_PROMPTS[section] || SECTION_PROMPTS.dashboard;
+    const basePrompt = SECTION_PROMPTS[section] || SECTION_PROMPTS.dashboard;
     const sectionData = await fetchSectionData(section);
+    const systemPrompt = `${basePrompt}\n\nCURRENT DATA:\n${sectionData}`;
 
     const messages: { role: "user" | "assistant"; content: string }[] = [];
 
@@ -101,10 +102,7 @@ router.post("/chat/contextual", async (req, res, next) => {
       }
     }
 
-    messages.push({
-      role: "user",
-      content: `CURRENT DATA:\n${sectionData}\n\nUSER QUESTION:\n${message}`,
-    });
+    messages.push({ role: "user", content: message });
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");

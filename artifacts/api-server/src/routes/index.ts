@@ -7,6 +7,13 @@ import toolboxRouter from "./toolbox";
 import dashboardRouter from "./dashboard";
 import todosRouter from "./todos";
 import projectsRouter from "./projects";
+import wipRouter from "./wip";
+import quotesRouter from "./quotes-route";
+import defectsRouter from "./defects-route";
+import invoicesRouter from "./invoices-route";
+import suppliersRouter from "./suppliers-route";
+import kpiRouter from "./kpi";
+import contextualChatRouter from "./contextual-chat";
 
 const router: IRouter = Router();
 
@@ -18,5 +25,12 @@ router.use(toolboxRouter);
 router.use(dashboardRouter);
 router.use(todosRouter);
 router.use(projectsRouter);
+router.use(wipRouter);
+router.use(quotesRouter);
+router.use(defectsRouter);
+router.use(invoicesRouter);
+router.use(suppliersRouter);
+router.use(kpiRouter);
+router.use(contextualChatRouter);
 
 export default router;

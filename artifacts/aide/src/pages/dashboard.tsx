@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { RefreshCw, MessageCircle, Zap, TrendingUp, Clock, AlertTriangle, CheckCircle2, ArrowRight, CalendarDays } from "lucide-react";
+import { RefreshCw, MessageCircle, Zap, TrendingUp, Clock, AlertTriangle, CheckCircle2, ArrowRight, CalendarDays, CheckSquare, Circle } from "lucide-react";
 import {
-  useGetDashboardSummary, useGetDashboardFocus, useListJobs, useListNotes,
-  getGetDashboardFocusQueryKey
+  useGetDashboardSummary, useGetDashboardFocus, useListJobs, useListNotes, useListTodos, useUpdateTodo,
+  getGetDashboardFocusQueryKey, getListTodosQueryKey
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SkeletonCard, SkeletonText } from "@/components/SkeletonCard";
 import { cn } from "@/lib/utils";
+import type { Todo } from "@workspace/api-client-react";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -50,9 +51,22 @@ export default function Dashboard() {
   const { data: focus, isLoading: focusLoading, isFetching: focusFetching } = useGetDashboardFocus();
   const { data: jobs, isLoading: jobsLoading } = useListJobs({});
   const { data: notes, isLoading: notesLoading } = useListNotes({ status: "Open" });
+  const { data: todos, isLoading: todosLoading } = useListTodos();
+  const updateTodo = useUpdateTodo();
 
   const openJobs = (jobs || []).filter(j => j.status !== "Done").slice(0, 5);
   const recentNotes = (notes || []).slice(0, 4);
+  const PRIORITY_ORDER: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+  const activeTodos = (todos || [])
+    .filter(t => !t.completed)
+    .sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3))
+    .slice(0, 6);
+  const allActiveTodosCount = (todos || []).filter(t => !t.completed).length;
+
+  const handleTodoToggle = async (todo: Todo) => {
+    await updateTodo.mutateAsync({ id: todo.id, data: { completed: !todo.completed } });
+    queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() });
+  };
 
   const metrics = [
     {
@@ -301,6 +315,74 @@ export default function Dashboard() {
 
           {/* Side column */}
           <div className="space-y-6">
+            {/* To-Do widget */}
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-4 bg-violet-400 rounded-full" />
+                  <h2 className="text-sm font-semibold text-foreground">To-Do</h2>
+                  {!todosLoading && allActiveTodosCount > 0 && (
+                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">
+                      {allActiveTodosCount}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setLocation("/todos")}
+                  className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                >
+                  All <ArrowRight size={12} />
+                </button>
+              </div>
+              {todosLoading ? (
+                <div className="p-3 space-y-2">
+                  {[1,2,3].map(i => <div key={i} className="h-8 bg-muted rounded skeleton-pulse" />)}
+                </div>
+              ) : activeTodos.length === 0 ? (
+                <div className="px-4 py-5 text-center">
+                  <CheckCircle2 size={18} className="text-emerald-400 mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">All clear — no active to-dos.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {activeTodos.map(todo => {
+                    const dotColors: Record<string, string> = {
+                      Critical: "bg-red-500", High: "bg-orange-400", Medium: "bg-blue-400", Low: "bg-slate-400"
+                    };
+                    const isOverdueTodo = todo.dueDate && new Date(todo.dueDate) < new Date();
+                    return (
+                      <div key={todo.id} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-muted/40 transition-colors group">
+                        <button
+                          data-testid={`dashboard-todo-toggle-${todo.id}`}
+                          onClick={() => handleTodoToggle(todo)}
+                          className="flex-shrink-0 hover:scale-110 transition-transform"
+                        >
+                          <Circle size={16} className="text-muted-foreground/30 group-hover:text-primary transition-colors" />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-foreground truncate">{todo.text}</p>
+                          {todo.dueDate && (
+                            <p className={cn("text-[10px]", isOverdueTodo ? "text-red-500 font-semibold" : "text-muted-foreground")}>
+                              {isOverdueTodo ? "Overdue · " : "Due "}
+                              {new Date(todo.dueDate).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+                            </p>
+                          )}
+                        </div>
+                        <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", dotColors[todo.priority] || "bg-slate-400")} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {allActiveTodosCount > 6 && (
+                <div className="px-4 py-2 border-t border-border bg-muted/30">
+                  <button onClick={() => setLocation("/todos")} className="text-xs text-primary font-medium hover:underline">
+                    +{allActiveTodosCount - 6} more to-dos →
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Recent Notes */}
             <div className="bg-card border border-border rounded-xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">

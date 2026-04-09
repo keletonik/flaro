@@ -21,7 +21,10 @@ import {
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
   Package, ChevronLeft, ChevronRight
 } from "lucide-react";
-import { useState } from "react";
+import { useState, createContext, useContext } from "react";
+
+const SidebarContext = createContext({ collapsed: false, setCollapsed: (_: boolean) => {} });
+function useSidebar() { return useContext(SidebarContext); }
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,7 +92,7 @@ function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
 
 function SidebarNav() {
   const [location, setLocation] = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
+  const { collapsed, setCollapsed } = useSidebar();
 
   return (
     <aside className={cn(
@@ -207,16 +210,12 @@ function BottomNav() {
   );
 }
 
-function useIsSidebarCollapsed() {
-  // Read from the sidebar width via CSS, default to 210px
-  return false;
-}
-
 function Layout({ children }: { children: React.ReactNode }) {
+  const { collapsed } = useSidebar();
   return (
     <div className="min-h-screen bg-background">
       <SidebarNav />
-      <div className="md:ml-[210px] pb-16 md:pb-0 min-h-screen transition-all duration-300">
+      <div className={cn("pb-16 md:pb-0 min-h-screen transition-all duration-300", collapsed ? "md:ml-[60px]" : "md:ml-[210px]")}>
         {children}
       </div>
       <BottomNav />
@@ -243,9 +242,15 @@ function Router() {
   );
 }
 
+function SidebarProvider({ children }: { children: React.ReactNode }) {
+  const [collapsed, setCollapsed] = useState(false);
+  return <SidebarContext.Provider value={{ collapsed, setCollapsed }}>{children}</SidebarContext.Provider>;
+}
+
 function App() {
   return (
     <ThemeProvider>
+      <SidebarProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
@@ -254,6 +259,7 @@ function App() {
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
+      </SidebarProvider>
     </ThemeProvider>
   );
 }

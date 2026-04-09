@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Search, X, LayoutGrid, List, Filter } from "lucide-react";
+import AnalyticsPanel from "@/components/AnalyticsPanel";
 import {
   useListJobs, useCreateJob, useUpdateJob, useDeleteJob,
   getListJobsQueryKey, getGetDashboardSummaryQueryKey
@@ -426,6 +427,8 @@ export default function Jobs() {
           onSave={handleSave}
         />
       )}
+
+      <AnalyticsPanel section="wip" title="Jobs Analyst" />
     </div>
   );
 }

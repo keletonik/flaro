@@ -33,6 +33,7 @@ export function streamChat(
     if (!reader) { onError("No stream"); return; }
     const decoder = new TextDecoder();
     let buffer = "";
+    let finished = false;
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -44,12 +45,12 @@ export function streamChat(
         try {
           const data = JSON.parse(line.slice(6));
           if (data.content) onChunk(data.content);
-          if (data.done) onDone();
+          if (data.done && !finished) { finished = true; onDone(); }
           if (data.error) onError(data.error);
         } catch {}
       }
     }
-    onDone();
+    if (!finished) onDone();
   }).catch((err) => {
     if (err.name !== "AbortError") onError(err.message);
   });

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import AnalyticsPanel from "@/components/AnalyticsPanel";
 import {
   Plus, X, LayoutGrid, List, ChevronDown, ChevronRight,
   Calendar, MoreHorizontal, Pencil, Trash2, GripVertical,
@@ -647,6 +648,8 @@ export default function Projects() {
           onSave={handleSave}
         />
       )}
+
+      <AnalyticsPanel section="tasks" title="Project Analyst" />
     </div>
   );
 }

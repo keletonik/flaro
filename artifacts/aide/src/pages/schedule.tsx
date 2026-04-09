@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Plus, X, Clock, MapPin, User, Briefcase } from "lucide-react";
+import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { useListJobs } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { PriorityBadge } from "@/components/PriorityBadge";
@@ -458,6 +459,8 @@ export default function Schedule() {
           onDelete={() => deleteEvent(selected.id)}
         />
       )}
+
+      <AnalyticsPanel section="wip" title="Schedule Analyst" />
     </div>
   );
 }

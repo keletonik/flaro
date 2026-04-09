@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, X, Upload, Download, Phone, Mail, Globe, MapPin, Edit2, Trash2, Package, ChevronDown, Star } from "lucide-react";
+import { Search, Plus, X, Upload, Download, Phone, Mail, MapPin, Edit2, Trash2, Package, ChevronDown } from "lucide-react";
 import { apiFetch, exportToCSV } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
 import AnalyticsPanel from "@/components/AnalyticsPanel";

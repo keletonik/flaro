@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Upload, Download, Filter, Plus, X, ChevronDown, BarChart3 } from "lucide-react";
+import { Search, Upload, Download, Filter, X, ChevronDown, BarChart3 } from "lucide-react";
 import { apiFetch, exportToCSV } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
@@ -274,13 +274,17 @@ export default function Operations() {
   };
 
   const handleDelete = async (id: string) => {
-    await apiFetch(`${ENDPOINTS[activeTab]}/${id}`, { method: "DELETE" });
-    fetchData(activeTab);
+    try {
+      await apiFetch(`${ENDPOINTS[activeTab]}/${id}`, { method: "DELETE" });
+      fetchData(activeTab);
+    } catch { toast({ title: "Could not delete record", variant: "destructive" }); }
   };
 
   const handleStatusChange = async (id: string, status: string) => {
-    await apiFetch(`${ENDPOINTS[activeTab]}/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
-    fetchData(activeTab);
+    try {
+      await apiFetch(`${ENDPOINTS[activeTab]}/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+      fetchData(activeTab);
+    } catch { toast({ title: "Could not update status", variant: "destructive" }); }
   };
 
   const handleExport = () => {

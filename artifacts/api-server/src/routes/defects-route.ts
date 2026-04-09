@@ -32,9 +32,17 @@ router.get("/defects", async (req, res, next) => {
 
 router.post("/defects", async (req, res, next) => {
   try {
+    const { taskNumber, site, address, client, description, severity, status, buildingClass, assetType, location, recommendation, dueDate, dateIdentified, notes } = req.body;
+    if (!site || !client || !description) { res.status(400).json({ error: "site, client, and description are required" }); return; }
     const id = randomUUID();
     const now = new Date();
-    const [record] = await db.insert(defects).values({ id, ...req.body, createdAt: now, updatedAt: now }).returning();
+    const [record] = await db.insert(defects).values({
+      id, taskNumber: taskNumber || null, site, address: address || null, client, description,
+      severity: severity || "Medium", status: status || "Open", buildingClass: buildingClass || null,
+      assetType: assetType || null, location: location || null, recommendation: recommendation || null,
+      dueDate: dueDate || null, dateIdentified: dateIdentified || null, notes: notes || null,
+      createdAt: now, updatedAt: now,
+    }).returning();
     res.status(201).json(serialize(record));
   } catch (err) { next(err); }
 });
@@ -70,7 +78,23 @@ router.patch("/defects/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(defects).where(eq(defects.id, req.params.id));
     if (!existing) { res.status(404).json({ error: "Defect not found" }); return; }
-    const [updated] = await db.update(defects).set({ ...req.body, updatedAt: new Date() }).where(eq(defects.id, req.params.id)).returning();
+    const { taskNumber, site, address, client, description, severity, status, buildingClass, assetType, location, recommendation, dueDate, dateIdentified, notes } = req.body;
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (taskNumber !== undefined) updates.taskNumber = taskNumber || null;
+    if (site !== undefined) updates.site = site;
+    if (address !== undefined) updates.address = address || null;
+    if (client !== undefined) updates.client = client;
+    if (description !== undefined) updates.description = description;
+    if (severity !== undefined) updates.severity = severity;
+    if (status !== undefined) updates.status = status;
+    if (buildingClass !== undefined) updates.buildingClass = buildingClass || null;
+    if (assetType !== undefined) updates.assetType = assetType || null;
+    if (location !== undefined) updates.location = location || null;
+    if (recommendation !== undefined) updates.recommendation = recommendation || null;
+    if (dueDate !== undefined) updates.dueDate = dueDate || null;
+    if (dateIdentified !== undefined) updates.dateIdentified = dateIdentified || null;
+    if (notes !== undefined) updates.notes = notes || null;
+    const [updated] = await db.update(defects).set(updates).where(eq(defects.id, req.params.id)).returning();
     res.json(serialize(updated));
   } catch (err) { next(err); }
 });

@@ -36,9 +36,17 @@ router.get("/wip", async (req, res, next) => {
 
 router.post("/wip", async (req, res, next) => {
   try {
+    const { taskNumber, site, address, client, jobType, description, status, priority, assignedTech, dueDate, dateCreated, quoteAmount, invoiceAmount, poNumber, notes } = req.body;
+    if (!site || !client) { res.status(400).json({ error: "site and client are required" }); return; }
     const id = randomUUID();
     const now = new Date();
-    const [record] = await db.insert(wipRecords).values({ id, ...req.body, createdAt: now, updatedAt: now }).returning();
+    const [record] = await db.insert(wipRecords).values({
+      id, taskNumber: taskNumber || null, site, address: address || null, client,
+      jobType: jobType || null, description: description || null, status: status || "Open",
+      priority: priority || "Medium", assignedTech: assignedTech || null, dueDate: dueDate || null,
+      dateCreated: dateCreated || null, quoteAmount: quoteAmount || null, invoiceAmount: invoiceAmount || null,
+      poNumber: poNumber || null, notes: notes || null, createdAt: now, updatedAt: now,
+    }).returning();
     res.status(201).json(serialize(record));
   } catch (err) { next(err); }
 });
@@ -86,7 +94,24 @@ router.patch("/wip/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(wipRecords).where(eq(wipRecords.id, req.params.id));
     if (!existing) { res.status(404).json({ error: "Record not found" }); return; }
-    const [updated] = await db.update(wipRecords).set({ ...req.body, updatedAt: new Date() }).where(eq(wipRecords.id, req.params.id)).returning();
+    const { taskNumber, site, address, client, jobType, description, status, priority, assignedTech, dueDate, dateCreated, quoteAmount, invoiceAmount, poNumber, notes } = req.body;
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (taskNumber !== undefined) updates.taskNumber = taskNumber || null;
+    if (site !== undefined) updates.site = site;
+    if (address !== undefined) updates.address = address || null;
+    if (client !== undefined) updates.client = client;
+    if (jobType !== undefined) updates.jobType = jobType || null;
+    if (description !== undefined) updates.description = description || null;
+    if (status !== undefined) updates.status = status;
+    if (priority !== undefined) updates.priority = priority;
+    if (assignedTech !== undefined) updates.assignedTech = assignedTech || null;
+    if (dueDate !== undefined) updates.dueDate = dueDate || null;
+    if (dateCreated !== undefined) updates.dateCreated = dateCreated || null;
+    if (quoteAmount !== undefined) updates.quoteAmount = quoteAmount || null;
+    if (invoiceAmount !== undefined) updates.invoiceAmount = invoiceAmount || null;
+    if (poNumber !== undefined) updates.poNumber = poNumber || null;
+    if (notes !== undefined) updates.notes = notes || null;
+    const [updated] = await db.update(wipRecords).set(updates).where(eq(wipRecords.id, req.params.id)).returning();
     res.json(serialize(updated));
   } catch (err) { next(err); }
 });

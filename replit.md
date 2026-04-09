@@ -30,26 +30,30 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## AIDE App
 
-**AIDE v1.0** — Premium dark-themed personal operations assistant for Casper Tavitian (FlameSafe Fire Protection, NSW).
+**AIDE v1.0** — Premium personal operations assistant for Casper Tavitian (FlameSafe Fire Protection, NSW). Light theme by default, dark mode toggle persisted in localStorage.
 
 ### Artifacts
 - `artifacts/aide` — React + Vite frontend (port from `$PORT`)
 - `artifacts/api-server` — Express API server (port 8080)
 
 ### Frontend Pages
-- `/` — Dashboard: greeting, summary strip (critical/high/open/done), AI-generated focus points, open jobs, recent notes, on-call roster
-- `/chat` — Chat with Claude (claude-sonnet-4-6) via SSE streaming; quick actions (Triage Email, Log Job, Drop Note, PA Check); rich card rendering for [EMAIL_TRIAGE], [NEW_JOB], [NEW_NOTE], [PA_CHECK], [ACTIONS] tags
-- `/jobs` — Jobs list with status/priority filters, search, full CRUD
+- `/` — Dashboard: greeting, metric widgets (critical/high/open/done), AI-generated focus, open jobs list, notes sidebar widget, on-call roster
+- `/chat` — Clean chat UI with Claude (claude-sonnet-4-6) via SSE streaming; typing indicator, copy-to-clipboard, suggestion chips
+- `/schedule` — NEW: full week calendar grid (7am–6pm); jobs from DB shown by due date (colour-coded by priority); add standalone events with title/time/location/colour picker
+- `/jobs` — List + Kanban board toggle (Monday.com-style); status filter tabs; search; full CRUD modal
 - `/jobs/:id` — Job detail with inline status/tech editing, contact call/email links
-- `/notes` — Notes with categories (Urgent/To Do/To Ask/Schedule/Done), expand/collapse, mark done
-- `/toolbox` — Toolbox briefing notes with TB-XXX refs, mark briefed, export to clipboard
+- `/notes` — Notion-style: list/grid toggle, category tabs with counts, expandable cards, mark done, search
+- `/toolbox` — Toolbox briefing notes with TB-XXX refs, mark briefed, export/copy to clipboard
 
 ### Design System
-- Dark only: background `#0F0F13`, cards `#1A1A24`, border `#2E2E45`
-- Primary purple: `#7C3AED` / `#A855F7`
-- Priority border colors: Critical=red (#EF4444), High=amber (#F59E0B), Medium=blue (#3B82F6), Low=gray
-- Desktop: sidebar nav (240px). Mobile: bottom tab bar
-- Animations: card-appear, typing-dot, pulse-glow, skeleton-pulse
+- **Themes**: Light (default) + Dark mode via `.dark` class on `<html>`; toggled by button in sidebar, persisted in `localStorage["aide-theme"]`
+- **Theme provider**: `src/lib/theme.tsx` → `ThemeProvider` + `useTheme()` hook
+- **Light bg**: `hsl(220 14% 96%)` · card: `white` · primary purple: `hsl(267 84% 57%)`
+- **Dark bg**: `hsl(222 47% 8%)` · card: `hsl(222 35% 11%)`
+- Priority CSS classes: `priority-critical/high/medium/low` (left border), badge classes: `badge-critical/high/medium/low`
+- Status badge classes: `badge-open/inprogress/booked/blocked/waiting/done`
+- Desktop: sidebar nav (224px). Mobile: bottom tab bar (5 items)
+- Animations: `card-appear`, `typing-dot`, `pulse-dot`, `pulse-ring`, `skeleton-pulse`, `slide-up`, `fade-in`
 
 ### API Routes
 - `GET /api/dashboard/summary` — job counts (critical/high/open/doneToday)

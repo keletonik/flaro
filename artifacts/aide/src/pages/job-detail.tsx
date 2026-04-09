@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { ArrowLeft, Phone, Mail, MapPin, Calendar, User, AlertCircle, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Calendar, User, AlertCircle, Trash2, ChevronDown } from "lucide-react";
 import { useGetJob, useUpdateJob, useDeleteJob, getListJobsQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -9,16 +9,35 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import type { UpdateJobBody } from "@workspace/api-client-react";
 
-const TECHS = ["Darren Brailey", "Gordon Jenkins", "Haider Al-Heyoury", "John Minai", "Nu Unasa", "Unassigned"];
+const TECHS = ["Darren Brailey", "Gordon Jenkins", "Haider Al-Heyoury", "John Minai", "Nu Unasa"];
+const STATUSES = ["Open", "In Progress", "Booked", "Blocked", "Waiting", "Done"] as const;
 
-function DetailRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null | undefined }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-border bg-muted/30">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</h3>
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+function DetailRow({ icon: Icon, label, value, href, testId }: {
+  icon: React.ElementType; label: string; value?: string | null;
+  href?: string; testId?: string;
+}) {
   if (!value) return null;
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-[#2E2E45] last:border-0">
-      <Icon size={16} className="text-[#475569] mt-0.5 flex-shrink-0" />
+    <div className="flex items-start gap-3 py-2 first:pt-0 last:pb-0">
+      <Icon size={14} className="text-muted-foreground mt-0.5 flex-shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-[#475569] text-xs uppercase tracking-wider mb-0.5">{label}</p>
-        <p className="text-[#E2E8F0] text-sm break-words">{value}</p>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{label}</p>
+        {href ? (
+          <a href={href} data-testid={testId} className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all">{value}</a>
+        ) : (
+          <p className="text-sm text-foreground break-words">{value}</p>
+        )}
       </div>
     </div>
   );
@@ -30,7 +49,7 @@ export default function JobDetail() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editingStatus, setEditingStatus] = useState(false);
-  const [editingAssigned, setEditingAssigned] = useState(false);
+  const [editingTech, setEditingTech] = useState(false);
 
   const { data: job, isLoading, refetch } = useGetJob(params.id);
   const updateJob = useUpdateJob();
@@ -50,21 +69,21 @@ export default function JobDetail() {
     }
   };
 
-  const handleUpdateAssigned = async (tech: string) => {
+  const handleUpdateTech = async (tech: string) => {
     if (!job) return;
     try {
       await updateJob.mutateAsync({ id: job.id, data: { assignedTech: tech === "Unassigned" ? undefined : tech } });
       queryClient.invalidateQueries({ queryKey: getListJobsQueryKey() });
       await refetch();
-      toast({ title: "Tech assigned" });
-      setEditingAssigned(false);
+      toast({ title: "Tech updated" });
+      setEditingTech(false);
     } catch {
       toast({ title: "Error", description: "Couldn't update tech.", variant: "destructive" });
     }
   };
 
   const handleDelete = async () => {
-    if (!job || !confirm("Delete this job? This cannot be undone.")) return;
+    if (!job || !confirm("Delete this job?")) return;
     try {
       await deleteJob.mutateAsync({ id: job.id });
       queryClient.invalidateQueries({ queryKey: getListJobsQueryKey() });
@@ -76,29 +95,19 @@ export default function JobDetail() {
     }
   };
 
-  const handleCall = (number: string) => {
-    window.open(`tel:${number.replace(/\s/g, "")}`, "_self");
-  };
-
-  const handleEmail = (email: string) => {
-    window.open(`mailto:${email}`, "_self");
-  };
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0F0F13] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#7C3AED] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-[#0F0F13] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-[#475569] text-sm">Job not found.</p>
-          <button onClick={() => setLocation("/jobs")} className="mt-3 text-[#7C3AED] text-sm">← Back to Jobs</button>
-        </div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
+        <p className="text-muted-foreground text-sm">Job not found.</p>
+        <button onClick={() => setLocation("/jobs")} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg">← Back to Jobs</button>
       </div>
     );
   }
@@ -106,181 +115,155 @@ export default function JobDetail() {
   const isOverdue = job.dueDate && new Date(job.dueDate) < new Date();
 
   return (
-    <div className="min-h-screen bg-[#0F0F13]">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0F0F13]/90 backdrop-blur-md border-b border-[#2E2E45] px-4 py-4">
+      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
         <div className="flex items-center gap-3 max-w-2xl mx-auto">
           <button
             data-testid="button-back"
             onClick={() => setLocation("/jobs")}
-            className="w-9 h-9 rounded-full bg-[#1A1A24] border border-[#2E2E45] flex items-center justify-center text-[#94A3B8] hover:text-white transition-colors"
+            className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={15} />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-[#F8FAFC] font-bold text-lg truncate">{job.site}</h1>
-            <p className="text-[#475569] text-xs">{job.client}</p>
+            <div className="flex items-center gap-1.5">
+              {job.taskNumber && <span className="text-[10px] text-muted-foreground font-mono">{job.taskNumber}</span>}
+              <h1 className="text-foreground font-bold text-base truncate">{job.site}</h1>
+            </div>
+            <p className="text-xs text-muted-foreground">{job.client}</p>
           </div>
-          <div className="flex gap-2">
-            <button
-              data-testid="button-delete-job"
-              onClick={handleDelete}
-              className="w-9 h-9 rounded-full bg-[#1A1A24] border border-[#EF4444]/30 flex items-center justify-center text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+          <button
+            data-testid="button-delete-job"
+            onClick={handleDelete}
+            className="w-8 h-8 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 flex items-center justify-center text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        {/* Priority + Status bar */}
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-5 space-y-4">
+        {/* Status + Priority bar */}
         <div className={cn(
-          "bg-[#1A1A24] border border-[#2E2E45] border-l-4 rounded-2xl p-4",
+          "bg-card border border-border border-l-4 rounded-xl p-4",
           `priority-${job.priority.toLowerCase()}`
         )}>
-          <div className="flex items-center gap-3 flex-wrap">
-            {job.taskNumber && (
-              <span className="text-[#7C3AED] font-bold text-sm">{job.taskNumber}</span>
-            )}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <PriorityBadge priority={job.priority} />
-            <div className="flex-shrink-0">
+            <div>
               {editingStatus ? (
                 <div className="flex flex-wrap gap-1.5">
-                  {["Open", "In Progress", "Booked", "Blocked", "Waiting", "Done"].map(s => (
+                  {STATUSES.map(s => (
                     <button
                       key={s}
                       onClick={() => handleUpdateStatus(s)}
-                      className="px-2 py-1 rounded text-xs bg-[#242433] border border-[#2E2E45] text-[#94A3B8] hover:border-[#7C3AED] hover:text-white transition-all"
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg text-xs font-medium border transition-all",
+                        job.status === s
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted text-muted-foreground border-border hover:border-primary/50"
+                      )}
                     >
                       {s}
                     </button>
                   ))}
+                  <button onClick={() => setEditingStatus(false)} className="px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground">×</button>
                 </div>
               ) : (
                 <button
                   data-testid="button-change-status"
                   onClick={() => setEditingStatus(true)}
-                  className="hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-1"
                 >
                   <StatusBadge status={job.status} />
+                  <ChevronDown size={11} className="text-muted-foreground" />
                 </button>
               )}
             </div>
           </div>
           {isOverdue && (
-            <div className="flex items-center gap-1.5 mt-3 text-[#EF4444] text-xs font-semibold">
+            <div className="flex items-center gap-1.5 text-red-500 text-xs font-semibold">
               <AlertCircle size={12} />
               Overdue — {new Date(job.dueDate!).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
             </div>
           )}
           {job.dueDate && !isOverdue && (
-            <div className="mt-3 flex items-center gap-1.5 text-[#475569] text-xs">
+            <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
               <Calendar size={12} />
-              Due: {new Date(job.dueDate).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
+              Due: {new Date(job.dueDate).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </div>
           )}
         </div>
 
         {/* Action Required */}
-        <div className="bg-[#1A1A24] border border-[#2E2E45] rounded-2xl p-4">
-          <p className="text-[#7C3AED] text-xs font-bold uppercase tracking-widest mb-2">Action Required</p>
-          <p className="text-[#E2E8F0] text-sm leading-relaxed">{job.actionRequired}</p>
-        </div>
+        <Section title="Action Required">
+          <p className="text-sm text-foreground leading-relaxed">{job.actionRequired}</p>
+        </Section>
 
         {/* Assigned Tech */}
-        <div className="bg-[#1A1A24] border border-[#2E2E45] rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[#475569] text-xs uppercase tracking-wider">Assigned Tech</p>
-            <button
-              data-testid="button-change-tech"
-              onClick={() => setEditingAssigned(!editingAssigned)}
-              className="text-[#7C3AED] text-xs hover:text-[#A855F7] transition-colors"
-            >
-              Change
-            </button>
-          </div>
-          {editingAssigned ? (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {TECHS.map(t => (
+        <Section title="Assigned Tech">
+          {editingTech ? (
+            <div className="flex flex-wrap gap-1.5">
+              {["Unassigned", ...TECHS].map(t => (
                 <button
                   key={t}
-                  onClick={() => handleUpdateAssigned(t)}
+                  onClick={() => handleUpdateTech(t)}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-sm border transition-all",
-                    job.assignedTech === t
-                      ? "bg-[#7C3AED] border-[#7C3AED] text-white"
-                      : "bg-[#242433] border-[#2E2E45] text-[#94A3B8] hover:border-[#7C3AED]/50"
+                    "px-3 py-1.5 rounded-lg text-sm border transition-all",
+                    (job.assignedTech || "Unassigned") === t
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-muted text-muted-foreground border-border hover:border-primary/50"
                   )}
                 >
                   {t}
                 </button>
               ))}
+              <button onClick={() => setEditingTech(false)} className="px-2 py-1 rounded-lg text-sm text-muted-foreground hover:text-foreground">×</button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-[#7C3AED]/30 border border-[#7C3AED]/50 flex items-center justify-center text-[10px] text-[#A855F7] font-bold">
-                {(job.assignedTech || "U").charAt(0)}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs text-primary font-bold">
+                  {(job.assignedTech || "?").charAt(0)}
+                </div>
+                <span className="text-sm font-medium text-foreground">{job.assignedTech || "Unassigned"}</span>
               </div>
-              <span className="text-[#E2E8F0] text-sm">{job.assignedTech || "Unassigned"}</span>
+              <button
+                data-testid="button-change-tech"
+                onClick={() => setEditingTech(true)}
+                className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+              >
+                Change
+              </button>
             </div>
           )}
-        </div>
+        </Section>
 
         {/* Contact Details */}
         {(job.contactName || job.contactNumber || job.contactEmail || job.address) && (
-          <div className="bg-[#1A1A24] border border-[#2E2E45] rounded-2xl px-4 py-2">
-            <p className="text-[#7C3AED] text-xs font-bold uppercase tracking-widest py-3">Contact Details</p>
-            <DetailRow icon={User} label="Contact" value={job.contactName} />
-            <DetailRow icon={MapPin} label="Address" value={job.address} />
-            {job.contactNumber && (
-              <div className="flex items-start gap-3 py-3 border-b border-[#2E2E45] last:border-0">
-                <Phone size={16} className="text-[#475569] mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[#475569] text-xs uppercase tracking-wider mb-0.5">Phone</p>
-                  <button
-                    data-testid="button-call-contact"
-                    onClick={() => handleCall(job.contactNumber!)}
-                    className="text-[#3B82F6] text-sm hover:text-blue-400 transition-colors"
-                  >
-                    {job.contactNumber}
-                  </button>
-                </div>
-              </div>
-            )}
-            {job.contactEmail && (
-              <div className="flex items-start gap-3 py-3 border-b border-[#2E2E45] last:border-0">
-                <Mail size={16} className="text-[#475569] mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[#475569] text-xs uppercase tracking-wider mb-0.5">Email</p>
-                  <button
-                    data-testid="button-email-contact"
-                    onClick={() => handleEmail(job.contactEmail!)}
-                    className="text-[#3B82F6] text-sm hover:text-blue-400 transition-colors break-all"
-                  >
-                    {job.contactEmail}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <Section title="Contact Details">
+            <div className="space-y-0">
+              <DetailRow icon={User} label="Contact" value={job.contactName} />
+              <DetailRow icon={MapPin} label="Address" value={job.address} />
+              <DetailRow icon={Phone} label="Phone" value={job.contactNumber} href={`tel:${job.contactNumber?.replace(/\s/g, "")}`} testId="button-call-contact" />
+              <DetailRow icon={Mail} label="Email" value={job.contactEmail} href={`mailto:${job.contactEmail}`} testId="button-email-contact" />
+            </div>
+          </Section>
         )}
 
         {/* Notes */}
         {job.notes && (
-          <div className="bg-[#1A1A24] border border-[#2E2E45] rounded-2xl p-4">
-            <p className="text-[#7C3AED] text-xs font-bold uppercase tracking-widest mb-2">Notes</p>
-            <p className="text-[#E2E8F0] text-sm leading-relaxed whitespace-pre-wrap">{job.notes}</p>
-          </div>
+          <Section title="Notes">
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{job.notes}</p>
+          </Section>
         )}
 
         {/* Meta */}
-        <div className="text-center text-[#475569] text-xs pb-4">
+        <p className="text-center text-[10px] text-muted-foreground pb-4">
           Created {new Date(job.createdAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
-          {job.updatedAt && job.updatedAt !== job.createdAt && (
-            <> · Updated {new Date(job.updatedAt).toLocaleDateString("en-AU", { day: "numeric", month: "long" })}</>
-          )}
-        </div>
+          {job.updatedAt !== job.createdAt && ` · Updated ${new Date(job.updatedAt).toLocaleDateString("en-AU", { day: "numeric", month: "long" })}`}
+        </p>
       </div>
     </div>
   );

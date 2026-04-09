@@ -1,15 +1,22 @@
-export function SkeletonCard() {
+import { cn } from "@/lib/utils";
+
+export function SkeletonCard({ lines = 3 }: { lines?: number }) {
   return (
-    <div className="bg-[#1A1A24] border border-[#2E2E45] rounded-2xl p-4 space-y-3">
-      <div className="flex justify-between items-start">
-        <div className="h-4 bg-[#242433] rounded w-24 skeleton-pulse" />
-        <div className="flex gap-2">
-          <div className="h-5 bg-[#242433] rounded w-16 skeleton-pulse" />
-          <div className="h-5 bg-[#242433] rounded w-20 skeleton-pulse" />
-        </div>
+    <div className="bg-card border border-border rounded-xl p-4 space-y-2.5">
+      <div className="flex justify-between items-center">
+        <div className="h-3.5 bg-muted rounded-md w-32 skeleton-pulse" />
+        <div className="h-5 bg-muted rounded-md w-16 skeleton-pulse" />
       </div>
-      <div className="h-4 bg-[#242433] rounded w-3/4 skeleton-pulse" />
-      <div className="h-3 bg-[#242433] rounded w-1/2 skeleton-pulse" />
+      {Array.from({ length: lines - 1 }).map((_, i) => (
+        <div
+          key={i}
+          className={cn("h-3 bg-muted rounded-md skeleton-pulse", i === lines - 2 ? "w-1/2" : "w-3/4")}
+        />
+      ))}
     </div>
   );
+}
+
+export function SkeletonText({ className }: { className?: string }) {
+  return <div className={cn("h-3 bg-muted rounded skeleton-pulse", className)} />;
 }

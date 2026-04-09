@@ -279,6 +279,100 @@ export interface DashboardFocus {
   generatedAt: string;
 }
 
+export type TodoPriority = (typeof TodoPriority)[keyof typeof TodoPriority];
+
+export const TodoPriority = {
+  Critical: "Critical",
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
+} as const;
+
+/**
+ * @nullable
+ */
+export type TodoCategory =
+  | (typeof TodoCategory)[keyof typeof TodoCategory]
+  | null;
+
+export const TodoCategory = {
+  Work: "Work",
+  Personal: "Personal",
+  "Follow-up": "Follow-up",
+  Compliance: "Compliance",
+  Admin: "Admin",
+} as const;
+
+export interface Todo {
+  id: string;
+  text: string;
+  completed: boolean;
+  priority: TodoPriority;
+  /** @nullable */
+  category?: TodoCategory;
+  /** @nullable */
+  dueDate?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateTodoBodyPriority =
+  (typeof CreateTodoBodyPriority)[keyof typeof CreateTodoBodyPriority];
+
+export const CreateTodoBodyPriority = {
+  Critical: "Critical",
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
+} as const;
+
+export type CreateTodoBodyCategory =
+  (typeof CreateTodoBodyCategory)[keyof typeof CreateTodoBodyCategory];
+
+export const CreateTodoBodyCategory = {
+  Work: "Work",
+  Personal: "Personal",
+  "Follow-up": "Follow-up",
+  Compliance: "Compliance",
+  Admin: "Admin",
+} as const;
+
+export interface CreateTodoBody {
+  text: string;
+  priority?: CreateTodoBodyPriority;
+  category?: CreateTodoBodyCategory;
+  dueDate?: string;
+}
+
+export type UpdateTodoBodyPriority =
+  (typeof UpdateTodoBodyPriority)[keyof typeof UpdateTodoBodyPriority];
+
+export const UpdateTodoBodyPriority = {
+  Critical: "Critical",
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
+} as const;
+
+export type UpdateTodoBodyCategory =
+  (typeof UpdateTodoBodyCategory)[keyof typeof UpdateTodoBodyCategory];
+
+export const UpdateTodoBodyCategory = {
+  Work: "Work",
+  Personal: "Personal",
+  "Follow-up": "Follow-up",
+  Compliance: "Compliance",
+  Admin: "Admin",
+} as const;
+
+export interface UpdateTodoBody {
+  text?: string;
+  completed?: boolean;
+  priority?: UpdateTodoBodyPriority;
+  category?: UpdateTodoBodyCategory;
+  dueDate?: string;
+}
+
 export interface ApiError {
   error: string;
 }

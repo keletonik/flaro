@@ -375,6 +375,86 @@ export const DeleteToolboxNoteParams = zod.object({
 });
 
 /**
+ * @summary List all todos
+ */
+export const ListTodosResponseItem = zod.object({
+  id: zod.string(),
+  text: zod.string(),
+  completed: zod.boolean(),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]),
+  category: zod
+    .union([
+      zod.literal("Work"),
+      zod.literal("Personal"),
+      zod.literal("Follow-up"),
+      zod.literal("Compliance"),
+      zod.literal("Admin"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  dueDate: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListTodosResponse = zod.array(ListTodosResponseItem);
+
+/**
+ * @summary Create a todo
+ */
+export const CreateTodoBody = zod.object({
+  text: zod.string(),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]).optional(),
+  category: zod
+    .enum(["Work", "Personal", "Follow-up", "Compliance", "Admin"])
+    .optional(),
+  dueDate: zod.string().optional(),
+});
+
+/**
+ * @summary Update a todo
+ */
+export const UpdateTodoParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateTodoBody = zod.object({
+  text: zod.string().optional(),
+  completed: zod.boolean().optional(),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]).optional(),
+  category: zod
+    .enum(["Work", "Personal", "Follow-up", "Compliance", "Admin"])
+    .optional(),
+  dueDate: zod.string().optional(),
+});
+
+export const UpdateTodoResponse = zod.object({
+  id: zod.string(),
+  text: zod.string(),
+  completed: zod.boolean(),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]),
+  category: zod
+    .union([
+      zod.literal("Work"),
+      zod.literal("Personal"),
+      zod.literal("Follow-up"),
+      zod.literal("Compliance"),
+      zod.literal("Admin"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  dueDate: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a todo
+ */
+export const DeleteTodoParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
  * @summary Get dashboard summary stats
  */
 export const GetDashboardSummaryResponse = zod.object({

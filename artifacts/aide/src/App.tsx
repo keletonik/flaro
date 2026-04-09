@@ -10,11 +10,12 @@ import Notes from "@/pages/notes";
 import Toolbox from "@/pages/toolbox";
 import JobDetail from "@/pages/job-detail";
 import Schedule from "@/pages/schedule";
+import Todos from "@/pages/todos";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import {
   Home, MessageCircle, Briefcase, FileText, Wrench,
-  CalendarDays, Sun, Moon, ChevronRight
+  CalendarDays, Sun, Moon, CheckSquare
 } from "lucide-react";
 
 const queryClient = new QueryClient({
@@ -26,10 +27,11 @@ const queryClient = new QueryClient({
 const navItems = [
   { path: "/", icon: Home, label: "Home", exact: true },
   { path: "/chat", icon: MessageCircle, label: "Chat" },
-  { path: "/schedule", icon: CalendarDays, label: "Schedule" },
   { path: "/jobs", icon: Briefcase, label: "Jobs" },
+  { path: "/todos", icon: CheckSquare, label: "To-Do" },
   { path: "/notes", icon: FileText, label: "Notes" },
-  { path: "/toolbox", icon: Wrench, label: "Toolbox" },
+  { path: "/schedule", icon: CalendarDays, label: "Schedule", sidebarOnly: true },
+  { path: "/toolbox", icon: Wrench, label: "Toolbox", sidebarOnly: true },
 ];
 
 function isActive(location: string, item: { path: string; exact?: boolean }) {
@@ -88,7 +90,7 @@ function SidebarNav() {
           return (
             <button
               key={item.path}
-              data-testid={`sidebar-nav-${item.label.toLowerCase()}`}
+              data-testid={`sidebar-nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
               onClick={() => setLocation(item.path)}
               className={cn(
                 "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 text-left group",
@@ -117,7 +119,7 @@ function SidebarNav() {
 
 function BottomNav() {
   const [location, setLocation] = useLocation();
-  const mobileItems = navItems.slice(0, 5);
+  const mobileItems = navItems.filter(i => !("sidebarOnly" in i && i.sidebarOnly)).slice(0, 5);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
@@ -130,7 +132,7 @@ function BottomNav() {
               key={item.path}
               onClick={() => setLocation(item.path)}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[52px]",
+                "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]",
                 active ? "text-primary" : "text-muted-foreground"
               )}
             >
@@ -165,6 +167,7 @@ function Router() {
       <Route path="/jobs" component={() => <Layout><Jobs /></Layout>} />
       <Route path="/jobs/:id" component={() => <Layout><JobDetail /></Layout>} />
       <Route path="/notes" component={() => <Layout><Notes /></Layout>} />
+      <Route path="/todos" component={() => <Layout><Todos /></Layout>} />
       <Route path="/toolbox" component={() => <Layout><Toolbox /></Layout>} />
       <Route component={NotFound} />
     </Switch>

@@ -19,6 +19,8 @@ tags:
     description: Toolbox notes management
   - name: dashboard
     description: Dashboard summary data
+  - name: todos
+    description: To-do checklist management
 paths:
   /healthz:
     get:
@@ -466,6 +468,87 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
+  /todos:
+    get:
+      operationId: listTodos
+      tags: [todos]
+      summary: List all todos
+      responses:
+        "200":
+          description: List of todos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Todo"
+    post:
+      operationId: createTodo
+      tags: [todos]
+      summary: Create a todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTodoBody"
+      responses:
+        "201":
+          description: Created todo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+  /todos/{id}:
+    patch:
+      operationId: updateTodo
+      tags: [todos]
+      summary: Update a todo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTodoBody"
+      responses:
+        "200":
+          description: Updated todo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteTodo
+      tags: [todos]
+      summary: Delete a todo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -819,6 +902,67 @@ components:
       required:
         - points
         - generatedAt
+
+    Todo:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        completed:
+          type: boolean
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        category:
+          type: ["string", "null"]
+          enum: [Work, Personal, "Follow-up", Compliance, Admin, null]
+        dueDate:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - text
+        - completed
+        - priority
+        - createdAt
+        - updatedAt
+    CreateTodoBody:
+      type: object
+      properties:
+        text:
+          type: string
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        category:
+          type: string
+          enum: [Work, Personal, "Follow-up", Compliance, Admin]
+        dueDate:
+          type: string
+      required:
+        - text
+    UpdateTodoBody:
+      type: object
+      properties:
+        text:
+          type: string
+        completed:
+          type: boolean
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        category:
+          type: string
+          enum: [Work, Personal, "Follow-up", Compliance, Admin]
+        dueDate:
+          type: string
 
     ApiError:
       type: object

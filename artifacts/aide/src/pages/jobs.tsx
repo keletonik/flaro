@@ -338,7 +338,8 @@ export default function Jobs() {
     return { critical, high, overdue, unassigned };
   }, [filtered]);
 
-  const thBase = "px-2 py-1.5 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none whitespace-nowrap border-r border-border/30 last:border-r-0";
+  const thBase = "px-2 py-1.5 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none whitespace-nowrap border border-neutral-600 dark:border-neutral-500";
+  const tdBase = "px-2 py-1.5 border border-neutral-600 dark:border-neutral-500 text-xs";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -436,11 +437,11 @@ export default function Jobs() {
             {activeFilterCount > 0 && <button onClick={clearAllFilters} className="mt-3 text-xs text-primary hover:underline">Clear all filters</button>}
           </div>
         ) : (
-          <div className="overflow-auto h-[calc(100vh-140px)]">
-            <table className="w-full border-collapse">
+          <div className="overflow-auto h-[calc(100vh-140px)] px-2">
+            <table className="w-full border-collapse border border-neutral-600 dark:border-neutral-500">
               <thead className="sticky top-0 z-10">
-                <tr className="bg-muted/80 backdrop-blur-sm border-b border-border">
-                  <th className="px-2 py-1.5 w-8 border-r border-border/30">
+                <tr className="bg-muted">
+                  <th className={cn(thBase, "w-8 text-center")}>
                     <input type="checkbox" checked={selectedRows.size === paged.length && paged.length > 0} onChange={toggleSelectAll}
                       className="w-3 h-3 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
                   </th>
@@ -488,42 +489,43 @@ export default function Jobs() {
                       Due <SortIcon field="dueDate" sortField={sortField} sortDir={sortDir} />
                     </div>
                   </th>
-                  <th className="px-1 py-1.5 w-8"></th>
+                  <th className={cn(thBase, "w-8 text-center")}>
+                  </th>
                 </tr>
               </thead>
-              <tbody className="text-xs">
+              <tbody>
                 {paged.map((job, i) => {
                   const overdue = isOverdue(job.dueDate);
                   return (
                     <tr key={job.id}
                       className={cn(
-                        "border-b border-border/30 hover:bg-primary/5 transition-colors cursor-pointer",
+                        "hover:bg-primary/5 transition-colors cursor-pointer",
                         selectedRows.has(job.id) && "bg-primary/8",
-                        overdue && !selectedRows.has(job.id) && "bg-red-50/30 dark:bg-red-900/5",
-                        i % 2 === 1 && !selectedRows.has(job.id) && !overdue && "bg-muted/20"
+                        overdue && !selectedRows.has(job.id) && "bg-red-950/10",
+                        i % 2 === 1 && !selectedRows.has(job.id) && !overdue && "bg-muted/15"
                       )}
                       onClick={() => setLocation(`/jobs/${job.id}`)}
                     >
-                      <td className="px-2 py-1.5 w-8 border-r border-border/20" onClick={e => e.stopPropagation()}>
+                      <td className={cn(tdBase, "w-8 text-center")} onClick={e => e.stopPropagation()}>
                         <input type="checkbox" checked={selectedRows.has(job.id)} onChange={() => toggleSelect(job.id)} className="w-3 h-3 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
                       </td>
-                      <td className="px-2 py-1.5 font-mono text-[10px] text-muted-foreground border-r border-border/20">{job.taskNumber || "—"}</td>
-                      <td className="px-2 py-1.5 font-semibold text-foreground border-r border-border/20">
-                        <div className="truncate max-w-[200px]" title={job.site}>{job.site}</div>
+                      <td className={cn(tdBase, "font-mono text-[10px] text-muted-foreground")}>{job.taskNumber || "—"}</td>
+                      <td className={cn(tdBase, "font-semibold text-foreground")}>
+                        <div className="truncate max-w-[220px]" title={job.site}>{job.site}</div>
                       </td>
-                      <td className="px-2 py-1.5 text-muted-foreground border-r border-border/20">
-                        <div className="truncate max-w-[150px]" title={job.client}>{job.client}</div>
+                      <td className={cn(tdBase, "text-muted-foreground")}>
+                        <div className="truncate max-w-[160px]" title={job.client}>{job.client}</div>
                       </td>
-                      <td className="px-2 py-1.5 text-muted-foreground border-r border-border/20 hidden xl:table-cell">
-                        <div className="truncate max-w-[200px]" title={job.actionRequired}>{job.actionRequired}</div>
+                      <td className={cn(tdBase, "text-muted-foreground hidden xl:table-cell")}>
+                        <div className="truncate max-w-[220px]" title={job.actionRequired}>{job.actionRequired}</div>
                       </td>
-                      <td className="px-2 py-1.5 border-r border-border/20"><PriorityBadge priority={job.priority} size="xs" /></td>
-                      <td className="px-2 py-1.5 border-r border-border/20"><StatusBadge status={job.status} size="xs" /></td>
-                      <td className="px-2 py-1.5 border-r border-border/20">{job.assignedTech ? <span title={job.assignedTech}>{job.assignedTech.split(" ")[0]}</span> : <span className="text-muted-foreground/30">—</span>}</td>
-                      <td className={cn("px-2 py-1.5 border-r border-border/20 tabular-nums", overdue ? "text-red-500 font-bold" : "text-muted-foreground")}>
+                      <td className={tdBase}><PriorityBadge priority={job.priority} size="xs" /></td>
+                      <td className={tdBase}><StatusBadge status={job.status} size="xs" /></td>
+                      <td className={tdBase}>{job.assignedTech ? <span title={job.assignedTech}>{job.assignedTech.split(" ")[0]}</span> : <span className="text-muted-foreground/30">—</span>}</td>
+                      <td className={cn(tdBase, "tabular-nums", overdue ? "text-red-500 font-bold" : "text-muted-foreground")}>
                         {job.dueDate ? new Date(job.dueDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short" }) : "—"}
                       </td>
-                      <td className="px-1 py-1.5" onClick={e => e.stopPropagation()}>
+                      <td className={cn(tdBase, "w-8 text-center")} onClick={e => e.stopPropagation()}>
                         <ActionMenu job={job}
                           onEdit={() => { setEditingJob(job); setShowModal(true); }}
                           onDelete={() => handleDelete(job.id)}

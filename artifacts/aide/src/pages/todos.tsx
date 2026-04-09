@@ -335,7 +335,8 @@ export default function Todos() {
     return { critical, overdue };
   }, [filtered]);
 
-  const thBase = "px-2 py-1.5 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none whitespace-nowrap border-r border-border/30 last:border-r-0";
+  const thBase = "px-2 py-1.5 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none whitespace-nowrap border border-neutral-600 dark:border-neutral-500";
+  const tdBase = "px-2 py-1.5 border border-neutral-600 dark:border-neutral-500 text-xs";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -440,15 +441,15 @@ export default function Todos() {
               className="mt-3 px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90">+ Add Task</button>
           </div>
         ) : (
-          <div className="overflow-auto h-[calc(100vh-140px)]">
-            <table className="w-full border-collapse">
+          <div className="overflow-auto h-[calc(100vh-140px)] px-2">
+            <table className="w-full border-collapse border border-neutral-600 dark:border-neutral-500">
               <thead className="sticky top-0 z-10">
-                <tr className="bg-muted/80 backdrop-blur-sm border-b border-border">
-                  <th className="px-2 py-1.5 w-8 border-r border-border/30">
+                <tr className="bg-muted">
+                  <th className={cn(thBase, "w-8 text-center")}>
                     <input type="checkbox" checked={selectedRows.size === paged.length && paged.length > 0} onChange={toggleSelectAll}
                       className="w-3 h-3 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
                   </th>
-                  <th className="px-2 py-1.5 w-8 border-r border-border/30"></th>
+                  <th className={cn(thBase, "w-8 text-center")}></th>
                   <th className={cn(thBase, "cursor-pointer hover:text-foreground min-w-[200px]")} onClick={() => toggleSort("text")}>
                     <div className="flex items-center gap-1">Task <SortIcon field="text" sortField={sortField} sortDir={sortDir} /></div>
                   </th>
@@ -480,58 +481,58 @@ export default function Todos() {
                     </div>
                   </th>
                   <th className={cn(thBase, "hidden lg:table-cell min-w-[120px]")}>Notes</th>
-                  <th className="px-1 py-1.5 w-8"></th>
+                  <th className={cn(thBase, "w-8 text-center")}></th>
                 </tr>
               </thead>
-              <tbody className="text-xs">
+              <tbody>
                 {paged.map((todo, i) => {
                   const ps = PRIORITY_STYLES[todo.priority] || PRIORITY_STYLES.Medium;
                   const overdue = isOverdue(todo.dueDate) && !todo.completed;
                   return (
                     <tr key={todo.id}
                       className={cn(
-                        "border-b border-border/30 hover:bg-primary/5 transition-colors",
+                        "hover:bg-primary/5 transition-colors",
                         selectedRows.has(todo.id) && "bg-primary/8",
                         todo.completed && "opacity-50",
-                        overdue && !selectedRows.has(todo.id) && "bg-red-50/30 dark:bg-red-900/5",
-                        i % 2 === 1 && !selectedRows.has(todo.id) && !overdue && "bg-muted/20"
+                        overdue && !selectedRows.has(todo.id) && "bg-red-950/10",
+                        i % 2 === 1 && !selectedRows.has(todo.id) && !overdue && "bg-muted/15"
                       )}
                     >
-                      <td className="px-2 py-1.5 w-8 border-r border-border/20">
+                      <td className={cn(tdBase, "w-8 text-center")}>
                         <input type="checkbox" checked={selectedRows.has(todo.id)} onChange={() => toggleSelect(todo.id)} className="w-3 h-3 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
                       </td>
-                      <td className="px-2 py-1.5 w-8 border-r border-border/20">
+                      <td className={cn(tdBase, "w-8 text-center")}>
                         <button onClick={() => handleToggle(todo)} className="hover:scale-110 transition-transform">
                           {todo.completed ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Circle size={16} className="text-muted-foreground/30 hover:text-primary transition-colors" />}
                         </button>
                       </td>
-                      <td className={cn("px-2 py-1.5 border-r border-border/20", todo.completed && "line-through text-muted-foreground")}>
+                      <td className={cn(tdBase, todo.completed && "line-through text-muted-foreground")}>
                         <div className="truncate max-w-[280px] font-medium text-foreground" title={todo.text}>{todo.text}</div>
                         {todo.urgencyTag && (
                           <span className="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-bold bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">{todo.urgencyTag}</span>
                         )}
                       </td>
-                      <td className="px-2 py-1.5 border-r border-border/20">
+                      <td className={tdBase}>
                         <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold", ps.text, ps.bg)}>
                           <span className={cn("w-1.5 h-1.5 rounded-full", ps.dot)} />{todo.priority}
                         </span>
                       </td>
-                      <td className="px-2 py-1.5 border-r border-border/20">
+                      <td className={tdBase}>
                         {todo.category && <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-semibold border", CAT_STYLES[todo.category] || CAT_STYLES.Work)}>{todo.category}</span>}
                       </td>
-                      <td className="px-2 py-1.5 border-r border-border/20">{todo.assignee || <span className="text-muted-foreground/30">—</span>}</td>
-                      <td className={cn("px-2 py-1.5 border-r border-border/20 tabular-nums", overdue ? "text-red-500 font-bold" : "text-muted-foreground")}>
+                      <td className={tdBase}>{todo.assignee || <span className="text-muted-foreground/30">—</span>}</td>
+                      <td className={cn(tdBase, "tabular-nums", overdue ? "text-red-500 font-bold" : "text-muted-foreground")}>
                         {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short" }) : "—"}
                       </td>
-                      <td className="px-2 py-1.5 border-r border-border/20">
+                      <td className={tdBase}>
                         <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-semibold",
                           todo.completed ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
                         )}>{todo.completed ? "Done" : "Active"}</span>
                       </td>
-                      <td className="px-2 py-1.5 border-r border-border/20 hidden lg:table-cell text-muted-foreground">
+                      <td className={cn(tdBase, "hidden lg:table-cell text-muted-foreground")}>
                         <div className="truncate max-w-[150px]" title={todo.notes || ""}>{todo.notes || "—"}</div>
                       </td>
-                      <td className="px-1 py-1.5">
+                      <td className={cn(tdBase, "w-8 text-center")}>
                         <ActionMenu todo={todo}
                           onEdit={() => { setEditingTodo(todo); setShowModal(true); }}
                           onToggle={() => handleToggle(todo)}

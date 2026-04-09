@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
-  Send, RefreshCw, MessageCircle, Copy, Check, Briefcase,
+  Send, RefreshCw, Copy, Check, Briefcase,
   FileText, CheckSquare, AlertTriangle, Image, Mail, X,
   Paperclip, Zap
 } from "lucide-react";
@@ -13,6 +13,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { Todo } from "@workspace/api-client-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const CONVERSATION_ID = "1";
 
@@ -158,15 +160,27 @@ function parseEmlContent(raw: string, fileName: string): Attachment | null {
 }
 
 function htmlToText(html: string): string {
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<\/div>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
-    .replace(/\n{3,}/g, "\n\n").trim();
+  const d = document.createElement("div");
+  d.innerHTML = html;
+  const styles = d.querySelectorAll("style, script, head, meta, link");
+  styles.forEach(el => el.remove());
+  const walk = (node: Node): string => {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent || "";
+    if (node.nodeType !== Node.ELEMENT_NODE) return "";
+    const el = node as HTMLElement;
+    const tag = el.tagName.toLowerCase();
+    if (tag === "br") return "\n";
+    const kids = Array.from(el.childNodes).map(walk).join("");
+    if (["p", "div", "tr", "h1", "h2", "h3", "h4", "h5", "h6", "li", "blockquote"].includes(tag)) return `\n${kids}\n`;
+    if (tag === "td" || tag === "th") return `${kids}\t`;
+    return kids;
+  };
+  return walk(d)
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n /g, "\n")
+    .replace(/ \n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 // ─── Action parsing ───────────────────────────────────────────────────────────
@@ -320,145 +334,80 @@ function TypingIndicator() {
   );
 }
 
-// ─── Inline markdown renderer ──────────────────────────────────────────────────
+// ─── Rich markdown renderer (react-markdown + remark-gfm) ──────────────────
 
-function renderInline(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  const regex = /(\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
-  let lastIndex = 0;
-  let match;
-  let key = 0;
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
-    if (match[2] && match[3]) parts.push(<a key={key++} href={match[3]} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:opacity-80">{match[2]}</a>);
-    else if (match[4]) parts.push(<strong key={key++} className="font-semibold text-foreground">{match[4]}</strong>);
-    else if (match[5]) parts.push(<em key={key++}>{match[5]}</em>);
-    else if (match[6]) parts.push(<code key={key++} className="px-1.5 py-0.5 rounded-md bg-muted/80 text-[12px] font-mono text-foreground">{match[6]}</code>);
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
-  return parts.length ? parts : [text];
-}
-
-function renderMarkdown(text: string): React.ReactNode[] {
-  const elements: React.ReactNode[] = [];
-  const rawLines = text.split("\n");
-  let i = 0;
-  let key = 0;
-
-  while (i < rawLines.length) {
-    const line = rawLines[i];
-    const trimmed = line.trim();
-
-    if (!trimmed) { i++; continue; }
-
-    if (/^-{3,}$|^\*{3,}$|^_{3,}$/.test(trimmed)) {
-      elements.push(<hr key={key++} className="my-4 border-t border-border/30" />);
-      i++; continue;
-    }
-
-    if (/^```/.test(trimmed)) {
-      const codeLines: string[] = [];
-      i++;
-      while (i < rawLines.length && !/^```/.test(rawLines[i].trim())) {
-        codeLines.push(rawLines[i]);
-        i++;
+function MarkdownContent({ content }: { content: string }) {
+  const components = useMemo(() => ({
+    h1: ({ children, ...props }: any) => <h1 className="text-lg font-bold text-foreground mt-4 mb-2 tracking-tight" {...props}>{children}</h1>,
+    h2: ({ children, ...props }: any) => <h2 className="text-base font-bold text-foreground mt-3.5 mb-1.5 tracking-tight" {...props}>{children}</h2>,
+    h3: ({ children, ...props }: any) => <h3 className="text-sm font-semibold text-foreground mt-3 mb-1" {...props}>{children}</h3>,
+    h4: ({ children, ...props }: any) => <h4 className="text-sm font-semibold text-foreground mt-2 mb-1" {...props}>{children}</h4>,
+    p: ({ children, ...props }: any) => <p className="my-1.5 first:mt-0 last:mb-0 leading-relaxed" {...props}>{children}</p>,
+    strong: ({ children, ...props }: any) => <strong className="font-semibold text-foreground" {...props}>{children}</strong>,
+    em: ({ children, ...props }: any) => <em className="italic text-foreground/80" {...props}>{children}</em>,
+    a: ({ children, href, ...props }: any) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 decoration-primary/40 hover:decoration-primary transition-colors" {...props}>{children}</a>,
+    ul: ({ children, className, ...props }: any) => {
+      const isTaskList = className === "contains-task-list";
+      return <ul className={cn("my-2 space-y-1.5", isTaskList ? "pl-0 list-none" : "pl-0 list-none chat-ul")} {...props}>{children}</ul>;
+    },
+    ol: ({ children, ...props }: any) => <ol className="my-2 space-y-1.5 pl-0 list-none chat-ol" {...props}>{children}</ol>,
+    li: ({ children, className, node, ...props }: any) => {
+      const isTask = className === "task-list-item";
+      const parentTag = node?.parentNode?.tagName;
+      const isOrdered = parentTag === "ol";
+      if (isTask) {
+        return <li className="flex gap-2 items-start leading-relaxed" {...props}>{children}</li>;
       }
-      i++;
-      elements.push(
-        <pre key={key++} className="my-3 rounded-lg bg-muted/60 border border-border/30 px-4 py-3 overflow-x-auto">
-          <code className="text-[12px] font-mono text-foreground/90 leading-relaxed">{codeLines.join("\n")}</code>
-        </pre>
+      const siblings = node?.parentNode?.children?.filter((c: any) => c.tagName === "li") || [];
+      const idx = siblings.indexOf(node);
+      return (
+        <li className="flex gap-2.5 items-start leading-relaxed" {...props}>
+          {isOrdered ? (
+            <span className="text-primary/70 text-xs font-semibold mt-[2px] flex-shrink-0 min-w-[20px] tabular-nums">{idx + 1}.</span>
+          ) : (
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-[7px] flex-shrink-0" />
+          )}
+          <span className="flex-1">{children}</span>
+        </li>
       );
-      continue;
-    }
-
-    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)/);
-    if (headingMatch) {
-      const level = headingMatch[1].length;
-      const sizes = ["text-lg font-bold", "text-base font-bold", "text-sm font-semibold", "text-sm font-semibold"];
-      elements.push(
-        <div key={key++} className={`${sizes[level - 1]} text-foreground mt-3 mb-1.5`}>
-          {renderInline(headingMatch[2])}
-        </div>
-      );
-      i++; continue;
-    }
-
-    if (/^>\s?/.test(trimmed)) {
-      const quoteLines: string[] = [];
-      while (i < rawLines.length && /^>\s?/.test(rawLines[i].trim())) {
-        quoteLines.push(rawLines[i].trim().replace(/^>\s?/, ""));
-        i++;
+    },
+    blockquote: ({ children, ...props }: any) => (
+      <blockquote className="my-3 pl-4 border-l-[3px] border-primary/30 bg-primary/[0.03] rounded-r-lg py-2 pr-3 text-foreground/75 italic" {...props}>{children}</blockquote>
+    ),
+    code: ({ inline, className, children, ...props }: any) => {
+      if (inline) {
+        return <code className="px-1.5 py-0.5 rounded-md bg-muted text-[12.5px] font-mono text-primary/90 border border-border/40" {...props}>{children}</code>;
       }
-      elements.push(
-        <blockquote key={key++} className="my-2 pl-3 border-l-2 border-primary/30 text-foreground/70 italic">
-          {quoteLines.map((ql, qi) => <span key={qi}>{renderInline(ql)}{qi < quoteLines.length - 1 && <br />}</span>)}
-        </blockquote>
+      return (
+        <code className="text-[12px] font-mono text-foreground/85 leading-relaxed block" {...props}>{children}</code>
       );
-      continue;
-    }
+    },
+    pre: ({ children, ...props }: any) => (
+      <pre className="my-3 rounded-xl bg-[hsl(var(--foreground)/0.04)] border border-border/40 px-4 py-3.5 overflow-x-auto" {...props}>{children}</pre>
+    ),
+    hr: (props: any) => <hr className="my-5 border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" {...props} />,
+    table: ({ children, ...props }: any) => (
+      <div className="my-3 overflow-x-auto rounded-xl border border-border/40">
+        <table className="w-full text-sm" {...props}>{children}</table>
+      </div>
+    ),
+    thead: ({ children, ...props }: any) => <thead className="bg-muted/50 border-b border-border/40" {...props}>{children}</thead>,
+    th: ({ children, ...props }: any) => <th className="px-3 py-2 text-left text-xs font-semibold text-foreground/70 uppercase tracking-wider" {...props}>{children}</th>,
+    td: ({ children, ...props }: any) => <td className="px-3 py-2 text-sm border-t border-border/20" {...props}>{children}</td>,
+    input: ({ checked, ...props }: any) => (
+      <span className={cn("inline-flex items-center justify-center w-4 h-4 rounded border mr-2 flex-shrink-0 mt-[2px]",
+        checked ? "bg-primary border-primary text-primary-foreground" : "border-border/60 bg-background"
+      )}>
+        {checked && <Check size={10} strokeWidth={3} />}
+      </span>
+    ),
+  }), []);
 
-    if (/^\s*[-•]\s/.test(trimmed)) {
-      const listItems: string[] = [];
-      while (i < rawLines.length && /^\s*[-•]\s/.test(rawLines[i].trim())) {
-        listItems.push(rawLines[i].trim().replace(/^\s*[-•]\s+/, ""));
-        i++;
-      }
-      elements.push(
-        <ul key={key++} className="my-2 space-y-1 ml-1">
-          {listItems.map((item, li) => (
-            <li key={li} className="flex gap-2 items-start">
-              <span className="text-muted-foreground/50 mt-[3px] flex-shrink-0 text-[8px]">●</span>
-              <span>{renderInline(item)}</span>
-            </li>
-          ))}
-        </ul>
-      );
-      continue;
-    }
-
-    if (/^\s*\d+\.\s/.test(trimmed)) {
-      const listItems: { num: string; text: string }[] = [];
-      while (i < rawLines.length && /^\s*\d+\.\s/.test(rawLines[i].trim())) {
-        const m = rawLines[i].trim().match(/^\s*(\d+)\.\s+(.*)/);
-        listItems.push({ num: m?.[1] || `${listItems.length + 1}`, text: m?.[2] || "" });
-        i++;
-      }
-      elements.push(
-        <ol key={key++} className="my-2 space-y-1 ml-1">
-          {listItems.map((item, li) => (
-            <li key={li} className="flex gap-2 items-start">
-              <span className="text-muted-foreground/60 text-xs font-mono mt-[1px] flex-shrink-0 min-w-[18px]">{item.num}.</span>
-              <span>{renderInline(item.text)}</span>
-            </li>
-          ))}
-        </ol>
-      );
-      continue;
-    }
-
-    const paraLines: string[] = [];
-    while (i < rawLines.length && rawLines[i].trim() && !/^(#{1,4}\s|```|>\s?|- |\d+\.\s|-{3,}|\*{3,}|_{3,})/.test(rawLines[i].trim())) {
-      paraLines.push(rawLines[i]);
-      i++;
-    }
-    if (paraLines.length > 0) {
-      elements.push(
-        <p key={key++} className="my-1.5 first:mt-0 last:mb-0">
-          {paraLines.map((pl, pli) => (
-            <span key={pli}>
-              {renderInline(pl)}
-              {pli < paraLines.length - 1 && <br />}
-            </span>
-          ))}
-        </p>
-      );
-    } else {
-      i++;
-    }
-  }
-  return elements;
+  return (
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      {content}
+    </ReactMarkdown>
+  );
 }
 
 // ─── Message components ─────────────────────────────────────────────────────────
@@ -503,8 +452,8 @@ function MessageBubble({ msg, executedActions }: { msg: Message; executedActions
           <Zap size={12} className="text-primary" />
         </div>
         <div className="flex-1 min-w-0 group">
-          <div className="text-[13.5px] text-foreground/90 leading-[1.75]">
-            {renderMarkdown(cleanText)}
+          <div className="text-[13.5px] text-foreground/90 leading-[1.75] chat-markdown">
+            <MarkdownContent content={cleanText} />
           </div>
           <div className="mt-2 flex items-center gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <CopyButton text={cleanText} />
@@ -596,10 +545,11 @@ export default function Chat() {
     const plain = htmlToText(html);
     const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
 
-    // Detect if there's real body content beyond the header fields
-    const headerLineRe = /^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To|De|Objet)\s*[:\s]/i;
-    const nonHeaderContent = plain.split("\n").filter(l => l.trim() && !headerLineRe.test(l.trim()));
-    const emailHasBody = nonHeaderContent.join("").replace(/\s/g, "").length > 120;
+    const headerLineRe = /^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To|De|Objet|Importance|Attachments?)\s*[:\s]/i;
+    const lines = plain.split("\n").map(l => l.trim()).filter(Boolean);
+    const nonHeaderLines = lines.filter(l => !headerLineRe.test(l));
+    const bodyText = nonHeaderLines.join(" ").replace(/\s+/g, " ").trim();
+    const emailHasBody = bodyText.length > 80;
 
     return {
       id: crypto.randomUUID(),

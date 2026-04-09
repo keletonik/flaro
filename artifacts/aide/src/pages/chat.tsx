@@ -1113,8 +1113,8 @@ export default function Chat() {
               onClick={() => handleSend()}
               disabled={!canSend}
               className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
-                canSend ? "bg-foreground text-background hover:opacity-80" : "bg-muted text-muted-foreground/30 cursor-not-allowed"
+                "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all active:scale-95",
+                canSend ? "bg-primary text-primary-foreground hover:brightness-110" : "bg-muted text-muted-foreground/30 cursor-not-allowed"
               )}
             >
               <Send size={14} strokeWidth={2.5} />

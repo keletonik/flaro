@@ -56,10 +56,10 @@
   --elevate-2: rgba(0,0,0,0.04);
   --glass-bg: rgba(250,249,246,0.80);
   --glass-border: rgba(0,0,0,0.06);
-  --user-bubble: 25 40% 92%;
-  --user-bubble-fg: 25 30% 20%;
+  --user-bubble: 35 15% 85%;
+  --user-bubble-fg: 40 10% 10%;
 
-  --background: 36 25% 97%;
+  --background: 43 18% 96%;
   --foreground: 25 10% 15%;
   --border: 30 12% 90%;
   --input: 30 12% 86%;
@@ -71,7 +71,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 25 10% 15%;
 
-  --primary: 18 70% 52%;
+  --primary: 18 60% 44%;
   --primary-foreground: 0 0% 100%;
 
   --secondary: 30 15% 94%;
@@ -126,10 +126,10 @@
   --elevate-2: rgba(255,255,255,0.06);
   --glass-bg: rgba(28,26,24,0.85);
   --glass-border: rgba(255,255,255,0.06);
-  --user-bubble: 18 40% 25%;
-  --user-bubble-fg: 30 20% 90%;
+  --user-bubble: 40 5% 22%;
+  --user-bubble-fg: 40 10% 93%;
 
-  --background: 30 6% 10%;
+  --background: 38 6% 16%;
   --foreground: 30 10% 92%;
   --border: 30 5% 18%;
   --input: 30 5% 20%;
@@ -389,14 +389,23 @@
   max-width: 720px;
 }
 .chat-input-bar {
-  border: 1.5px solid hsl(var(--border));
+  border: none;
   border-radius: 24px;
   background: hsl(var(--card));
-  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0.25rem 1.25rem rgba(0,0,0,0.035), 0 0 0 0.5px rgba(0,0,0,0.08);
+  transition: box-shadow 0.2s;
+}
+.chat-input-bar:hover {
+  box-shadow: 0 0.25rem 1.25rem rgba(0,0,0,0.05), 0 0 0 0.5px rgba(0,0,0,0.12);
 }
 .chat-input-bar:focus-within {
-  border-color: hsl(var(--primary) / 0.4);
-  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
+  box-shadow: 0 0.25rem 1.25rem rgba(0,0,0,0.075), 0 0 0 0.5px rgba(0,0,0,0.15);
+}
+.dark .chat-input-bar {
+  box-shadow: 0 0.25rem 1.25rem rgba(0,0,0,0.4), 0 0 0 0.5px rgba(108,106,96,0.15);
+}
+.dark .chat-input-bar:focus-within {
+  box-shadow: 0 0.25rem 1.25rem rgba(0,0,0,0.5), 0 0 0 0.5px rgba(108,106,96,0.3);
 }
 
 /* ===== UTILITIES ===== */

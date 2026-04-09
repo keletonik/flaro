@@ -14,6 +14,12 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
+    const migrated = localStorage.getItem("aide-theme-dark-default");
+    if (!migrated) {
+      localStorage.setItem("aide-theme-dark-default", "1");
+      localStorage.setItem("aide-theme", "dark");
+      return "dark";
+    }
     const existing = localStorage.getItem("aide-theme");
     if (existing) return existing as Theme;
     return "dark";

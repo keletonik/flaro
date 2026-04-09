@@ -6,6 +6,7 @@ import notesRouter from "./notes";
 import toolboxRouter from "./toolbox";
 import dashboardRouter from "./dashboard";
 import todosRouter from "./todos";
+import projectsRouter from "./projects";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(notesRouter);
 router.use(toolboxRouter);
 router.use(dashboardRouter);
 router.use(todosRouter);
+router.use(projectsRouter);
 
 export default router;

@@ -238,18 +238,15 @@ function EmailTriageCard({ data }: { data: Record<string, string | boolean | nul
 }
 
 function AttachmentChip({
-  att, onRemove, onBodyChange,
+  att, onRemove,
 }: {
   att: Attachment;
   onRemove: () => void;
   onBodyChange?: (body: string) => void;
 }) {
-  const [bodyInput, setBodyInput] = useState(att.emailBody || "");
-
   if (att.type === "email") {
     return (
       <div className="w-full bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl overflow-hidden">
-        {/* ── Header row ── */}
         <div className="flex items-center gap-2 px-3 py-2">
           <div className="w-7 h-7 bg-amber-100 dark:bg-amber-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
             <Mail size={14} className="text-amber-600 dark:text-amber-400" />
@@ -264,37 +261,19 @@ function AttachmentChip({
             <X size={12} />
           </button>
         </div>
-
-        {/* ── Body area ── */}
-        {att.emailHasBody ? (
-          <div className="border-t border-amber-200 dark:border-amber-800 px-3 py-1.5">
+        <div className="border-t border-amber-200 dark:border-amber-800 px-3 py-1.5">
+          {att.emailHasBody ? (
             <div className="flex items-center gap-1">
               <Check size={10} className="text-emerald-500 flex-shrink-0" />
               <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Full email captured — ready to triage</p>
             </div>
-          </div>
-        ) : (
-          <div className="border-t border-amber-200 dark:border-amber-800">
-            {!bodyInput && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100/60 dark:bg-amber-900/20">
-                <AlertTriangle size={10} className="text-amber-600 dark:text-amber-500 flex-shrink-0" />
-                <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
-                  Body not in drag payload — paste it below for full triage
-                </p>
-              </div>
-            )}
-            <textarea
-              placeholder={`Open the email → Ctrl+A → Ctrl+C → paste here…`}
-              value={bodyInput}
-              onChange={e => {
-                setBodyInput(e.target.value);
-                onBodyChange?.(e.target.value);
-              }}
-              onPaste={e => e.stopPropagation()}
-              className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground/60 resize-none focus:outline-none px-3 py-2 leading-relaxed min-h-[60px] max-h-[160px]"
-            />
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center gap-1">
+              <AlertTriangle size={10} className="text-amber-500 flex-shrink-0" />
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Header only — paste email body (Ctrl+V) for full triage, or send as-is</p>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -757,40 +736,66 @@ export default function Chat() {
       }
     }
 
-    // 2. Pasted HTML — only treat as email if the plain-text version has email headers
+    // 2. Pasted HTML — treat as email if it has email headers
     const html = e.clipboardData.getData("text/html");
     if (html && html.trim().length > 20 && looksLikeEmail(htmlToText(html))) {
       const emailAtt = processHtmlEmail(html);
       if (emailAtt) {
         e.preventDefault();
-        setAttachments(prev => [...prev, emailAtt]);
+        // If there's already a header-only email chip, merge the body into it
+        setAttachments(prev => {
+          const existingIdx = prev.findIndex(a => a.type === "email" && !a.emailHasBody);
+          if (existingIdx >= 0) {
+            const updated = [...prev];
+            updated[existingIdx] = { ...updated[existingIdx], emailHtml: (updated[existingIdx].emailHtml || "") + "\n" + (emailAtt.emailHtml || ""), emailHasBody: true };
+            return updated;
+          }
+          return [...prev, emailAtt];
+        });
+        toast({ title: "Email body captured", description: "Full email ready — send to triage." });
+        return;
+      }
+    }
+
+    // 3. Pasted plain text — check if it's an email or body content for an existing chip
+    const text = e.clipboardData.getData("text/plain");
+    if (text && text.trim().length > 30) {
+      // If there's a header-only email attachment, merge this paste as the body
+      const hasHeaderOnlyEmail = attachments.some(a => a.type === "email" && !a.emailHasBody);
+      if (hasHeaderOnlyEmail) {
+        e.preventDefault();
+        setAttachments(prev => prev.map(a =>
+          a.type === "email" && !a.emailHasBody
+            ? { ...a, emailHtml: (a.emailHtml || "") + `\n<hr/>\n<div style="white-space:pre-wrap">${text.replace(/</g, "&lt;")}</div>`, emailHasBody: true }
+            : a
+        ));
+        toast({ title: "Email body merged", description: "Full email ready — send to triage." });
+        return;
+      }
+
+      // Detect complete email and create a new attachment
+      if (looksLikeEmail(text)) {
+        e.preventDefault();
+        const meta = {
+          from:    text.match(/^From:\s*(.+)/im)?.[1]?.trim() || "",
+          subject: text.match(/^Subject:\s*(.+)/im)?.[1]?.trim() || "Email",
+          date:    text.match(/^(?:Date|Sent):\s*(.+)/im)?.[1]?.trim() || "",
+        };
+        const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
+        setAttachments(prev => [...prev, {
+          id: crypto.randomUUID(), type: "email",
+          name: `Email: ${meta.subject.slice(0, 50)}`,
+          emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text.replace(/</g, "&lt;")}</pre>`,
+          emailSummary: parts.join(" · ").slice(0, 120),
+          emailHasBody: true,
+        }]);
         toast({ title: "Email pasted", description: "AIDE will triage it automatically when you send." });
         return;
       }
     }
 
-    // 3. Pasted plain text — only intercept if it looks like an email
-    const text = e.clipboardData.getData("text/plain");
-    if (text && looksLikeEmail(text)) {
-      e.preventDefault();
-      const meta = {
-        from:    text.match(/^From:\s*(.+)/im)?.[1]?.trim() || "",
-        subject: text.match(/^Subject:\s*(.+)/im)?.[1]?.trim() || "Email",
-        date:    text.match(/^(?:Date|Sent):\s*(.+)/im)?.[1]?.trim() || "",
-      };
-      const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
-      setAttachments(prev => [...prev, {
-        id: crypto.randomUUID(), type: "email",
-        name: `Email: ${meta.subject.slice(0, 50)}`,
-        emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text.replace(/</g, "&lt;")}</pre>`,
-        emailSummary: parts.join(" · ").slice(0, 120),
-      }]);
-      toast({ title: "Email pasted", description: "AIDE will triage it automatically when you send." });
-      return;
-    }
-
     // Otherwise: let the browser handle it normally (text into textarea)
-  }, [processHtmlEmail, processFile, toast]);
+  }, [processHtmlEmail, processFile, toast, attachments]);
 
   const removeAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id));
   const updateAttachmentBody = (id: string, body: string) =>
@@ -881,11 +886,7 @@ export default function Chat() {
       // Always supply non-empty content — backend will merge with email HTML
       const body: Record<string, unknown> = { content: msg || "Please triage and analyse the attached content." };
       if (emailAtt?.emailHtml) {
-        // Merge user-pasted body into the emailHtml if provided
-        const pastedBody = emailAtt.emailBody?.trim();
-        body.emailHtml = pastedBody
-          ? emailAtt.emailHtml + `\n<hr/>\n<div style="white-space:pre-wrap">${pastedBody.replace(/</g, "&lt;")}</div>`
-          : emailAtt.emailHtml;
+        body.emailHtml = emailAtt.emailHtml;
       }
       if (imageAtts.length > 0) body.images = imageAtts.map(a => a.preview as string);
 

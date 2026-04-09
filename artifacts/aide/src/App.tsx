@@ -11,11 +11,12 @@ import Toolbox from "@/pages/toolbox";
 import JobDetail from "@/pages/job-detail";
 import Schedule from "@/pages/schedule";
 import Todos from "@/pages/todos";
+import Projects from "@/pages/projects";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
-  CalendarDays, Sun, Moon, CheckSquare
+  CalendarDays, Sun, Moon, CheckSquare, FolderKanban
 } from "lucide-react";
 
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ const navItems = [
   { path: "/chat", icon: MessageCircle, label: "Chat" },
   { path: "/jobs", icon: Briefcase, label: "Jobs" },
   { path: "/todos", icon: CheckSquare, label: "To-Do" },
+  { path: "/projects", icon: FolderKanban, label: "Projects" },
   { path: "/notes", icon: FileText, label: "Notes" },
   { path: "/schedule", icon: CalendarDays, label: "Schedule", sidebarOnly: true },
   { path: "/toolbox", icon: Wrench, label: "Toolbox", sidebarOnly: true },
@@ -203,6 +205,7 @@ function Router() {
       <Route path="/jobs/:id" component={() => <Layout><JobDetail /></Layout>} />
       <Route path="/notes" component={() => <Layout><Notes /></Layout>} />
       <Route path="/todos" component={() => <Layout><Todos /></Layout>} />
+      <Route path="/projects" component={() => <Layout><Projects /></Layout>} />
       <Route path="/toolbox" component={() => <Layout><Toolbox /></Layout>} />
       <Route component={NotFound} />
     </Switch>

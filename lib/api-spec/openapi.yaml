@@ -21,6 +21,8 @@ tags:
     description: Dashboard summary data
   - name: todos
     description: To-do checklist management
+  - name: projects
+    description: Project and task management
 paths:
   /healthz:
     get:
@@ -549,6 +551,195 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectBody"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /projects/{id}:
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectBody"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /projects/{projectId}/tasks:
+    get:
+      operationId: listProjectTasks
+      tags: [projects]
+      summary: List tasks for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectTask"
+    post:
+      operationId: createProjectTask
+      tags: [projects]
+      summary: Create a task in a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectTaskBody"
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectTask"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /projects/{projectId}/tasks/{taskId}:
+    patch:
+      operationId: updateProjectTask
+      tags: [projects]
+      summary: Update a task
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectTaskBody"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectTask"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteProjectTask
+      tags: [projects]
+      summary: Delete a task
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -963,6 +1154,154 @@ components:
           enum: [Work, Personal, "Follow-up", Compliance, Admin]
         dueDate:
           type: string
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [Active, "On Hold", Completed, Archived]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        colour:
+          type: string
+        dueDate:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - status
+        - priority
+        - createdAt
+        - updatedAt
+    CreateProjectBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [Active, "On Hold", Completed, Archived]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        colour:
+          type: string
+        dueDate:
+          type: string
+      required:
+        - name
+    UpdateProjectBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [Active, "On Hold", Completed, Archived]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        colour:
+          type: string
+        dueDate:
+          type: string
+    ProjectTask:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: ["To Do", "In Progress", Review, Done]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        assignee:
+          type: string
+          nullable: true
+        dueDate:
+          type: string
+          nullable: true
+        position:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - projectId
+        - title
+        - status
+        - priority
+        - position
+        - createdAt
+        - updatedAt
+    CreateProjectTaskBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: ["To Do", "In Progress", Review, Done]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        assignee:
+          type: string
+        dueDate:
+          type: string
+        position:
+          type: integer
+      required:
+        - title
+    UpdateProjectTaskBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: ["To Do", "In Progress", Review, Done]
+        priority:
+          type: string
+          enum: [Critical, High, Medium, Low]
+        assignee:
+          type: string
+        dueDate:
+          type: string
+        position:
+          type: integer
 
     ApiError:
       type: object

@@ -4,3 +4,4 @@ export * from "./jobs";
 export * from "./notes";
 export * from "./toolbox";
 export * from "./todos";
+export * from "./projects";

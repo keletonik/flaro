@@ -455,6 +455,148 @@ export const DeleteTodoParams = zod.object({
 });
 
 /**
+ * @summary List all projects
+ */
+export const ListProjectsResponseItem = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  status: zod.enum(["Active", "On Hold", "Completed", "Archived"]),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]),
+  colour: zod.string().optional(),
+  dueDate: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
+
+/**
+ * @summary Create a project
+ */
+export const CreateProjectBody = zod.object({
+  name: zod.string(),
+  description: zod.string().optional(),
+  status: zod.enum(["Active", "On Hold", "Completed", "Archived"]).optional(),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]).optional(),
+  colour: zod.string().optional(),
+  dueDate: zod.string().optional(),
+});
+
+/**
+ * @summary Update a project
+ */
+export const UpdateProjectParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateProjectBody = zod.object({
+  name: zod.string().optional(),
+  description: zod.string().optional(),
+  status: zod.enum(["Active", "On Hold", "Completed", "Archived"]).optional(),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]).optional(),
+  colour: zod.string().optional(),
+  dueDate: zod.string().optional(),
+});
+
+export const UpdateProjectResponse = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  status: zod.enum(["Active", "On Hold", "Completed", "Archived"]),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]),
+  colour: zod.string().optional(),
+  dueDate: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Delete a project
+ */
+export const DeleteProjectParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * @summary List tasks for a project
+ */
+export const ListProjectTasksParams = zod.object({
+  projectId: zod.coerce.string(),
+});
+
+export const ListProjectTasksResponseItem = zod.object({
+  id: zod.string(),
+  projectId: zod.string(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  status: zod.enum(["To Do", "In Progress", "Review", "Done"]),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]),
+  assignee: zod.string().nullish(),
+  dueDate: zod.string().nullish(),
+  position: zod.number(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListProjectTasksResponse = zod.array(ListProjectTasksResponseItem);
+
+/**
+ * @summary Create a task in a project
+ */
+export const CreateProjectTaskParams = zod.object({
+  projectId: zod.coerce.string(),
+});
+
+export const CreateProjectTaskBody = zod.object({
+  title: zod.string(),
+  description: zod.string().optional(),
+  status: zod.enum(["To Do", "In Progress", "Review", "Done"]).optional(),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]).optional(),
+  assignee: zod.string().optional(),
+  dueDate: zod.string().optional(),
+  position: zod.number().optional(),
+});
+
+/**
+ * @summary Update a task
+ */
+export const UpdateProjectTaskParams = zod.object({
+  projectId: zod.coerce.string(),
+  taskId: zod.coerce.string(),
+});
+
+export const UpdateProjectTaskBody = zod.object({
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  status: zod.enum(["To Do", "In Progress", "Review", "Done"]).optional(),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]).optional(),
+  assignee: zod.string().optional(),
+  dueDate: zod.string().optional(),
+  position: zod.number().optional(),
+});
+
+export const UpdateProjectTaskResponse = zod.object({
+  id: zod.string(),
+  projectId: zod.string(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  status: zod.enum(["To Do", "In Progress", "Review", "Done"]),
+  priority: zod.enum(["Critical", "High", "Medium", "Low"]),
+  assignee: zod.string().nullish(),
+  dueDate: zod.string().nullish(),
+  position: zod.number(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Delete a task
+ */
+export const DeleteProjectTaskParams = zod.object({
+  projectId: zod.coerce.string(),
+  taskId: zod.coerce.string(),
+});
+
+/**
  * @summary Get dashboard summary stats
  */
 export const GetDashboardSummaryResponse = zod.object({

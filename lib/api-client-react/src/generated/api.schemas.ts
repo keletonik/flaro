@@ -373,6 +373,189 @@ export interface UpdateTodoBody {
   dueDate?: string;
 }
 
+export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
+
+export const ProjectStatus = {
+  Active: "Active",
+  On_Hold: "On Hold",
+  Completed: "Completed",
+  Archived: "Archived",
+} as const;
+
+export type ProjectPriority =
+  (typeof ProjectPriority)[keyof typeof ProjectPriority];
+
+export const ProjectPriority = {
+  Critical: "Critical",
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
+} as const;
+
+export interface Project {
+  id: string;
+  name: string;
+  description?: string | null;
+  status: ProjectStatus;
+  priority: ProjectPriority;
+  colour?: string;
+  dueDate?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateProjectBodyStatus =
+  (typeof CreateProjectBodyStatus)[keyof typeof CreateProjectBodyStatus];
+
+export const CreateProjectBodyStatus = {
+  Active: "Active",
+  On_Hold: "On Hold",
+  Completed: "Completed",
+  Archived: "Archived",
+} as const;
+
+export type CreateProjectBodyPriority =
+  (typeof CreateProjectBodyPriority)[keyof typeof CreateProjectBodyPriority];
+
+export const CreateProjectBodyPriority = {
+  Critical: "Critical",
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
+} as const;
+
+export interface CreateProjectBody {
+  name: string;
+  description?: string;
+  status?: CreateProjectBodyStatus;
+  priority?: CreateProjectBodyPriority;
+  colour?: string;
+  dueDate?: string;
+}
+
+export type UpdateProjectBodyStatus =
+  (typeof UpdateProjectBodyStatus)[keyof typeof UpdateProjectBodyStatus];
+
+export const UpdateProjectBodyStatus = {
+  Active: "Active",
+  On_Hold: "On Hold",
+  Completed: "Completed",
+  Archived: "Archived",
+} as const;
+
+export type UpdateProjectBodyPriority =
+  (typeof UpdateProjectBodyPriority)[keyof typeof UpdateProjectBodyPriority];
+
+export const UpdateProjectBodyPriority = {
+  Critical: "Critical",
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
+} as const;
+
+export interface UpdateProjectBody {
+  name?: string;
+  description?: string;
+  status?: UpdateProjectBodyStatus;
+  priority?: UpdateProjectBodyPriority;
+  colour?: string;
+  dueDate?: string;
+}
+
+export type ProjectTaskStatus =
+  (typeof ProjectTaskStatus)[keyof typeof ProjectTaskStatus];
+
+export const ProjectTaskStatus = {
+  To_Do: "To Do",
+  In_Progress: "In Progress",
+  Review: "Review",
+  Done: "Done",
+} as const;
+
+export type ProjectTaskPriority =
+  (typeof ProjectTaskPriority)[keyof typeof ProjectTaskPriority];
+
+export const ProjectTaskPriority = {
+  Critical: "Critical",
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
+} as const;
+
+export interface ProjectTask {
+  id: string;
+  projectId: string;
+  title: string;
+  description?: string | null;
+  status: ProjectTaskStatus;
+  priority: ProjectTaskPriority;
+  assignee?: string | null;
+  dueDate?: string | null;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateProjectTaskBodyStatus =
+  (typeof CreateProjectTaskBodyStatus)[keyof typeof CreateProjectTaskBodyStatus];
+
+export const CreateProjectTaskBodyStatus = {
+  To_Do: "To Do",
+  In_Progress: "In Progress",
+  Review: "Review",
+  Done: "Done",
+} as const;
+
+export type CreateProjectTaskBodyPriority =
+  (typeof CreateProjectTaskBodyPriority)[keyof typeof CreateProjectTaskBodyPriority];
+
+export const CreateProjectTaskBodyPriority = {
+  Critical: "Critical",
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
+} as const;
+
+export interface CreateProjectTaskBody {
+  title: string;
+  description?: string;
+  status?: CreateProjectTaskBodyStatus;
+  priority?: CreateProjectTaskBodyPriority;
+  assignee?: string;
+  dueDate?: string;
+  position?: number;
+}
+
+export type UpdateProjectTaskBodyStatus =
+  (typeof UpdateProjectTaskBodyStatus)[keyof typeof UpdateProjectTaskBodyStatus];
+
+export const UpdateProjectTaskBodyStatus = {
+  To_Do: "To Do",
+  In_Progress: "In Progress",
+  Review: "Review",
+  Done: "Done",
+} as const;
+
+export type UpdateProjectTaskBodyPriority =
+  (typeof UpdateProjectTaskBodyPriority)[keyof typeof UpdateProjectTaskBodyPriority];
+
+export const UpdateProjectTaskBodyPriority = {
+  Critical: "Critical",
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
+} as const;
+
+export interface UpdateProjectTaskBody {
+  title?: string;
+  description?: string;
+  status?: UpdateProjectTaskBodyStatus;
+  priority?: UpdateProjectTaskBodyPriority;
+  assignee?: string;
+  dueDate?: string;
+  position?: number;
+}
+
 export interface ApiError {
   error: string;
 }

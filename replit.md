@@ -43,6 +43,8 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - `/jobs` — List + Kanban board toggle (Monday.com-style); status filter tabs; search; full CRUD modal
 - `/jobs/:id` — Job detail with inline status/tech editing, contact call/email links
 - `/notes` — Notion-style: list/grid toggle, category tabs with counts, expandable cards, mark done, search
+- `/todos` — To-do checklist with quick-add, priority/category badges, inline edit, filter tabs (All/Active/Done)
+- `/projects` — Monday.com-style project organiser: project cards with colour bars, status/priority badges, progress bars; expand to see tasks in list or Kanban board view; full CRUD for projects and tasks
 - `/toolbox` — Toolbox briefing notes with TB-XXX refs, mark briefed, export/copy to clipboard
 
 ### Design System
@@ -62,6 +64,12 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - `GET/PUT/DELETE /api/jobs/:id` — job CRUD
 - `GET/POST /api/notes` — list/create notes
 - `GET/PUT/DELETE /api/notes/:id` — note CRUD
+- `GET/POST /api/todos` — list/create todos
+- `PATCH/DELETE /api/todos/:id` — update/delete todo
+- `GET/POST /api/projects` — list/create projects
+- `PATCH/DELETE /api/projects/:id` — update/delete project
+- `GET/POST /api/projects/:projectId/tasks` — list/create project tasks
+- `PATCH/DELETE /api/projects/:projectId/tasks/:taskId` — update/delete task (scoped to project)
 - `GET/POST /api/toolbox` — toolbox notes list/create
 - `PUT/DELETE /api/toolbox/:id` — toolbox note CRUD
 - `GET /api/anthropic/conversations/:id` — get conversation with messages
@@ -81,5 +89,8 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - `jobs` — id (UUID), task_number, site, address, client, contact_name/number/email, action_required, priority, status, assigned_tech, due_date, notes, uptick_notes
 - `notes` — id (UUID), text, category, owner, status
 - `toolbox` — id (UUID), text, ref (TB-XXX), status
+- `todos` — id (UUID), text, completed, priority, category, due_date
+- `projects` — id (UUID), name, description, status, priority, colour, due_date
+- `project_tasks` — id (UUID), project_id (FK→projects), title, description, status, priority, assignee, due_date, position
 - `conversations` — id (serial), title
 - `messages` — id (serial), conversation_id, role, content

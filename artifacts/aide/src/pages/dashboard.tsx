@@ -236,7 +236,7 @@ export default function Dashboard() {
   const metrics = [
     { label: "Critical",      value: summary?.critical  ?? 0, icon: AlertTriangle, color: "text-red-500",    bg: "bg-red-50 dark:bg-red-900/15",      ring: "ring-red-100 dark:ring-red-900/30" },
     { label: "High Priority", value: summary?.high       ?? 0, icon: TrendingUp,    color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-900/15", ring: "ring-orange-100 dark:ring-orange-900/30" },
-    { label: "Open Jobs",     value: summary?.open       ?? 0, icon: Briefcase,     color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-900/15",     ring: "ring-blue-100 dark:ring-blue-900/30" },
+    { label: "Active Jobs",    value: (summary as any)?.active ?? summary?.totalJobs ?? 0, icon: Briefcase,     color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-900/15",     ring: "ring-blue-100 dark:ring-blue-900/30" },
     { label: "Done Today",    value: summary?.doneToday  ?? 0, icon: CheckCircle2,  color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/15", ring: "ring-emerald-100 dark:ring-emerald-900/30" },
   ];
 

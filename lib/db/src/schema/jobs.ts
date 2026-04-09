@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -20,7 +20,11 @@ export const jobs = pgTable("jobs", {
   uptickNotes: text("uptick_notes").array().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => [
+  index("jobs_status_idx").on(table.status),
+  index("jobs_priority_idx").on(table.priority),
+  index("jobs_created_at_idx").on(table.createdAt),
+]);
 
 export const insertJobSchema = createInsertSchema(jobs).omit({
   createdAt: true,

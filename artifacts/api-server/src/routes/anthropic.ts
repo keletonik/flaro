@@ -198,6 +198,10 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
 
   let fullResponse = "";
+  let clientDisconnected = false;
+
+  // Abort the Claude stream if the client disconnects (saves tokens + avoids writes to closed socket)
+  req.on("close", () => { clientDisconnected = true; });
 
   try {
     const stream = anthropic.messages.stream({
@@ -208,17 +212,22 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
     });
 
     for await (const event of stream) {
+      if (clientDisconnected) { stream.abort(); break; }
       if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
         fullResponse += event.delta.text;
         res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
       }
     }
 
-    await db.insert(messages).values({ conversationId, role: "assistant", content: fullResponse });
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    if (!clientDisconnected && fullResponse) {
+      await db.insert(messages).values({ conversationId, role: "assistant", content: fullResponse });
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    }
   } catch (err: any) {
     console.error("Claude error:", err?.message || err);
-    res.write(`data: ${JSON.stringify({ error: "AI response failed. Please try again." })}\n\n`);
+    if (!clientDisconnected) {
+      res.write(`data: ${JSON.stringify({ error: "AI response failed. Please try again." })}\n\n`);
+    }
   }
 
   res.end();

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, X, LayoutGrid, List, ChevronRight, Filter } from "lucide-react";
+import { Plus, Search, X, LayoutGrid, List, Filter } from "lucide-react";
 import {
   useListJobs, useCreateJob, useUpdateJob, useDeleteJob,
   getListJobsQueryKey, getGetDashboardSummaryQueryKey

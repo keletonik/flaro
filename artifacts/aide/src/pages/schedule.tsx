@@ -230,7 +230,7 @@ export default function Schedule() {
       .map(j => ({
         id: `job-${j.id}`,
         title: `${j.taskNumber ? j.taskNumber + " — " : ""}${j.site}`,
-        date: j.dueDate!.slice(0, 10),
+        date: (j.dueDate as string).slice(0, 10),
         startHour: 9,
         endHour: 10,
         type: "job" as const,

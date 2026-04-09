@@ -14,7 +14,7 @@ import Todos from "@/pages/todos";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import {
-  Home, MessageCircle, Briefcase, FileText, Wrench,
+  LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare
 } from "lucide-react";
 
@@ -25,7 +25,7 @@ const queryClient = new QueryClient({
 });
 
 const navItems = [
-  { path: "/", icon: Home, label: "Home", exact: true },
+  { path: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
   { path: "/chat", icon: MessageCircle, label: "Chat" },
   { path: "/jobs", icon: Briefcase, label: "Jobs" },
   { path: "/todos", icon: CheckSquare, label: "To-Do" },
@@ -47,44 +47,48 @@ function ThemeToggle({ compact = false }: { compact?: boolean }) {
       onClick={toggleTheme}
       title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
       className={cn(
-        "flex items-center gap-2 rounded-lg transition-all duration-200",
+        "flex items-center gap-2.5 rounded-lg transition-all duration-200",
         compact
-          ? "w-8 h-8 justify-center text-muted-foreground hover:text-foreground hover:bg-muted"
-          : "px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted text-sm w-full"
+          ? "w-8 h-8 justify-center text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          : "px-3 py-2 text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs w-full font-medium"
       )}
     >
       {theme === "light"
-        ? <Moon size={16} strokeWidth={1.5} />
-        : <Sun size={16} strokeWidth={1.5} />
+        ? <Moon size={14} strokeWidth={1.75} />
+        : <Sun size={14} strokeWidth={1.75} />
       }
-      {!compact && <span className="font-medium">{theme === "light" ? "Dark mode" : "Light mode"}</span>}
+      {!compact && <span>{theme === "light" ? "Dark mode" : "Light mode"}</span>}
     </button>
   );
 }
 
 function SidebarNav() {
   const [location, setLocation] = useLocation();
-  const { theme } = useTheme();
+
+  const mainNav = navItems.filter(i => !i.path.match(/schedule|toolbox/));
+  const secondaryNav = navItems.filter(i => i.path.match(/schedule|toolbox/));
 
   return (
-    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 flex-col z-50 bg-sidebar border-r border-sidebar-border">
-      <div className="px-4 py-4 border-b border-sidebar-border">
+    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-52 flex-col z-50 bg-sidebar border-r border-sidebar-border">
+      {/* Logo area */}
+      <div className="px-4 pt-5 pb-4">
         <button
           onClick={() => setLocation("/")}
-          className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-xs tracking-tight">A</span>
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm flex-shrink-0">
+            <span className="text-white font-bold text-sm tracking-tighter">A</span>
           </div>
-          <div className="text-left">
-            <p className="text-sidebar-foreground font-bold text-sm tracking-tight">AIDE</p>
-            <p className="text-muted-foreground text-[10px]">Operations Assistant</p>
-          </div>
+          <span className="text-sidebar-foreground font-bold text-base tracking-tight">AIDE</span>
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-        {navItems.map((item) => {
+      {/* Divider */}
+      <div className="mx-4 h-px bg-sidebar-border mb-3" />
+
+      {/* Main nav */}
+      <nav className="flex-1 overflow-y-auto px-2 space-y-0.5">
+        {mainNav.map((item) => {
           const Icon = item.icon;
           const active = isActive(location, item);
           return (
@@ -93,24 +97,55 @@ function SidebarNav() {
               data-testid={`sidebar-nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
               onClick={() => setLocation(item.path)}
               className={cn(
-                "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 text-left group",
+                "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 text-left relative",
                 active
-                  ? "bg-accent text-primary"
-                  : "text-muted-foreground hover:text-sidebar-foreground hover:bg-muted"
+                  ? "bg-sidebar-accent text-white"
+                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
               )}
             >
-              <Icon size={16} strokeWidth={active ? 2.5 : 1.75} className="flex-shrink-0" />
-              <span className="flex-1">{item.label}</span>
-              {active && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+              {active && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-r-full" />
+              )}
+              <Icon size={15} strokeWidth={active ? 2.25 : 1.75} className="flex-shrink-0" />
+              <span className="flex-1 tracking-wide uppercase text-[10px]">{item.label}</span>
             </button>
           );
         })}
+
+        {/* Secondary nav group */}
+        <div className="pt-4 pb-1">
+          <p className="px-3 text-[9px] font-bold uppercase tracking-widest text-sidebar-foreground/25 mb-1">Tools</p>
+          {secondaryNav.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(location, item);
+            return (
+              <button
+                key={item.path}
+                data-testid={`sidebar-nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                onClick={() => setLocation(item.path)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 text-left relative",
+                  active
+                    ? "bg-sidebar-accent text-white"
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
+                )}
+              >
+                {active && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-r-full" />
+                )}
+                <Icon size={15} strokeWidth={active ? 2.25 : 1.75} className="flex-shrink-0" />
+                <span className="flex-1 tracking-wide uppercase text-[10px]">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
-      <div className="px-2 py-3 border-t border-sidebar-border space-y-0.5">
+      {/* Footer */}
+      <div className="px-2 pb-4 border-t border-sidebar-border pt-3 space-y-1">
         <ThemeToggle />
-        <div className="px-3 py-2">
-          <p className="text-[10px] text-muted-foreground">Mentaris · AIDE v1.0</p>
+        <div className="px-3 pt-1">
+          <p className="text-[9px] text-sidebar-foreground/25 font-medium tracking-widest uppercase">Mentaris · AIDE v1.0</p>
         </div>
       </div>
     </aside>
@@ -133,11 +168,11 @@ function BottomNav() {
               onClick={() => setLocation(item.path)}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]",
-                active ? "text-primary" : "text-muted-foreground"
+                active ? "text-primary" : "text-sidebar-foreground/40"
               )}
             >
-              <Icon size={20} strokeWidth={active ? 2.5 : 1.5} />
-              <span className="text-[9px] font-semibold tracking-wide uppercase">{item.label}</span>
+              <Icon size={20} strokeWidth={active ? 2.25 : 1.5} />
+              <span className="text-[9px] font-bold tracking-widest uppercase">{item.label}</span>
             </button>
           );
         })}
@@ -150,7 +185,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <SidebarNav />
-      <div className="md:ml-56 pb-16 md:pb-0 min-h-screen">
+      <div className="md:ml-52 pb-16 md:pb-0 min-h-screen">
         {children}
       </div>
       <BottomNav />

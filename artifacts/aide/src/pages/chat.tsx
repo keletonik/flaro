@@ -327,19 +327,162 @@ function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button onClick={() => { navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }); }}
-      className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100">
-      {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+      className="p-1 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 transition-all">
+      {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
     </button>
   );
 }
 
 function TypingIndicator() {
   return (
-    <div className="flex gap-1.5 px-3 py-3">
-      {[0,1,2].map(i => <div key={i} className="typing-dot w-2 h-2 rounded-full bg-muted-foreground/40" />)}
+    <div className="flex gap-1.5 px-1 py-3">
+      {[0,1,2].map(i => <div key={i} className="typing-dot w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />)}
     </div>
   );
 }
+
+// ─── Inline markdown renderer ──────────────────────────────────────────────────
+
+function renderInline(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    if (match[2] && match[3]) parts.push(<a key={key++} href={match[3]} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:opacity-80">{match[2]}</a>);
+    else if (match[4]) parts.push(<strong key={key++} className="font-semibold text-foreground">{match[4]}</strong>);
+    else if (match[5]) parts.push(<em key={key++}>{match[5]}</em>);
+    else if (match[6]) parts.push(<code key={key++} className="px-1.5 py-0.5 rounded-md bg-muted/80 text-[12px] font-mono text-foreground">{match[6]}</code>);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts.length ? parts : [text];
+}
+
+function renderMarkdown(text: string): React.ReactNode[] {
+  const elements: React.ReactNode[] = [];
+  const rawLines = text.split("\n");
+  let i = 0;
+  let key = 0;
+
+  while (i < rawLines.length) {
+    const line = rawLines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) { i++; continue; }
+
+    if (/^-{3,}$|^\*{3,}$|^_{3,}$/.test(trimmed)) {
+      elements.push(<hr key={key++} className="my-4 border-t border-border/30" />);
+      i++; continue;
+    }
+
+    if (/^```/.test(trimmed)) {
+      const codeLines: string[] = [];
+      i++;
+      while (i < rawLines.length && !/^```/.test(rawLines[i].trim())) {
+        codeLines.push(rawLines[i]);
+        i++;
+      }
+      i++;
+      elements.push(
+        <pre key={key++} className="my-3 rounded-lg bg-muted/60 border border-border/30 px-4 py-3 overflow-x-auto">
+          <code className="text-[12px] font-mono text-foreground/90 leading-relaxed">{codeLines.join("\n")}</code>
+        </pre>
+      );
+      continue;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const sizes = ["text-lg font-bold", "text-base font-bold", "text-sm font-semibold", "text-sm font-semibold"];
+      elements.push(
+        <div key={key++} className={`${sizes[level - 1]} text-foreground mt-3 mb-1.5`}>
+          {renderInline(headingMatch[2])}
+        </div>
+      );
+      i++; continue;
+    }
+
+    if (/^>\s?/.test(trimmed)) {
+      const quoteLines: string[] = [];
+      while (i < rawLines.length && /^>\s?/.test(rawLines[i].trim())) {
+        quoteLines.push(rawLines[i].trim().replace(/^>\s?/, ""));
+        i++;
+      }
+      elements.push(
+        <blockquote key={key++} className="my-2 pl-3 border-l-2 border-primary/30 text-foreground/70 italic">
+          {quoteLines.map((ql, qi) => <span key={qi}>{renderInline(ql)}{qi < quoteLines.length - 1 && <br />}</span>)}
+        </blockquote>
+      );
+      continue;
+    }
+
+    if (/^\s*[-•]\s/.test(trimmed)) {
+      const listItems: string[] = [];
+      while (i < rawLines.length && /^\s*[-•]\s/.test(rawLines[i].trim())) {
+        listItems.push(rawLines[i].trim().replace(/^\s*[-•]\s+/, ""));
+        i++;
+      }
+      elements.push(
+        <ul key={key++} className="my-2 space-y-1 ml-1">
+          {listItems.map((item, li) => (
+            <li key={li} className="flex gap-2 items-start">
+              <span className="text-muted-foreground/50 mt-[3px] flex-shrink-0 text-[8px]">●</span>
+              <span>{renderInline(item)}</span>
+            </li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+
+    if (/^\s*\d+\.\s/.test(trimmed)) {
+      const listItems: { num: string; text: string }[] = [];
+      while (i < rawLines.length && /^\s*\d+\.\s/.test(rawLines[i].trim())) {
+        const m = rawLines[i].trim().match(/^\s*(\d+)\.\s+(.*)/);
+        listItems.push({ num: m?.[1] || `${listItems.length + 1}`, text: m?.[2] || "" });
+        i++;
+      }
+      elements.push(
+        <ol key={key++} className="my-2 space-y-1 ml-1">
+          {listItems.map((item, li) => (
+            <li key={li} className="flex gap-2 items-start">
+              <span className="text-muted-foreground/60 text-xs font-mono mt-[1px] flex-shrink-0 min-w-[18px]">{item.num}.</span>
+              <span>{renderInline(item.text)}</span>
+            </li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
+
+    const paraLines: string[] = [];
+    while (i < rawLines.length && rawLines[i].trim() && !/^(#{1,4}\s|```|>\s?|- |\d+\.\s|-{3,}|\*{3,}|_{3,})/.test(rawLines[i].trim())) {
+      paraLines.push(rawLines[i]);
+      i++;
+    }
+    if (paraLines.length > 0) {
+      elements.push(
+        <p key={key++} className="my-1.5 first:mt-0 last:mb-0">
+          {paraLines.map((pl, pli) => (
+            <span key={pli}>
+              {renderInline(pl)}
+              {pli < paraLines.length - 1 && <br />}
+            </span>
+          ))}
+        </p>
+      );
+    } else {
+      i++;
+    }
+  }
+  return elements;
+}
+
+// ─── Message components ─────────────────────────────────────────────────────────
 
 function MessageBubble({ msg, executedActions }: { msg: Message; executedActions?: ExecutedAction[] }) {
   const isUser = msg.role === "user";
@@ -347,47 +490,57 @@ function MessageBubble({ msg, executedActions }: { msg: Message; executedActions
   const emailTriage = actions.find(a => a.type === "EMAIL_TRIAGE");
   const isEmailDrop = msg.content.startsWith("[EMAIL DROPPED]");
   const isImageDrop = msg.content.startsWith("[") && msg.content.includes("image");
+  const ts = new Date(msg.createdAt).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
 
-  return (
-    <div className={cn("flex gap-2.5 fade-in", isUser ? "flex-row-reverse" : "flex-row")}>
-      {!isUser && (
-        <div className="w-7 h-7 rounded-xl bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5 shadow-sm">A</div>
-      )}
-      <div className={cn("max-w-[85%] group", isUser ? "items-end" : "items-start flex flex-col")}>
-        {/* User message indicator for drops */}
-        {isUser && (isEmailDrop || isImageDrop) && (
-          <div className={cn(
-            "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold mb-1 self-end",
-            isEmailDrop ? "bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400" : "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-          )}>
-            {isEmailDrop ? <><Mail size={10} /> Email dropped</> : <><Image size={10} /> Image attached</>}
+  // ── User message ──
+  if (isUser) {
+    return (
+      <div className="flex justify-end fade-in">
+        <div className="max-w-[75%] flex flex-col items-end">
+          {(isEmailDrop || isImageDrop) && (
+            <div className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold mb-1",
+              isEmailDrop ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+            )}>
+              {isEmailDrop ? <><Mail size={10} /> Email dropped</> : <><Image size={10} /> Image attached</>}
+            </div>
+          )}
+          <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-2.5 text-[13.5px] leading-relaxed">
+            {cleanText.split("\n").map((line, i, arr) => (
+              <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+            ))}
           </div>
-        )}
-
-        <div className={cn(
-          "rounded-2xl px-4 py-2.5 text-sm leading-relaxed relative",
-          isUser
-            ? "bg-primary text-primary-foreground rounded-tr-md"
-            : "bg-card text-foreground border border-border rounded-tl-md"
-        )}>
-          {cleanText.split("\n").map((line, i, arr) => (
-            <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
-          ))}
-          {!isUser && <div className="absolute top-1 right-1"><CopyButton text={cleanText} /></div>}
+          <span className="text-[10px] text-muted-foreground/50 mt-1 mr-1">{ts}</span>
         </div>
-
-        {!isUser && emailTriage && <EmailTriageCard data={emailTriage.data} />}
-
-        {!isUser && executedActions && executedActions.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {executedActions.map((a, i) => <ActionBadge key={i} action={a} />)}
-          </div>
-        )}
-
-        <p className={cn("text-[10px] text-muted-foreground mt-1 px-1", isUser ? "text-right" : "text-left")}>
-          {new Date(msg.createdAt).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}
-        </p>
       </div>
+    );
+  }
+
+  // ── Assistant message — Claude-like clean layout ──
+  return (
+    <div className="fade-in">
+      <div className="flex items-start gap-3">
+        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+          <Zap size={12} className="text-white" />
+        </div>
+        <div className="flex-1 min-w-0 group">
+          <div className="text-[13.5px] text-foreground/90 leading-[1.75]">
+            {renderMarkdown(cleanText)}
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            <CopyButton text={cleanText} />
+            <span className="text-[10px] text-muted-foreground/40">{ts}</span>
+          </div>
+        </div>
+      </div>
+
+      {emailTriage && <div className="ml-9 mt-2"><EmailTriageCard data={emailTriage.data} /></div>}
+
+      {executedActions && executedActions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2 ml-9">
+          {executedActions.map((a, i) => <ActionBadge key={i} action={a} />)}
+        </div>
+      )}
     </div>
   );
 }
@@ -844,86 +997,58 @@ export default function Chat() {
       )}
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-border bg-background/80 backdrop-blur-md flex-shrink-0">
+      <div className="flex items-center justify-between px-5 sm:px-8 py-3 border-b border-border/60 bg-background/95 backdrop-blur-md flex-shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-            <MessageCircle size={15} className="text-white" />
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
+            <Zap size={13} className="text-white" />
           </div>
           <div>
-            <p className="text-foreground font-bold text-sm">AIDE</p>
+            <p className="text-foreground font-semibold text-sm tracking-tight">AIDE</p>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot" />
-              <p className="text-[10px] text-muted-foreground">claude-sonnet-4-6 · Vision enabled</p>
+              <p className="text-[10px] text-muted-foreground/60">claude-sonnet-4-6 · Vision enabled</p>
             </div>
           </div>
         </div>
-        <button
-          data-testid="button-clear-chat"
-          onClick={() => { if (confirm("Clear this conversation?")) { setOptimisticMessages([]); setAttachments([]); queryClient.setQueryData(getGetAnthropicConversationQueryKey(CONVERSATION_ID), null); } }}
-          className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors"
-          title="Clear chat"
-        >
-          <RefreshCw size={14} />
-        </button>
-      </div>
-
-      {/* ── Drop hint bar ── */}
-      <div className="flex items-center gap-3 px-4 sm:px-6 py-1.5 border-b border-border bg-muted/20 flex-shrink-0 overflow-x-auto">
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium whitespace-nowrap">
-          <Mail size={10} className="text-amber-500" />
-          <span>Drag or paste Outlook emails</span>
-        </div>
-        <span className="text-muted-foreground/30">·</span>
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium whitespace-nowrap">
-          <Paperclip size={10} className="text-violet-500" />
-          <span>Drop .eml files</span>
-        </div>
-        <span className="text-muted-foreground/30">·</span>
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium whitespace-nowrap">
-          <Image size={10} className="text-blue-500" />
-          <span>Drop images for vision</span>
-        </div>
-        <span className="text-muted-foreground/30">·</span>
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium whitespace-nowrap">
-          <Zap size={10} className="text-primary" />
-          <span>AIDE acts automatically</span>
+        <div className="flex items-center gap-1">
+          <div className="hidden sm:flex items-center gap-2 mr-2 text-[10px] text-muted-foreground/40">
+            <span className="flex items-center gap-1"><Mail size={9} /> Drag emails</span>
+            <span>·</span>
+            <span className="flex items-center gap-1"><Image size={9} /> Drop images</span>
+            <span>·</span>
+            <span className="flex items-center gap-1"><Paperclip size={9} /> .eml files</span>
+          </div>
+          <button
+            data-testid="button-clear-chat"
+            onClick={() => { if (confirm("Clear this conversation?")) { setOptimisticMessages([]); setAttachments([]); queryClient.setQueryData(getGetAnthropicConversationQueryKey(CONVERSATION_ID), null); } }}
+            className="text-muted-foreground/40 hover:text-foreground p-1.5 rounded-lg hover:bg-muted/60 transition-all"
+            title="Clear chat"
+          >
+            <RefreshCw size={13} />
+          </button>
         </div>
       </div>
 
       {/* ── Messages ── */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto py-6 space-y-6">
+        <div className="max-w-3xl mx-auto px-5 sm:px-8 space-y-6">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : allMessages.length === 0 && !streaming ? (
-          <div className="flex flex-col items-center justify-center h-full py-12 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-4 shadow-md">
-              <Zap size={24} className="text-white" />
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-5 shadow-lg">
+              <Zap size={22} className="text-white" />
             </div>
-            <h2 className="text-foreground font-bold text-base mb-1">Hi Casper, I'm AIDE</h2>
-            <p className="text-muted-foreground text-sm max-w-xs mb-2">
-              Drop an Outlook email directly into this window and I'll triage it, extract action items, and log jobs automatically.
+            <h2 className="text-foreground font-bold text-lg mb-1.5">Hi Casper, I'm AIDE</h2>
+            <p className="text-muted-foreground text-sm max-w-sm mb-6 leading-relaxed">
+              Drop an Outlook email, paste content, or ask me anything — I'll triage it, log jobs, and handle the rest.
             </p>
-            <div className="flex flex-wrap gap-1.5 justify-center mb-6 max-w-sm">
-              {[
-                { label: "Drop emails", icon: Mail },
-                { label: "Attach images", icon: Image },
-                { label: "Create jobs", icon: Briefcase },
-                { label: "Add to-dos", icon: CheckSquare },
-              ].map(c => {
-                const Icon = c.icon;
-                return (
-                  <div key={c.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/8 border border-primary/20 text-primary text-[11px] font-semibold">
-                    <Icon size={10} />{c.label}
-                  </div>
-                );
-              })}
-            </div>
             <div className="flex flex-col gap-2 w-full max-w-sm">
               {SUGGESTIONS.map(s => (
                 <button key={s} onClick={() => handleSend(s)}
-                  className="text-left px-3.5 py-2.5 text-sm text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors hover:border-primary/30 leading-tight">
+                  className="text-left px-4 py-3 text-[13.5px] text-foreground bg-card border border-border rounded-xl hover:bg-muted/60 transition-all hover:border-primary/30 leading-snug">
                   {s}
                 </button>
               ))}
@@ -938,81 +1063,84 @@ export default function Chat() {
               streamingContent ? (
                 <MessageBubble msg={{ id: "streaming", role: "assistant", content: streamingContent, createdAt: new Date().toISOString() }} />
               ) : (
-                <div className="flex gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">A</div>
-                  <div className="bg-card border border-border rounded-2xl rounded-tl-md"><TypingIndicator /></div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+                    <Zap size={12} className="text-white" />
+                  </div>
+                  <TypingIndicator />
                 </div>
               )
             )}
           </>
         )}
         <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* ── Input area ── */}
-      <div className="border-t border-border bg-background/80 backdrop-blur-md px-4 sm:px-6 py-3 flex-shrink-0">
-        {/* Attachment chips */}
-        {attachments.length > 0 && (
-          <div className="flex flex-col gap-2 mb-2.5">
-            {attachments.map(att => (
-              <AttachmentChip
-                key={att.id}
-                att={att}
-                onRemove={() => removeAttachment(att.id)}
-                onBodyChange={att.type === "email" ? (body) => updateAttachmentBody(att.id, body) : undefined}
+      <div className="border-t border-border/50 bg-background/95 backdrop-blur-md px-4 sm:px-6 py-3 flex-shrink-0">
+        <div className="max-w-3xl mx-auto">
+          {attachments.length > 0 && (
+            <div className="flex flex-col gap-2 mb-2.5">
+              {attachments.map(att => (
+                <AttachmentChip
+                  key={att.id}
+                  att={att}
+                  onRemove={() => removeAttachment(att.id)}
+                  onBodyChange={att.type === "email" ? (body) => updateAttachmentBody(att.id, body) : undefined}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className={cn(
+            "flex items-end gap-2.5 bg-card border rounded-2xl px-4 py-2.5 transition-all shadow-sm",
+            dragOver ? "border-primary ring-2 ring-primary/20" : "border-border/70 focus-within:border-border focus-within:ring-1 focus-within:ring-ring/30"
+          )}>
+            <label className="flex-shrink-0 p-1 text-muted-foreground/50 hover:text-foreground transition-colors cursor-pointer" title="Attach image">
+              <Paperclip size={16} />
+              <input
+                type="file"
+                accept="image/*,.eml,message/rfc822"
+                multiple
+                className="hidden"
+                onChange={async e => {
+                  if (!e.target.files) return;
+                  const results = await Promise.all(Array.from(e.target.files).map(processFile));
+                  const valid = results.filter(Boolean) as Attachment[];
+                  if (valid.length > 0) setAttachments(prev => [...prev, ...valid]);
+                  e.target.value = "";
+                }}
               />
-            ))}
-          </div>
-        )}
+            </label>
 
-        <div className={cn(
-          "flex items-end gap-2.5 bg-card border rounded-2xl px-3.5 py-2.5 transition-all",
-          dragOver ? "border-primary ring-2 ring-primary/20" : "border-border focus-within:ring-2 focus-within:ring-ring"
-        )}>
-          {/* Attach button */}
-          <label className="flex-shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="Attach image">
-            <Paperclip size={16} />
-            <input
-              type="file"
-              accept="image/*,.eml,message/rfc822"
-              multiple
-              className="hidden"
-              onChange={async e => {
-                if (!e.target.files) return;
-                const results = await Promise.all(Array.from(e.target.files).map(processFile));
-                const valid = results.filter(Boolean) as Attachment[];
-                if (valid.length > 0) setAttachments(prev => [...prev, ...valid]);
-                e.target.value = "";
-              }}
+            <textarea
+              ref={textareaRef}
+              data-testid="input-chat-message"
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder={attachments.length > 0 ? "Add a note (optional) then send…" : "Message AIDE…"}
+              rows={1}
+              disabled={streaming}
+              className="flex-1 bg-transparent text-[13.5px] text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none leading-relaxed min-h-[20px] max-h-[140px] disabled:opacity-60"
             />
-          </label>
-
-          <textarea
-            ref={textareaRef}
-            data-testid="input-chat-message"
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder={attachments.length > 0 ? "Add a note (optional) then send…" : "Tell AIDE what's happening, or drag an email here…"}
-            rows={1}
-            disabled={streaming}
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none leading-relaxed min-h-[20px] max-h-[140px] disabled:opacity-60"
-          />
-          <button
-            data-testid="button-send-message"
-            onClick={() => handleSend()}
-            disabled={!canSend}
-            className={cn(
-              "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all",
-              canSend ? "bg-primary text-primary-foreground hover:opacity-90" : "bg-muted text-muted-foreground cursor-not-allowed"
-            )}
-          >
-            <Send size={14} strokeWidth={2} />
-          </button>
+            <button
+              data-testid="button-send-message"
+              onClick={() => handleSend()}
+              disabled={!canSend}
+              className={cn(
+                "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all",
+                canSend ? "bg-foreground text-background hover:opacity-80" : "bg-muted text-muted-foreground/40 cursor-not-allowed"
+              )}
+            >
+              <Send size={13} strokeWidth={2.5} />
+            </button>
+          </div>
+          <p className="text-[10px] text-muted-foreground/30 text-center mt-1.5">
+            Enter to send · Shift+Enter for new line · Drag emails or images anywhere
+          </p>
         </div>
-        <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-          Enter to send · Shift+Enter for new line · Drag emails/images anywhere into this window
-        </p>
       </div>
     </div>
   );

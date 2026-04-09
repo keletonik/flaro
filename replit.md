@@ -30,7 +30,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## AIDE App
 
-**AIDE v1.0** — Premium personal operations assistant for Casper Tavitian (FlameSafe Fire Protection, NSW). Light theme by default, dark mode toggle persisted in localStorage.
+**AIDE v1.0** — Premium personal operations assistant for Casper Tavitian (FlameSafe Fire Protection, NSW). Dark theme by default (Claude-inspired), toggle persisted in localStorage.
 
 ### Artifacts
 - `artifacts/aide` — React + Vite frontend (port from `$PORT`)

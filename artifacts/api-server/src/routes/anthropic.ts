@@ -142,11 +142,14 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   // Build conversation history (all previous messages as plain text)
   const allMessages = await db.select().from(messages).where(eq(messages.conversationId, conversationId)).orderBy(messages.createdAt);
 
-  // Previous messages (all except the last user message we just inserted)
-  const historyMessages = allMessages.slice(0, -1).map(m => ({
-    role: m.role as "user" | "assistant",
-    content: m.content,
-  }));
+  // Previous messages (all except the last user message we just inserted).
+  // Skip any messages with empty content — Claude rejects them.
+  const historyMessages = allMessages.slice(0, -1)
+    .filter(m => m.content && m.content.trim().length > 0)
+    .map(m => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
 
   // Build the latest user message content (multimodal if needed)
   type ContentBlock =

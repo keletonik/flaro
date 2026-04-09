@@ -470,20 +470,24 @@ export default function Chat() {
       if (emailAtt?.emailHtml) body.emailHtml = emailAtt.emailHtml;
       if (imageAtts.length > 0) body.images = imageAtts.map(a => a.preview!);
 
-      const res = await fetch(`${base}/api/conversations/${CONVERSATION_ID}/messages`, {
+      const res = await fetch(`${base}/api/anthropic/conversations/${CONVERSATION_ID}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error((errBody as { error?: string }).error || `HTTP ${res.status}`);
+      }
 
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
       let fullText = "";
+      let streamError: string | null = null;
 
       if (reader) {
-        while (true) {
+        outer: while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           const chunk = decoder.decode(value, { stream: true });
@@ -494,10 +498,14 @@ export default function Chat() {
             try {
               const parsed = JSON.parse(data);
               if (parsed.content) { fullText += parsed.content; setStreamingContent(fullText); }
+              if (parsed.error)   { streamError = parsed.error; break outer; }
+              if (parsed.done)    { break outer; }
             } catch {}
           }
         }
       }
+
+      if (streamError) throw new Error(streamError);
 
       setOptimisticMessages([]);
       setStreaming(false);

@@ -14,12 +14,13 @@ import Todos from "@/pages/todos";
 import Projects from "@/pages/projects";
 import Operations from "@/pages/operations";
 import Suppliers from "@/pages/suppliers";
+import Analytics from "@/pages/analytics";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
-  Package, ChevronLeft, ChevronRight
+  Package, ChevronLeft, ChevronRight, PieChart
 } from "lucide-react";
 import { useState, createContext, useContext } from "react";
 
@@ -39,6 +40,7 @@ const navGroups = [
       { path: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
       { path: "/chat", icon: MessageCircle, label: "Chat" },
       { path: "/operations", icon: BarChart3, label: "Operations" },
+      { path: "/analytics", icon: PieChart, label: "Analytics" },
     ],
   },
   {
@@ -229,6 +231,7 @@ function Router() {
       <Route path="/" component={() => <Layout><Dashboard /></Layout>} />
       <Route path="/chat" component={() => <Layout><Chat /></Layout>} />
       <Route path="/operations" component={() => <Layout><Operations /></Layout>} />
+      <Route path="/analytics" component={() => <Layout><Analytics /></Layout>} />
       <Route path="/schedule" component={() => <Layout><Schedule /></Layout>} />
       <Route path="/jobs" component={() => <Layout><Jobs /></Layout>} />
       <Route path="/jobs/:id" component={() => <Layout><JobDetail /></Layout>} />

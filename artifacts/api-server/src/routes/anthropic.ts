@@ -27,7 +27,7 @@ YOUR BEHAVIOUR:
 - When Casper mentions needing to do something — proactively offer to log it as a todo or job
 
 DROPPED CONTENT — When Casper drops an email or file:
-1. Emails: Read the ENTIRE email including the full reply trail/chain. ALWAYS produce an EMAIL_TRIAGE action block from the latest message. Extract ALL action items from every message in the thread as CREATE_TODO actions. Create a CREATE_JOB if any message mentions a site visit needed. Include context from the reply chain in your analysis — previous messages often contain critical details.
+1. Emails: ALWAYS produce an EMAIL_TRIAGE action block, extract ALL action items as CREATE_TODO actions, and create a CREATE_JOB if a site visit is needed
 2. Images: Describe what you see. If it's a job site photo, document, report or certificate — extract the relevant info and create appropriate jobs/notes/todos
 3. Documents/text: Extract all relevant data, create appropriate records
 
@@ -143,15 +143,14 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   const images: string[] = Array.isArray(req.body.images) ? req.body.images : [];
   const emailHtml: string | null = typeof req.body.emailHtml === "string" ? req.body.emailHtml : null;
   const emailPlainText: string | null = typeof req.body.emailPlainText === "string" ? req.body.emailPlainText : null;
-  const hasAttachments = images.length > 0 || emailHtml || emailPlainText;
+  const hasAttachments = images.length > 0 || emailHtml;
 
   let dbContent = bodyParsed.data.content;
   if (emailHtml || emailPlainText) {
-    // Store the plain text version (includes full reply trail) or fall back to HTML extraction
-    const fromPlain = emailPlainText || "";
     const fromHtml = emailHtml ? htmlToPlainText(emailHtml) : "";
-    const bestForDb = fromPlain.length > fromHtml.length ? fromPlain : (fromHtml || fromPlain);
-    dbContent = `[EMAIL DROPPED]\n${bestForDb}${bodyParsed.data.content ? `\n\nCasper's note: ${bodyParsed.data.content}` : ""}`;
+    const fromPlain = emailPlainText || "";
+    const emailText = fromPlain.length > fromHtml.length ? fromPlain : fromHtml;
+    dbContent = `[EMAIL DROPPED]\n${emailText}${bodyParsed.data.content ? `\n\nCasper's note: ${bodyParsed.data.content}` : ""}`;
   } else if (images.length > 0) {
     dbContent = `[${images.length} image(s) attached]${bodyParsed.data.content ? ` — ${bodyParsed.data.content}` : ""}`;
   }
@@ -192,20 +191,13 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   if (emailHtml || emailPlainText) {
     const fromHtml = emailHtml ? htmlToPlainText(emailHtml) : "";
     const fromPlain = emailPlainText || "";
-    // Send BOTH extractions to the LLM — the HTML version is the latest message
-    // rendered cleanly, and the plain text often contains the full reply chain/trail.
-    // Let the LLM see everything so nothing is lost.
-    const parts: string[] = [];
-    if (fromPlain && fromPlain.trim().length > 20) {
-      parts.push(`=== EMAIL CONTENT (full text including reply trail) ===\n${fromPlain}`);
+    const emailText = fromPlain.length > fromHtml.length ? fromPlain : fromHtml;
+    const secondSource = fromPlain.length > fromHtml.length ? fromHtml : fromPlain;
+    let combined = emailText;
+    if (secondSource && secondSource.length > 30 && Math.abs(secondSource.length - emailText.length) > 50) {
+      combined += `\n\n--- ADDITIONAL EMAIL CONTENT (secondary extraction) ---\n${secondSource}`;
     }
-    if (fromHtml && fromHtml.trim().length > 20 && fromHtml !== fromPlain) {
-      parts.push(`=== EMAIL CONTENT (extracted from HTML) ===\n${fromHtml}`);
-    }
-    if (!parts.length) {
-      parts.push(fromPlain || fromHtml || "No email content could be extracted.");
-    }
-    textContent = `[EMAIL DROPPED — TRIAGE THIS IMMEDIATELY]\n\n${parts.join("\n\n")}`;
+    textContent = `[EMAIL DROPPED BY CASPER — TRIAGE THIS IMMEDIATELY]\n\n${combined}`;
     if (bodyParsed.data.content) textContent += `\n\nCasper's note: ${bodyParsed.data.content}`;
   } else if (images.length > 0) {
     textContent = bodyParsed.data.content
@@ -231,7 +223,6 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-  res.setHeader("X-Accel-Buffering", "no");
 
   let fullResponse = "";
   let clientDisconnected = false;

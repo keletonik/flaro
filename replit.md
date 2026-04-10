@@ -146,5 +146,8 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - Imported: 211 jobs, 87 quotes, 123 WIP records, notes from Action List, Quotes, Repairs, Schedule Register, Notes Log sheets
 - Chat rendering: react-markdown + remark-gfm for polished tables, lists, code blocks, blockquotes
 
+### GitHub Sync Rule
+**PERMANENT RULE**: After every update or change, automatically push the latest changes to GitHub repo `keletonik/flaro` on branch `claude/service-manager-dashboard-KR9HH`. This must happen on every single update — no exceptions, no need for the user to ask.
+
 ### Techs
 - Darren Brailey, Gordon Jenkins, Haider Al-Heyoury, John Minai, Nu Unasa, Unassigned

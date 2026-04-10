@@ -107,6 +107,7 @@ router.post("/chat/contextual", async (req, res, next) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
 
     let fullResponse = "";
     let clientDisconnected = false;

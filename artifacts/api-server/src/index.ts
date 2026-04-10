@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { db } from "@workspace/db";
+import { db, pool } from "@workspace/db";
 import { conversations } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
@@ -22,7 +22,10 @@ async function ensureDefaultConversation() {
   try {
     const [existing] = await db.select().from(conversations).where(eq(conversations.id, 1));
     if (!existing) {
-      await db.insert(conversations).values({ title: "Service Ops Chat" });
+      // Force id=1 via raw SQL to guarantee the frontend's hardcoded CONVERSATION_ID matches
+      await pool.query(`INSERT INTO conversations (id, title, created_at) VALUES (1, 'Service Ops Chat', NOW()) ON CONFLICT (id) DO NOTHING`);
+      // Reset sequence to avoid conflicts on next auto-generated id
+      await pool.query(`SELECT setval('conversations_id_seq', GREATEST((SELECT MAX(id) FROM conversations), 1))`);
       logger.info("Created default conversation (id=1)");
     }
   } catch (err) {

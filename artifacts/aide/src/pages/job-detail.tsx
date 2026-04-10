@@ -107,7 +107,7 @@ export default function JobDetail() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
         <p className="text-muted-foreground text-sm">Job not found.</p>
-        <button onClick={() => setLocation("/jobs")} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg">← Back to Jobs</button>
+        <button onClick={() => setLocation("/jobs")} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg">← Back to WIPs</button>
       </div>
     );
   }

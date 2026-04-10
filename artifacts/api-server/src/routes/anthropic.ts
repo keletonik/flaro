@@ -81,7 +81,7 @@ function htmlToPlainText(html: string): string {
     .replace(/&mdash;/g, "—")
     .replace(/&ndash;/g, "–")
     .replace(/&hellip;/g, "...")
-    .replace(/&#\d+;/g, "")
+    .replace(/&#(\d+);/g, (_, n) => { const code = parseInt(n); return code > 31 && code < 65535 ? String.fromCharCode(code) : ""; })
     .replace(/[ \t]+/g, " ")
     .replace(/\n /g, "\n")
     .replace(/ \n/g, "\n")

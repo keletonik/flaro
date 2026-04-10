@@ -155,8 +155,9 @@ function parseEmlContent(raw: string, fileName: string): Attachment | null {
     type: "email",
     name: `Email: ${subject.slice(0, 50)}`,
     emailHtml: finalHtml,
+    emailPlainText: textBody || htmlToText(finalHtml),
     emailSummary: parts.join(" · ").slice(0, 120),
-    emailHasBody: true,  // .eml files always include the full body
+    emailHasBody: true,
   };
 }
 
@@ -770,13 +771,15 @@ export default function Chat() {
           date:    text.match(/^(?:Date|Sent):\s*(.+)/im)?.[1]?.trim() || "",
         };
         const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
+        const bodyLines = text.split("\n").map(l => l.trim()).filter(l => l && !/^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To)\s*[:\s]/i.test(l) && l.length > 2);
+        const hasBody = bodyLines.join(" ").replace(/\s+/g, " ").trim().length > 60 && bodyLines.length > 2;
         setAttachments(prev => [...prev, {
           id: crypto.randomUUID(), type: "email",
           name: `Email: ${meta.subject.slice(0, 50)}`,
           emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text.replace(/</g, "&lt;")}</pre>`,
           emailPlainText: text,
           emailSummary: parts.join(" · ").slice(0, 120),
-          emailHasBody: true,
+          emailHasBody: hasBody,
         }]);
         toast({ title: "Email pasted", description: "Will be triaged automatically when you send." });
         return;
@@ -851,7 +854,11 @@ export default function Chat() {
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
-    const emailAtt = attachments.find(a => a.type === "email");
+    const emailAtts = attachments.filter(a => a.type === "email");
+    if (emailAtts.length > 1) {
+      toast({ title: "Multiple emails detected", description: "Only the first email will be triaged. Send separately for multiple." });
+    }
+    const emailAtt = emailAtts[0] || null;
     const imageAtts = attachments.filter(a => a.type === "image" && a.preview);
 
     // Build display content for the optimistic message

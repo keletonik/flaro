@@ -40,7 +40,6 @@ interface Attachment {
   emailHtml?: string;
   emailPlainText?: string;
   emailSummary?: string;
-  emailBody?: string;
   emailHasBody?: boolean;
   size?: number;
 }
@@ -174,7 +173,7 @@ function htmlToText(html: string): string {
     if (tag === "br") return "\n";
     const kids = Array.from(el.childNodes).map(walk).join("");
     if (["p", "div", "tr", "h1", "h2", "h3", "h4", "h5", "h6", "li", "blockquote"].includes(tag)) return `\n${kids}\n`;
-    if (tag === "td" || tag === "th") return `${kids}\t`;
+    if (tag === "td" || tag === "th") return `${kids} | `;
     return kids;
   };
   return walk(d)
@@ -258,7 +257,6 @@ function AttachmentChip({
 }: {
   att: Attachment;
   onRemove: () => void;
-  onBodyChange?: (body: string) => void;
 }) {
   if (att.type === "email") {
     return (
@@ -303,7 +301,7 @@ function AttachmentChip({
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">Header only — body text not captured by Outlook</p>
               </div>
               <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80 pl-5">
-                Open the email in Outlook, press Ctrl+A then Ctrl+C, then click here and press Ctrl+V
+                Open the email in Outlook, select all (Ctrl+A), copy (Ctrl+C), then paste here (Ctrl+V)
               </p>
             </div>
           )}
@@ -576,7 +574,7 @@ export default function Chat() {
     let bodyFromPlain = extraPlainText ? extractBody(extraPlainText) : "";
 
     const bestBody = bodyFromPlain.length > bodyFromHtml.length ? bodyFromPlain : bodyFromHtml;
-    const emailHasBody = bestBody.length > 60 && bestBody.split(/\s+/).length > 8;
+    const emailHasBody = bestBody.length > 150 && bestBody.split(/\s+/).length > 15;
 
     let mergedHtml = html;
     if (!emailHasBody && extraPlainText && extraPlainText.trim().length > htmlPlain.length) {
@@ -585,7 +583,7 @@ export default function Chat() {
       mergedHtml = `${html}\n<div style="white-space:pre-wrap;margin-top:12px;font-family:sans-serif">${extraPlainText!.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
     }
 
-    const mergedPlain = [htmlPlain, extraPlainText].filter(Boolean).join("\n\n");
+    const mergedPlain = extraPlainText && extraPlainText.length > htmlPlain.length ? extraPlainText : htmlPlain;
     const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
 
     return {
@@ -684,7 +682,7 @@ export default function Chat() {
         const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
         const headerLineRe = /^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To|Importance|Attachments?)\s*[:\s]/i;
         const bodyLines = plainText.split("\n").map(l => l.trim()).filter(l => l && !headerLineRe.test(l) && l.length > 2);
-        const hasBody = bodyLines.join(" ").length > 60 && bodyLines.length > 2;
+        const hasBody = bodyLines.join(" ").length > 150 && bodyLines.join(" ").split(/\s+/).length > 15;
         newAttachments.push({
           id: crypto.randomUUID(), type: "email",
           name: `Email: ${meta.subject.slice(0, 50)}`,
@@ -736,6 +734,8 @@ export default function Chat() {
       e.preventDefault();
       const pastedContent = html && html.trim().length > 50 ? html : (text ? `<div style="white-space:pre-wrap;font-family:sans-serif">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>` : "");
       const pastedPlain = text || (html ? htmlToText(html) : "");
+      const plainWords = pastedPlain.trim().split(/\s+/).length;
+      const hasRealBody = pastedPlain.trim().length > 30 && plainWords > 5;
       if (pastedContent) {
         setAttachments(prev => prev.map(a =>
           a.type === "email" && !a.emailHasBody
@@ -743,11 +743,11 @@ export default function Chat() {
                 ...a,
                 emailHtml: `<div>${a.emailHtml || ""}</div>\n${pastedContent}`,
                 emailPlainText: [a.emailPlainText, pastedPlain].filter(Boolean).join("\n\n"),
-                emailHasBody: true,
+                emailHasBody: hasRealBody,
               }
             : a
         ));
-        toast({ title: "Email body merged", description: "Full email ready — send to triage." });
+        toast({ title: hasRealBody ? "Email body captured" : "Content added — paste more if needed", description: hasRealBody ? "Full email ready — send to triage." : "Body seems short. Try selecting all (Ctrl+A) in the email." });
       }
       return;
     }
@@ -772,7 +772,8 @@ export default function Chat() {
         };
         const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
         const bodyLines = text.split("\n").map(l => l.trim()).filter(l => l && !/^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To)\s*[:\s]/i.test(l) && l.length > 2);
-        const hasBody = bodyLines.join(" ").replace(/\s+/g, " ").trim().length > 60 && bodyLines.length > 2;
+        const bodyText = bodyLines.join(" ").replace(/\s+/g, " ").trim();
+        const hasBody = bodyText.length > 150 && bodyText.split(/\s+/).length > 15;
         setAttachments(prev => [...prev, {
           id: crypto.randomUUID(), type: "email",
           name: `Email: ${meta.subject.slice(0, 50)}`,
@@ -788,8 +789,6 @@ export default function Chat() {
   }, [processHtmlEmail, processFile, toast, attachments]);
 
   const removeAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id));
-  const updateAttachmentBody = (id: string, body: string) =>
-    setAttachments(prev => prev.map(a => a.id === id ? { ...a, emailBody: body } : a));
 
   // ── Action execution ─────────────────────────────────────────────────────────
 
@@ -1070,7 +1069,6 @@ export default function Chat() {
                   key={att.id}
                   att={att}
                   onRemove={() => removeAttachment(att.id)}
-                  onBodyChange={att.type === "email" ? (body) => updateAttachmentBody(att.id, body) : undefined}
                 />
               ))}
             </div>

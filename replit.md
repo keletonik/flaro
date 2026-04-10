@@ -57,8 +57,8 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 ### Design System
 - **Themes**: Light (default) + Dark mode via `.dark` class on `<html>`; toggled by sidebar button, persisted in `localStorage["ops-theme"]`
 - **Theme provider**: `src/lib/theme.tsx` → `ThemeProvider` + `useTheme()` hook
-- **Font**: Inter (body), JetBrains Mono (code)
-- **Primary**: Purple `hsl(250 70% 56%)` light / `hsl(250 70% 65%)` dark
+- **Font**: Plus Jakarta Sans (body), JetBrains Mono (code)
+- **Primary**: Warm amber/copper `hsl(18 60% 44%)` light / `hsl(18 60% 55%)` dark
 - **Sidebar**: Dark enterprise sidebar with grouped nav (Command, Manage, Tools), collapsible
 - **Glass**: Glassmorphism header bars with `backdrop-filter: blur(20px)`
 - Priority CSS classes: `priority-critical/high/medium/low` (left border), badge classes
@@ -139,6 +139,15 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - `supplier_products` — id, supplier_id (FK), product_name, product_code, category, brand, unit_price, unit, description, notes, raw_data, import_batch_id
 - `conversations` — id (serial), title
 - `messages` — id (serial), conversation_id, role, content
+
+### Data Import
+- `scripts/import-flamesafe-data.cjs` — imports the FlameSafe operations spreadsheet into DB
+- Source: `attached_assets/flamesafe_focused_09apr2026_1775773663737.xlsx` (10 sheets)
+- Imported: 211 jobs, 87 quotes, 123 WIP records, notes from Action List, Quotes, Repairs, Schedule Register, Notes Log sheets
+- Chat rendering: react-markdown + remark-gfm for polished tables, lists, code blocks, blockquotes
+
+### GitHub Sync Rule
+**PERMANENT RULE**: After every update or change, automatically push the latest changes to GitHub repo `keletonik/flaro` on branch `claude/service-manager-dashboard-KR9HH`. This must happen on every single update — no exceptions, no need for the user to ask.
 
 ### Techs
 - Darren Brailey, Gordon Jenkins, Haider Al-Heyoury, John Minai, Nu Unasa, Unassigned

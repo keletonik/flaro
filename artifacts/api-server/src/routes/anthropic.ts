@@ -81,15 +81,7 @@ function htmlToPlainText(html: string): string {
     .replace(/&mdash;/g, "—")
     .replace(/&ndash;/g, "–")
     .replace(/&hellip;/g, "...")
-    .replace(/&apos;/g, "'")
-    .replace(/&bull;/g, "\u2022")
-    .replace(/&middot;/g, "\u00B7")
-    .replace(/&trade;/g, "\u2122")
-    .replace(/&reg;/g, "\u00AE")
-    .replace(/&copy;/g, "\u00A9")
-    .replace(/&shy;/g, "")
-    .replace(/&#(\d+);/g, (_, n) => { const code = parseInt(n); return code > 31 && code < 65535 ? String.fromCharCode(code) : ""; })
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => { const code = parseInt(h, 16); return code > 31 && code < 65535 ? String.fromCharCode(code) : ""; })
+    .replace(/&#\d+;/g, "")
     .replace(/[ \t]+/g, " ")
     .replace(/\n /g, "\n")
     .replace(/ \n/g, "\n")
@@ -151,22 +143,13 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   const images: string[] = Array.isArray(req.body.images) ? req.body.images : [];
   const emailHtml: string | null = typeof req.body.emailHtml === "string" ? req.body.emailHtml : null;
   const emailPlainText: string | null = typeof req.body.emailPlainText === "string" ? req.body.emailPlainText : null;
-  const hasAttachments = images.length > 0 || emailHtml || emailPlainText;
-
-  // Prefer HTML-extracted text (canonical rendering, cleanest for latest message).
-  // Fall back to plain text only when HTML is absent. Plain text often contains
-  // full quoted reply chains that bury the latest message.
-  function pickEmailText(html: string | null, plain: string | null): string {
-    const fromHtml = html ? htmlToPlainText(html) : "";
-    const fromPlain = plain || "";
-    if (fromHtml.length > 50) return fromHtml;
-    if (fromPlain.length > fromHtml.length) return fromPlain;
-    return fromHtml || fromPlain;
-  }
+  const hasAttachments = images.length > 0 || emailHtml;
 
   let dbContent = bodyParsed.data.content;
   if (emailHtml || emailPlainText) {
-    const emailText = pickEmailText(emailHtml, emailPlainText);
+    const fromHtml = emailHtml ? htmlToPlainText(emailHtml) : "";
+    const fromPlain = emailPlainText || "";
+    const emailText = fromPlain.length > fromHtml.length ? fromPlain : fromHtml;
     dbContent = `[EMAIL DROPPED]\n${emailText}${bodyParsed.data.content ? `\n\nCasper's note: ${bodyParsed.data.content}` : ""}`;
   } else if (images.length > 0) {
     dbContent = `[${images.length} image(s) attached]${bodyParsed.data.content ? ` — ${bodyParsed.data.content}` : ""}`;
@@ -206,16 +189,15 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
 
   let textContent = "";
   if (emailHtml || emailPlainText) {
-    const emailText = pickEmailText(emailHtml, emailPlainText);
-    // Only supplement with plain text if HTML was used as primary and plain text
-    // has substantial unique content (e.g., forwarded context not in the HTML)
     const fromHtml = emailHtml ? htmlToPlainText(emailHtml) : "";
     const fromPlain = emailPlainText || "";
+    const emailText = fromPlain.length > fromHtml.length ? fromPlain : fromHtml;
+    const secondSource = fromPlain.length > fromHtml.length ? fromHtml : fromPlain;
     let combined = emailText;
-    if (emailText === fromHtml && fromPlain.length > fromHtml.length + 100) {
-      combined += `\n\n--- ADDITIONAL CONTEXT ---\n${fromPlain}`;
+    if (secondSource && secondSource.length > 30 && Math.abs(secondSource.length - emailText.length) > 50) {
+      combined += `\n\n--- ADDITIONAL EMAIL CONTENT (secondary extraction) ---\n${secondSource}`;
     }
-    textContent = `[EMAIL DROPPED — TRIAGE THIS IMMEDIATELY]\n\n${combined}`;
+    textContent = `[EMAIL DROPPED BY CASPER — TRIAGE THIS IMMEDIATELY]\n\n${combined}`;
     if (bodyParsed.data.content) textContent += `\n\nCasper's note: ${bodyParsed.data.content}`;
   } else if (images.length > 0) {
     textContent = bodyParsed.data.content
@@ -241,7 +223,6 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-  res.setHeader("X-Accel-Buffering", "no");
 
   let fullResponse = "";
   let clientDisconnected = false;

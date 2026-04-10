@@ -40,8 +40,8 @@ interface Attachment {
   emailHtml?: string;
   emailPlainText?: string;
   emailSummary?: string;
+  emailBody?: string;
   emailHasBody?: boolean;
-  fileText?: string;
   size?: number;
 }
 
@@ -312,36 +312,23 @@ function AttachmentChip({
   }
 
   // ── Image / file chips ──
-  const ext = att.name.toLowerCase().split(".").pop() || "";
-  const isPdf = ext === "pdf";
-  const isDoc = ["doc", "docx"].includes(ext);
-  const isXls = ["xls", "xlsx", "csv"].includes(ext);
-  const isText = att.fileText !== undefined;
-  const chipColor = att.type === "image"
-    ? "bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800"
-    : isPdf ? "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"
-    : isDoc ? "bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800"
-    : isXls ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800"
-    : "bg-muted border-border";
-  const iconColor = isPdf ? "text-red-500" : isDoc ? "text-blue-500" : isXls ? "text-emerald-500" : "text-muted-foreground";
-
   return (
-    <div className={cn("group flex items-center gap-2.5 rounded-xl border overflow-hidden", chipColor)}>
+    <div className={cn(
+      "group flex items-center gap-2 rounded-xl border overflow-hidden max-w-xs",
+      att.type === "image" ? "bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800" : "bg-muted border-border"
+    )}>
       {att.type === "image" && att.preview ? (
         <img src={att.preview} alt={att.name} className="w-10 h-10 object-cover flex-shrink-0" />
       ) : (
-        <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
-          <FileText size={18} className={iconColor} />
+        <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 bg-muted">
+          <Paperclip size={16} className="text-muted-foreground" />
         </div>
       )}
-      <div className="flex-1 min-w-0 py-2 pr-1">
+      <div className="flex-1 min-w-0 py-1.5 pr-1">
         <p className="text-xs font-semibold text-foreground truncate">{att.name}</p>
-        <p className="text-[10px] text-muted-foreground">
-          {att.size ? `${(att.size / 1024).toFixed(0)} KB` : ""}
-          {isText ? " · Text extracted" : isPdf || isDoc || isXls ? " · Binary attached" : ""}
-        </p>
+        {att.size && <p className="text-[10px] text-muted-foreground">{(att.size / 1024).toFixed(0)} KB</p>}
       </div>
-      <button onClick={onRemove} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0 mr-1">
+      <button onClick={onRemove} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0">
         <X size={12} />
       </button>
     </div>
@@ -541,60 +528,32 @@ export default function Chat() {
 
   const processFile = useCallback((file: File): Promise<Attachment | null> => {
     return new Promise(resolve => {
-      const name = file.name;
-      const ext = name.toLowerCase().split(".").pop() || "";
-
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
         reader.onload = e => resolve({
           id: crypto.randomUUID(), type: "image",
-          name, preview: e.target?.result as string, size: file.size,
+          name: file.name, preview: e.target?.result as string, size: file.size,
         });
         reader.onerror = () => resolve(null);
         reader.readAsDataURL(file);
       } else if (
-        ext === "eml" ||
+        file.name.toLowerCase().endsWith(".eml") ||
         file.type === "message/rfc822" ||
-        file.type === "message/rfc2822"
+        file.type === "message/rfc2822" ||
+        file.type === "application/octet-stream" && file.name.toLowerCase().endsWith(".eml")
       ) {
+        // Parse .eml files as RFC 822 email content
         const reader = new FileReader();
         reader.onload = e => {
           const text = e.target?.result as string;
-          const att = parseEmlContent(text, name);
+          const att = parseEmlContent(text, file.name);
           resolve(att);
         };
         reader.onerror = () => resolve(null);
         reader.readAsText(file);
-      } else if (
-        // Text-readable documents — read as text and send content to LLM
-        ["txt", "csv", "json", "xml", "html", "htm", "md", "log", "ini", "cfg", "yaml", "yml", "toml"].includes(ext) ||
-        file.type.startsWith("text/") ||
-        file.type === "application/json" ||
-        file.type === "application/xml"
-      ) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const text = e.target?.result as string;
-          resolve({
-            id: crypto.randomUUID(), type: "file",
-            name, size: file.size,
-            fileText: text,
-          });
-        };
-        reader.onerror = () => resolve(null);
-        reader.readAsText(file);
       } else {
-        // Binary documents (PDF, Word, Excel, etc.) — read as data URL for attachment
-        const reader = new FileReader();
-        reader.onload = e => {
-          resolve({
-            id: crypto.randomUUID(), type: "file",
-            name, size: file.size,
-            preview: e.target?.result as string,
-          });
-        };
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(file);
+        // Unknown file type — skip silently (don't add useless chips)
+        resolve(null);
       }
     });
   }, []);
@@ -897,9 +856,7 @@ export default function Chat() {
 
     // Build display content for the optimistic message
     let displayContent = msg;
-    const fileAttsDisplay = attachments.filter(a => a.type === "file");
     if (emailAtt) displayContent = `[EMAIL DROPPED]\n${emailAtt.emailSummary || "Email"}${msg ? `\n\n${msg}` : ""}`;
-    else if (fileAttsDisplay.length > 0) displayContent = `[${fileAttsDisplay.map(f => f.name).join(", ")} attached]${msg ? `\n\n${msg}` : ""}`;
     else if (imageAtts.length > 0) displayContent = `[${imageAtts.length} image(s) attached]${msg ? ` — ${msg}` : ""}`;
 
     const userMsg: Message = { id: `opt-${Date.now()}`, role: "user", content: displayContent, createdAt: new Date().toISOString() };
@@ -922,18 +879,6 @@ export default function Chat() {
         body.emailPlainText = emailAtt.emailPlainText;
       }
       if (imageAtts.length > 0) body.images = imageAtts.map(a => a.preview as string);
-
-      // Attach file content (text-readable and binary documents)
-      const fileAtts = attachments.filter(a => a.type === "file");
-      if (fileAtts.length > 0) {
-        const fileContents = fileAtts.map(f => ({
-          name: f.name,
-          text: f.fileText || null,
-          dataUrl: !f.fileText ? f.preview || null : null,
-          size: f.size,
-        }));
-        body.files = fileContents;
-      }
 
       const res = await fetch(`${base}/api/anthropic/conversations/${CONVERSATION_ID}/messages`, {
         method: "POST",
@@ -1132,7 +1077,7 @@ export default function Chat() {
               <Paperclip size={17} />
               <input
                 type="file"
-                accept="*/*"
+                accept="image/*,.eml,message/rfc822"
                 multiple
                 className="hidden"
                 onChange={async e => {

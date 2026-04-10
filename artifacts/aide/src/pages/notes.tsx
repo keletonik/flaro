@@ -8,14 +8,17 @@ import { SkeletonCard } from "@/components/SkeletonCard";
 import { cn } from "@/lib/utils";
 import type { Note } from "@workspace/api-client-react";
 
-const CATEGORIES = ["All", "Urgent", "To Do", "To Ask", "Schedule", "Done"] as const;
+const CATEGORIES = ["All", "Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"] as const;
 
 const CAT_STYLES: Record<string, { badge: string; card: string; accent: string }> = {
-  "Urgent":   { badge: "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800", card: "border-l-red-400", accent: "bg-red-50 dark:bg-red-900/10" },
-  "To Do":    { badge: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800", card: "border-l-blue-400", accent: "bg-blue-50 dark:bg-blue-900/10" },
-  "To Ask":   { badge: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800", card: "border-l-amber-400", accent: "bg-amber-50 dark:bg-amber-900/10" },
-  "Schedule": { badge: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800", card: "border-l-purple-400", accent: "bg-purple-50 dark:bg-purple-900/10" },
-  "Done":     { badge: "bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/20 dark:text-slate-500 dark:border-slate-700", card: "border-l-slate-300", accent: "bg-slate-50 dark:bg-slate-900/10" },
+  "Urgent":      { badge: "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800", card: "border-l-red-400", accent: "bg-red-50 dark:bg-red-900/10" },
+  "To Do":       { badge: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800", card: "border-l-blue-400", accent: "bg-blue-50 dark:bg-blue-900/10" },
+  "To Ask":      { badge: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800", card: "border-l-amber-400", accent: "bg-amber-50 dark:bg-amber-900/10" },
+  "Schedule":    { badge: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800", card: "border-l-purple-400", accent: "bg-purple-50 dark:bg-purple-900/10" },
+  "Quote":       { badge: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800", card: "border-l-emerald-400", accent: "bg-emerald-50 dark:bg-emerald-900/10" },
+  "Follow Up":   { badge: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/20 dark:text-cyan-400 dark:border-cyan-800", card: "border-l-cyan-400", accent: "bg-cyan-50 dark:bg-cyan-900/10" },
+  "Investigate": { badge: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800", card: "border-l-orange-400", accent: "bg-orange-50 dark:bg-orange-900/10" },
+  "Done":        { badge: "bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/20 dark:text-slate-500 dark:border-slate-700", card: "border-l-slate-300", accent: "bg-slate-50 dark:bg-slate-900/10" },
 };
 
 type ViewMode = "list" | "grid";
@@ -153,7 +156,7 @@ function AddNoteSheet({ onClose, onSave }: {
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Category</p>
           <div className="flex flex-wrap gap-1.5">
-            {["Urgent", "To Do", "To Ask", "Schedule"].map(cat => (
+            {["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate"].map(cat => (
               <button
                 key={cat}
                 data-testid={`category-${cat.toLowerCase().replace(/\s+/g, "-")}`}
@@ -232,6 +235,9 @@ export default function Notes() {
       "To Do": all.filter(n => n.category === "To Do" && n.status !== "Done").length,
       "To Ask": all.filter(n => n.category === "To Ask" && n.status !== "Done").length,
       Schedule: all.filter(n => n.category === "Schedule" && n.status !== "Done").length,
+      Quote: all.filter(n => n.category === "Quote" && n.status !== "Done").length,
+      "Follow Up": all.filter(n => n.category === "Follow Up" && n.status !== "Done").length,
+      Investigate: all.filter(n => n.category === "Investigate" && n.status !== "Done").length,
       Done: all.filter(n => n.status === "Done").length,
     };
   }, [notes]);
@@ -240,7 +246,7 @@ export default function Notes() {
     try {
       await createNote.mutateAsync({ data: {
         text,
-        category: category as "Urgent" | "To Do" | "To Ask" | "Schedule" | "Done",
+        category: category as "Urgent" | "To Do" | "To Ask" | "Schedule" | "Quote" | "Follow Up" | "Investigate" | "Done",
         owner,
       }});
       queryClient.invalidateQueries({ queryKey: getListNotesQueryKey() });

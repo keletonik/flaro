@@ -148,6 +148,7 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 
 ### GitHub Sync Rule
 **PERMANENT RULE**: After every update or change, automatically push the latest changes to GitHub repo `keletonik/flaro` on branch `claude/service-manager-dashboard-KR9HH`. This must happen on every single update — no exceptions, no need for the user to ask.
+**CRITICAL — ROLLING UPDATES ONLY**: Syncs must NEVER remove existing data from the repo. Always use `base_tree` (the parent commit's tree) when creating new trees via the GitHub API. This ensures only changed files are added/updated — all other existing files in the repo remain untouched. Never create a tree from scratch or force-push. Every sync is additive on top of the current remote HEAD.
 
 ### Techs
 - Darren Brailey, Gordon Jenkins, Haider Al-Heyoury, John Minai, Nu Unasa, Unassigned

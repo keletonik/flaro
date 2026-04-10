@@ -36,11 +36,12 @@ interface Attachment {
   id: string;
   type: "image" | "email" | "file";
   name: string;
-  preview?: string;       // data URL for images
-  emailHtml?: string;     // raw HTML for emails
-  emailSummary?: string;  // "From: x | Subject: y"
-  emailBody?: string;     // user-pasted body (when drag-drop only captured header)
-  emailHasBody?: boolean; // true if body was captured automatically (not just header)
+  preview?: string;
+  emailHtml?: string;
+  emailPlainText?: string;
+  emailSummary?: string;
+  emailBody?: string;
+  emailHasBody?: boolean;
   size?: number;
 }
 
@@ -260,10 +261,20 @@ function AttachmentChip({
 }) {
   if (att.type === "email") {
     return (
-      <div className="w-full bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl overflow-hidden">
+      <div className={cn(
+        "w-full rounded-xl overflow-hidden border",
+        att.emailHasBody
+          ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800"
+          : "bg-amber-50 dark:bg-amber-900/10 border-amber-300 dark:border-amber-700"
+      )}>
         <div className="flex items-center gap-2 px-3 py-2">
-          <div className="w-7 h-7 bg-amber-100 dark:bg-amber-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Mail size={14} className="text-amber-600 dark:text-amber-400" />
+          <div className={cn(
+            "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0",
+            att.emailHasBody
+              ? "bg-emerald-100 dark:bg-emerald-900/20"
+              : "bg-amber-100 dark:bg-amber-900/20"
+          )}>
+            <Mail size={14} className={att.emailHasBody ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground truncate">{att.name}</p>
@@ -275,16 +286,24 @@ function AttachmentChip({
             <X size={12} />
           </button>
         </div>
-        <div className="border-t border-amber-200 dark:border-amber-800 px-3 py-1.5">
+        <div className={cn(
+          "border-t px-3 py-1.5",
+          att.emailHasBody ? "border-emerald-200 dark:border-emerald-800" : "border-amber-300 dark:border-amber-700"
+        )}>
           {att.emailHasBody ? (
-            <div className="flex items-center gap-1">
-              <Check size={10} className="text-emerald-500 flex-shrink-0" />
-              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Full email captured — ready to triage</p>
+            <div className="flex items-center gap-1.5">
+              <Check size={12} className="text-emerald-500 flex-shrink-0" />
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Full email captured — ready to triage</p>
             </div>
           ) : (
-            <div className="flex items-center gap-1">
-              <AlertTriangle size={10} className="text-amber-500 flex-shrink-0" />
-              <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Header only — paste email body (Ctrl+V) for full triage, or send as-is</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle size={12} className="text-amber-500 flex-shrink-0" />
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">Header only — body text not captured by Outlook</p>
+              </div>
+              <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80 pl-5">
+                Open the email in Outlook, press Ctrl+A then Ctrl+C, then click here and press Ctrl+V
+              </p>
             </div>
           )}
         </div>
@@ -539,24 +558,42 @@ export default function Chat() {
     });
   }, []);
 
-  const processHtmlEmail = useCallback((html: string): Attachment | null => {
+  const processHtmlEmail = useCallback((html: string, extraPlainText?: string): Attachment | null => {
     if (!html || html.trim().length < 20) return null;
     const meta = extractEmailMeta(html);
-    const plain = htmlToText(html);
-    const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
+    const htmlPlain = htmlToText(html);
 
-    const headerLineRe = /^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To|De|Objet|Importance|Attachments?)\s*[:\s]/i;
-    const lines = plain.split("\n").map(l => l.trim()).filter(Boolean);
-    const nonHeaderLines = lines.filter(l => !headerLineRe.test(l));
-    const bodyText = nonHeaderLines.join(" ").replace(/\s+/g, " ").trim();
-    const emailHasBody = bodyText.length > 80;
+    const headerLineRe = /^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To|De|Objet|Importance|Attachments?|Categories|Sensitivity|Priority)\s*[:\s]/i;
+    const metaJunkRe = /^(mailto:|https?:\/\/|www\.|javascript:|#|[\s•–—·|]+$)/i;
+    const extractBody = (text: string): string => {
+      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+      const nonHeaders = lines.filter(l => !headerLineRe.test(l) && !metaJunkRe.test(l) && l.length > 2);
+      return nonHeaders.join(" ").replace(/\s+/g, " ").trim();
+    };
+
+    let bodyFromHtml = extractBody(htmlPlain);
+    let bodyFromPlain = extraPlainText ? extractBody(extraPlainText) : "";
+
+    const bestBody = bodyFromPlain.length > bodyFromHtml.length ? bodyFromPlain : bodyFromHtml;
+    const emailHasBody = bestBody.length > 60 && bestBody.split(/\s+/).length > 8;
+
+    let mergedHtml = html;
+    if (!emailHasBody && extraPlainText && extraPlainText.trim().length > htmlPlain.length) {
+      mergedHtml = `${html}\n<div style="white-space:pre-wrap;margin-top:12px;font-family:sans-serif">${extraPlainText.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+    } else if (bodyFromPlain.length > bodyFromHtml.length + 40) {
+      mergedHtml = `${html}\n<div style="white-space:pre-wrap;margin-top:12px;font-family:sans-serif">${extraPlainText!.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+    }
+
+    const mergedPlain = [htmlPlain, extraPlainText].filter(Boolean).join("\n\n");
+    const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
 
     return {
       id: crypto.randomUUID(),
       type: "email",
       name: meta.subject ? `Email: ${meta.subject.slice(0, 50)}` : "Email dropped",
-      emailHtml: html,
-      emailSummary: parts.join(" · ") || plain.slice(0, 80),
+      emailHtml: mergedHtml,
+      emailPlainText: mergedPlain,
+      emailSummary: parts.join(" · ") || htmlPlain.slice(0, 80),
       emailHasBody,
     };
   }, []);
@@ -609,23 +646,26 @@ export default function Chat() {
 
     const newAttachments: Attachment[] = [];
 
-    // 1. text/html — richest source, works for Outlook desktop drag & OWA drag
     const html = e.dataTransfer.getData("text/html");
+    const plainText = e.dataTransfer.getData("text/plain");
+
     if (html && html.trim().length > 20) {
-      const emailAtt = processHtmlEmail(html);
+      const emailAtt = processHtmlEmail(html, plainText || undefined);
       if (emailAtt) {
         newAttachments.push(emailAtt);
-        toast({ title: "Email captured", description: "Will be triaged automatically when you send." });
+        if (emailAtt.emailHasBody) {
+          toast({ title: "Email captured", description: "Full email ready — will be triaged when you send." });
+        } else {
+          toast({ title: "Email header captured", description: "Paste the email body (Ctrl+V) for full triage, or send as-is." });
+        }
       }
     }
 
-    // 2. Files (images and .eml files)
     if (e.dataTransfer.files.length > 0) {
       const filePromises = Array.from(e.dataTransfer.files).map(processFile);
       const results = await Promise.all(filePromises);
       const valid = results.filter((r): r is Attachment => r !== null);
       valid.forEach(r => {
-        // Don't double-add if we already captured an email via text/html
         if (r.type === "email" && newAttachments.some(a => a.type === "email")) return;
         newAttachments.push(r);
       });
@@ -635,27 +675,27 @@ export default function Chat() {
       if (emlCount > 0) toast({ title: "Email file captured", description: "Will be triaged automatically when you send." });
     }
 
-    // 3. text/plain — fallback: detect email-like plain text or put in input
-    if (newAttachments.length === 0) {
-      const text = e.dataTransfer.getData("text/plain");
-      if (text && text.trim()) {
-        if (looksLikeEmail(text)) {
-          // Plain text that looks like an email header block
-          const meta = { from: text.match(/^From:\s*(.+)/im)?.[1]?.trim() || "",
-                         subject: text.match(/^Subject:\s*(.+)/im)?.[1]?.trim() || "Email",
-                         date: text.match(/^(?:Date|Sent):\s*(.+)/im)?.[1]?.trim() || "" };
-          const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
-          newAttachments.push({
-            id: crypto.randomUUID(), type: "email",
-            name: `Email: ${meta.subject.slice(0, 50)}`,
-            emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text.replace(/</g, "&lt;")}</pre>`,
-            emailSummary: parts.join(" · ").slice(0, 120),
-          });
-          toast({ title: "Email captured", description: "Will be triaged automatically when you send." });
-        } else {
-          setInput(prev => prev ? `${prev}\n${text}` : text);
-          textareaRef.current?.focus();
-        }
+    if (newAttachments.length === 0 && plainText && plainText.trim()) {
+      if (looksLikeEmail(plainText)) {
+        const meta = { from: plainText.match(/^From:\s*(.+)/im)?.[1]?.trim() || "",
+                       subject: plainText.match(/^Subject:\s*(.+)/im)?.[1]?.trim() || "Email",
+                       date: plainText.match(/^(?:Date|Sent):\s*(.+)/im)?.[1]?.trim() || "" };
+        const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
+        const headerLineRe = /^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To|Importance|Attachments?)\s*[:\s]/i;
+        const bodyLines = plainText.split("\n").map(l => l.trim()).filter(l => l && !headerLineRe.test(l) && l.length > 2);
+        const hasBody = bodyLines.join(" ").length > 60 && bodyLines.length > 2;
+        newAttachments.push({
+          id: crypto.randomUUID(), type: "email",
+          name: `Email: ${meta.subject.slice(0, 50)}`,
+          emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${plainText.replace(/</g, "&lt;")}</pre>`,
+          emailPlainText: plainText,
+          emailSummary: parts.join(" · ").slice(0, 120),
+          emailHasBody: hasBody,
+        });
+        toast({ title: "Email captured", description: hasBody ? "Full email ready — will be triaged when you send." : "Paste the email body (Ctrl+V) for full triage, or send as-is." });
+      } else {
+        setInput(prev => prev ? `${prev}\n${plainText}` : plainText);
+        textareaRef.current?.focus();
       }
     }
 
@@ -686,44 +726,42 @@ export default function Chat() {
       }
     }
 
-    // 2. Pasted HTML — treat as email if it has email headers
+    const hasHeaderOnlyEmail = attachments.some(a => a.type === "email" && !a.emailHasBody);
+
     const html = e.clipboardData.getData("text/html");
+    const text = e.clipboardData.getData("text/plain");
+
+    if (hasHeaderOnlyEmail) {
+      e.preventDefault();
+      const pastedContent = html && html.trim().length > 50 ? html : (text ? `<div style="white-space:pre-wrap;font-family:sans-serif">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>` : "");
+      const pastedPlain = text || (html ? htmlToText(html) : "");
+      if (pastedContent) {
+        setAttachments(prev => prev.map(a =>
+          a.type === "email" && !a.emailHasBody
+            ? {
+                ...a,
+                emailHtml: `<div>${a.emailHtml || ""}</div>\n${pastedContent}`,
+                emailPlainText: [a.emailPlainText, pastedPlain].filter(Boolean).join("\n\n"),
+                emailHasBody: true,
+              }
+            : a
+        ));
+        toast({ title: "Email body merged", description: "Full email ready — send to triage." });
+      }
+      return;
+    }
+
     if (html && html.trim().length > 20 && looksLikeEmail(htmlToText(html))) {
-      const emailAtt = processHtmlEmail(html);
+      const emailAtt = processHtmlEmail(html, text || undefined);
       if (emailAtt) {
         e.preventDefault();
-        // If there's already a header-only email chip, merge the body into it
-        setAttachments(prev => {
-          const existingIdx = prev.findIndex(a => a.type === "email" && !a.emailHasBody);
-          if (existingIdx >= 0) {
-            const updated = [...prev];
-            updated[existingIdx] = { ...updated[existingIdx], emailHtml: emailAtt.emailHtml || updated[existingIdx].emailHtml, emailHasBody: true };
-            return updated;
-          }
-          return [...prev, emailAtt];
-        });
-        toast({ title: "Email body captured", description: "Full email ready — send to triage." });
+        setAttachments(prev => [...prev, emailAtt]);
+        toast({ title: "Email pasted", description: emailAtt.emailHasBody ? "Full email ready — send to triage." : "Header captured — paste body for full triage." });
         return;
       }
     }
 
-    // 3. Pasted plain text — check if it's an email or body content for an existing chip
-    const text = e.clipboardData.getData("text/plain");
     if (text && text.trim().length > 30) {
-      // If there's a header-only email attachment, merge this paste as the body
-      const hasHeaderOnlyEmail = attachments.some(a => a.type === "email" && !a.emailHasBody);
-      if (hasHeaderOnlyEmail) {
-        e.preventDefault();
-        setAttachments(prev => prev.map(a =>
-          a.type === "email" && !a.emailHasBody
-            ? { ...a, emailHtml: `<div>${a.emailHtml || ""}</div><div style="white-space:pre-wrap;margin-top:12px">${text.replace(/</g, "&lt;")}</div>`, emailHasBody: true }
-            : a
-        ));
-        toast({ title: "Email body merged", description: "Full email ready — send to triage." });
-        return;
-      }
-
-      // Detect complete email and create a new attachment
       if (looksLikeEmail(text)) {
         e.preventDefault();
         const meta = {
@@ -736,6 +774,7 @@ export default function Chat() {
           id: crypto.randomUUID(), type: "email",
           name: `Email: ${meta.subject.slice(0, 50)}`,
           emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text.replace(/</g, "&lt;")}</pre>`,
+          emailPlainText: text,
           emailSummary: parts.join(" · ").slice(0, 120),
           emailHasBody: true,
         }]);
@@ -743,8 +782,6 @@ export default function Chat() {
         return;
       }
     }
-
-    // Otherwise: let the browser handle it normally (text into textarea)
   }, [processHtmlEmail, processFile, toast, attachments]);
 
   const removeAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id));
@@ -837,6 +874,9 @@ export default function Chat() {
       const body: Record<string, unknown> = { content: msg || "Please triage and analyse the attached content." };
       if (emailAtt?.emailHtml) {
         body.emailHtml = emailAtt.emailHtml;
+      }
+      if (emailAtt?.emailPlainText) {
+        body.emailPlainText = emailAtt.emailPlainText;
       }
       if (imageAtts.length > 0) body.images = imageAtts.map(a => a.preview as string);
 

@@ -140,15 +140,16 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   const [conv] = await db.select().from(conversations).where(eq(conversations.id, conversationId));
   if (!conv) { res.status(404).json({ error: "Conversation not found" }); return; }
 
-  // Extract multimodal fields (not in Zod schema — accessed directly)
   const images: string[] = Array.isArray(req.body.images) ? req.body.images : [];
   const emailHtml: string | null = typeof req.body.emailHtml === "string" ? req.body.emailHtml : null;
+  const emailPlainText: string | null = typeof req.body.emailPlainText === "string" ? req.body.emailPlainText : null;
   const hasAttachments = images.length > 0 || emailHtml;
 
-  // Build a text-only version of the user message for DB storage
   let dbContent = bodyParsed.data.content;
-  if (emailHtml) {
-    const emailText = htmlToPlainText(emailHtml);
+  if (emailHtml || emailPlainText) {
+    const fromHtml = emailHtml ? htmlToPlainText(emailHtml) : "";
+    const fromPlain = emailPlainText || "";
+    const emailText = fromPlain.length > fromHtml.length ? fromPlain : fromHtml;
     dbContent = `[EMAIL DROPPED]\n${emailText}${bodyParsed.data.content ? `\n\nCasper's note: ${bodyParsed.data.content}` : ""}`;
   } else if (images.length > 0) {
     dbContent = `[${images.length} image(s) attached]${bodyParsed.data.content ? ` — ${bodyParsed.data.content}` : ""}`;
@@ -186,11 +187,17 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
     }
   }
 
-  // Build text content
   let textContent = "";
-  if (emailHtml) {
-    const emailText = htmlToPlainText(emailHtml);
-    textContent = `[EMAIL DROPPED BY CASPER — TRIAGE THIS IMMEDIATELY]\n\n${emailText}`;
+  if (emailHtml || emailPlainText) {
+    const fromHtml = emailHtml ? htmlToPlainText(emailHtml) : "";
+    const fromPlain = emailPlainText || "";
+    const emailText = fromPlain.length > fromHtml.length ? fromPlain : fromHtml;
+    const secondSource = fromPlain.length > fromHtml.length ? fromHtml : fromPlain;
+    let combined = emailText;
+    if (secondSource && secondSource.length > 30 && Math.abs(secondSource.length - emailText.length) > 50) {
+      combined += `\n\n--- ADDITIONAL EMAIL CONTENT (secondary extraction) ---\n${secondSource}`;
+    }
+    textContent = `[EMAIL DROPPED BY CASPER — TRIAGE THIS IMMEDIATELY]\n\n${combined}`;
     if (bodyParsed.data.content) textContent += `\n\nCasper's note: ${bodyParsed.data.content}`;
   } else if (images.length > 0) {
     textContent = bodyParsed.data.content

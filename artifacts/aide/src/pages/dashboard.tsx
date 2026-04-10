@@ -175,7 +175,7 @@ export default function Dashboard() {
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <MetricCard label="Active Jobs" value={summary?.active ?? "-"} icon={Briefcase} color="bg-primary/8" onClick={() => setLocation("/jobs")} />
+          <MetricCard label="Active WIPs" value={summary?.active ?? "-"} icon={Briefcase} color="bg-primary/8" onClick={() => setLocation("/jobs")} />
           <MetricCard label="Completed Today" value={summary?.doneToday ?? "-"} icon={CheckCircle2} color="bg-emerald-500/8" trend={summary && summary.doneToday > 0 ? "up" : "neutral"} trendLabel={`${summary?.doneToday ?? 0}`} />
           <MetricCard label="Revenue (Week)" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={DollarSign} color="bg-emerald-500/8" />
           <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={TrendingUp} color="bg-amber-500/8" onClick={() => setLocation("/operations")} />

@@ -155,7 +155,7 @@ function JobModal({ job, onClose, onSave }: {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-card border border-border w-full md:max-w-xl max-h-[90vh] overflow-y-auto rounded-t-2xl md:rounded-2xl shadow-xl">
         <div className="sticky top-0 bg-card border-b border-border px-5 py-4 flex items-center justify-between">
-          <h2 className="font-bold text-foreground">{job ? "Edit Job" : "New Job"}</h2>
+          <h2 className="font-bold text-foreground">{job ? "Edit WIP" : "New WIP"}</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted"><X size={18} /></button>
         </div>
         <form onSubmit={e => { e.preventDefault(); if (form.site && form.client && form.actionRequired) onSave(form); }} className="px-5 py-4 space-y-4">
@@ -180,7 +180,7 @@ function JobModal({ job, onClose, onSave }: {
           <div><label className={label}>Notes</label><textarea className={cn(field, "resize-none")} rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Additional notes..." /></div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 bg-muted text-muted-foreground rounded-lg text-sm font-medium hover:text-foreground">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90">{job ? "Save Changes" : "Add Job"}</button>
+            <button type="submit" className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90">{job ? "Save Changes" : "Add WIP"}</button>
           </div>
         </form>
       </div>
@@ -345,7 +345,7 @@ export default function Jobs() {
     <div className="min-h-screen bg-background flex flex-col">
       <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2">
-          <h1 className="text-foreground font-bold text-base tracking-tight shrink-0">Jobs</h1>
+          <h1 className="text-foreground font-bold text-base tracking-tight shrink-0">WIPs</h1>
           <div className="flex-1 max-w-sm">
             <div className="relative">
               <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -371,7 +371,7 @@ export default function Jobs() {
               onClick={() => { setEditingJob(undefined); setShowModal(true); }}
               className="flex items-center gap-1 px-2.5 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded hover:opacity-90 transition-opacity"
             >
-              <Plus size={12} />Add Job
+              <Plus size={12} />Add WIP
             </button>
           </div>
         </div>
@@ -407,7 +407,7 @@ export default function Jobs() {
         )}
 
         <div className="flex items-center gap-3 px-3 py-1.5 bg-muted/30 border-t border-border text-[10px] text-muted-foreground">
-          <span className="font-medium text-foreground">{filtered.length}</span> of {allJobs.length} jobs
+          <span className="font-medium text-foreground">{filtered.length}</span> of {allJobs.length} WIPs
           {stats.critical > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />{stats.critical} critical</span>}
           {stats.high > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-orange-400" />{stats.high} high</span>}
           {stats.overdue > 0 && <span className="text-red-500 font-semibold">{stats.overdue} overdue</span>}
@@ -432,7 +432,7 @@ export default function Jobs() {
         ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Filter size={24} className="text-muted-foreground/30 mb-3" />
-            <p className="text-sm text-foreground font-medium">No jobs match your filters</p>
+            <p className="text-sm text-foreground font-medium">No WIPs match your filters</p>
             <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters or search query</p>
             {activeFilterCount > 0 && <button onClick={clearAllFilters} className="mt-3 text-xs text-primary hover:underline">Clear all filters</button>}
           </div>
@@ -570,7 +570,7 @@ export default function Jobs() {
       </div>
 
       {showModal && <JobModal job={editingJob} onClose={() => { setShowModal(false); setEditingJob(undefined); }} onSave={handleSave} />}
-      <AnalyticsPanel section="wip" title="Jobs Analyst" />
+      <AnalyticsPanel section="wip" title="WIPs Analyst" />
     </div>
   );
 }

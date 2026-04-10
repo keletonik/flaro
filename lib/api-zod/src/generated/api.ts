@@ -260,7 +260,7 @@ export const ListNotesQueryParams = zod.object({
 export const ListNotesResponseItem = zod.object({
   id: zod.string(),
   text: zod.string(),
-  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Done"]),
+  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"]),
   owner: zod.string(),
   status: zod.enum(["Open", "Done"]),
   createdAt: zod.coerce.date(),
@@ -272,7 +272,7 @@ export const ListNotesResponse = zod.array(ListNotesResponseItem);
  */
 export const CreateNoteBody = zod.object({
   text: zod.string(),
-  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Done"]),
+  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"]),
   owner: zod.string(),
 });
 
@@ -286,7 +286,7 @@ export const GetNoteParams = zod.object({
 export const GetNoteResponse = zod.object({
   id: zod.string(),
   text: zod.string(),
-  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Done"]),
+  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"]),
   owner: zod.string(),
   status: zod.enum(["Open", "Done"]),
   createdAt: zod.coerce.date(),
@@ -302,7 +302,7 @@ export const UpdateNoteParams = zod.object({
 export const UpdateNoteBody = zod.object({
   text: zod.string().optional(),
   category: zod
-    .enum(["Urgent", "To Do", "To Ask", "Schedule", "Done"])
+    .enum(["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"])
     .optional(),
   owner: zod.string().optional(),
   status: zod.enum(["Open", "Done"]).optional(),
@@ -311,7 +311,7 @@ export const UpdateNoteBody = zod.object({
 export const UpdateNoteResponse = zod.object({
   id: zod.string(),
   text: zod.string(),
-  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Done"]),
+  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"]),
   owner: zod.string(),
   status: zod.enum(["Open", "Done"]),
   createdAt: zod.coerce.date(),

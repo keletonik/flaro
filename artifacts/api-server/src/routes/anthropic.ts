@@ -143,7 +143,8 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   const images: string[] = Array.isArray(req.body.images) ? req.body.images : [];
   const emailHtml: string | null = typeof req.body.emailHtml === "string" ? req.body.emailHtml : null;
   const emailPlainText: string | null = typeof req.body.emailPlainText === "string" ? req.body.emailPlainText : null;
-  const hasAttachments = images.length > 0 || emailHtml;
+  const files: { name: string; text: string | null; dataUrl: string | null; size?: number }[] = Array.isArray(req.body.files) ? req.body.files : [];
+  const hasAttachments = images.length > 0 || emailHtml || emailPlainText || files.length > 0;
 
   let dbContent = bodyParsed.data.content;
   if (emailHtml || emailPlainText) {
@@ -151,6 +152,10 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
     const fromPlain = emailPlainText || "";
     const emailText = fromPlain.length > fromHtml.length ? fromPlain : fromHtml;
     dbContent = `[EMAIL DROPPED]\n${emailText}${bodyParsed.data.content ? `\n\nCasper's note: ${bodyParsed.data.content}` : ""}`;
+  } else if (files.length > 0) {
+    const fileNames = files.map(f => f.name).join(", ");
+    const textContents = files.filter(f => f.text).map(f => `[${f.name}]\n${f.text}`).join("\n\n");
+    dbContent = `[Files: ${fileNames}]\n${textContents || "(binary files)"}${bodyParsed.data.content ? `\n\nCasper's note: ${bodyParsed.data.content}` : ""}`;
   } else if (images.length > 0) {
     dbContent = `[${images.length} image(s) attached]${bodyParsed.data.content ? ` — ${bodyParsed.data.content}` : ""}`;
   }
@@ -199,6 +204,16 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
     }
     textContent = `[EMAIL DROPPED BY CASPER — TRIAGE THIS IMMEDIATELY]\n\n${combined}`;
     if (bodyParsed.data.content) textContent += `\n\nCasper's note: ${bodyParsed.data.content}`;
+  } else if (files.length > 0) {
+    // Build file content for the LLM
+    const fileParts = files.map(f => {
+      if (f.text) return `=== FILE: ${f.name} ===\n${f.text}`;
+      return `=== FILE: ${f.name} (${f.size ? Math.round(f.size / 1024) + " KB" : "binary"}) === [Binary file — content not extractable in browser]`;
+    });
+    textContent = `Casper has attached ${files.length} file(s). Analyse the content and extract any relevant information, action items, or data.\n\n${fileParts.join("\n\n")}`;
+    if (bodyParsed.data.content && bodyParsed.data.content !== "Please triage and analyse the attached content.") {
+      textContent += `\n\nCasper's note: ${bodyParsed.data.content}`;
+    }
   } else if (images.length > 0) {
     textContent = bodyParsed.data.content
       ? `Casper has attached ${images.length} image(s). His note: ${bodyParsed.data.content}`

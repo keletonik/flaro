@@ -143,7 +143,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   const images: string[] = Array.isArray(req.body.images) ? req.body.images : [];
   const emailHtml: string | null = typeof req.body.emailHtml === "string" ? req.body.emailHtml : null;
   const emailPlainText: string | null = typeof req.body.emailPlainText === "string" ? req.body.emailPlainText : null;
-  const hasAttachments = images.length > 0 || emailHtml;
+  const hasAttachments = images.length > 0 || emailHtml || emailPlainText;
 
   let dbContent = bodyParsed.data.content;
   if (emailHtml || emailPlainText) {
@@ -223,6 +223,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
 
   let fullResponse = "";
   let clientDisconnected = false;

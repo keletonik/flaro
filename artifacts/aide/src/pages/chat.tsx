@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Send, RefreshCw, Copy, Check, Briefcase,
   FileText, CheckSquare, AlertTriangle, Image, Mail, X,
-  Paperclip, Zap
+  Paperclip, Zap, Clipboard
 } from "lucide-react";
 import {
   useGetAnthropicConversation, getGetAnthropicConversationQueryKey,
@@ -253,13 +253,32 @@ function EmailTriageCard({ data }: { data: Record<string, string | boolean | nul
 }
 
 function AttachmentChip({
-  att, onRemove,
+  att, onRemove, onPasteBody,
 }: {
   att: Attachment;
   onRemove: () => void;
-  onBodyChange?: (body: string) => void;
+  onPasteBody?: (html: string, plain: string) => void;
 }) {
+  const pasteRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-focus the paste area when header-only email is shown
+  useEffect(() => {
+    if (att.type === "email" && !att.emailHasBody && pasteRef.current) {
+      setTimeout(() => pasteRef.current?.focus(), 100);
+    }
+  }, [att.type, att.emailHasBody]);
+
   if (att.type === "email") {
+    const handleBodyPaste = (e: React.ClipboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const html = e.clipboardData.getData("text/html");
+      const text = e.clipboardData.getData("text/plain");
+      if ((html && html.trim().length > 20) || (text && text.trim().length > 10)) {
+        onPasteBody?.(html || "", text || "");
+      }
+    };
+
     return (
       <div className={cn(
         "w-full rounded-xl overflow-hidden border",
@@ -286,27 +305,38 @@ function AttachmentChip({
             <X size={12} />
           </button>
         </div>
-        <div className={cn(
-          "border-t px-3 py-1.5",
-          att.emailHasBody ? "border-emerald-200 dark:border-emerald-800" : "border-amber-300 dark:border-amber-700"
-        )}>
-          {att.emailHasBody ? (
+
+        {att.emailHasBody ? (
+          <div className="border-t border-emerald-200 dark:border-emerald-800 px-3 py-1.5">
             <div className="flex items-center gap-1.5">
               <Check size={12} className="text-emerald-500 flex-shrink-0" />
-              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Full email captured — ready to triage</p>
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Full email captured — ready to send</p>
             </div>
-          ) : (
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5">
-                <AlertTriangle size={12} className="text-amber-500 flex-shrink-0" />
-                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">Header only — body text not captured by Outlook</p>
+          </div>
+        ) : (
+          <div className="border-t border-amber-300 dark:border-amber-700 px-3 py-2 space-y-2">
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle size={12} className="text-amber-500 flex-shrink-0" />
+              <p className="text-[11px] text-amber-700 dark:text-amber-300 font-bold">Body not captured — paste it below</p>
+            </div>
+            <div className="relative">
+              <textarea
+                ref={pasteRef}
+                onPaste={handleBodyPaste}
+                placeholder="Open the email → Ctrl+A → Ctrl+C → then Ctrl+V here"
+                rows={3}
+                className="w-full bg-white dark:bg-[hsl(30,5%,11%)] border border-amber-300 dark:border-amber-700 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
+                readOnly
+              />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                <Clipboard size={24} className="text-amber-500" />
               </div>
-              <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80 pl-5">
-                Open the email in Outlook, press Ctrl+A then Ctrl+C, then click here and press Ctrl+V
-              </p>
             </div>
-          )}
-        </div>
+            <p className="text-[9px] text-amber-600/60 dark:text-amber-400/60">
+              Outlook drag only captures headers. Paste the full email body above to include it in the triage.
+            </p>
+          </div>
+        )}
       </div>
     );
   }
@@ -785,8 +815,6 @@ export default function Chat() {
   }, [processHtmlEmail, processFile, toast, attachments]);
 
   const removeAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id));
-  const updateAttachmentBody = (id: string, body: string) =>
-    setAttachments(prev => prev.map(a => a.id === id ? { ...a, emailBody: body } : a));
 
   // ── Action execution ─────────────────────────────────────────────────────────
 
@@ -1063,7 +1091,18 @@ export default function Chat() {
                   key={att.id}
                   att={att}
                   onRemove={() => removeAttachment(att.id)}
-                  onBodyChange={att.type === "email" ? (body) => updateAttachmentBody(att.id, body) : undefined}
+                  onPasteBody={att.type === "email" && !att.emailHasBody ? (html, plain) => {
+                    const pastedHtml = html && html.trim().length > 20 ? html : `<div style="white-space:pre-wrap">${(plain || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+                    setAttachments(prev => prev.map(a =>
+                      a.id === att.id ? {
+                        ...a,
+                        emailHtml: `<div>${a.emailHtml || ""}</div>\n${pastedHtml}`,
+                        emailPlainText: [a.emailPlainText, plain].filter(Boolean).join("\n\n"),
+                        emailHasBody: true,
+                      } : a
+                    ));
+                    toast({ title: "Email body captured", description: "Full email ready — hit send to triage." });
+                  } : undefined}
                 />
               ))}
             </div>

@@ -473,45 +473,43 @@ function MessageBubble({ msg, executedActions }: { msg: Message; executedActions
   if (isUser) {
     return (
       <div className="flex justify-end fade-in">
-        <div className="max-w-[75%] flex flex-col items-end">
+        <div className="max-w-[75ch] flex flex-col items-end gap-1">
           {(isEmailDrop || isImageDrop) && (
             <div className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold mb-1",
-              isEmailDrop ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+              "flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold",
+              isEmailDrop ? "bg-primary/10 text-primary" : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
             )}>
-              {isEmailDrop ? <><Mail size={10} /> Email dropped</> : <><Image size={10} /> Image attached</>}
+              {isEmailDrop ? <><Mail size={10} /> Email</> : <><Image size={10} /> Image</>}
             </div>
           )}
-          <div className="chat-user-bubble text-[13.5px] leading-relaxed">
+          <div className="chat-user-bubble text-[14px] leading-[1.6]">
             {cleanText.split("\n").map((line, i, arr) => (
               <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
             ))}
           </div>
-          <span className="text-[10px] text-muted-foreground/40 mt-1 mr-1">{ts}</span>
         </div>
       </div>
     );
   }
 
-  // ── Assistant message — clean layout ──
+  // ── Assistant message — no bubble, flows on background ──
   return (
-    <div className="fade-in">
-      <div className="flex items-start gap-3 chat-assistant">
-        <div className="w-6 h-6 rounded-full bg-primary/12 flex items-center justify-center flex-shrink-0 mt-0.5">
-          <Zap size={12} className="text-primary" />
+    <div className="fade-in mb-6">
+      <div className="flex items-start gap-3.5 chat-assistant">
+        <div className="w-7 h-7 rounded-full bg-primary/12 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <Zap size={13} className="text-primary" />
         </div>
         <div className="flex-1 min-w-0 group">
-          <div className="text-[13.5px] text-foreground/90 leading-[1.75] chat-markdown">
+          <div className="text-[14px] text-foreground leading-[1.65rem] chat-markdown">
             <MarkdownContent content={cleanText} />
           </div>
-          <div className="mt-2 flex items-center gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+          <div className="mt-3 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <CopyButton text={cleanText} />
-            <span className="text-[10px] text-muted-foreground/40">{ts}</span>
           </div>
         </div>
       </div>
 
-      {emailTriage && <div className="ml-9 mt-2"><EmailTriageCard data={emailTriage.data} /></div>}
+      {emailTriage && <div className="ml-[42px] mt-3"><EmailTriageCard data={emailTriage.data} /></div>}
 
       {executedActions && executedActions.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2 ml-9">
@@ -1011,48 +1009,45 @@ export default function Chat() {
         </div>
       )}
 
-      {/* ── Header — minimal ── */}
-      <div className="flex items-center justify-between px-5 sm:px-8 py-2.5 border-b border-border/40 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-primary/12 flex items-center justify-center">
-            <Zap size={11} className="text-primary" />
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between px-5 sm:px-8 py-2.5 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-primary/12 flex items-center justify-center">
+            <Zap size={13} className="text-primary" />
           </div>
-          <span className="text-sm font-medium text-foreground">Chat</span>
-          {streaming && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+          <span className="text-[15px] font-semibold text-foreground tracking-tight">Service Ops</span>
+          {streaming && <div className="flex items-center gap-1 ml-1"><div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /><span className="text-[10px] text-primary font-medium">Thinking</span></div>}
         </div>
-        <div className="flex items-center gap-1">
-          <span className="hidden sm:inline text-[10px] text-muted-foreground/40">Drop emails · images · .eml files</span>
-          <button
-            data-testid="button-clear-chat"
-            onClick={() => { if (confirm("Clear this conversation?")) { setOptimisticMessages([]); setAttachments([]); queryClient.setQueryData(getGetAnthropicConversationQueryKey(CONVERSATION_ID), null); } }}
-            className="text-muted-foreground/40 hover:text-foreground p-1.5 rounded-lg hover:bg-muted/60 transition-all ml-2"
-            title="New conversation"
-          >
-            <RefreshCw size={13} />
-          </button>
-        </div>
+        <button
+          data-testid="button-clear-chat"
+          onClick={() => { if (confirm("Start a new conversation?")) { setOptimisticMessages([]); setAttachments([]); queryClient.setQueryData(getGetAnthropicConversationQueryKey(CONVERSATION_ID), null); } }}
+          className="text-muted-foreground/40 hover:text-foreground p-2 rounded-lg hover:bg-[rgba(0,0,0,0.04)] dark:hover:bg-[rgba(255,255,255,0.04)] transition-all"
+          title="New conversation"
+        >
+          <RefreshCw size={14} />
+        </button>
       </div>
 
       {/* ── Messages ── */}
-      <div className="flex-1 overflow-y-auto py-6 space-y-6">
-        <div className="max-w-3xl mx-auto px-5 sm:px-8 space-y-6">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-[780px] mx-auto px-5 sm:px-8 py-8 space-y-8">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
             <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : allMessages.length === 0 && !streaming ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <Zap size={20} className="text-primary" />
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
+              <Zap size={22} className="text-primary" />
             </div>
-            <h2 className="text-foreground font-semibold text-xl mb-2 tracking-tight">How can I help today?</h2>
-            <p className="text-muted-foreground text-sm max-w-md mb-8 leading-relaxed">
-              Drop an Outlook email, paste content, or just ask — jobs get logged, emails triaged, and tasks created automatically.
+            <h2 className="text-foreground font-semibold text-2xl mb-2 tracking-tight">How can I help?</h2>
+            <p className="text-muted-foreground text-[15px] max-w-md mb-10 leading-relaxed">
+              Drag an Outlook email, drop an image, or type a question. Jobs get logged, emails triaged, and tasks created.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-xl">
               {SUGGESTIONS.slice(0, 4).map(s => (
                 <button key={s} onClick={() => handleSend(s)}
-                  className="text-left px-4 py-3 text-[13px] text-muted-foreground bg-card border border-border rounded-2xl hover:text-foreground hover:bg-muted/40 transition-all hover:border-primary/20 leading-snug">
+                  className="text-left px-5 py-3.5 text-[13.5px] text-muted-foreground border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] rounded-2xl hover:text-foreground hover:bg-card hover:border-[rgba(0,0,0,0.15)] dark:hover:border-[rgba(255,255,255,0.12)] transition-all leading-snug shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
                   {s}
                 </button>
               ))}
@@ -1067,9 +1062,9 @@ export default function Chat() {
               streamingContent ? (
                 <MessageBubble msg={{ id: "streaming", role: "assistant", content: streamingContent, createdAt: new Date().toISOString() }} />
               ) : (
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/12 flex items-center justify-center flex-shrink-0">
-                    <Zap size={12} className="text-primary" />
+                <div className="flex items-start gap-3.5">
+                  <div className="w-7 h-7 rounded-full bg-primary/12 flex items-center justify-center flex-shrink-0">
+                    <Zap size={13} className="text-primary" />
                   </div>
                   <TypingIndicator />
                 </div>
@@ -1082,10 +1077,10 @@ export default function Chat() {
       </div>
 
       {/* ── Input area ── */}
-      <div className="px-4 sm:px-6 py-3 flex-shrink-0">
-        <div className="max-w-3xl mx-auto">
+      <div className="px-4 sm:px-6 py-4 flex-shrink-0">
+        <div className="max-w-[780px] mx-auto">
           {attachments.length > 0 && (
-            <div className="flex flex-col gap-2 mb-2.5">
+            <div className="flex flex-col gap-2 mb-3">
               {attachments.map(att => (
                 <AttachmentChip
                   key={att.id}
@@ -1093,15 +1088,49 @@ export default function Chat() {
                   onRemove={() => removeAttachment(att.id)}
                   onPasteBody={att.type === "email" && !att.emailHasBody ? (html, plain) => {
                     const pastedHtml = html && html.trim().length > 20 ? html : `<div style="white-space:pre-wrap">${(plain || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
-                    setAttachments(prev => prev.map(a =>
-                      a.id === att.id ? {
-                        ...a,
-                        emailHtml: `<div>${a.emailHtml || ""}</div>\n${pastedHtml}`,
-                        emailPlainText: [a.emailPlainText, plain].filter(Boolean).join("\n\n"),
-                        emailHasBody: true,
-                      } : a
-                    ));
-                    toast({ title: "Email body captured", description: "Full email ready — hit send to triage." });
+                    const updatedAtt: Attachment = {
+                      ...att,
+                      emailHtml: `<div>${att.emailHtml || ""}</div>\n${pastedHtml}`,
+                      emailPlainText: [att.emailPlainText, plain].filter(Boolean).join("\n\n"),
+                      emailHasBody: true,
+                    };
+                    setAttachments(prev => prev.map(a => a.id === att.id ? updatedAtt : a));
+                    toast({ title: "Email captured — sending now..." });
+                    // Auto-send immediately after paste
+                    setTimeout(() => {
+                      const emailBody: Record<string, unknown> = {
+                        content: "Please triage and analyse the attached content.",
+                        emailHtml: updatedAtt.emailHtml,
+                        emailPlainText: updatedAtt.emailPlainText,
+                      };
+                      setAttachments([]);
+                      const userMsg: Message = { id: `opt-${Date.now()}`, role: "user", content: `[EMAIL DROPPED]\n${updatedAtt.emailSummary || "Email"}`, createdAt: new Date().toISOString() };
+                      setOptimisticMessages(prev => [...prev, userMsg]);
+                      setStreaming(true);
+                      setStreamingContent("");
+                      const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+                      fetch(`${base}/api/anthropic/conversations/${CONVERSATION_ID}/messages`, {
+                        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(emailBody),
+                      }).then(async res => {
+                        if (!res.ok) { setStreaming(false); toast({ title: "Send failed", variant: "destructive" }); return; }
+                        const reader = res.body?.getReader();
+                        if (!reader) { setStreaming(false); return; }
+                        const decoder = new TextDecoder();
+                        let fullText = "", buffer = "";
+                        while (true) {
+                          const { done, value } = await reader.read();
+                          if (done) break;
+                          buffer += decoder.decode(value, { stream: true });
+                          const lines = buffer.split("\n"); buffer = lines.pop() || "";
+                          for (const line of lines) {
+                            if (!line.startsWith("data:")) continue;
+                            try { const p = JSON.parse(line.slice(5).trim()); if (p.content) { fullText += p.content; setStreamingContent(fullText); } if (p.done || p.error) break; } catch {}
+                          }
+                        }
+                        setStreaming(false); setStreamingContent("");
+                        queryClient.invalidateQueries({ queryKey: getGetAnthropicConversationQueryKey(CONVERSATION_ID) });
+                      }).catch(() => { setStreaming(false); toast({ title: "Send failed", variant: "destructive" }); });
+                    }, 100);
                   } : undefined}
                 />
               ))}
@@ -1109,52 +1138,51 @@ export default function Chat() {
           )}
 
           <div className={cn(
-            "chat-input-bar flex items-end gap-2.5 px-4 py-3",
-            dragOver && "border-primary ring-2 ring-primary/10"
+            "chat-input-bar flex flex-col",
+            dragOver && "ring-2 ring-primary/15"
           )}>
-            <label className="flex-shrink-0 p-1 text-muted-foreground/40 hover:text-foreground transition-colors cursor-pointer" title="Attach file">
-              <Paperclip size={17} />
-              <input
-                type="file"
-                accept="image/*,.eml,message/rfc822"
-                multiple
-                className="hidden"
-                onChange={async e => {
-                  if (!e.target.files) return;
-                  const results = await Promise.all(Array.from(e.target.files).map(processFile));
-                  const valid = results.filter(Boolean) as Attachment[];
-                  if (valid.length > 0) setAttachments(prev => [...prev, ...valid]);
-                  e.target.value = "";
-                }}
-              />
-            </label>
+            <div className="flex items-end gap-3 px-4 py-3">
+              <label className="flex-shrink-0 w-8 h-8 min-w-[32px] rounded-lg border border-[rgba(0,0,0,0.08)] dark:border-[rgba(108,106,96,0.25)] flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-[rgba(0,0,0,0.03)] dark:hover:bg-[rgba(255,255,255,0.04)] transition-all cursor-pointer active:scale-[0.97]" title="Attach file">
+                <Paperclip size={15} />
+                <input
+                  type="file"
+                  accept="image/*,.eml,message/rfc822"
+                  multiple
+                  className="hidden"
+                  onChange={async e => {
+                    if (!e.target.files) return;
+                    const results = await Promise.all(Array.from(e.target.files).map(processFile));
+                    const valid = results.filter(Boolean) as Attachment[];
+                    if (valid.length > 0) setAttachments(prev => [...prev, ...valid]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
 
-            <textarea
-              ref={textareaRef}
-              data-testid="input-chat-message"
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder={attachments.length > 0 ? "Add a note then send..." : "Message..."}
-              rows={1}
-              disabled={streaming}
-              className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none leading-relaxed min-h-[22px] max-h-[140px] disabled:opacity-60"
-            />
-            <button
-              data-testid="button-send-message"
-              onClick={() => handleSend()}
-              disabled={!canSend}
-              className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all active:scale-95",
-                canSend ? "bg-primary text-primary-foreground hover:brightness-110" : "bg-muted text-muted-foreground/30 cursor-not-allowed"
-              )}
-            >
-              <Send size={14} strokeWidth={2.5} />
-            </button>
+              <textarea
+                ref={textareaRef}
+                data-testid="input-chat-message"
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder={attachments.length > 0 ? "Add a note then send..." : "How can I help you today?"}
+                rows={1}
+                disabled={streaming}
+                className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-[rgba(154,152,147,1)] resize-none focus:outline-none leading-[1.5] min-h-[24px] max-h-[160px] disabled:opacity-50 py-1"
+              />
+              <button
+                data-testid="button-send-message"
+                onClick={() => handleSend()}
+                disabled={!canSend}
+                className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all active:scale-95",
+                  canSend ? "bg-primary text-white" : "bg-[rgba(0,0,0,0.05)] dark:bg-[rgba(255,255,255,0.05)] text-muted-foreground/30 cursor-not-allowed"
+                )}
+              >
+                <Send size={14} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
-          <p className="text-[10px] text-muted-foreground/25 text-center mt-2">
-            Enter to send · Shift+Enter for new line · Drag emails or images anywhere
-          </p>
         </div>
       </div>
     </div>

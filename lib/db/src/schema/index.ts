@@ -10,3 +10,4 @@ export * from "./quotes";
 export * from "./defects";
 export * from "./invoices";
 export * from "./suppliers";
+export * from "./schedule-events";

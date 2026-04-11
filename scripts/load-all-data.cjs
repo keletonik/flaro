@@ -78,7 +78,9 @@ async function run() {
     await client.query('DELETE FROM wip_records');
     await client.query('DELETE FROM quotes');
     await client.query('DELETE FROM jobs');
+    await client.query('DELETE FROM invoices WHERE import_batch_id = $1', ['spreadsheet-import']);
     await client.query('DELETE FROM notes WHERE owner = $1', ['Casper']);
+    await client.query('DELETE FROM schedule_events WHERE 1=1').catch(() => {});
     console.log('Cleared existing data for fresh import');
 
     // 1. REPAIRS → wip_records
@@ -188,6 +190,52 @@ async function run() {
     }
     console.log(`  → ${noteCount} notes`);
 
+    // 6. Generate INVOICES from REPAIRS where INVOICED = Yes
+    console.log(`\nGENERATING INVOICES from invoiced repairs...`);
+    let invCount = 0;
+    for (const row of rep.rows) {
+      const d = mapRow(rep.headers, row);
+      if (!d['REF'] || String(d['INVOICED'] || '').toUpperCase() !== 'YES') continue;
+      const amount = d['VALUE ($)'] ? Number(d['VALUE ($)']) : 0;
+      if (amount <= 0) continue;
+      const gst = Math.round(amount * 0.1 * 100) / 100;
+      const total = Math.round((amount + gst) * 100) / 100;
+      // Use a date roughly 7 days after scheduled date, or today
+      const schedDate = excelDateToISO(d['SCHED DATE']);
+      const paidDate = schedDate || new Date().toISOString().split('T')[0];
+      await client.query(
+        `INSERT INTO invoices (id, invoice_number, task_number, site, client, description, amount, gst_amount, total_amount, status, date_issued, date_due, date_paid, import_batch_id, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW(),NOW())`,
+        [uid(), `INV-${d['REF']}`, d['REF'], d['PROPERTY / SITE'] || 'Unknown', d['CLIENT'] || 'Unknown',
+         d['NOTES / ACTION'] || 'Repair - invoiced', amount.toFixed(2), gst.toFixed(2), total.toFixed(2),
+         'Paid', paidDate, paidDate, paidDate, 'spreadsheet-import']
+      );
+      invCount++;
+    }
+    // Also generate outstanding invoices from completed but not invoiced repairs
+    for (const row of rep.rows) {
+      const d = mapRow(rep.headers, row);
+      if (!d['REF']) continue;
+      const status = String(d['STATUS'] || '').toUpperCase();
+      const invoiced = String(d['INVOICED'] || '').toUpperCase();
+      if (status === 'COMPLETED' && invoiced !== 'YES') {
+        const amount = d['VALUE ($)'] ? Number(d['VALUE ($)']) : 0;
+        if (amount <= 0) continue;
+        const gst = Math.round(amount * 0.1 * 100) / 100;
+        const total = Math.round((amount + gst) * 100) / 100;
+        await client.query(
+          `INSERT INTO invoices (id, invoice_number, task_number, site, client, description, amount, gst_amount, total_amount, status, date_issued, date_due, import_batch_id, created_at, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())`,
+          [uid(), `INV-${d['REF']}`, d['REF'], d['PROPERTY / SITE'] || 'Unknown', d['CLIENT'] || 'Unknown',
+           d['NOTES / ACTION'] || 'Repair - pending invoice', amount.toFixed(2), gst.toFixed(2), total.toFixed(2),
+           'Sent', new Date().toISOString().split('T')[0], new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
+           'spreadsheet-import']
+        );
+        invCount++;
+      }
+    }
+    console.log(`  → ${invCount} invoices`);
+
     await client.query('COMMIT');
 
     // Print totals
@@ -196,12 +244,14 @@ async function run() {
       client.query('SELECT COUNT(*) as c FROM wip_records'),
       client.query('SELECT COUNT(*) as c FROM quotes'),
       client.query('SELECT COUNT(*) as c FROM notes'),
+      client.query('SELECT COUNT(*) as c FROM invoices'),
     ]);
     console.log(`\n=== IMPORT COMPLETE ===`);
     console.log(`Jobs: ${counts[0].rows[0].c}`);
     console.log(`WIP Records: ${counts[1].rows[0].c}`);
     console.log(`Quotes: ${counts[2].rows[0].c}`);
     console.log(`Notes: ${counts[3].rows[0].c}`);
+    console.log(`Invoices: ${counts[4].rows[0].c}`);
 
   } catch (err) {
     await client.query('ROLLBACK');

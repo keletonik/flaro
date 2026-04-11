@@ -46,7 +46,7 @@ const navGroups = [
   {
     label: "Manage",
     items: [
-      { path: "/jobs", icon: Briefcase, label: "WIPs" },
+      { path: "/jobs", icon: Briefcase, label: "Action List" },
       { path: "/todos", icon: CheckSquare, label: "Tasks" },
       { path: "/projects", icon: FolderKanban, label: "Projects" },
       { path: "/suppliers", icon: Package, label: "Suppliers" },
@@ -183,7 +183,7 @@ function BottomNav() {
     allNavItems[0], // Dashboard
     allNavItems[2], // Operations
     allNavItems[1], // Chat
-    allNavItems[3], // WIPs
+    allNavItems[3], // Action List
     allNavItems[4], // Tasks
   ];
 

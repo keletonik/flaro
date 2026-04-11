@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Search, Upload, Download, Filter, X, ChevronDown, BarChart3, MessageCircle, Send, Trash2, PanelRightClose, PanelRightOpen, Loader2 } from "lucide-react";
+import { Search, Upload, Download, Filter, X, ChevronDown, BarChart3, MessageCircle, Send, Trash2, PanelRightClose, PanelRightOpen, Loader2, Pencil } from "lucide-react";
 import { apiFetch, exportToCSV, streamChat } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
 import { cn } from "@/lib/utils";
@@ -94,9 +94,10 @@ function StatusPill({ status, tab }: { status: string; tab: TabKey }) {
   );
 }
 
-function DataTable({ data, tab, onDelete, onStatusChange, selectedIds, onToggleSelect, onToggleAll }: {
+function DataTable({ data, tab, onDelete, onStatusChange, onEdit, selectedIds, onToggleSelect, onToggleAll }: {
   data: any[]; tab: TabKey; onDelete: (id: string) => void;
   onStatusChange: (id: string, status: string) => void;
+  onEdit: (row: any) => void;
   selectedIds: Set<string>; onToggleSelect: (id: string) => void; onToggleAll: () => void;
 }) {
   const columns = getColumns(tab);
@@ -137,12 +138,10 @@ function DataTable({ data, tab, onDelete, onStatusChange, selectedIds, onToggleS
                 </td>
               ))}
               <td>
-                <button
-                  onClick={() => onDelete(row.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-red-500 transition-all"
-                >
-                  <X size={12} />
-                </button>
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+                  <button onClick={() => onEdit(row)} className="p-1 rounded text-muted-foreground hover:text-primary transition-all" title="Edit"><Pencil size={11} /></button>
+                  <button onClick={() => onDelete(row.id)} className="p-1 rounded text-muted-foreground hover:text-red-500 transition-all" title="Delete"><X size={12} /></button>
+                </div>
               </td>
             </tr>
           ))}
@@ -256,7 +255,17 @@ export default function Operations() {
   const [importOpen, setImportOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [editingRow, setEditingRow] = useState<any>(null);
   const { toast } = useToast();
+
+  const handleEditSave = async (id: string, updates: Record<string, any>) => {
+    try {
+      await apiFetch(`${ENDPOINTS[activeTab]}/${id}`, { method: "PATCH", body: JSON.stringify(updates) });
+      toast({ title: "Record updated" });
+      setEditingRow(null);
+      fetchData(activeTab);
+    } catch { toast({ title: "Update failed", variant: "destructive" }); }
+  };
 
   const toggleSelect = (id: string) => setSelectedIds(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const toggleSelectAll = () => { const current = data[activeTab]; if (selectedIds.size === current.length) setSelectedIds(new Set()); else setSelectedIds(new Set(current.map((r: any) => r.id))); };
@@ -430,7 +439,7 @@ export default function Operations() {
                 <button onClick={clearSelection} className="px-2 py-1 rounded-md text-[10px] font-medium text-muted-foreground hover:text-foreground transition-all">Clear</button>
               </div>
             )}
-            <DataTable data={currentData} tab={activeTab} onDelete={handleDelete} onStatusChange={handleStatusChange} selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleAll={toggleSelectAll} />
+            <DataTable data={currentData} tab={activeTab} onDelete={handleDelete} onStatusChange={handleStatusChange} onEdit={setEditingRow} selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleAll={toggleSelectAll} />
             </>
           )}
         </div>
@@ -494,6 +503,39 @@ export default function Operations() {
       </div>
 
       <CSVImportModal open={importOpen} onClose={() => setImportOpen(false)} onImport={handleImport} availableFields={FIELDS_MAP[activeTab]} title={`Import ${activeTab.toUpperCase()} Data`} />
+
+      {/* Edit Modal */}
+      {editingRow && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setEditingRow(null)}>
+          <div className="bg-card rounded-2xl shadow-xl border border-border w-full max-w-md mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+              <h3 className="text-sm font-semibold text-foreground">Edit Record</h3>
+              <button onClick={() => setEditingRow(null)} className="p-1 rounded text-muted-foreground hover:text-foreground"><X size={14} /></button>
+            </div>
+            <div className="px-5 py-4 space-y-3 max-h-[60vh] overflow-y-auto">
+              {FIELDS_MAP[activeTab].slice(0, 10).map(field => (
+                <div key={field.key}>
+                  <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1 block">{field.label}</label>
+                  {field.key === "status" ? (
+                    <select value={editingRow[field.key] || ""} onChange={e => setEditingRow((prev: any) => ({ ...prev, [field.key]: e.target.value }))}
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20">
+                      {STATUS_OPTIONS[activeTab].map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  ) : (
+                    <input value={editingRow[field.key] || ""} onChange={e => setEditingRow((prev: any) => ({ ...prev, [field.key]: e.target.value }))}
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border">
+              <button onClick={() => setEditingRow(null)} className="px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Cancel</button>
+              <button onClick={() => { const { id, createdAt, updatedAt, rawData, importBatchId, ...updates } = editingRow; handleEditSave(id, updates); }}
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-primary text-white hover:opacity-90 transition-all">Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

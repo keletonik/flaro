@@ -102,17 +102,43 @@ export default function Dashboard() {
   const [notes, setNotes] = useState<QuickNote[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [newNote, setNewNote] = useState("");
+  const [pipelineGaps, setPipelineGaps] = useState<any>(null);
   const { toast } = useToast();
+
+  // On-call roster data
+  const ON_CALL: Record<string, string> = {
+    "2026-04-10": "Darren Brailey", "2026-04-11": "Darren Brailey", "2026-04-12": "Darren Brailey",
+    "2026-04-13": "Gordon Jenkins", "2026-04-16": "Haider Al-Heyoury",
+    "2026-04-21": "Haider Al-Heyoury", "2026-04-22": "Nu Unasa",
+    "2026-04-28": "John Minai", "2026-04-29": "Haider Al-Heyoury", "2026-04-30": "Nu Unasa",
+  };
+  const todayStr = new Date().toISOString().split("T")[0];
+  const onCallToday = ON_CALL[todayStr] || "Check roster";
 
   const fetchAll = () => {
     apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(() => {});
     apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(() => {});
+    apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(() => {});
     apiFetch<FocusData>("/dashboard/focus").then(d => { setFocus(d); setFocusLoading(false); }).catch(() => setFocusLoading(false));
-    apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 8))).catch(() => {});
-    apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 6))).catch(() => {});
+    apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(() => {});
+    apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(() => {});
   };
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+    // Auto-refresh KPI data every 60 seconds
+    const interval = setInterval(() => {
+      apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(() => {});
+      apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(() => {});
+      apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(() => {});
+      apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(() => {});
+      apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(() => {});
+    }, 60000);
+    // Refetch on tab focus
+    const handleVisibility = () => { if (!document.hidden) fetchAll(); };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", handleVisibility); };
+  }, []);
 
   const addTodo = async () => {
     if (!newTodo.trim()) return;
@@ -148,6 +174,20 @@ export default function Dashboard() {
     } catch {}
   };
 
+  const deleteTodo = async (id: string) => {
+    try {
+      await apiFetch(`/todos/${id}`, { method: "DELETE" });
+      fetchAll();
+    } catch {}
+  };
+
+  const deleteNote = async (id: string) => {
+    try {
+      await apiFetch(`/notes/${id}`, { method: "DELETE" });
+      fetchAll();
+    } catch {}
+  };
+
   const greeting = (() => {
     const h = new Date().getHours();
     return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
@@ -164,11 +204,17 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground mt-0.5">{new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold">
+              On Call: {onCallToday.split(" ")[0]}
+            </div>
             {summary && summary.critical > 0 && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 text-xs font-semibold">
                 <AlertTriangle size={12} /> {summary.critical} Critical
               </div>
             )}
+            <button onClick={fetchAll} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors" title="Refresh data">
+              <Activity size={12} /> Refresh
+            </button>
           </div>
         </div>
       </div>
@@ -200,6 +246,66 @@ export default function Dashboard() {
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 7 } as React.CSSProperties}>
             <MetricCard label="Overdue Invoices" value={kpi?.invoices.overdue ?? "-"} icon={Clock} color="bg-red-500/8" />
           </div>
+        </div>
+
+        {/* Pipeline Gaps + Morning Dispatch */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Revenue Leakage */}
+          {pipelineGaps && pipelineGaps.totalAtRisk > 0 && (
+            <div className="pipeline-gap bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={14} className="text-red-500" />
+                  <span className="text-xs font-bold text-foreground uppercase tracking-wide">Revenue Leakage</span>
+                </div>
+                <span className="text-lg font-bold text-red-500">{fmt(pipelineGaps.totalAtRisk)}</span>
+              </div>
+              <div className="space-y-2 text-[13px]">
+                {pipelineGaps.summary.quotesWithoutWipCount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Accepted quotes without WIP</span>
+                    <span className="font-semibold text-foreground">{pipelineGaps.summary.quotesWithoutWipCount} ({fmt(pipelineGaps.summary.quotesWithoutWipValue)})</span>
+                  </div>
+                )}
+                {pipelineGaps.summary.wipWithoutInvoiceCount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Completed WIP not invoiced</span>
+                    <span className="font-semibold text-foreground">{pipelineGaps.summary.wipWithoutInvoiceCount} ({fmt(pipelineGaps.summary.wipWithoutInvoiceValue)})</span>
+                  </div>
+                )}
+                {pipelineGaps.summary.underInvoicedCount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Under-invoiced jobs</span>
+                    <span className="font-semibold text-foreground">{pipelineGaps.summary.underInvoicedCount} ({fmt(pipelineGaps.summary.underInvoicedGap)})</span>
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setLocation("/operations")} className="mt-3 text-xs text-primary font-medium hover:underline">View details in Operations →</button>
+            </div>
+          )}
+
+          {/* Today's Dispatch */}
+          {kpi && Object.keys(kpi.wip.byTech).length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Briefcase size={14} className="text-primary" />
+                <span className="text-xs font-bold text-foreground uppercase tracking-wide">Today's Dispatch</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {Object.entries(kpi.wip.byTech).sort(([,a], [,b]) => b - a).map(([tech, count]) => (
+                  <div key={tech} className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-muted/40 border border-border">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[9px]">
+                      {tech.split(" ").map(w => w[0]).join("").slice(0, 2)}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-foreground leading-tight">{tech.split(" ")[0]}</p>
+                      <p className="text-[10px] text-muted-foreground">{count} active</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -275,6 +381,7 @@ export default function Dashboard() {
                   </button>
                   <span className="text-[13px] text-foreground flex-1 truncate">{t.text}</span>
                   <span className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded", t.priority === "Critical" ? "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20" : t.priority === "High" ? "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20" : "text-muted-foreground bg-muted")}>{t.priority}</span>
+                  <button onClick={() => deleteTodo(t.id)} className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-red-500 transition-all"><X size={11} /></button>
                 </div>
               ))}
               {todos.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No active tasks</p>}
@@ -303,8 +410,11 @@ export default function Dashboard() {
                 <div key={n.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/40 transition-colors group">
                   <span className={cn("text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0", n.category === "Urgent" ? "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20" : "text-muted-foreground bg-muted")}>{n.category}</span>
                   <span className="text-[13px] text-foreground flex-1 truncate">{n.text}</span>
-                  <button onClick={() => markNoteDone(n.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-emerald-500 transition-all" title="Mark done">
-                    <Check size={12} />
+                  <button onClick={() => markNoteDone(n.id)} className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-emerald-500 transition-all" title="Mark done">
+                    <Check size={11} />
+                  </button>
+                  <button onClick={() => deleteNote(n.id)} className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-red-500 transition-all" title="Delete">
+                    <X size={11} />
                   </button>
                 </div>
               ))}

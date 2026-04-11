@@ -16,6 +16,9 @@ import kpiRouter from "./kpi";
 import contextualChatRouter from "./contextual-chat";
 import analyticsRouter from "./analytics";
 import scheduleEventsRouter from "./schedule-events";
+import pmRouter from "./pm";
+import onCallRouter from "./on-call";
+import clientsRouter from "./clients";
 
 const router: IRouter = Router();
 
@@ -36,5 +39,8 @@ router.use(kpiRouter);
 router.use(contextualChatRouter);
 router.use(analyticsRouter);
 router.use(scheduleEventsRouter);
+router.use(pmRouter);
+router.use(onCallRouter);
+router.use(clientsRouter);
 
 export default router;

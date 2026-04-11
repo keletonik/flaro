@@ -25,6 +25,24 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
+// SSE event stream for real-time dashboard updates
+import { addSSEClient, broadcastEvent } from "./lib/events";
+app.get("/api/events", (req, res) => { addSSEClient(res); });
+
+// Broadcast data changes for real-time dashboard updates
+app.use("/api", (req, res, next) => {
+  if (req.method === "GET" || req.method === "OPTIONS") { next(); return; }
+  const originalJson = res.json.bind(res);
+  res.json = (body: any) => {
+    const path = req.originalUrl.replace("/api", "");
+    if (res.statusCode < 400) {
+      broadcastEvent("data_change", { path, method: req.method });
+    }
+    return originalJson(body);
+  };
+  next();
+});
+
 // 404 — must be after all routes
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: "Not found" });

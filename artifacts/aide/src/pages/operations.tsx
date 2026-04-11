@@ -297,9 +297,11 @@ export default function Operations() {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (statusFilter) params.set("status", statusFilter);
-      const result = await apiFetch(`${ENDPOINTS[tab]}?${params}`);
-      setData(prev => ({ ...prev, [tab]: result }));
-    } catch {} finally { setLoading(false); }
+      const result = await apiFetch(`${ENDPOINTS[tab]}?${params}&limit=500`);
+      // Handle both paginated {data:[]} and flat array responses
+      const records = Array.isArray(result) ? result : (result.data || []);
+      setData(prev => ({ ...prev, [tab]: records }));
+    } catch (e: any) { console.error(e); } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchData(activeTab); }, [activeTab, search, statusFilter]);
@@ -311,6 +313,7 @@ export default function Operations() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Delete this record?")) return;
     try {
       await apiFetch(`${ENDPOINTS[activeTab]}/${id}`, { method: "DELETE" });
       fetchData(activeTab);
@@ -513,7 +516,7 @@ export default function Operations() {
               <button onClick={() => setEditingRow(null)} className="p-1 rounded text-muted-foreground hover:text-foreground"><X size={14} /></button>
             </div>
             <div className="px-5 py-4 space-y-3 max-h-[60vh] overflow-y-auto">
-              {FIELDS_MAP[activeTab].slice(0, 10).map(field => (
+              {FIELDS_MAP[activeTab].map(field => (
                 <div key={field.key}>
                   <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1 block">{field.label}</label>
                   {field.key === "status" ? (

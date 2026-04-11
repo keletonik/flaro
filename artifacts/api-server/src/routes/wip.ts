@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { wipRecords } from "@workspace/db";
-import { eq, and, or, ilike, desc } from "drizzle-orm";
+import { eq, and, or, ilike, desc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import { parsePagination, paginatedResponse } from "../lib/pagination";
 
 const router = Router();
 
@@ -27,10 +28,16 @@ router.get("/wip", async (req, res, next) => {
       const s = search.replace(/[%_\\]/g, "\\$&");
       conditions.push(or(ilike(wipRecords.site, `%${s}%`), ilike(wipRecords.client, `%${s}%`), ilike(wipRecords.taskNumber!, `%${s}%`), ilike(wipRecords.description!, `%${s}%`)));
     }
+    // Count total for pagination
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(wipRecords).$dynamic();
+    if (conditions.length) countQuery = countQuery.where(and(...conditions));
+    const [{ count: total }] = await countQuery;
+
+    const pg = parsePagination(req);
     let query = db.select().from(wipRecords).$dynamic();
     if (conditions.length) query = query.where(and(...conditions));
-    const result = await query.orderBy(desc(wipRecords.createdAt));
-    res.json(result.map(serialize));
+    const result = await query.orderBy(desc(wipRecords.createdAt)).limit(pg.limit).offset(pg.offset);
+    res.json(paginatedResponse(result.map(serialize), Number(total), pg));
   } catch (err) { next(err); }
 });
 

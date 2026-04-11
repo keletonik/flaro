@@ -5,7 +5,7 @@ import {
   FileText, BarChart3, ArrowUpRight, ArrowDownRight, Activity, Zap,
   Plus, Circle, Check, X, StickyNote
 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, formatCurrency } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -103,41 +103,38 @@ export default function Dashboard() {
   const [newTodo, setNewTodo] = useState("");
   const [newNote, setNewNote] = useState("");
   const [pipelineGaps, setPipelineGaps] = useState<any>(null);
+  const [onCallToday, setOnCallToday] = useState("Loading...");
   const { toast } = useToast();
 
-  // On-call roster data
-  const ON_CALL: Record<string, string> = {
-    "2026-04-10": "Darren Brailey", "2026-04-11": "Darren Brailey", "2026-04-12": "Darren Brailey",
-    "2026-04-13": "Gordon Jenkins", "2026-04-16": "Haider Al-Heyoury",
-    "2026-04-21": "Haider Al-Heyoury", "2026-04-22": "Nu Unasa",
-    "2026-04-28": "John Minai", "2026-04-29": "Haider Al-Heyoury", "2026-04-30": "Nu Unasa",
-  };
-  const todayStr = new Date().toISOString().split("T")[0];
-  const onCallToday = ON_CALL[todayStr] || "Check roster";
-
   const fetchAll = () => {
-    apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(() => {});
-    apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(() => {});
-    apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(() => {});
+    apiFetch<{ techName: string | null }>("/on-call/today").then(d => setOnCallToday(d.techName || "Check roster")).catch(() => setOnCallToday("Check roster"));
+    apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(e => console.error(e));
+    apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(e => console.error(e));
+    apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(e => console.error(e));
     apiFetch<FocusData>("/dashboard/focus").then(d => { setFocus(d); setFocusLoading(false); }).catch(() => setFocusLoading(false));
-    apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(() => {});
-    apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(() => {});
+    apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(e => console.error(e));
+    apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(e => console.error(e));
   };
 
   useEffect(() => {
     fetchAll();
-    // Auto-refresh KPI data every 60 seconds
-    const interval = setInterval(() => {
-      apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(() => {});
-      apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(() => {});
-      apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(() => {});
-      apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(() => {});
-      apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(() => {});
-    }, 60000);
-    // Refetch on tab focus
+    // SSE real-time updates — listen for data changes and refetch
+    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource(`${base}/api/events`);
+      eventSource.onmessage = (e) => {
+        try {
+          const event = JSON.parse(e.data);
+          if (event.type === "data_change") fetchAll();
+        } catch (e: any) { console.error(e); }
+      };
+      eventSource.onerror = () => { /* SSE reconnects automatically */ };
+    } catch (e: any) { console.error(e); }
+    // Fallback: refetch on tab focus
     const handleVisibility = () => { if (!document.hidden) fetchAll(); };
     document.addEventListener("visibilitychange", handleVisibility);
-    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", handleVisibility); };
+    return () => { eventSource?.close(); document.removeEventListener("visibilitychange", handleVisibility); };
   }, []);
 
   const addTodo = async () => {
@@ -154,7 +151,7 @@ export default function Dashboard() {
     try {
       await apiFetch(`/todos/${id}`, { method: "PATCH", body: JSON.stringify({ completed: !completed }) });
       fetchAll();
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const addNote = async () => {
@@ -171,21 +168,23 @@ export default function Dashboard() {
     try {
       await apiFetch(`/notes/${id}`, { method: "PATCH", body: JSON.stringify({ status: "Done" }) });
       fetchAll();
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const deleteTodo = async (id: string) => {
+    if (!confirm("Delete this task?")) return;
     try {
       await apiFetch(`/todos/${id}`, { method: "DELETE" });
       fetchAll();
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const deleteNote = async (id: string) => {
+    if (!confirm("Delete this note?")) return;
     try {
       await apiFetch(`/notes/${id}`, { method: "DELETE" });
       fetchAll();
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const greeting = (() => {
@@ -193,7 +192,7 @@ export default function Dashboard() {
     return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
   })();
 
-  const fmt = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toLocaleString()}`;
+  const fmt = formatCurrency;
 
   return (
     <div className="min-h-screen bg-background">

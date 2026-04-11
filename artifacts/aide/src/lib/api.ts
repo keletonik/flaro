@@ -108,3 +108,9 @@ export function exportToCSV(data: Record<string, any>[], filename: string) {
   link.click();
   URL.revokeObjectURL(url);
 }
+
+export function formatCurrency(n: number): string {
+  if (n >= 1000000) return `$${(n / 1000000).toFixed(2)}M`;
+  if (n >= 1000) return `$${(n / 1000).toFixed(1)}k`;
+  return `$${n.toLocaleString()}`;
+}

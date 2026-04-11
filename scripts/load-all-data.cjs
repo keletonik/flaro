@@ -79,7 +79,8 @@ async function run() {
     await client.query('DELETE FROM quotes');
     await client.query('DELETE FROM jobs');
     await client.query('DELETE FROM invoices WHERE import_batch_id = $1', ['spreadsheet-import']);
-    await client.query('DELETE FROM notes WHERE owner = $1', ['Casper']);
+    // Only delete imported notes (contain [T- or [N/A] prefix), preserve manually created ones
+    await client.query(`DELETE FROM notes WHERE text LIKE '[T-%' OR text LIKE '[N/A]%'`);
     await client.query('DELETE FROM schedule_events WHERE 1=1').catch(() => {});
     console.log('Cleared existing data for fresh import');
 

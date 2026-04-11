@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { BarChart3, TrendingUp, Target, DollarSign, Clock, CheckCircle2, Settings2, Palette, ChevronDown } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, formatCurrency } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,7 @@ const COLOR_THEMES: Record<string, string[]> = {
   "Monochrome": ["#374151", "#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB"],
 };
 
-function fmt(n: number) { return n >= 1000000 ? `$${(n / 1000000).toFixed(2)}M` : n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toLocaleString()}`; }
+const fmt = formatCurrency;
 function fmtShort(n: number) { return n >= 1000 ? `${(n / 1000).toFixed(0)}k` : String(n); }
 
 interface AnalyticsData {
@@ -192,6 +192,8 @@ export default function Analytics() {
   const [taskChartType, setTaskChartType] = useState<ChartType>("area");
   const [techChartType, setTechChartType] = useState<ChartType>("bar");
   const [quoteChartType, setQuoteChartType] = useState<ChartType>("pie");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const colors = COLOR_THEMES[colorTheme] || COLOR_THEMES.Default;
 
@@ -259,6 +261,12 @@ export default function Analytics() {
             <p className="text-xs text-muted-foreground mt-0.5">Performance metrics and revenue tracking</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="bg-card border border-border rounded-lg px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/20" title="From date" />
+              <span className="text-[10px] text-muted-foreground">to</span>
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="bg-card border border-border rounded-lg px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/20" title="To date" />
+              {(dateFrom || dateTo) && <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-[10px] text-muted-foreground hover:text-foreground">Clear</button>}
+            </div>
             <ColorThemeSelector value={colorTheme} onChange={setColorTheme} />
           </div>
         </div>

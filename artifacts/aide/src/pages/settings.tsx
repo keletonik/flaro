@@ -64,7 +64,7 @@ export default function SettingsPage() {
         if (s.defaultPmView) setDefaultPmView(s.defaultPmView);
         if (s.dateFormat) setDateFormat(s.dateFormat);
         if (s.currencySymbol) setCurrencySymbol(s.currencySymbol);
-      } catch {}
+      } catch (e: any) { console.error(e); }
     }
   }, []);
 

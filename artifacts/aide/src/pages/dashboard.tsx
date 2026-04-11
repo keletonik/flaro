@@ -127,10 +127,10 @@ export default function Dashboard() {
         try {
           const event = JSON.parse(e.data);
           if (event.type === "data_change") fetchAll();
-        } catch {}
+        } catch (e: any) { console.error(e); }
       };
       eventSource.onerror = () => { /* SSE reconnects automatically */ };
-    } catch {}
+    } catch (e: any) { console.error(e); }
     // Fallback: refetch on tab focus
     const handleVisibility = () => { if (!document.hidden) fetchAll(); };
     document.addEventListener("visibilitychange", handleVisibility);

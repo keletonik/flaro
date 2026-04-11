@@ -94,9 +94,10 @@ function StatusPill({ status, tab }: { status: string; tab: TabKey }) {
   );
 }
 
-function DataTable({ data, tab, onDelete, onStatusChange }: {
+function DataTable({ data, tab, onDelete, onStatusChange, selectedIds, onToggleSelect, onToggleAll }: {
   data: any[]; tab: TabKey; onDelete: (id: string) => void;
   onStatusChange: (id: string, status: string) => void;
+  selectedIds: Set<string>; onToggleSelect: (id: string) => void; onToggleAll: () => void;
 }) {
   const columns = getColumns(tab);
   if (!data.length) return (
@@ -111,13 +112,15 @@ function DataTable({ data, tab, onDelete, onStatusChange }: {
       <table className="data-table w-full">
         <thead>
           <tr>
+            <th className="w-10"><input type="checkbox" checked={selectedIds.size === data.length && data.length > 0} onChange={onToggleAll} className="rounded border-border" /></th>
             {columns.map(col => <th key={col.key}>{col.label}</th>)}
             <th className="w-16">Actions</th>
           </tr>
         </thead>
         <tbody>
           {data.map((row) => (
-            <tr key={row.id} className="group">
+            <tr key={row.id} className={cn("group", selectedIds.has(row.id) && "bg-primary/5")}>
+              <td className="w-10"><input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => onToggleSelect(row.id)} className="rounded border-border" /></td>
               {columns.map(col => (
                 <td key={col.key} className={cn(col.key.includes("amount") || col.key.includes("Amount") ? "font-mono text-right" : "")}>
                   {col.key === "status" ? (
@@ -252,7 +255,33 @@ export default function Operations() {
   const [statusFilter, setStatusFilter] = useState("");
   const [importOpen, setImportOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  const toggleSelect = (id: string) => setSelectedIds(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleSelectAll = () => { const current = data[activeTab]; if (selectedIds.size === current.length) setSelectedIds(new Set()); else setSelectedIds(new Set(current.map((r: any) => r.id))); };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkStatus = async (status: string) => {
+    const ids = Array.from(selectedIds);
+    try {
+      await apiFetch(`${ENDPOINTS[activeTab]}/bulk`, { method: "PATCH", body: JSON.stringify({ ids, status }) });
+      toast({ title: `${ids.length} records updated to ${status}` });
+      clearSelection();
+      fetchData(activeTab);
+    } catch { toast({ title: "Bulk update failed", variant: "destructive" }); }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (!confirm(`Delete ${ids.length} selected records?`)) return;
+    try {
+      for (const id of ids) { await apiFetch(`${ENDPOINTS[activeTab]}/${id}`, { method: "DELETE" }); }
+      toast({ title: `${ids.length} records deleted` });
+      clearSelection();
+      fetchData(activeTab);
+    } catch { toast({ title: "Delete failed", variant: "destructive" }); }
+  };
 
   const fetchData = async (tab: TabKey) => {
     try {
@@ -353,7 +382,7 @@ export default function Operations() {
 
         <div className="flex gap-1">
           {TABS.map(tab => (
-            <button key={tab.key} onClick={() => { setActiveTab(tab.key); setStatusFilter(""); setSearch(""); }}
+            <button key={tab.key} onClick={() => { setActiveTab(tab.key); setStatusFilter(""); setSearch(""); clearSelection(); }}
               className={cn("px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
                 activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}>
@@ -388,7 +417,21 @@ export default function Operations() {
           {loading ? (
             <div className="space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-card border border-border rounded-xl skeleton-pulse" />)}</div>
           ) : (
-            <DataTable data={currentData} tab={activeTab} onDelete={handleDelete} onStatusChange={handleStatusChange} />
+            <>
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/8 border border-primary/20 rounded-xl mb-3">
+                <span className="text-xs font-semibold text-primary">{selectedIds.size} selected</span>
+                <div className="flex items-center gap-1.5">
+                  {STATUS_OPTIONS[activeTab].map(s => (
+                    <button key={s} onClick={() => handleBulkStatus(s)} className="px-2 py-1 rounded-md text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-card border border-border transition-all">{s}</button>
+                  ))}
+                </div>
+                <button onClick={handleBulkDelete} className="px-2 py-1 rounded-md text-[10px] font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 border border-red-200 dark:border-red-800 transition-all ml-auto">Delete</button>
+                <button onClick={clearSelection} className="px-2 py-1 rounded-md text-[10px] font-medium text-muted-foreground hover:text-foreground transition-all">Clear</button>
+              </div>
+            )}
+            <DataTable data={currentData} tab={activeTab} onDelete={handleDelete} onStatusChange={handleStatusChange} selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleAll={toggleSelectAll} />
+            </>
           )}
         </div>
 

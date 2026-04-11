@@ -113,4 +113,16 @@ router.delete("/invoices/:id", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.patch("/invoices/bulk", async (req, res, next) => {
+  try {
+    const { ids, status } = req.body as { ids: string[]; status?: string };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    if (status === "Paid") updates.datePaid = new Date().toISOString().split("T")[0];
+    for (const id of ids) { await db.update(invoices).set(updates).where(eq(invoices.id, id)); }
+    res.json({ updated: ids.length });
+  } catch (err) { next(err); }
+});
+
 export default router;

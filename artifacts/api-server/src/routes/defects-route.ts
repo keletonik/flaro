@@ -108,4 +108,16 @@ router.delete("/defects/:id", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.patch("/defects/bulk", async (req, res, next) => {
+  try {
+    const { ids, status, severity } = req.body as { ids: string[]; status?: string; severity?: string };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    if (severity) updates.severity = severity;
+    for (const id of ids) { await db.update(defects).set(updates).where(eq(defects.id, id)); }
+    res.json({ updated: ids.length });
+  } catch (err) { next(err); }
+});
+
 export default router;

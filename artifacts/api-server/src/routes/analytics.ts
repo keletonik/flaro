@@ -182,4 +182,67 @@ router.get("/analytics/wip", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Quote-to-Invoice Pipeline Gap Detection
+router.get("/analytics/pipeline-gaps", async (req, res, next) => {
+  try {
+    const allQuotes = await db.select().from(quotes);
+    const allWip = await db.select().from(wipRecords);
+    const allInvoices = await db.select().from(invoices);
+
+    // Gap A: Accepted quotes with no corresponding WIP record
+    const acceptedQuotes = allQuotes.filter(q => q.status === "Accepted");
+    const wipTaskNumbers = new Set(allWip.map(w => w.taskNumber).filter(Boolean));
+    const quotesWithoutWip = acceptedQuotes.filter(q => q.taskNumber && !wipTaskNumbers.has(q.taskNumber));
+
+    // Gap B: Completed WIP with no invoice raised
+    const completedWip = allWip.filter(w => w.status === "Completed");
+    const invoiceTaskNumbers = new Set(allInvoices.map(i => i.taskNumber).filter(Boolean));
+    const wipWithoutInvoice = completedWip.filter(w => w.taskNumber && !invoiceTaskNumbers.has(w.taskNumber));
+
+    // Gap C: Invoices significantly less than quoted amount
+    const underInvoiced = allInvoices.filter(inv => {
+      if (!inv.taskNumber) return false;
+      const quote = allQuotes.find(q => q.taskNumber === inv.taskNumber && q.status === "Accepted");
+      if (!quote || !quote.quoteAmount) return false;
+      const quoteAmt = Number(quote.quoteAmount);
+      const invAmt = Number(inv.totalAmount || inv.amount || 0);
+      return quoteAmt > 0 && invAmt > 0 && invAmt < quoteAmt * 0.85;
+    }).map(inv => {
+      const quote = allQuotes.find(q => q.taskNumber === inv.taskNumber);
+      return {
+        invoiceNumber: inv.invoiceNumber, taskNumber: inv.taskNumber, site: inv.site, client: inv.client,
+        invoiceAmount: Number(inv.totalAmount || inv.amount || 0),
+        quoteAmount: Number(quote?.quoteAmount || 0),
+        gap: Number(quote?.quoteAmount || 0) - Number(inv.totalAmount || inv.amount || 0),
+      };
+    });
+
+    const totalAtRisk = quotesWithoutWip.reduce((s, q) => s + (q.quoteAmount ? Number(q.quoteAmount) : 0), 0)
+      + wipWithoutInvoice.reduce((s, w) => s + (w.quoteAmount ? Number(w.quoteAmount) : 0), 0)
+      + underInvoiced.reduce((s, i) => s + i.gap, 0);
+
+    res.json({
+      totalAtRisk,
+      quotesWithoutWip: quotesWithoutWip.map(q => ({
+        quoteNumber: q.quoteNumber, taskNumber: q.taskNumber, site: q.site, client: q.client,
+        amount: q.quoteAmount ? Number(q.quoteAmount) : 0,
+      })),
+      wipWithoutInvoice: wipWithoutInvoice.map(w => ({
+        taskNumber: w.taskNumber, site: w.site, client: w.client,
+        amount: w.quoteAmount ? Number(w.quoteAmount) : 0,
+      })),
+      underInvoiced,
+      summary: {
+        acceptedQuotesTotal: acceptedQuotes.length,
+        quotesWithoutWipCount: quotesWithoutWip.length,
+        quotesWithoutWipValue: quotesWithoutWip.reduce((s, q) => s + (q.quoteAmount ? Number(q.quoteAmount) : 0), 0),
+        wipWithoutInvoiceCount: wipWithoutInvoice.length,
+        wipWithoutInvoiceValue: wipWithoutInvoice.reduce((s, w) => s + (w.quoteAmount ? Number(w.quoteAmount) : 0), 0),
+        underInvoicedCount: underInvoiced.length,
+        underInvoicedGap: underInvoiced.reduce((s, i) => s + i.gap, 0),
+      },
+    });
+  } catch (err) { next(err); }
+});
+
 export default router;

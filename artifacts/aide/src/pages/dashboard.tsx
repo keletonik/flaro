@@ -30,15 +30,15 @@ interface FocusData {
   points: string[]; generatedAt: string;
 }
 
-function MetricCard({ label, value, icon: Icon, trend, trendLabel, color, onClick }: {
+function MetricCard({ label, value, icon: Icon, trend, trendLabel, color, onClick, featured }: {
   label: string; value: string | number; icon: any; trend?: "up" | "down" | "neutral";
-  trendLabel?: string; color?: string; onClick?: () => void;
+  trendLabel?: string; color?: string; onClick?: () => void; featured?: boolean;
 }) {
   return (
-    <button onClick={onClick} className="metric-card text-left w-full group" disabled={!onClick}>
+    <button onClick={onClick} className={cn("metric-card text-left w-full h-full group", featured && "metric-card--featured")} disabled={!onClick}>
       <div className="flex items-start justify-between mb-3">
-        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", color || "bg-primary/8")}>
-          <Icon size={17} className={cn(color?.includes("emerald") ? "text-emerald-500" : color?.includes("amber") ? "text-amber-500" : color?.includes("red") ? "text-red-500" : color?.includes("blue") ? "text-blue-500" : "text-primary")} />
+        <div className={cn("rounded-xl flex items-center justify-center", featured ? "w-11 h-11" : "w-9 h-9", color || "bg-primary/8")}>
+          <Icon size={featured ? 20 : 17} className={cn(color?.includes("emerald") ? "text-emerald-500" : color?.includes("amber") ? "text-amber-500" : color?.includes("red") ? "text-red-500" : color?.includes("blue") ? "text-blue-500" : "text-primary")} />
         </div>
         {trend && trend !== "neutral" && (
           <div className={cn("flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md",
@@ -50,8 +50,8 @@ function MetricCard({ label, value, icon: Icon, trend, trendLabel, color, onClic
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-foreground tracking-tight metric-count">{value}</p>
-      <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{label}</p>
+      <p className={cn("font-bold text-foreground tracking-tight metric-count", featured ? "text-[36px] leading-none" : "text-2xl")}>{value}</p>
+      <p className={cn("text-muted-foreground font-medium", featured ? "text-[13px] mt-1.5" : "text-[11px] mt-0.5")}>{label}</p>
     </button>
   );
 }
@@ -174,13 +174,32 @@ export default function Dashboard() {
       </div>
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <MetricCard label="Active WIPs" value={summary?.active ?? "-"} icon={Briefcase} color="bg-primary/8" onClick={() => setLocation("/jobs")} />
-          <MetricCard label="Completed Today" value={summary?.doneToday ?? "-"} icon={CheckCircle2} color="bg-emerald-500/8" trend={summary && summary.doneToday > 0 ? "up" : "neutral"} trendLabel={`${summary?.doneToday ?? 0}`} />
-          <MetricCard label="Revenue (Week)" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={DollarSign} color="bg-emerald-500/8" />
-          <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={TrendingUp} color="bg-amber-500/8" onClick={() => setLocation("/operations")} />
-          <MetricCard label="Open WIP" value={kpi?.wip.active ?? "-"} icon={Activity} color="bg-blue-500/8" onClick={() => setLocation("/operations")} />
-          <MetricCard label="Pending Quotes" value={kpi?.quotes.pending ?? "-"} icon={FileText} color="bg-primary/8" onClick={() => setLocation("/operations")} />
+        {/* Bento Grid — featured metrics prominent, secondary compact */}
+        <div className="bento-grid">
+          <div className="bento-featured card-stagger" style={{ '--stagger-index': 0 } as React.CSSProperties}>
+            <MetricCard label="Revenue This Week" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={DollarSign} color="bg-emerald-500/8" featured />
+          </div>
+          <div className="bento-featured card-stagger" style={{ '--stagger-index': 1 } as React.CSSProperties}>
+            <MetricCard label="Active WIPs" value={summary?.active ?? "-"} icon={Briefcase} color="bg-primary/8" onClick={() => setLocation("/jobs")} featured />
+          </div>
+          <div className="bento-featured card-stagger" style={{ '--stagger-index': 2 } as React.CSSProperties}>
+            <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={TrendingUp} color="bg-amber-500/8" onClick={() => setLocation("/operations")} featured />
+          </div>
+          <div className="bento-compact card-stagger" style={{ '--stagger-index': 3 } as React.CSSProperties}>
+            <MetricCard label="Completed Today" value={summary?.doneToday ?? "-"} icon={CheckCircle2} color="bg-emerald-500/8" trend={summary && summary.doneToday > 0 ? "up" : "neutral"} trendLabel={`${summary?.doneToday ?? 0}`} />
+          </div>
+          <div className="bento-compact card-stagger" style={{ '--stagger-index': 4 } as React.CSSProperties}>
+            <MetricCard label="Open WIP" value={kpi?.wip.active ?? "-"} icon={Activity} color="bg-blue-500/8" onClick={() => setLocation("/operations")} />
+          </div>
+          <div className="bento-compact card-stagger" style={{ '--stagger-index': 5 } as React.CSSProperties}>
+            <MetricCard label="Pending Quotes" value={kpi?.quotes.pending ?? "-"} icon={FileText} color="bg-primary/8" onClick={() => setLocation("/operations")} />
+          </div>
+          <div className="bento-compact card-stagger" style={{ '--stagger-index': 6 } as React.CSSProperties}>
+            <MetricCard label="Revenue (Month)" value={kpi ? fmt(kpi.invoices.revenueThisMonth) : "-"} icon={DollarSign} color="bg-emerald-500/8" />
+          </div>
+          <div className="bento-compact card-stagger" style={{ '--stagger-index': 7 } as React.CSSProperties}>
+            <MetricCard label="Overdue Invoices" value={kpi?.invoices.overdue ?? "-"} icon={Clock} color="bg-red-500/8" />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -209,12 +228,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <MetricCard label="Revenue (Month)" value={kpi ? fmt(kpi.invoices.revenueThisMonth) : "-"} icon={DollarSign} color="bg-emerald-500/8" />
-          <MetricCard label="Overdue Invoices" value={kpi?.invoices.overdue ?? "-"} icon={Clock} color="bg-red-500/8" trend={kpi && kpi.invoices.overdue > 0 ? "down" : undefined} trendLabel={`${kpi?.invoices.overdue ?? 0}`} />
-          <MetricCard label="Critical Defects" value={kpi?.defects.critical ?? "-"} icon={AlertTriangle} color="bg-red-500/8" />
-          <MetricCard label="Active Tasks" value={kpi?.overview.activeTodos ?? "-"} icon={Activity} color="bg-primary/8" onClick={() => setLocation("/todos")} />
-        </div>
 
         {kpi && Object.keys(kpi.wip.byTech).length > 0 && (
           <div className="bg-card border border-border rounded-2xl p-5">

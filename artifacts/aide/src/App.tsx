@@ -19,12 +19,13 @@ const Projects = lazy(() => import("@/pages/projects"));
 const Operations = lazy(() => import("@/pages/operations"));
 const Suppliers = lazy(() => import("@/pages/suppliers"));
 const Analytics = lazy(() => import("@/pages/analytics"));
+const SettingsPage = lazy(() => import("@/pages/settings"));
 const PM = lazy(() => import("@/pages/pm"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
-  Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal
+  Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal, Settings2
 } from "lucide-react";
 
 const SidebarContext = createContext({ collapsed: false, setCollapsed: (_: boolean) => {} });
@@ -61,6 +62,7 @@ const navGroups = [
       { path: "/schedule", icon: CalendarDays, label: "Schedule" },
       { path: "/notes", icon: FileText, label: "Notes" },
       { path: "/toolbox", icon: Wrench, label: "Toolbox" },
+      { path: "/settings", icon: Settings2, label: "Settings" },
     ],
   },
 ];
@@ -280,6 +282,7 @@ function Router() {
           <Route path="/projects"><PM /></Route>
           <Route path="/toolbox"><Toolbox /></Route>
           <Route path="/suppliers"><Suppliers /></Route>
+          <Route path="/settings"><SettingsPage /></Route>
           <Route><NotFound /></Route>
         </Switch>
       </Suspense>

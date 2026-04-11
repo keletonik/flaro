@@ -262,7 +262,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   latestContent.push({ type: "text", text: textContent });
 
   // Compose the full messages array for LLM
-  const claudeMessages: any[] = [
+  const llmMessages: any[] = [
     ...historyMessages,
     {
       role: "user",
@@ -288,7 +288,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
       model: "claude-sonnet-4-6",
       max_tokens: 8192,
       system: SYSTEM_PROMPT,
-      messages: claudeMessages,
+      messages: llmMessages,
     });
 
     for await (const event of stream) {

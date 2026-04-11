@@ -904,7 +904,7 @@ export default function Chat() {
           await createNote.mutateAsync({ data: {
             text: d.text || "Auto-generated note",
             category: (d.category as "Urgent" | "To Do" | "To Ask" | "Schedule" | "Done") || "To Do",
-            owner: d.owner || "Casper",
+            owner: d.owner || "User",
           }});
           queryClient.invalidateQueries({ queryKey: getListNotesQueryKey() });
           return { type: action.type, label: "Note saved", success: true };

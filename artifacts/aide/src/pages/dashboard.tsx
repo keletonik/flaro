@@ -9,6 +9,7 @@ import { apiFetch, formatCurrency } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/App";
 
 interface KpiMetrics {
   overview: {
@@ -105,6 +106,8 @@ export default function Dashboard() {
   const [pipelineGaps, setPipelineGaps] = useState<any>(null);
   const [onCallToday, setOnCallToday] = useState("Loading...");
   const { toast } = useToast();
+  const { user } = useAuth();
+  const userName = user?.displayName?.split(" ")[0] || "there";
 
   const fetchAll = () => {
     apiFetch<{ techName: string | null }>("/on-call/today").then(d => setOnCallToday(d.techName || "Check roster")).catch(() => setOnCallToday("Check roster"));
@@ -157,7 +160,7 @@ export default function Dashboard() {
   const addNote = async () => {
     if (!newNote.trim()) return;
     try {
-      await apiFetch("/notes", { method: "POST", body: JSON.stringify({ text: newNote.trim(), category: "To Do", owner: "Casper" }) });
+      await apiFetch("/notes", { method: "POST", body: JSON.stringify({ text: newNote.trim(), category: "To Do", owner: user?.displayName || "User" }) });
       setNewNote("");
       fetchAll();
       toast({ title: "Note added" });
@@ -199,7 +202,7 @@ export default function Dashboard() {
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-foreground font-bold text-lg tracking-tight">{greeting}, Casper</h1>
+            <h1 className="text-foreground font-bold text-lg tracking-tight">{greeting}, {userName}</h1>
             <p className="text-xs text-muted-foreground mt-0.5">{new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}</p>
           </div>
           <div className="flex items-center gap-2">

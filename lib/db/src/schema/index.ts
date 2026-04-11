@@ -13,3 +13,4 @@ export * from "./suppliers";
 export * from "./schedule-events";
 export * from "./pm";
 export * from "./on-call";
+export * from "./clients";

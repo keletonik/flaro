@@ -118,18 +118,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchAll();
-    // Auto-refresh KPI data every 60 seconds
-    const interval = setInterval(() => {
-      apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(e => console.error(e));
-      apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(e => console.error(e));
-      apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(e => console.error(e));
-      apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(e => console.error(e));
-      apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(e => console.error(e));
-    }, 60000);
-    // Refetch on tab focus
+    // SSE real-time updates — listen for data changes and refetch
+    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource(`${base}/api/events`);
+      eventSource.onmessage = (e) => {
+        try {
+          const event = JSON.parse(e.data);
+          if (event.type === "data_change") fetchAll();
+        } catch {}
+      };
+      eventSource.onerror = () => { /* SSE reconnects automatically */ };
+    } catch {}
+    // Fallback: refetch on tab focus
     const handleVisibility = () => { if (!document.hidden) fetchAll(); };
     document.addEventListener("visibilitychange", handleVisibility);
-    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", handleVisibility); };
+    return () => { eventSource?.close(); document.removeEventListener("visibilitychange", handleVisibility); };
   }, []);
 
   const addTodo = async () => {

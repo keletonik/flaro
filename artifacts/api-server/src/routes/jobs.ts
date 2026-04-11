@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { jobs } from "@workspace/db";
-import { eq, and, or, ilike } from "drizzle-orm";
+import { eq, and, or, ilike, sql } from "drizzle-orm";
+import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { CreateJobBody, UpdateJobBody, ListJobsQueryParams, GetJobParams, UpdateJobParams, DeleteJobParams } from "@workspace/api-zod";
 import { randomUUID } from "crypto";
 
@@ -44,8 +45,18 @@ router.get("/jobs", async (req, res, next) => {
     }
 
     if (conditions.length > 0) query = query.where(and(...conditions));
-    const result = await query.orderBy(jobs.createdAt);
-    res.json(result.map(serializeJob));
+    // Support both flat array (for generated hooks) and paginated response
+    if (req.query.page) {
+      let countQuery = db.select({ count: sql<number>`count(*)` }).from(jobs).$dynamic();
+      if (conditions.length > 0) countQuery = countQuery.where(and(...conditions));
+      const [{ count: total }] = await countQuery;
+      const pg = parsePagination(req);
+      const result = await query.orderBy(jobs.createdAt).limit(pg.limit).offset(pg.offset);
+      res.json(paginatedResponse(result.map(serializeJob), Number(total), pg));
+    } else {
+      const result = await query.orderBy(jobs.createdAt);
+      res.json(result.map(serializeJob));
+    }
   } catch (err) { next(err); }
 });
 

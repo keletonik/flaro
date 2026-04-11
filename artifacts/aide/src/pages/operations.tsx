@@ -297,8 +297,10 @@ export default function Operations() {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (statusFilter) params.set("status", statusFilter);
-      const result = await apiFetch(`${ENDPOINTS[tab]}?${params}`);
-      setData(prev => ({ ...prev, [tab]: result }));
+      const result = await apiFetch(`${ENDPOINTS[tab]}?${params}&limit=500`);
+      // Handle both paginated {data:[]} and flat array responses
+      const records = Array.isArray(result) ? result : (result.data || []);
+      setData(prev => ({ ...prev, [tab]: records }));
     } catch (e: any) { console.error(e); } finally { setLoading(false); }
   };
 

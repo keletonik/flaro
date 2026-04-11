@@ -2,27 +2,31 @@ import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
-import Chat from "@/pages/chat";
-import Jobs from "@/pages/jobs";
-import Notes from "@/pages/notes";
-import Toolbox from "@/pages/toolbox";
-import JobDetail from "@/pages/job-detail";
-import Schedule from "@/pages/schedule";
-import Todos from "@/pages/todos";
-import Projects from "@/pages/projects";
-import Operations from "@/pages/operations";
-import Suppliers from "@/pages/suppliers";
-import Analytics from "@/pages/analytics";
-import { ThemeProvider, useTheme } from "@/lib/theme";
+import { lazy, Suspense, useState, createContext, useContext } from "react";
+import { ThemeProvider, useTheme, THEME_OPTIONS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+
+// Lazy-loaded pages for code splitting
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Chat = lazy(() => import("@/pages/chat"));
+const Jobs = lazy(() => import("@/pages/jobs"));
+const Notes = lazy(() => import("@/pages/notes"));
+const Toolbox = lazy(() => import("@/pages/toolbox"));
+const JobDetail = lazy(() => import("@/pages/job-detail"));
+const Schedule = lazy(() => import("@/pages/schedule"));
+const Todos = lazy(() => import("@/pages/todos"));
+const Projects = lazy(() => import("@/pages/projects"));
+const Operations = lazy(() => import("@/pages/operations"));
+const Suppliers = lazy(() => import("@/pages/suppliers"));
+const Analytics = lazy(() => import("@/pages/analytics"));
+const SettingsPage = lazy(() => import("@/pages/settings"));
+const PM = lazy(() => import("@/pages/pm"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
-  Package, ChevronLeft, ChevronRight, PieChart
+  Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal, Settings2
 } from "lucide-react";
-import { useState, createContext, useContext } from "react";
 
 const SidebarContext = createContext({ collapsed: false, setCollapsed: (_: boolean) => {} });
 function useSidebar() { return useContext(SidebarContext); }
@@ -58,6 +62,7 @@ const navGroups = [
       { path: "/schedule", icon: CalendarDays, label: "Schedule" },
       { path: "/notes", icon: FileText, label: "Notes" },
       { path: "/toolbox", icon: Wrench, label: "Toolbox" },
+      { path: "/settings", icon: Settings2, label: "Settings" },
     ],
   },
 ];
@@ -70,25 +75,38 @@ function isActive(location: string, item: { path: string; exact?: boolean }) {
 }
 
 function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, mode, setTheme, toggleMode } = useTheme();
+  const [showPicker, setShowPicker] = useState(false);
   return (
-    <button
-      data-testid="button-theme-toggle"
-      onClick={toggleTheme}
-      title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-      className={cn(
-        "flex items-center gap-2.5 rounded-lg transition-all duration-200",
-        collapsed
-          ? "w-9 h-9 justify-center text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          : "px-3 py-2 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs w-full font-medium"
+    <div className="relative">
+      <button
+        data-testid="button-theme-toggle"
+        onClick={() => collapsed ? toggleMode() : setShowPicker(v => !v)}
+        title="Change theme"
+        className={cn(
+          "flex items-center gap-2.5 rounded-lg transition-all duration-200",
+          collapsed
+            ? "w-9 h-9 justify-center text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            : "px-3 py-2 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs w-full font-medium"
+        )}
+      >
+        {mode === "light" ? <Sun size={14} strokeWidth={1.75} /> : <Moon size={14} strokeWidth={1.75} />}
+        {!collapsed && <span className="text-[11px]">Theme</span>}
+      </button>
+      {showPicker && !collapsed && (
+        <div className="absolute bottom-full left-0 mb-1 w-full bg-sidebar-accent border border-sidebar-border rounded-lg p-1.5 shadow-lg z-50">
+          {THEME_OPTIONS.map(opt => (
+            <button key={opt.key} onClick={() => { setTheme(opt.key); setShowPicker(false); }}
+              className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium transition-all",
+                theme === opt.key ? "text-sidebar-primary-foreground bg-sidebar-primary" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              )}>
+              <div className="w-3 h-3 rounded-full border border-sidebar-border" style={{ backgroundColor: opt.accent }} />
+              {opt.label}
+            </button>
+          ))}
+        </div>
       )}
-    >
-      {theme === "light"
-        ? <Moon size={14} strokeWidth={1.75} />
-        : <Sun size={14} strokeWidth={1.75} />
-      }
-      {!collapsed && <span className="text-[11px]">{theme === "light" ? "Dark mode" : "Light mode"}</span>}
-    </button>
+    </div>
   );
 }
 
@@ -179,36 +197,52 @@ function SidebarNav() {
 
 function BottomNav() {
   const [location, setLocation] = useLocation();
-  const mobileItems = [
-    allNavItems[0], // Dashboard
-    allNavItems[2], // Operations
-    allNavItems[1], // Chat
-    allNavItems[3], // WIPs
-    allNavItems[4], // Tasks
-  ];
+  const [moreOpen, setMoreOpen] = useState(false);
+  const PRIMARY_PATHS = ["/", "/chat", "/operations", "/analytics"];
+  const primaryItems = allNavItems.filter(i => PRIMARY_PATHS.includes(i.path));
+  const moreItems = allNavItems.filter(i => !PRIMARY_PATHS.includes(i.path));
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
-      <div className="flex items-center justify-around px-1 py-1.5 safe-area-inset-bottom">
-        {mobileItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(location, item);
-          return (
-            <button
-              key={item.path}
-              onClick={() => setLocation(item.path)}
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]",
-                active ? "text-primary" : "text-sidebar-foreground/35"
-              )}
-            >
-              <Icon size={20} strokeWidth={active ? 2.25 : 1.5} />
-              <span className="text-[9px] font-bold tracking-wider uppercase">{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+    <>
+      {moreOpen && (
+        <div className="fixed inset-0 z-[60] md:hidden" onClick={() => setMoreOpen(false)}>
+          <div className="absolute bottom-16 left-0 right-0 bg-sidebar border-t border-sidebar-border rounded-t-2xl p-3 shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="grid grid-cols-4 gap-2">
+              {moreItems.map(item => {
+                const Icon = item.icon;
+                return (
+                  <button key={item.path} onClick={() => { setLocation(item.path); setMoreOpen(false); }}
+                    className="flex flex-col items-center gap-1 py-2 rounded-xl text-sidebar-foreground/50 hover:text-primary transition-colors">
+                    <Icon size={18} strokeWidth={1.5} />
+                    <span className="text-[8px] font-bold tracking-wider uppercase">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
+        <div className="flex items-center justify-around px-1 py-1.5 safe-area-inset-bottom">
+          {primaryItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(location, item);
+            return (
+              <button key={item.path} onClick={() => setLocation(item.path)}
+                className={cn("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]", active ? "text-primary" : "text-sidebar-foreground/35")}>
+                <Icon size={20} strokeWidth={active ? 2.25 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wider uppercase">{item.label}</span>
+              </button>
+            );
+          })}
+          <button onClick={() => setMoreOpen(v => !v)}
+            className={cn("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]", moreOpen ? "text-primary" : "text-sidebar-foreground/35")}>
+            <MoreHorizontal size={20} strokeWidth={1.5} />
+            <span className="text-[9px] font-bold tracking-wider uppercase">More</span>
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }
 
@@ -225,23 +259,34 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={() => <Layout><Dashboard /></Layout>} />
-      <Route path="/chat" component={() => <Layout><Chat /></Layout>} />
-      <Route path="/operations" component={() => <Layout><Operations /></Layout>} />
-      <Route path="/analytics" component={() => <Layout><Analytics /></Layout>} />
-      <Route path="/schedule" component={() => <Layout><Schedule /></Layout>} />
-      <Route path="/jobs" component={() => <Layout><Jobs /></Layout>} />
-      <Route path="/jobs/:id" component={() => <Layout><JobDetail /></Layout>} />
-      <Route path="/notes" component={() => <Layout><Notes /></Layout>} />
-      <Route path="/todos" component={() => <Layout><Todos /></Layout>} />
-      <Route path="/projects" component={() => <Layout><Projects /></Layout>} />
-      <Route path="/toolbox" component={() => <Layout><Toolbox /></Layout>} />
-      <Route path="/suppliers" component={() => <Layout><Suppliers /></Layout>} />
-      <Route component={NotFound} />
-    </Switch>
+    <Layout>
+      <Suspense fallback={<PageLoader />}>
+        <Switch>
+          <Route path="/"><Dashboard /></Route>
+          <Route path="/chat"><Chat /></Route>
+          <Route path="/operations"><Operations /></Route>
+          <Route path="/analytics"><Analytics /></Route>
+          <Route path="/schedule"><Schedule /></Route>
+          <Route path="/jobs"><Jobs /></Route>
+          <Route path="/jobs/:id"><JobDetail /></Route>
+          <Route path="/notes"><Notes /></Route>
+          <Route path="/todos"><Todos /></Route>
+          <Route path="/projects"><PM /></Route>
+          <Route path="/toolbox"><Toolbox /></Route>
+          <Route path="/suppliers"><Suppliers /></Route>
+          <Route path="/settings"><SettingsPage /></Route>
+          <Route><NotFound /></Route>
+        </Switch>
+      </Suspense>
+    </Layout>
   );
 }
 

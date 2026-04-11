@@ -2,28 +2,30 @@ import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
-import Chat from "@/pages/chat";
-import Jobs from "@/pages/jobs";
-import Notes from "@/pages/notes";
-import Toolbox from "@/pages/toolbox";
-import JobDetail from "@/pages/job-detail";
-import Schedule from "@/pages/schedule";
-import Todos from "@/pages/todos";
-import Projects from "@/pages/projects";
-import Operations from "@/pages/operations";
-import Suppliers from "@/pages/suppliers";
-import Analytics from "@/pages/analytics";
-import PM from "@/pages/pm";
+import { lazy, Suspense, useState, createContext, useContext } from "react";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+
+// Lazy-loaded pages for code splitting
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Chat = lazy(() => import("@/pages/chat"));
+const Jobs = lazy(() => import("@/pages/jobs"));
+const Notes = lazy(() => import("@/pages/notes"));
+const Toolbox = lazy(() => import("@/pages/toolbox"));
+const JobDetail = lazy(() => import("@/pages/job-detail"));
+const Schedule = lazy(() => import("@/pages/schedule"));
+const Todos = lazy(() => import("@/pages/todos"));
+const Projects = lazy(() => import("@/pages/projects"));
+const Operations = lazy(() => import("@/pages/operations"));
+const Suppliers = lazy(() => import("@/pages/suppliers"));
+const Analytics = lazy(() => import("@/pages/analytics"));
+const PM = lazy(() => import("@/pages/pm"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
   Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal
 } from "lucide-react";
-import { useState, createContext, useContext } from "react";
 
 const SidebarContext = createContext({ collapsed: false, setCollapsed: (_: boolean) => {} });
 function useSidebar() { return useContext(SidebarContext); }
@@ -241,23 +243,33 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={() => <Layout><Dashboard /></Layout>} />
-      <Route path="/chat" component={() => <Layout><Chat /></Layout>} />
-      <Route path="/operations" component={() => <Layout><Operations /></Layout>} />
-      <Route path="/analytics" component={() => <Layout><Analytics /></Layout>} />
-      <Route path="/schedule" component={() => <Layout><Schedule /></Layout>} />
-      <Route path="/jobs" component={() => <Layout><Jobs /></Layout>} />
-      <Route path="/jobs/:id" component={() => <Layout><JobDetail /></Layout>} />
-      <Route path="/notes" component={() => <Layout><Notes /></Layout>} />
-      <Route path="/todos" component={() => <Layout><Todos /></Layout>} />
-      <Route path="/projects" component={() => <Layout><PM /></Layout>} />
-      <Route path="/toolbox" component={() => <Layout><Toolbox /></Layout>} />
-      <Route path="/suppliers" component={() => <Layout><Suppliers /></Layout>} />
-      <Route component={NotFound} />
-    </Switch>
+    <Layout>
+      <Suspense fallback={<PageLoader />}>
+        <Switch>
+          <Route path="/"><Dashboard /></Route>
+          <Route path="/chat"><Chat /></Route>
+          <Route path="/operations"><Operations /></Route>
+          <Route path="/analytics"><Analytics /></Route>
+          <Route path="/schedule"><Schedule /></Route>
+          <Route path="/jobs"><Jobs /></Route>
+          <Route path="/jobs/:id"><JobDetail /></Route>
+          <Route path="/notes"><Notes /></Route>
+          <Route path="/todos"><Todos /></Route>
+          <Route path="/projects"><PM /></Route>
+          <Route path="/toolbox"><Toolbox /></Route>
+          <Route path="/suppliers"><Suppliers /></Route>
+          <Route><NotFound /></Route>
+        </Switch>
+      </Suspense>
+    </Layout>
   );
 }
 

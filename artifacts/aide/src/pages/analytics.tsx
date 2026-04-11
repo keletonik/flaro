@@ -192,6 +192,8 @@ export default function Analytics() {
   const [taskChartType, setTaskChartType] = useState<ChartType>("area");
   const [techChartType, setTechChartType] = useState<ChartType>("bar");
   const [quoteChartType, setQuoteChartType] = useState<ChartType>("pie");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const colors = COLOR_THEMES[colorTheme] || COLOR_THEMES.Default;
 
@@ -259,6 +261,12 @@ export default function Analytics() {
             <p className="text-xs text-muted-foreground mt-0.5">Performance metrics and revenue tracking</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="bg-card border border-border rounded-lg px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/20" title="From date" />
+              <span className="text-[10px] text-muted-foreground">to</span>
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="bg-card border border-border rounded-lg px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/20" title="To date" />
+              {(dateFrom || dateTo) && <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-[10px] text-muted-foreground hover:text-foreground">Clear</button>}
+            </div>
             <ColorThemeSelector value={colorTheme} onChange={setColorTheme} />
           </div>
         </div>

@@ -103,19 +103,11 @@ export default function Dashboard() {
   const [newTodo, setNewTodo] = useState("");
   const [newNote, setNewNote] = useState("");
   const [pipelineGaps, setPipelineGaps] = useState<any>(null);
+  const [onCallToday, setOnCallToday] = useState("Loading...");
   const { toast } = useToast();
 
-  // On-call roster data
-  const ON_CALL: Record<string, string> = {
-    "2026-04-10": "Darren Brailey", "2026-04-11": "Darren Brailey", "2026-04-12": "Darren Brailey",
-    "2026-04-13": "Gordon Jenkins", "2026-04-16": "Haider Al-Heyoury",
-    "2026-04-21": "Haider Al-Heyoury", "2026-04-22": "Nu Unasa",
-    "2026-04-28": "John Minai", "2026-04-29": "Haider Al-Heyoury", "2026-04-30": "Nu Unasa",
-  };
-  const todayStr = new Date().toISOString().split("T")[0];
-  const onCallToday = ON_CALL[todayStr] || "Check roster";
-
   const fetchAll = () => {
+    apiFetch<{ techName: string | null }>("/on-call/today").then(d => setOnCallToday(d.techName || "Check roster")).catch(() => setOnCallToday("Check roster"));
     apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(e => console.error(e));
     apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(e => console.error(e));
     apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(e => console.error(e));

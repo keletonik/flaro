@@ -19,6 +19,7 @@ import scheduleEventsRouter from "./schedule-events";
 import pmRouter from "./pm";
 import onCallRouter from "./on-call";
 import clientsRouter from "./clients";
+import chatHistoryRouter from "./chat-history";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use(scheduleEventsRouter);
 router.use(pmRouter);
 router.use(onCallRouter);
 router.use(clientsRouter);
+router.use(chatHistoryRouter);
 
 export default router;

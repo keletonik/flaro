@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Search, Upload, Download, Filter, X, ChevronDown, BarChart3, MessageCircle, Send, Trash2, PanelRightClose, PanelRightOpen, Loader2, Pencil } from "lucide-react";
+import { Search, Upload, Download, Filter, X, ChevronDown, BarChart3, MessageCircle, Send, Trash2, PanelRightClose, PanelRightOpen, Loader2, Pencil, Eye, ArrowUpDown } from "lucide-react";
 import { apiFetch, exportToCSV, streamChat } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
 import { cn } from "@/lib/utils";
@@ -100,7 +100,44 @@ function DataTable({ data, tab, onDelete, onStatusChange, onEdit, selectedIds, o
   onEdit: (row: any) => void;
   selectedIds: Set<string>; onToggleSelect: (id: string) => void; onToggleAll: () => void;
 }) {
-  const columns = getColumns(tab);
+  const allColumns = getColumns(tab);
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
+  const [sortCol, setSortCol] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [colFilters, setColFilters] = useState<Record<string, string>>({});
+  const [showColMenu, setShowColMenu] = useState(false);
+
+  const visibleColumns = allColumns.filter(c => !hiddenCols.has(c.key));
+
+  const toggleCol = (key: string) => setHiddenCols(prev => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
+
+  const handleSort = (key: string) => {
+    if (sortCol === key) { setSortDir(d => d === "asc" ? "desc" : "asc"); }
+    else { setSortCol(key); setSortDir("asc"); }
+  };
+
+  // Apply column-level filters
+  const filtered = useMemo(() => {
+    let result = data;
+    for (const [key, val] of Object.entries(colFilters)) {
+      if (!val) continue;
+      result = result.filter(r => String(r[key] ?? "").toLowerCase().includes(val.toLowerCase()));
+    }
+    return result;
+  }, [data, colFilters]);
+
+  // Apply sorting
+  const sorted = useMemo(() => {
+    if (!sortCol) return filtered;
+    return [...filtered].sort((a, b) => {
+      const av = a[sortCol] ?? "";
+      const bv = b[sortCol] ?? "";
+      const numA = Number(av), numB = Number(bv);
+      if (!isNaN(numA) && !isNaN(numB)) return sortDir === "asc" ? numA - numB : numB - numA;
+      return sortDir === "asc" ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+    });
+  }, [filtered, sortCol, sortDir]);
+
   if (!data.length) return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <Upload size={28} className="text-muted-foreground/30 mb-3" />
@@ -108,45 +145,110 @@ function DataTable({ data, tab, onDelete, onStatusChange, onEdit, selectedIds, o
       <p className="text-xs text-muted-foreground mt-1">Import a CSV from Uptick to get started</p>
     </div>
   );
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="data-table w-full">
-        <thead>
-          <tr>
-            <th className="w-10"><input type="checkbox" checked={selectedIds.size === data.length && data.length > 0} onChange={onToggleAll} className="rounded border-border" /></th>
-            {columns.map(col => <th key={col.key}>{col.label}</th>)}
-            <th className="w-16">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row) => (
-            <tr key={row.id} className={cn("group", selectedIds.has(row.id) && "bg-primary/5")}>
-              <td className="w-10"><input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => onToggleSelect(row.id)} className="rounded border-border" /></td>
-              {columns.map(col => (
-                <td key={col.key} className={cn(col.key.includes("amount") || col.key.includes("Amount") ? "font-mono text-right" : "")}>
-                  {col.key === "status" ? (
-                    <select
-                      value={row.status}
-                      onChange={e => onStatusChange(row.id, e.target.value)}
-                      className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer"
-                    >
-                      {STATUS_OPTIONS[tab].map(s => <option key={s} value={s}>{s}</option>)}
+    <div>
+      {/* Column visibility toggle */}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="relative">
+          <button onClick={() => setShowColMenu(v => !v)} className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-muted-foreground hover:text-foreground border border-border hover:bg-muted/50 transition-all">
+            <Eye size={10} /> Columns ({visibleColumns.length}/{allColumns.length})
+          </button>
+          {showColMenu && (
+            <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-md p-2 z-50 min-w-[160px]">
+              {allColumns.map(col => (
+                <label key={col.key} className="flex items-center gap-2 px-2 py-1 rounded text-[11px] text-foreground hover:bg-muted/50 cursor-pointer">
+                  <input type="checkbox" checked={!hiddenCols.has(col.key)} onChange={() => toggleCol(col.key)} className="rounded border-border" />
+                  {col.label}
+                </label>
+              ))}
+              <button onClick={() => setHiddenCols(new Set())} className="w-full text-left px-2 py-1 mt-1 text-[10px] text-primary hover:underline">Show all</button>
+            </div>
+          )}
+        </div>
+        {sortCol && (
+          <span className="text-[10px] text-muted-foreground">Sorted by {allColumns.find(c => c.key === sortCol)?.label} {sortDir === "asc" ? "↑" : "↓"}</span>
+        )}
+        <span className="text-[10px] text-muted-foreground ml-auto">{sorted.length} of {data.length} records</span>
+      </div>
+
+      {/* Excel-grade table */}
+      <div className="overflow-x-auto border border-border rounded-lg">
+        <table className="w-full border-collapse text-[12px]">
+          <thead>
+            {/* Header row */}
+            <tr className="bg-muted/30">
+              <th className="w-8 px-2 py-2 text-left border-b border-r border-border sticky top-0 bg-muted/30 z-10">
+                <input type="checkbox" checked={selectedIds.size === sorted.length && sorted.length > 0} onChange={onToggleAll} className="rounded border-border" />
+              </th>
+              {visibleColumns.map(col => (
+                <th key={col.key} onClick={() => handleSort(col.key)}
+                  className={cn("px-2 py-2 text-left font-semibold uppercase tracking-wider text-[10px] text-muted-foreground border-b border-r border-border sticky top-0 bg-muted/30 z-10 cursor-pointer hover:text-foreground hover:bg-muted/60 select-none whitespace-nowrap",
+                    sortCol === col.key && "text-primary"
+                  )}>
+                  <div className="flex items-center gap-1">
+                    {col.label}
+                    {sortCol === col.key && <ArrowUpDown size={9} className="text-primary" />}
+                  </div>
+                </th>
+              ))}
+              <th className="w-12 px-1 py-2 border-b border-border sticky top-0 bg-muted/30 z-10"></th>
+            </tr>
+            {/* Filter row */}
+            <tr className="bg-card">
+              <td className="px-2 py-1 border-b border-r border-border"></td>
+              {visibleColumns.map(col => (
+                <td key={col.key} className="px-1 py-1 border-b border-r border-border">
+                  {col.key !== "status" ? (
+                    <input value={colFilters[col.key] || ""} onChange={e => setColFilters(prev => ({ ...prev, [col.key]: e.target.value }))}
+                      placeholder="Filter..." className="w-full bg-transparent text-[10px] px-1 py-0.5 border border-border rounded focus:outline-none focus:border-primary/40 placeholder:text-muted-foreground/30" />
+                  ) : (
+                    <select value={colFilters[col.key] || ""} onChange={e => setColFilters(prev => ({ ...prev, [col.key]: e.target.value }))}
+                      className="w-full bg-transparent text-[10px] px-1 py-0.5 border border-border rounded focus:outline-none">
+                      <option value="">All</option>
+                      {STATUS_OPTIONS[tab].map(s => <option key={s}>{s}</option>)}
                     </select>
-                  ) : col.render ? col.render(row) : (
-                    <span className="text-[13px]">{row[col.key] ?? "-"}</span>
                   )}
                 </td>
               ))}
-              <td>
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
-                  <button onClick={() => onEdit(row)} className="p-1 rounded text-muted-foreground hover:text-primary transition-all" title="Edit"><Pencil size={11} /></button>
-                  <button onClick={() => onDelete(row.id)} className="p-1 rounded text-muted-foreground hover:text-red-500 transition-all" title="Delete"><X size={12} /></button>
-                </div>
+              <td className="px-1 py-1 border-b border-border">
+                {Object.values(colFilters).some(v => v) && (
+                  <button onClick={() => setColFilters({})} className="text-[9px] text-primary hover:underline">Clear</button>
+                )}
               </td>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sorted.map((row) => (
+              <tr key={row.id} className={cn("hover:bg-muted/30 transition-colors", selectedIds.has(row.id) && "bg-primary/4")}>
+                <td className="px-2 py-1.5 border-b border-r border-border">
+                  <input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => onToggleSelect(row.id)} className="rounded border-border" />
+                </td>
+                {visibleColumns.map(col => (
+                  <td key={col.key} className={cn("px-2 py-1.5 border-b border-r border-border whitespace-nowrap",
+                    (col.key.includes("amount") || col.key.includes("Amount")) && "font-mono text-right"
+                  )}>
+                    {col.key === "status" ? (
+                      <select value={row.status} onChange={e => onStatusChange(row.id, e.target.value)}
+                        className="bg-transparent text-[11px] font-medium focus:outline-none cursor-pointer">
+                        {STATUS_OPTIONS[tab].map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    ) : col.render ? col.render(row) : (
+                      <span className="text-[12px]">{row[col.key] ?? ""}</span>
+                    )}
+                  </td>
+                ))}
+                <td className="px-1 py-1.5 border-b border-border">
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+                    <button onClick={() => onEdit(row)} className="p-0.5 rounded text-muted-foreground hover:text-primary" title="Edit"><Pencil size={10} /></button>
+                    <button onClick={() => onDelete(row.id)} className="p-0.5 rounded text-muted-foreground hover:text-red-500" title="Delete"><X size={10} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

@@ -14,3 +14,5 @@ export * from "./schedule-events";
 export * from "./pm";
 export * from "./on-call";
 export * from "./clients";
+export * from "./chat-history";
+export * from "./users";

@@ -565,6 +565,26 @@ export default function Chat() {
         };
         reader.onerror = () => resolve(null);
         reader.readAsText(file);
+      } else if (ext === "msg" || file.type === "application/vnd.ms-outlook") {
+        // Outlook .msg file — read as binary and extract what we can
+        const reader = new FileReader();
+        reader.onload = e => {
+          const text = e.target?.result as string;
+          // .msg files are binary but contain readable strings — extract email-like content
+          const readable = text.replace(/[\x00-\x08\x0E-\x1F\x7F-\xFF]/g, " ").replace(/\s{3,}/g, "\n").trim();
+          if (readable.length > 50) {
+            resolve({
+              id: crypto.randomUUID(), type: "email",
+              name: `Email: ${name}`,
+              emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${readable.replace(/</g, "&lt;")}</pre>`,
+              emailPlainText: readable,
+              emailSummary: `Outlook message: ${name}`,
+              emailHasBody: true,
+            });
+          } else { resolve(null); }
+        };
+        reader.onerror = () => resolve(null);
+        reader.readAsText(file, "latin1");
       } else if (
         // Text-readable documents — read as text and send content to LLM
         ["txt", "csv", "json", "xml", "html", "htm", "md", "log", "ini", "cfg", "yaml", "yml", "toml"].includes(ext) ||
@@ -687,11 +707,41 @@ export default function Chat() {
 
     const newAttachments: Attachment[] = [];
 
+    // Capture ALL available data types from the drag event
+    const availableTypes = Array.from(e.dataTransfer.types || []);
     const html = e.dataTransfer.getData("text/html");
     const plainText = e.dataTransfer.getData("text/plain");
 
-    if (html && html.trim().length > 20) {
-      const emailAtt = processHtmlEmail(html, plainText || undefined);
+    // Try to read ALL text-based data types (some Outlook versions provide custom types)
+    let richestContent = html;
+    for (const type of availableTypes) {
+      if (type === "text/html" || type === "Files") continue;
+      try {
+        const data = e.dataTransfer.getData(type);
+        if (data && data.length > (richestContent?.length || 0)) {
+          richestContent = data;
+        }
+      } catch {}
+    }
+
+    // Also check dataTransfer.items for any file-like entries (Outlook sometimes provides .msg/.eml as items)
+    if (e.dataTransfer.items) {
+      for (let i = 0; i < e.dataTransfer.items.length; i++) {
+        const item = e.dataTransfer.items[i];
+        if (item.kind === "file") {
+          const file = item.getAsFile();
+          if (file && (file.name.endsWith(".eml") || file.name.endsWith(".msg") || file.type === "message/rfc822")) {
+            const att = await processFile(file);
+            if (att) newAttachments.push(att);
+          }
+        }
+      }
+    }
+
+    // Use the richest HTML content available
+    const bestHtml = richestContent || html;
+    if (bestHtml && bestHtml.trim().length > 20 && newAttachments.filter(a => a.type === "email").length === 0) {
+      const emailAtt = processHtmlEmail(bestHtml, plainText || undefined);
       if (emailAtt) {
         newAttachments.push(emailAtt);
         if (emailAtt.emailHasBody) {

@@ -2,7 +2,7 @@ import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { lazy, Suspense, useState, createContext, useContext } from "react";
+import React, { lazy, Suspense, useState, createContext, useContext } from "react";
 import { ThemeProvider, useTheme, THEME_OPTIONS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -110,6 +110,24 @@ function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
   );
 }
 
+function UserBadge({ collapsed }: { collapsed: boolean }) {
+  const { user, logout } = useAuth();
+  if (!user) return null;
+  return (
+    <div className={cn("flex items-center rounded-lg", collapsed ? "justify-center py-1" : "gap-2 px-3 py-1.5")}>
+      <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+        {user.displayName.split(" ").map(w => w[0]).join("").slice(0, 2)}
+      </div>
+      {!collapsed && (
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] font-medium text-sidebar-foreground truncate">{user.displayName}</p>
+          <button onClick={logout} className="text-[9px] text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors">Sign out</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SidebarNav() {
   const [location, setLocation] = useLocation();
   const { collapsed, setCollapsed } = useSidebar();
@@ -179,6 +197,7 @@ function SidebarNav() {
 
       {/* Footer */}
       <div className={cn("border-t border-sidebar-border pt-2 pb-3 space-y-1", collapsed ? "px-2" : "px-2")}>
+        <UserBadge collapsed={collapsed} />
         <ThemeToggle collapsed={collapsed} />
         <button
           onClick={() => setCollapsed(v => !v)}
@@ -265,9 +284,33 @@ const PageLoader = () => (
   </div>
 );
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: string }> {
+  constructor(props: any) { super(props); this.state = { hasError: false, error: "" }; }
+  static getDerivedStateFromError(error: Error) { return { hasError: true, error: error.message }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[50vh] px-8 text-center">
+          <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center mb-4">
+            <span className="text-destructive text-xl">!</span>
+          </div>
+          <h2 className="text-foreground font-semibold text-lg mb-2">Something went wrong</h2>
+          <p className="text-muted-foreground text-sm mb-4 max-w-md">{this.state.error}</p>
+          <button onClick={() => { this.setState({ hasError: false, error: "" }); window.location.reload(); }}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90">
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function Router() {
   return (
     <Layout>
+      <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/"><Dashboard /></Route>
@@ -286,6 +329,7 @@ function Router() {
           <Route><NotFound /></Route>
         </Switch>
       </Suspense>
+      </ErrorBoundary>
     </Layout>
   );
 }
@@ -295,9 +339,55 @@ function SidebarProvider({ children }: { children: React.ReactNode }) {
   return <SidebarContext.Provider value={{ collapsed, setCollapsed }}>{children}</SidebarContext.Provider>;
 }
 
+// Auth context
+interface AuthUser { id: string; username: string; displayName: string; role: string; }
+const AuthContext = createContext<{ user: AuthUser | null; token: string | null; logout: () => void }>({ user: null, token: null, logout: () => {} });
+export function useAuth() { return useContext(AuthContext); }
+
 function App() {
+  const [authToken, setAuthToken] = useState<string | null>(() => localStorage.getItem("ops-auth-token"));
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Check existing token on mount
+  React.useEffect(() => {
+    const token = localStorage.getItem("ops-auth-token");
+    if (!token) { setAuthChecked(true); return; }
+    fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(user => { setAuthUser(user); setAuthToken(token); setAuthChecked(true); })
+      .catch(() => { localStorage.removeItem("ops-auth-token"); setAuthChecked(true); });
+  }, []);
+
+  const handleLogin = (token: string, user: any) => {
+    localStorage.setItem("ops-auth-token", token);
+    setAuthToken(token);
+    setAuthUser(user);
+  };
+
+  const handleLogout = () => {
+    if (authToken) fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${authToken}` } }).catch(() => {});
+    localStorage.removeItem("ops-auth-token");
+    setAuthToken(null);
+    setAuthUser(null);
+  };
+
+  if (!authChecked) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+
+  if (!authUser) {
+    const LoginPage = React.lazy(() => import("@/pages/login"));
+    return (
+      <ThemeProvider>
+        <React.Suspense fallback={<div />}>
+          <LoginPage onLogin={handleLogin} />
+        </React.Suspense>
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider>
+      <AuthContext.Provider value={{ user: authUser, token: authToken, logout: handleLogout }}>
       <SidebarProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -308,6 +398,7 @@ function App() {
         </TooltipProvider>
       </QueryClientProvider>
       </SidebarProvider>
+      </AuthContext.Provider>
     </ThemeProvider>
   );
 }

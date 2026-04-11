@@ -182,10 +182,74 @@ function RenderChart({ type, data, dataKey, nameKey, colors, target }: {
   );
 }
 
+function PatternInsights({ data }: { data: AnalyticsData }) {
+  const insights: { type: "positive" | "negative" | "neutral"; text: string }[] = [];
+  const r = data.revenue;
+
+  // Revenue trend analysis
+  if (r.progressPercent >= 80) insights.push({ type: "positive", text: `On track: ${r.progressPercent}% of monthly target achieved` });
+  else if (r.progressPercent < 50) insights.push({ type: "negative", text: `Behind target: only ${r.progressPercent}% of $${(r.monthlyTarget/1000).toFixed(0)}k monthly target` });
+
+  // Week-over-week comparison
+  if (r.byWeek.length >= 2) {
+    const lastWeek = r.byWeek[r.byWeek.length - 1]?.revenue || 0;
+    const prevWeek = r.byWeek[r.byWeek.length - 2]?.revenue || 0;
+    if (prevWeek > 0) {
+      const change = ((lastWeek - prevWeek) / prevWeek * 100);
+      if (change > 10) insights.push({ type: "positive", text: `Revenue up ${change.toFixed(0)}% week-over-week` });
+      else if (change < -10) insights.push({ type: "negative", text: `Revenue down ${Math.abs(change).toFixed(0)}% week-over-week` });
+    }
+  }
+
+  // Quote conversion
+  if (data.quotes.total > 0) {
+    const rate = Math.round(data.quotes.accepted / data.quotes.total * 100);
+    if (rate < 40) insights.push({ type: "negative", text: `Low quote conversion: ${rate}% (${data.quotes.accepted}/${data.quotes.total})` });
+    else if (rate > 70) insights.push({ type: "positive", text: `Strong quote conversion: ${rate}%` });
+  }
+
+  // Outstanding invoices
+  if (data.invoices.overdue > 0) insights.push({ type: "negative", text: `${data.invoices.overdue} overdue invoices totalling ${fmt(data.invoices.outstanding)}` });
+
+  // WIP pipeline
+  if (data.wip.active > 0) insights.push({ type: "neutral", text: `${data.wip.active} active WIP items in pipeline (${fmt(data.wip.pipelineValue)})` });
+
+  // Tech utilisation
+  if (data.wip.byTech.length > 0) {
+    const maxTech = data.wip.byTech.reduce((a, b) => a.count > b.count ? a : b);
+    const minTech = data.wip.byTech.reduce((a, b) => a.count < b.count ? a : b);
+    if (maxTech.count > minTech.count * 2) insights.push({ type: "negative", text: `Workload imbalance: ${maxTech.tech.split(" ")[0]} has ${maxTech.count} jobs vs ${minTech.tech.split(" ")[0]} with ${minTech.count}` });
+  }
+
+  // Completion rate
+  if (data.tasks.avgCompletionDays > 14) insights.push({ type: "negative", text: `Slow completion: averaging ${data.tasks.avgCompletionDays} days per job` });
+  else if (data.tasks.avgCompletionDays > 0 && data.tasks.avgCompletionDays <= 7) insights.push({ type: "positive", text: `Fast turnaround: ${data.tasks.avgCompletionDays} day average completion` });
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4">
+      <h3 className="text-[11px] font-bold text-foreground uppercase tracking-wide mb-3">Pattern Detection</h3>
+      <div className="space-y-1.5">
+        {insights.map((ins, i) => (
+          <div key={i} className={cn("flex items-start gap-2 text-[12px] leading-relaxed px-2 py-1.5 rounded-md",
+            ins.type === "positive" ? "bg-emerald-500/5 text-emerald-700 dark:text-emerald-400" :
+            ins.type === "negative" ? "bg-red-500/5 text-red-700 dark:text-red-400" :
+            "bg-muted/50 text-muted-foreground"
+          )}>
+            <span className="shrink-0 mt-0.5">{ins.type === "positive" ? "↑" : ins.type === "negative" ? "↓" : "→"}</span>
+            {ins.text}
+          </div>
+        ))}
+        {insights.length === 0 && <p className="text-[11px] text-muted-foreground">No patterns detected yet. Import more data to enable analysis.</p>}
+      </div>
+    </div>
+  );
+}
+
 export default function Analytics() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [colorTheme, setColorTheme] = useState("Default");
+  const [advancedMode, setAdvancedMode] = useState(true);
   const [revenuePeriod, setRevenuePeriod] = useState<TimePeriod>("week");
   const [revenueChartType, setRevenueChartType] = useState<ChartType>("bar");
   const [wipChartType, setWipChartType] = useState<ChartType>("bar");
@@ -261,6 +325,10 @@ export default function Analytics() {
             <p className="text-xs text-muted-foreground mt-0.5">Performance metrics and revenue tracking</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex gap-0.5 bg-muted/50 rounded-lg p-0.5 mr-2">
+              <button onClick={() => setAdvancedMode(false)} className={cn("px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all", !advancedMode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>Simple</button>
+              <button onClick={() => setAdvancedMode(true)} className={cn("px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all", advancedMode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>Advanced</button>
+            </div>
             <div className="flex items-center gap-2">
               <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="bg-card border border-border rounded-lg px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/20" title="From date" />
               <span className="text-[10px] text-muted-foreground">to</span>
@@ -273,6 +341,9 @@ export default function Analytics() {
       </div>
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
+        {/* Pattern Detection — always visible */}
+        <PatternInsights data={data} />
+
         {/* Revenue Target Section */}
         <div className="bg-card border border-border rounded-2xl p-6">
           <div className="flex items-center gap-2 mb-5">
@@ -303,7 +374,8 @@ export default function Analytics() {
           <RenderChart type={revenueChartType} data={revenueData} dataKey="value" nameKey="name" colors={colors} target={targetForPeriod} />
         </ChartCard>
 
-        {/* WIP + Tasks Row */}
+        {/* Advanced mode — detailed breakdowns */}
+        {advancedMode && <>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <ChartCard title="WIP by Status" chartType={wipChartType} onChartTypeChange={setWipChartType}>
             <RenderChart type={wipChartType} data={wipStatusData} dataKey="value" nameKey="name" colors={colors} />
@@ -371,6 +443,7 @@ export default function Analytics() {
             </div>
           </div>
         </div>
+        </>}
       </div>
 
       <AnalyticsPanel section="dashboard" title="Analytics Analyst" />

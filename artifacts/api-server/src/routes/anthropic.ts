@@ -5,7 +5,8 @@ import { eq } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { CreateAnthropicConversationBody, SendAnthropicMessageBody, GetAnthropicConversationParams, DeleteAnthropicConversationParams, ListAnthropicMessagesParams, SendAnthropicMessageParams } from "@workspace/api-zod";
 
-const SYSTEM_PROMPT = `You are the personal operations assistant for Casper Tavitian, Electrical Services Manager (Dry Fire Division), FlameSafe Fire Protection, Rydalmere NSW. Mobile: 0419 272 500. Address: Unit 2, 8-10 Mary Parade, Rydalmere NSW 2116.
+function buildSystemPrompt(userName: string = "the user") {
+  return `You are the personal operations assistant for ${userName} at FlameSafe Fire Protection, Rydalmere NSW.
 
 BUSINESS CONTEXT:
 - FlameSafe is a fire protection company in NSW, Australia
@@ -48,7 +49,7 @@ ON-CALL ROSTER — DRY FIRE TEAM | APRIL–JUNE 2026:
 5-7 Jun Fri-Sun — Gordon Jenkins
 
 YOUR BEHAVIOUR:
-- Always address Casper by name in your first sentence
+- Always address the user by their first name in your first sentence
 - Be direct, efficient, no corporate waffle, no AI language
 - Australian English throughout (colour, organise, prioritise, etc.)
 - Never say "I'd be happy to", "Certainly!", or any robotic phrasing
@@ -88,6 +89,9 @@ RULES:
 - For dropped images: describe what you see, then create relevant records
 - Always confirm in your text what actions you've taken
 - Priority assessment: Critical = safety/compliance risk, regulatory deadline; High = client impact, this week; Medium = this fortnight; Low = when convenient`;
+}
+
+const SYSTEM_PROMPT = buildSystemPrompt("Casper Tavitian"); // default fallback
 
 function htmlToPlainText(html: string): string {
   let text = html
@@ -126,6 +130,8 @@ function htmlToPlainText(html: string): string {
     .trim();
   return text;
 }
+
+import { getSessionUser } from "./auth";
 
 const router = Router();
 
@@ -287,7 +293,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
     const stream = anthropic.messages.stream({
       model: "claude-sonnet-4-6",
       max_tokens: 8192,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(getSessionUser(req.headers.authorization)?.displayName || "the user"),
       messages: llmMessages,
     });
 

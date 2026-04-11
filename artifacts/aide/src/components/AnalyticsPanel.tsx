@@ -31,24 +31,24 @@ function CopyBtn({ text }: { text: string }) {
 }
 
 function renderMarkdown(text: string) {
-  // Simple markdown: **bold**, *italic*, `code`, - lists, ### headers
   const lines = text.split("\n");
   return lines.map((line, i) => {
     if (line.startsWith("### ")) return <h4 key={i} className="font-semibold text-foreground mt-2 mb-1 text-[12px]">{line.slice(4)}</h4>;
     if (line.startsWith("## ")) return <h3 key={i} className="font-semibold text-foreground mt-2 mb-1 text-[13px]">{line.slice(3)}</h3>;
-    if (line.startsWith("- ") || line.startsWith("* ")) return <li key={i} className="ml-3 list-disc text-[12px] leading-relaxed">{formatInline(line.slice(2))}</li>;
-    if (/^\d+\.\s/.test(line)) return <li key={i} className="ml-3 list-decimal text-[12px] leading-relaxed">{formatInline(line.replace(/^\d+\.\s/, ""))}</li>;
+    if (line.startsWith("- ") || line.startsWith("* ")) return <li key={i} className="ml-3 list-disc text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line.slice(2)) }} />;
+    if (/^\d+\.\s/.test(line)) return <li key={i} className="ml-3 list-decimal text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line.replace(/^\d+\.\s/, "")) }} />;
     if (line.trim() === "") return <div key={i} className="h-2" />;
-    return <p key={i} className="text-[12px] leading-relaxed">{formatInline(line)}</p>;
+    return <p key={i} className="text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line) }} />;
   });
 }
 
-function formatInline(text: string) {
+function formatInline(text: string): string {
   return text
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") // Escape HTML first
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-[11px] font-mono">$1</code>')
-    .replace(/\$([0-9,.]+)/g, '<span class="font-mono font-semibold">$$1</span>');
+    .replace(/\$([0-9,.]+)/g, '<span class="font-mono font-semibold">$$$1</span>');
 }
 
 export default function AnalyticsPanel({ section, title = "Analyst" }: AnalyticsPanelProps) {

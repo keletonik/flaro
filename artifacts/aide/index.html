@@ -10,6 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=Geist:wght@300..800&family=Geist+Mono:wght@300..800&display=swap" rel="stylesheet">
   </head>
   <body>
+    <script>
+      // Prevent theme flash — set dark class and data-theme before paint
+      (function(){var t=localStorage.getItem("ops-theme-variant")||"deep-navy";document.documentElement.setAttribute("data-theme",t);if(["deep-navy","slate-dark","graphite-green"].includes(t))document.documentElement.classList.add("dark")})();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -2,7 +2,7 @@ import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { lazy, Suspense, useState, createContext, useContext } from "react";
+import React, { lazy, Suspense, useState, createContext, useContext } from "react";
 import { ThemeProvider, useTheme, THEME_OPTIONS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -265,9 +265,33 @@ const PageLoader = () => (
   </div>
 );
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: string }> {
+  constructor(props: any) { super(props); this.state = { hasError: false, error: "" }; }
+  static getDerivedStateFromError(error: Error) { return { hasError: true, error: error.message }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[50vh] px-8 text-center">
+          <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center mb-4">
+            <span className="text-destructive text-xl">!</span>
+          </div>
+          <h2 className="text-foreground font-semibold text-lg mb-2">Something went wrong</h2>
+          <p className="text-muted-foreground text-sm mb-4 max-w-md">{this.state.error}</p>
+          <button onClick={() => { this.setState({ hasError: false, error: "" }); window.location.reload(); }}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90">
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function Router() {
   return (
     <Layout>
+      <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/"><Dashboard /></Route>
@@ -286,6 +310,7 @@ function Router() {
           <Route><NotFound /></Route>
         </Switch>
       </Suspense>
+      </ErrorBoundary>
     </Layout>
   );
 }

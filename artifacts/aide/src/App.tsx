@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense, useState, createContext, useContext } from "react";
-import { ThemeProvider, useTheme } from "@/lib/theme";
+import { ThemeProvider, useTheme, THEME_OPTIONS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 // Lazy-loaded pages for code splitting
@@ -73,25 +73,38 @@ function isActive(location: string, item: { path: string; exact?: boolean }) {
 }
 
 function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, mode, setTheme, toggleMode } = useTheme();
+  const [showPicker, setShowPicker] = useState(false);
   return (
-    <button
-      data-testid="button-theme-toggle"
-      onClick={toggleTheme}
-      title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-      className={cn(
-        "flex items-center gap-2.5 rounded-lg transition-all duration-200",
-        collapsed
-          ? "w-9 h-9 justify-center text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          : "px-3 py-2 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs w-full font-medium"
+    <div className="relative">
+      <button
+        data-testid="button-theme-toggle"
+        onClick={() => collapsed ? toggleMode() : setShowPicker(v => !v)}
+        title="Change theme"
+        className={cn(
+          "flex items-center gap-2.5 rounded-lg transition-all duration-200",
+          collapsed
+            ? "w-9 h-9 justify-center text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            : "px-3 py-2 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs w-full font-medium"
+        )}
+      >
+        {mode === "light" ? <Sun size={14} strokeWidth={1.75} /> : <Moon size={14} strokeWidth={1.75} />}
+        {!collapsed && <span className="text-[11px]">Theme</span>}
+      </button>
+      {showPicker && !collapsed && (
+        <div className="absolute bottom-full left-0 mb-1 w-full bg-sidebar-accent border border-sidebar-border rounded-lg p-1.5 shadow-lg z-50">
+          {THEME_OPTIONS.map(opt => (
+            <button key={opt.key} onClick={() => { setTheme(opt.key); setShowPicker(false); }}
+              className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium transition-all",
+                theme === opt.key ? "text-sidebar-primary-foreground bg-sidebar-primary" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              )}>
+              <div className="w-3 h-3 rounded-full border border-sidebar-border" style={{ backgroundColor: opt.accent }} />
+              {opt.label}
+            </button>
+          ))}
+        </div>
       )}
-    >
-      {theme === "light"
-        ? <Moon size={14} strokeWidth={1.75} />
-        : <Sun size={14} strokeWidth={1.75} />
-      }
-      {!collapsed && <span className="text-[11px]">{theme === "light" ? "Dark mode" : "Light mode"}</span>}
-    </button>
+    </div>
   );
 }
 

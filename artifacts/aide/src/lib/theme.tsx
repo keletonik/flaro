@@ -1,46 +1,65 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+export type ThemeVariant = "blue-white" | "blue-orange" | "blue-green" | "deep-navy" | "slate-dark" | "graphite-green";
+type Mode = "light" | "dark";
+
+const LIGHT_THEMES: ThemeVariant[] = ["blue-white", "blue-orange", "blue-green"];
+const DARK_THEMES: ThemeVariant[] = ["deep-navy", "slate-dark", "graphite-green"];
+
+export const THEME_OPTIONS: { key: ThemeVariant; label: string; mode: Mode; accent: string }[] = [
+  { key: "blue-white", label: "Enterprise", mode: "light", accent: "#2563EB" },
+  { key: "blue-orange", label: "Action", mode: "light", accent: "#F97316" },
+  { key: "blue-green", label: "Industrial", mode: "light", accent: "#6B8E23" },
+  { key: "deep-navy", label: "Navy", mode: "dark", accent: "#3B82F6" },
+  { key: "slate-dark", label: "Slate", mode: "dark", accent: "#38BDF8" },
+  { key: "graphite-green", label: "Graphite", mode: "dark", accent: "#22C55E" },
+];
 
 interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
+  theme: ThemeVariant;
+  mode: Mode;
+  setTheme: (t: ThemeVariant) => void;
+  toggleMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: "light",
-  toggleTheme: () => {},
+  theme: "deep-navy",
+  mode: "dark",
+  setTheme: () => {},
+  toggleMode: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const migrated = localStorage.getItem("ops-theme-dark-default");
-    if (!migrated) {
-      localStorage.setItem("ops-theme-dark-default", "1");
-      localStorage.setItem("ops-theme", "dark");
-      return "dark";
-    }
-    const existing = localStorage.getItem("ops-theme");
-    if (existing) return existing as Theme;
-    return "dark";
+  const [theme, setThemeState] = useState<ThemeVariant>(() => {
+    const saved = localStorage.getItem("ops-theme-variant");
+    if (saved && [...LIGHT_THEMES, ...DARK_THEMES].includes(saved as ThemeVariant)) return saved as ThemeVariant;
+    return "deep-navy";
   });
+
+  const mode: Mode = DARK_THEMES.includes(theme) ? "dark" : "light";
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("ops-theme", theme);
-  }, [theme]);
+    // Set dark class
+    if (mode === "dark") root.classList.add("dark");
+    else root.classList.remove("dark");
+    // Set data-theme attribute for CSS selectors
+    root.setAttribute("data-theme", theme);
+    localStorage.setItem("ops-theme-variant", theme);
+  }, [theme, mode]);
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === "light" ? "dark" : "light");
+  const setTheme = (t: ThemeVariant) => setThemeState(t);
+
+  const toggleMode = () => {
+    if (mode === "light") {
+      setThemeState("deep-navy");
+    } else {
+      setThemeState("blue-white");
+    }
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, mode, setTheme, toggleMode }}>
       {children}
     </ThemeContext.Provider>
   );

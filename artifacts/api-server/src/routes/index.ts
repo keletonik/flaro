@@ -20,6 +20,7 @@ import pmRouter from "./pm";
 import onCallRouter from "./on-call";
 import clientsRouter from "./clients";
 import chatHistoryRouter from "./chat-history";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
@@ -44,5 +45,6 @@ router.use(pmRouter);
 router.use(onCallRouter);
 router.use(clientsRouter);
 router.use(chatHistoryRouter);
+router.use(authRouter);
 
 export default router;

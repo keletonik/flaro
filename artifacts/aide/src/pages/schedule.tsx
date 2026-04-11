@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Plus, X, Clock, MapPin, User, Briefcase } from "lucide-react";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { useListJobs } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { cn } from "@/lib/utils";
 
@@ -221,6 +222,18 @@ export default function Schedule() {
 
   const { data: jobs } = useListJobs({});
 
+  // Load persisted schedule events from DB
+  useEffect(() => {
+    apiFetch("/schedule-events").then((events: any[]) => {
+      setLocalEvents(events.map((e: any) => ({
+        id: e.id, title: e.title, date: e.date, startHour: e.startHour || 9,
+        endHour: e.endHour || 10, type: "local" as const,
+        color: e.color ? `bg-[${e.color}] text-white` : "bg-blue-500 text-white border-blue-600",
+        location: e.location || undefined,
+      })));
+    }).catch(e => console.error(e));
+  }, []);
+
   const weekDates = useMemo(() => getWeekDates(anchor), [anchor]);
   const weekStart = weekDates[0];
   const weekEnd = weekDates[6];
@@ -245,13 +258,22 @@ export default function Schedule() {
 
   const allEvents = useMemo(() => [...jobEvents, ...localEvents], [jobEvents, localEvents]);
 
-  const addEvent = (ev: Omit<LocalEvent, "id">) => {
-    setLocalEvents(prev => [...prev, { ...ev, id: `ev-${Date.now()}` }]);
-    toast({ title: "Event added" });
+  const addEvent = async (ev: Omit<LocalEvent, "id">) => {
+    try {
+      const saved = await apiFetch("/schedule-events", {
+        method: "POST",
+        body: JSON.stringify({ title: ev.title, date: ev.date, startHour: ev.startHour, endHour: ev.endHour, location: ev.location }),
+      });
+      setLocalEvents(prev => [...prev, { ...ev, id: saved.id }]);
+      toast({ title: "Event added" });
+    } catch (e) { console.error(e); toast({ title: "Failed to add event", variant: "destructive" }); }
   };
 
-  const deleteEvent = (id: string) => {
-    setLocalEvents(prev => prev.filter(e => e.id !== id));
+  const deleteEvent = async (id: string) => {
+    try {
+      await apiFetch(`/schedule-events/${id}`, { method: "DELETE" });
+      setLocalEvents(prev => prev.filter(e => e.id !== id));
+    } catch (e) { console.error(e); }
   };
 
   const goBack = () => { const d = new Date(anchor); d.setDate(d.getDate() - 7); setAnchor(d); };

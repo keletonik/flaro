@@ -183,8 +183,9 @@ function SidebarNav() {
 function BottomNav() {
   const [location, setLocation] = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
-  const primaryItems = allNavItems.slice(0, 4);
-  const moreItems = allNavItems.slice(4);
+  const PRIMARY_PATHS = ["/", "/chat", "/operations", "/analytics"];
+  const primaryItems = allNavItems.filter(i => PRIMARY_PATHS.includes(i.path));
+  const moreItems = allNavItems.filter(i => !PRIMARY_PATHS.includes(i.path));
 
   return (
     <>

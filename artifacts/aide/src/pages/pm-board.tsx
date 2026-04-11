@@ -9,7 +9,7 @@ import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
-type ViewType = "table" | "kanban" | "gantt" | "timeline";
+type ViewType = "table" | "kanban" | "gantt";
 type ColumnType = "text" | "number" | "status" | "date" | "person" | "dropdown" | "tags" | "priority" | "timeline" | "dependency" | "progress" | "link" | "checkbox" | "rating";
 
 interface Board { id: string; name: string; description: string | null; template: string; color: string; groups: Group[]; columns: Column[]; items: Item[]; views: any[]; }
@@ -19,7 +19,7 @@ interface Item { id: string; boardId: string; groupId: string | null; parentId: 
 
 const PRIORITY_COLORS: Record<string, string> = { Critical: "#EF4444", High: "#F97316", Medium: "#3B82F6", Low: "#94A3B8" };
 const PERSON_LIST = ["Casper", "Darren", "Gordon", "Haider", "John", "Nu"];
-const VIEW_ICONS: Record<ViewType, any> = { table: Table2, kanban: Columns3, gantt: BarChart3, timeline: Calendar };
+const VIEW_ICONS: Record<ViewType, any> = { table: Table2, kanban: Columns3, gantt: BarChart3 };
 
 function StatusCell({ value, options, onChange }: { value: string; options: any[]; onChange: (v: string) => void }) {
   const opt = (options || []).find((o: any) => o.label === value);
@@ -200,7 +200,8 @@ function KanbanView({ board, onUpdateItem, onAddItem, onDeleteItem }: {
 // ─── Gantt View ──────────────────────────────────────────────────────────────
 function GanttView({ board }: { board: Board }) {
   const dateCol = board.columns.find(c => c.type === "date");
-  if (!dateCol) return <p className="text-sm text-muted-foreground p-4">Add a Date column to use Gantt view</p>;
+  const timelineCol = board.columns.find(c => c.type === "timeline");
+  if (!dateCol && !timelineCol) return <p className="text-sm text-muted-foreground p-4">Add a Date or Timeline column to use Gantt view</p>;
 
   const today = new Date();
   const startDate = new Date(today);
@@ -212,9 +213,20 @@ function GanttView({ board }: { board: Board }) {
     days.push(d.toISOString().split("T")[0]);
   }
 
-  const itemsWithDates = board.items.filter(i => (i.values as any)[dateCol.id]).map(i => ({
-    ...i, date: (i.values as any)[dateCol.id] as string,
-  }));
+  const itemsWithDates = board.items.filter(i => {
+    if (timelineCol) {
+      const tl = (i.values as any)[timelineCol.id];
+      return tl?.start;
+    }
+    return dateCol && (i.values as any)[dateCol.id];
+  }).map(i => {
+    if (timelineCol) {
+      const tl = (i.values as any)[timelineCol.id];
+      return { ...i, startDay: tl.start as string, endDay: tl.end as string };
+    }
+    const d = (i.values as any)[dateCol!.id] as string;
+    return { ...i, startDay: d, endDay: d }; // single-day if no timeline
+  });
 
   return (
     <div className="overflow-x-auto">
@@ -237,16 +249,20 @@ function GanttView({ board }: { board: Board }) {
         </div>
         {/* Rows */}
         {itemsWithDates.map(item => {
-          const dayIdx = days.indexOf(item.date);
+          const startIdx = days.indexOf(item.startDay);
+          const endIdx = item.endDay ? days.indexOf(item.endDay) : startIdx;
+          const barStart = Math.max(0, startIdx);
+          const barEnd = endIdx >= 0 ? endIdx : barStart;
+          const duration = Math.max(1, barEnd - barStart + 1);
           const personCol = board.columns.find(c => c.type === "person");
           const person = personCol ? (item.values as any)[personCol.id] : null;
           return (
             <div key={item.id} className="flex border-b border-border hover:bg-muted/20">
               <div className="w-[200px] shrink-0 px-3 py-2 text-xs text-foreground truncate">{item.name}</div>
               <div className="flex-1 flex relative items-center">
-                {dayIdx >= 0 && (
+                {barStart >= 0 && (
                   <div className="absolute h-5 rounded-md text-[9px] font-semibold flex items-center px-2 text-white truncate"
-                    style={{ left: `${(dayIdx / days.length) * 100}%`, width: `${(3 / days.length) * 100}%`, minWidth: 60, backgroundColor: board.color || "#3B82F6" }}>
+                    style={{ left: `${(barStart / days.length) * 100}%`, width: `${(duration / days.length) * 100}%`, minWidth: 40, backgroundColor: board.color || "#3B82F6" }}>
                     {person ? person.split(" ")[0] : item.name.slice(0, 15)}
                   </div>
                 )}

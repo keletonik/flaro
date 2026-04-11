@@ -5,7 +5,7 @@ import {
   FileText, BarChart3, ArrowUpRight, ArrowDownRight, Activity, Zap,
   Plus, Circle, Check, X, StickyNote
 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, formatCurrency } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -192,7 +192,7 @@ export default function Dashboard() {
     return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
   })();
 
-  const fmt = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toLocaleString()}`;
+  const fmt = formatCurrency;
 
   return (
     <div className="min-h-screen bg-background">

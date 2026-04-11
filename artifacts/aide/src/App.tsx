@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
-  Package, ChevronLeft, ChevronRight, PieChart
+  Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal
 } from "lucide-react";
 import { useState, createContext, useContext } from "react";
 
@@ -180,36 +180,51 @@ function SidebarNav() {
 
 function BottomNav() {
   const [location, setLocation] = useLocation();
-  const mobileItems = [
-    allNavItems[0], // Dashboard
-    allNavItems[2], // Operations
-    allNavItems[1], // Chat
-    allNavItems[3], // Action List
-    allNavItems[4], // Tasks
-  ];
+  const [moreOpen, setMoreOpen] = useState(false);
+  const primaryItems = allNavItems.slice(0, 4);
+  const moreItems = allNavItems.slice(4);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
-      <div className="flex items-center justify-around px-1 py-1.5 safe-area-inset-bottom">
-        {mobileItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(location, item);
-          return (
-            <button
-              key={item.path}
-              onClick={() => setLocation(item.path)}
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]",
-                active ? "text-primary" : "text-sidebar-foreground/35"
-              )}
-            >
-              <Icon size={20} strokeWidth={active ? 2.25 : 1.5} />
-              <span className="text-[9px] font-bold tracking-wider uppercase">{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+    <>
+      {moreOpen && (
+        <div className="fixed inset-0 z-[60] md:hidden" onClick={() => setMoreOpen(false)}>
+          <div className="absolute bottom-16 left-0 right-0 bg-sidebar border-t border-sidebar-border rounded-t-2xl p-3 shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="grid grid-cols-4 gap-2">
+              {moreItems.map(item => {
+                const Icon = item.icon;
+                return (
+                  <button key={item.path} onClick={() => { setLocation(item.path); setMoreOpen(false); }}
+                    className="flex flex-col items-center gap-1 py-2 rounded-xl text-sidebar-foreground/50 hover:text-primary transition-colors">
+                    <Icon size={18} strokeWidth={1.5} />
+                    <span className="text-[8px] font-bold tracking-wider uppercase">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
+        <div className="flex items-center justify-around px-1 py-1.5 safe-area-inset-bottom">
+          {primaryItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(location, item);
+            return (
+              <button key={item.path} onClick={() => setLocation(item.path)}
+                className={cn("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]", active ? "text-primary" : "text-sidebar-foreground/35")}>
+                <Icon size={20} strokeWidth={active ? 2.25 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wider uppercase">{item.label}</span>
+              </button>
+            );
+          })}
+          <button onClick={() => setMoreOpen(v => !v)}
+            className={cn("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]", moreOpen ? "text-primary" : "text-sidebar-foreground/35")}>
+            <MoreHorizontal size={20} strokeWidth={1.5} />
+            <span className="text-[9px] font-bold tracking-wider uppercase">More</span>
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }
 

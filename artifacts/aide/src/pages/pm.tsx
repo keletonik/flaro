@@ -36,7 +36,7 @@ export default function PM() {
       const [b, t] = await Promise.all([apiFetch("/pm/boards"), apiFetch("/pm/templates")]);
       setBoards(b);
       setTemplates(t);
-    } catch {} finally { setLoading(false); }
+    } catch (e: any) { console.error(e); } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchBoards(); }, []);
@@ -58,7 +58,7 @@ export default function PM() {
       await apiFetch(`/pm/boards/${id}`, { method: "DELETE" });
       if (selectedBoardId === id) setSelectedBoardId(null);
       fetchBoards();
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   // If a board is selected, show it full-screen

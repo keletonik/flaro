@@ -116,23 +116,23 @@ export default function Dashboard() {
   const onCallToday = ON_CALL[todayStr] || "Check roster";
 
   const fetchAll = () => {
-    apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(() => {});
-    apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(() => {});
-    apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(() => {});
+    apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(e => console.error(e));
+    apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(e => console.error(e));
+    apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(e => console.error(e));
     apiFetch<FocusData>("/dashboard/focus").then(d => { setFocus(d); setFocusLoading(false); }).catch(() => setFocusLoading(false));
-    apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(() => {});
-    apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(() => {});
+    apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(e => console.error(e));
+    apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(e => console.error(e));
   };
 
   useEffect(() => {
     fetchAll();
     // Auto-refresh KPI data every 60 seconds
     const interval = setInterval(() => {
-      apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(() => {});
-      apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(() => {});
-      apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(() => {});
-      apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(() => {});
-      apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(() => {});
+      apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(e => console.error(e));
+      apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(e => console.error(e));
+      apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(e => console.error(e));
+      apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(e => console.error(e));
+      apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(e => console.error(e));
     }, 60000);
     // Refetch on tab focus
     const handleVisibility = () => { if (!document.hidden) fetchAll(); };
@@ -154,7 +154,7 @@ export default function Dashboard() {
     try {
       await apiFetch(`/todos/${id}`, { method: "PATCH", body: JSON.stringify({ completed: !completed }) });
       fetchAll();
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const addNote = async () => {
@@ -171,21 +171,23 @@ export default function Dashboard() {
     try {
       await apiFetch(`/notes/${id}`, { method: "PATCH", body: JSON.stringify({ status: "Done" }) });
       fetchAll();
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const deleteTodo = async (id: string) => {
+    if (!confirm("Delete this task?")) return;
     try {
       await apiFetch(`/todos/${id}`, { method: "DELETE" });
       fetchAll();
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const deleteNote = async (id: string) => {
+    if (!confirm("Delete this note?")) return;
     try {
       await apiFetch(`/notes/${id}`, { method: "DELETE" });
       fetchAll();
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const greeting = (() => {

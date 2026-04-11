@@ -19,9 +19,26 @@ app.use(
     },
   }),
 );
-app.use(cors());
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || true, // Restrict in production via env var
+  credentials: true,
+}));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Simple rate limiting for AI endpoints
+const aiRateMap = new Map<string, { count: number; reset: number }>();
+function aiRateLimit(req: Request, res: Response, next: NextFunction) {
+  const key = req.ip || "unknown";
+  const now = Date.now();
+  let entry = aiRateMap.get(key);
+  if (!entry || now > entry.reset) { entry = { count: 0, reset: now + 60000 }; aiRateMap.set(key, entry); }
+  entry.count++;
+  if (entry.count > 20) { res.status(429).json({ error: "Rate limit exceeded. Try again in a minute." }); return; }
+  next();
+}
+app.use("/api/anthropic", aiRateLimit);
+app.use("/api/chat", aiRateLimit);
 
 app.use("/api", router);
 

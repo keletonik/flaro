@@ -272,7 +272,7 @@ export default function PmBoardPage({ boardId }: { boardId: string }) {
       const data = await apiFetch(`/pm/boards/${boardId}`);
       setBoard(data);
       if (data.defaultView) setView(data.defaultView);
-    } catch {} finally { setLoading(false); }
+    } catch (e: any) { console.error(e); } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchBoard(); }, [boardId]);
@@ -301,10 +301,11 @@ export default function PmBoardPage({ boardId }: { boardId: string }) {
   };
 
   const handleDeleteItem = async (id: string) => {
+    if (!confirm("Delete this item?")) return;
     try {
       await apiFetch(`/pm/items/${id}`, { method: "DELETE" });
       setBoard(prev => prev ? { ...prev, items: prev.items.filter(i => i.id !== id) } : prev);
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const handleAddColumn = async (name: string, type: ColumnType) => {
@@ -312,7 +313,7 @@ export default function PmBoardPage({ boardId }: { boardId: string }) {
     try {
       const col = await apiFetch(`/pm/boards/${boardId}/columns`, { method: "POST", body: JSON.stringify({ name, type }) });
       setBoard(prev => prev ? { ...prev, columns: [...prev.columns, col] } : prev);
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const handleAddGroup = async () => {
@@ -320,7 +321,7 @@ export default function PmBoardPage({ boardId }: { boardId: string }) {
     try {
       const group = await apiFetch(`/pm/boards/${boardId}/groups`, { method: "POST", body: JSON.stringify({ name: "New Group" }) });
       setBoard(prev => prev ? { ...prev, groups: [...prev.groups, group] } : prev);
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   const filteredBoard = useMemo(() => {

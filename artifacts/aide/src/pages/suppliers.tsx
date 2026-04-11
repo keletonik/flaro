@@ -224,14 +224,14 @@ export default function Suppliers() {
       if (categoryFilter) params.set("category", categoryFilter);
       const data = await apiFetch(`/suppliers?${params}`);
       setSuppliers(data);
-    } catch {} finally { setLoading(false); }
+    } catch (e: any) { console.error(e); } finally { setLoading(false); }
   };
 
   const fetchProducts = async (supplierId: string) => {
     try {
       const data = await apiFetch(`/suppliers/${supplierId}/products`);
       setProducts(prev => ({ ...prev, [supplierId]: data }));
-    } catch {}
+    } catch (e: any) { console.error(e); }
   };
 
   useEffect(() => { fetchSuppliers(); }, [search, categoryFilter]);

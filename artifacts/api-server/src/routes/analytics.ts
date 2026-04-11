@@ -5,7 +5,20 @@ import { sql } from "drizzle-orm";
 
 const router = Router();
 
+// Simple in-memory cache with 60-second TTL
+const cache = new Map<string, { data: any; expires: number }>();
+function getCached(key: string): any | null {
+  const entry = cache.get(key);
+  if (entry && Date.now() < entry.expires) return entry.data;
+  return null;
+}
+function setCache(key: string, data: any, ttlMs = 60000) {
+  cache.set(key, { data, expires: Date.now() + ttlMs });
+}
+
 router.get("/analytics/wip", async (req, res, next) => {
+  const cached = getCached("analytics-wip");
+  if (cached) { res.json(cached); return; }
   try {
     const allWip = await db.select().from(wipRecords);
     const allJobs = await db.select().from(jobs);
@@ -15,8 +28,8 @@ router.get("/analytics/wip", async (req, res, next) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Revenue target
-    const MONTHLY_TARGET = 180000;
+    // Revenue target — configurable via env var, defaults to $180k
+    const MONTHLY_TARGET = Number(process.env.MONTHLY_REVENUE_TARGET) || 180000;
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const dayOfMonth = now.getDate();
     const dailyTarget = MONTHLY_TARGET / daysInMonth;
@@ -144,7 +157,7 @@ router.get("/analytics/wip", async (req, res, next) => {
     // WIP pipeline total
     const wipPipelineTotal = allWip.filter(w => w.status !== "Completed").reduce((s, w) => s + (w.quoteAmount ? Number(w.quoteAmount) : 0), 0);
 
-    res.json({
+    const result = {
       revenue: {
         today: revenueToday,
         thisWeek: revenueThisWeek,
@@ -178,12 +191,16 @@ router.get("/analytics/wip", async (req, res, next) => {
         total: allInvoices.length,
       },
       generatedAt: new Date().toISOString(),
-    });
+    };
+    setCache("analytics-wip", result);
+    res.json(result);
   } catch (err) { next(err); }
 });
 
 // Quote-to-Invoice Pipeline Gap Detection
 router.get("/analytics/pipeline-gaps", async (req, res, next) => {
+  const cached = getCached("pipeline-gaps");
+  if (cached) { res.json(cached); return; }
   try {
     const allQuotes = await db.select().from(quotes);
     const allWip = await db.select().from(wipRecords);
@@ -221,7 +238,7 @@ router.get("/analytics/pipeline-gaps", async (req, res, next) => {
       + wipWithoutInvoice.reduce((s, w) => s + (w.quoteAmount ? Number(w.quoteAmount) : 0), 0)
       + underInvoiced.reduce((s, i) => s + i.gap, 0);
 
-    res.json({
+    const gapResult = {
       totalAtRisk,
       quotesWithoutWip: quotesWithoutWip.map(q => ({
         quoteNumber: q.quoteNumber, taskNumber: q.taskNumber, site: q.site, client: q.client,
@@ -241,7 +258,9 @@ router.get("/analytics/pipeline-gaps", async (req, res, next) => {
         underInvoicedCount: underInvoiced.length,
         underInvoicedGap: underInvoiced.reduce((s, i) => s + i.gap, 0),
       },
-    });
+    };
+    setCache("pipeline-gaps", gapResult);
+    res.json(gapResult);
   } catch (err) { next(err); }
 });
 

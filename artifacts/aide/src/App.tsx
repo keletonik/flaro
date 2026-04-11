@@ -15,6 +15,7 @@ import Projects from "@/pages/projects";
 import Operations from "@/pages/operations";
 import Suppliers from "@/pages/suppliers";
 import Analytics from "@/pages/analytics";
+import PM from "@/pages/pm";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import {
@@ -237,7 +238,7 @@ function Router() {
       <Route path="/jobs/:id" component={() => <Layout><JobDetail /></Layout>} />
       <Route path="/notes" component={() => <Layout><Notes /></Layout>} />
       <Route path="/todos" component={() => <Layout><Todos /></Layout>} />
-      <Route path="/projects" component={() => <Layout><Projects /></Layout>} />
+      <Route path="/projects" component={() => <Layout><PM /></Layout>} />
       <Route path="/toolbox" component={() => <Layout><Toolbox /></Layout>} />
       <Route path="/suppliers" component={() => <Layout><Suppliers /></Layout>} />
       <Route component={NotFound} />

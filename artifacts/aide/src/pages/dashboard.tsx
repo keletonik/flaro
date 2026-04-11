@@ -108,8 +108,8 @@ export default function Dashboard() {
     apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(() => {});
     apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(() => {});
     apiFetch<FocusData>("/dashboard/focus").then(d => { setFocus(d); setFocusLoading(false); }).catch(() => setFocusLoading(false));
-    apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 8))).catch(() => {});
-    apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 6))).catch(() => {});
+    apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(() => {});
+    apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(() => {});
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -148,6 +148,20 @@ export default function Dashboard() {
     } catch {}
   };
 
+  const deleteTodo = async (id: string) => {
+    try {
+      await apiFetch(`/todos/${id}`, { method: "DELETE" });
+      fetchAll();
+    } catch {}
+  };
+
+  const deleteNote = async (id: string) => {
+    try {
+      await apiFetch(`/notes/${id}`, { method: "DELETE" });
+      fetchAll();
+    } catch {}
+  };
+
   const greeting = (() => {
     const h = new Date().getHours();
     return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
@@ -169,6 +183,9 @@ export default function Dashboard() {
                 <AlertTriangle size={12} /> {summary.critical} Critical
               </div>
             )}
+            <button onClick={fetchAll} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors" title="Refresh data">
+              <Activity size={12} /> Refresh
+            </button>
           </div>
         </div>
       </div>
@@ -275,6 +292,7 @@ export default function Dashboard() {
                   </button>
                   <span className="text-[13px] text-foreground flex-1 truncate">{t.text}</span>
                   <span className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded", t.priority === "Critical" ? "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20" : t.priority === "High" ? "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20" : "text-muted-foreground bg-muted")}>{t.priority}</span>
+                  <button onClick={() => deleteTodo(t.id)} className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-red-500 transition-all"><X size={11} /></button>
                 </div>
               ))}
               {todos.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No active tasks</p>}
@@ -303,8 +321,11 @@ export default function Dashboard() {
                 <div key={n.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/40 transition-colors group">
                   <span className={cn("text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0", n.category === "Urgent" ? "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20" : "text-muted-foreground bg-muted")}>{n.category}</span>
                   <span className="text-[13px] text-foreground flex-1 truncate">{n.text}</span>
-                  <button onClick={() => markNoteDone(n.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-emerald-500 transition-all" title="Mark done">
-                    <Check size={12} />
+                  <button onClick={() => markNoteDone(n.id)} className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-emerald-500 transition-all" title="Mark done">
+                    <Check size={11} />
+                  </button>
+                  <button onClick={() => deleteNote(n.id)} className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-red-500 transition-all" title="Delete">
+                    <X size={11} />
                   </button>
                 </div>
               ))}

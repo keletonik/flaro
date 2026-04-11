@@ -122,7 +122,7 @@ function AddEventModal({ defaultDate, onClose, onSave }: {
           </div>
           <div>
             <label className={labelClass}>Assigned to</label>
-            <input className={fieldClass} value={assignedTo} onChange={e => setAssignedTo(e.target.value)} placeholder="Casper / Tech name" data-testid="input-event-assignedto" />
+            <input className={fieldClass} value={assignedTo} onChange={e => setAssignedTo(e.target.value)} placeholder="Assign to..." data-testid="input-event-assignedto" />
           </div>
           <div>
             <label className={labelClass}>Colour</label>

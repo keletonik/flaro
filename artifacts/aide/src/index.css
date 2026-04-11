@@ -185,6 +185,7 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
     font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+    font-variant-numeric: tabular-nums;
     letter-spacing: var(--tracking-normal);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -388,6 +389,11 @@
 .chat-assistant {
   max-width: 720px;
 }
+.chat-markdown > *:first-child { margin-top: 0 !important; }
+.chat-markdown > *:last-child { margin-bottom: 0 !important; }
+.chat-markdown li > p { margin: 0; }
+.chat-markdown li > ul,
+.chat-markdown li > ol { margin-top: 4px; margin-bottom: 4px; }
 .chat-input-bar {
   border: none;
   border-radius: 24px;
@@ -435,4 +441,76 @@
   }
   .hover-elevate:hover::after { background: var(--elevate-1); }
   .active-elevate:active::after { background: var(--elevate-2); }
+}
+
+/* ===== STAGGERED CARD ENTRANCE ===== */
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card-stagger {
+  animation: card-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--stagger-index, 0) * 60ms);
+}
+
+/* ===== BENTO GRID ===== */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+.bento-featured {
+  grid-column: span 4;
+  min-height: 140px;
+}
+.bento-compact {
+  grid-column: span 2;
+  min-height: 88px;
+}
+@media (max-width: 1024px) {
+  .bento-featured { grid-column: span 6; }
+  .bento-compact { grid-column: span 3; }
+}
+@media (max-width: 640px) {
+  .bento-featured { grid-column: span 12; }
+  .bento-compact { grid-column: span 6; }
+}
+
+/* ===== METRIC CARD — FEATURED VARIANT ===== */
+.metric-card--featured {
+  padding: 28px 24px;
+  min-height: 140px;
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 85%, hsl(var(--primary) / 0.03) 100%);
+}
+.metric-card--featured .metric-value {
+  font-size: 36px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* ===== CARD LIFT ON HOVER ===== */
+.metric-card:hover {
+  transform: translateY(-1px);
+  border-color: hsl(var(--primary) / 0.2);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===== SIDEBAR POLISH ===== */
+.sidebar-shadow {
+  box-shadow: 1px 0 0 0 rgba(0,0,0,0.06);
+}
+.dark .sidebar-shadow {
+  box-shadow: 1px 0 0 0 rgba(255,255,255,0.04);
+}
+
+/* ===== PIPELINE GAP CARD ===== */
+.pipeline-gap {
+  border-left: 3px solid hsl(var(--destructive));
+  background: hsl(var(--destructive) / 0.04);
+}
+
+/* ===== BULK SELECT HIGHLIGHT ===== */
+.bulk-selected {
+  background: hsl(var(--primary) / 0.04) !important;
 }

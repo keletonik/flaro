@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
-  Send, RefreshCw, MessageCircle, Copy, Check, Briefcase,
+  Send, RefreshCw, Copy, Check, Briefcase,
   FileText, CheckSquare, AlertTriangle, Image, Mail, X,
   Paperclip, Zap
 } from "lucide-react";
@@ -13,6 +13,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { Todo } from "@workspace/api-client-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const CONVERSATION_ID = "1";
 
@@ -34,11 +36,12 @@ interface Attachment {
   id: string;
   type: "image" | "email" | "file";
   name: string;
-  preview?: string;       // data URL for images
-  emailHtml?: string;     // raw HTML for emails
-  emailSummary?: string;  // "From: x | Subject: y"
-  emailBody?: string;     // user-pasted body (when drag-drop only captured header)
-  emailHasBody?: boolean; // true if body was captured automatically (not just header)
+  preview?: string;
+  emailHtml?: string;
+  emailPlainText?: string;
+  emailSummary?: string;
+  emailHasBody?: boolean;
+  fileText?: string;
   size?: number;
 }
 
@@ -158,15 +161,27 @@ function parseEmlContent(raw: string, fileName: string): Attachment | null {
 }
 
 function htmlToText(html: string): string {
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<\/div>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
-    .replace(/\n{3,}/g, "\n\n").trim();
+  const d = document.createElement("div");
+  d.innerHTML = html;
+  const styles = d.querySelectorAll("style, script, head, meta, link");
+  styles.forEach(el => el.remove());
+  const walk = (node: Node): string => {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent || "";
+    if (node.nodeType !== Node.ELEMENT_NODE) return "";
+    const el = node as HTMLElement;
+    const tag = el.tagName.toLowerCase();
+    if (tag === "br") return "\n";
+    const kids = Array.from(el.childNodes).map(walk).join("");
+    if (["p", "div", "tr", "h1", "h2", "h3", "h4", "h5", "h6", "li", "blockquote"].includes(tag)) return `\n${kids}\n`;
+    if (tag === "td" || tag === "th") return `${kids}\t`;
+    return kids;
+  };
+  return walk(d)
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n /g, "\n")
+    .replace(/ \n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 // ─── Action parsing ───────────────────────────────────────────────────────────
@@ -246,10 +261,20 @@ function AttachmentChip({
 }) {
   if (att.type === "email") {
     return (
-      <div className="w-full bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl overflow-hidden">
+      <div className={cn(
+        "w-full rounded-xl overflow-hidden border",
+        att.emailHasBody
+          ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800"
+          : "bg-amber-50 dark:bg-amber-900/10 border-amber-300 dark:border-amber-700"
+      )}>
         <div className="flex items-center gap-2 px-3 py-2">
-          <div className="w-7 h-7 bg-amber-100 dark:bg-amber-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Mail size={14} className="text-amber-600 dark:text-amber-400" />
+          <div className={cn(
+            "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0",
+            att.emailHasBody
+              ? "bg-emerald-100 dark:bg-emerald-900/20"
+              : "bg-amber-100 dark:bg-amber-900/20"
+          )}>
+            <Mail size={14} className={att.emailHasBody ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground truncate">{att.name}</p>
@@ -261,16 +286,24 @@ function AttachmentChip({
             <X size={12} />
           </button>
         </div>
-        <div className="border-t border-amber-200 dark:border-amber-800 px-3 py-1.5">
+        <div className={cn(
+          "border-t px-3 py-1.5",
+          att.emailHasBody ? "border-emerald-200 dark:border-emerald-800" : "border-amber-300 dark:border-amber-700"
+        )}>
           {att.emailHasBody ? (
-            <div className="flex items-center gap-1">
-              <Check size={10} className="text-emerald-500 flex-shrink-0" />
-              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Full email captured — ready to triage</p>
+            <div className="flex items-center gap-1.5">
+              <Check size={12} className="text-emerald-500 flex-shrink-0" />
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Full email captured — ready to triage</p>
             </div>
           ) : (
-            <div className="flex items-center gap-1">
-              <AlertTriangle size={10} className="text-amber-500 flex-shrink-0" />
-              <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Header only — paste email body (Ctrl+V) for full triage, or send as-is</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle size={12} className="text-amber-500 flex-shrink-0" />
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">Header only — body text not captured by Outlook</p>
+              </div>
+              <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80 pl-5">
+                Open the email in Outlook, press Ctrl+A then Ctrl+C, then click here and press Ctrl+V
+              </p>
             </div>
           )}
         </div>
@@ -279,23 +312,36 @@ function AttachmentChip({
   }
 
   // ── Image / file chips ──
+  const ext = att.name.toLowerCase().split(".").pop() || "";
+  const isPdf = ext === "pdf";
+  const isDoc = ["doc", "docx"].includes(ext);
+  const isXls = ["xls", "xlsx", "csv"].includes(ext);
+  const isText = att.fileText !== undefined;
+  const chipColor = att.type === "image"
+    ? "bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800"
+    : isPdf ? "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"
+    : isDoc ? "bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800"
+    : isXls ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800"
+    : "bg-muted border-border";
+  const iconColor = isPdf ? "text-red-500" : isDoc ? "text-blue-500" : isXls ? "text-emerald-500" : "text-muted-foreground";
+
   return (
-    <div className={cn(
-      "group flex items-center gap-2 rounded-xl border overflow-hidden max-w-xs",
-      att.type === "image" ? "bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800" : "bg-muted border-border"
-    )}>
+    <div className={cn("group flex items-center gap-2.5 rounded-xl border overflow-hidden", chipColor)}>
       {att.type === "image" && att.preview ? (
         <img src={att.preview} alt={att.name} className="w-10 h-10 object-cover flex-shrink-0" />
       ) : (
-        <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 bg-muted">
-          <Paperclip size={16} className="text-muted-foreground" />
+        <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+          <FileText size={18} className={iconColor} />
         </div>
       )}
-      <div className="flex-1 min-w-0 py-1.5 pr-1">
+      <div className="flex-1 min-w-0 py-2 pr-1">
         <p className="text-xs font-semibold text-foreground truncate">{att.name}</p>
-        {att.size && <p className="text-[10px] text-muted-foreground">{(att.size / 1024).toFixed(0)} KB</p>}
+        <p className="text-[10px] text-muted-foreground">
+          {att.size ? `${(att.size / 1024).toFixed(0)} KB` : ""}
+          {isText ? " · Text extracted" : isPdf || isDoc || isXls ? " · Binary attached" : ""}
+        </p>
       </div>
-      <button onClick={onRemove} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0">
+      <button onClick={onRemove} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0 mr-1">
         <X size={12} />
       </button>
     </div>
@@ -320,145 +366,80 @@ function TypingIndicator() {
   );
 }
 
-// ─── Inline markdown renderer ──────────────────────────────────────────────────
+// ─── Rich markdown renderer (react-markdown + remark-gfm) ──────────────────
 
-function renderInline(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  const regex = /(\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
-  let lastIndex = 0;
-  let match;
-  let key = 0;
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
-    if (match[2] && match[3]) parts.push(<a key={key++} href={match[3]} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:opacity-80">{match[2]}</a>);
-    else if (match[4]) parts.push(<strong key={key++} className="font-semibold text-foreground">{match[4]}</strong>);
-    else if (match[5]) parts.push(<em key={key++}>{match[5]}</em>);
-    else if (match[6]) parts.push(<code key={key++} className="px-1.5 py-0.5 rounded-md bg-muted/80 text-[12px] font-mono text-foreground">{match[6]}</code>);
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
-  return parts.length ? parts : [text];
-}
-
-function renderMarkdown(text: string): React.ReactNode[] {
-  const elements: React.ReactNode[] = [];
-  const rawLines = text.split("\n");
-  let i = 0;
-  let key = 0;
-
-  while (i < rawLines.length) {
-    const line = rawLines[i];
-    const trimmed = line.trim();
-
-    if (!trimmed) { i++; continue; }
-
-    if (/^-{3,}$|^\*{3,}$|^_{3,}$/.test(trimmed)) {
-      elements.push(<hr key={key++} className="my-4 border-t border-border/30" />);
-      i++; continue;
-    }
-
-    if (/^```/.test(trimmed)) {
-      const codeLines: string[] = [];
-      i++;
-      while (i < rawLines.length && !/^```/.test(rawLines[i].trim())) {
-        codeLines.push(rawLines[i]);
-        i++;
+function MarkdownContent({ content }: { content: string }) {
+  const components = useMemo(() => ({
+    h1: ({ children, ...props }: any) => <h1 className="text-lg font-bold text-foreground mt-4 mb-2 tracking-tight" {...props}>{children}</h1>,
+    h2: ({ children, ...props }: any) => <h2 className="text-base font-bold text-foreground mt-3.5 mb-1.5 tracking-tight" {...props}>{children}</h2>,
+    h3: ({ children, ...props }: any) => <h3 className="text-sm font-semibold text-foreground mt-3 mb-1" {...props}>{children}</h3>,
+    h4: ({ children, ...props }: any) => <h4 className="text-sm font-semibold text-foreground mt-2 mb-1" {...props}>{children}</h4>,
+    p: ({ children, ...props }: any) => <p className="my-1.5 first:mt-0 last:mb-0 leading-relaxed" {...props}>{children}</p>,
+    strong: ({ children, ...props }: any) => <strong className="font-semibold text-foreground" {...props}>{children}</strong>,
+    em: ({ children, ...props }: any) => <em className="italic text-foreground/80" {...props}>{children}</em>,
+    a: ({ children, href, ...props }: any) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 decoration-primary/40 hover:decoration-primary transition-colors" {...props}>{children}</a>,
+    ul: ({ children, className, ...props }: any) => {
+      const isTaskList = className === "contains-task-list";
+      return <ul className={cn("my-2 space-y-1.5", isTaskList ? "pl-0 list-none" : "pl-0 list-none chat-ul")} {...props}>{children}</ul>;
+    },
+    ol: ({ children, ...props }: any) => <ol className="my-2 space-y-1.5 pl-0 list-none chat-ol" {...props}>{children}</ol>,
+    li: ({ children, className, node, ...props }: any) => {
+      const isTask = className === "task-list-item";
+      const parentTag = node?.parentNode?.tagName;
+      const isOrdered = parentTag === "ol";
+      if (isTask) {
+        return <li className="flex gap-2 items-start leading-relaxed" {...props}>{children}</li>;
       }
-      i++;
-      elements.push(
-        <pre key={key++} className="my-3 rounded-lg bg-muted/60 border border-border/30 px-4 py-3 overflow-x-auto">
-          <code className="text-[12px] font-mono text-foreground/90 leading-relaxed">{codeLines.join("\n")}</code>
-        </pre>
+      const siblings = node?.parentNode?.children?.filter((c: any) => c.tagName === "li") || [];
+      const idx = siblings.indexOf(node);
+      return (
+        <li className="flex gap-2.5 items-start leading-relaxed" {...props}>
+          {isOrdered ? (
+            <span className="text-primary/70 text-xs font-semibold mt-[2px] flex-shrink-0 min-w-[20px] tabular-nums">{idx + 1}.</span>
+          ) : (
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-[7px] flex-shrink-0" />
+          )}
+          <span className="flex-1">{children}</span>
+        </li>
       );
-      continue;
-    }
-
-    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)/);
-    if (headingMatch) {
-      const level = headingMatch[1].length;
-      const sizes = ["text-lg font-bold", "text-base font-bold", "text-sm font-semibold", "text-sm font-semibold"];
-      elements.push(
-        <div key={key++} className={`${sizes[level - 1]} text-foreground mt-3 mb-1.5`}>
-          {renderInline(headingMatch[2])}
-        </div>
-      );
-      i++; continue;
-    }
-
-    if (/^>\s?/.test(trimmed)) {
-      const quoteLines: string[] = [];
-      while (i < rawLines.length && /^>\s?/.test(rawLines[i].trim())) {
-        quoteLines.push(rawLines[i].trim().replace(/^>\s?/, ""));
-        i++;
+    },
+    blockquote: ({ children, ...props }: any) => (
+      <blockquote className="my-3 pl-4 border-l-[3px] border-primary/30 bg-primary/[0.03] rounded-r-lg py-2 pr-3 text-foreground/75 italic" {...props}>{children}</blockquote>
+    ),
+    code: ({ inline, className, children, ...props }: any) => {
+      if (inline) {
+        return <code className="px-1.5 py-0.5 rounded-md bg-muted text-[12.5px] font-mono text-primary/90 border border-border/40" {...props}>{children}</code>;
       }
-      elements.push(
-        <blockquote key={key++} className="my-2 pl-3 border-l-2 border-primary/30 text-foreground/70 italic">
-          {quoteLines.map((ql, qi) => <span key={qi}>{renderInline(ql)}{qi < quoteLines.length - 1 && <br />}</span>)}
-        </blockquote>
+      return (
+        <code className="text-[12px] font-mono text-foreground/85 leading-relaxed block" {...props}>{children}</code>
       );
-      continue;
-    }
+    },
+    pre: ({ children, ...props }: any) => (
+      <pre className="my-3 rounded-xl bg-[hsl(var(--foreground)/0.04)] border border-border/40 px-4 py-3.5 overflow-x-auto" {...props}>{children}</pre>
+    ),
+    hr: (props: any) => <hr className="my-5 border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" {...props} />,
+    table: ({ children, ...props }: any) => (
+      <div className="my-3 overflow-x-auto rounded-xl border border-border/40">
+        <table className="w-full text-sm" {...props}>{children}</table>
+      </div>
+    ),
+    thead: ({ children, ...props }: any) => <thead className="bg-muted/50 border-b border-border/40" {...props}>{children}</thead>,
+    th: ({ children, ...props }: any) => <th className="px-3 py-2 text-left text-xs font-semibold text-foreground/70 uppercase tracking-wider" {...props}>{children}</th>,
+    td: ({ children, ...props }: any) => <td className="px-3 py-2 text-sm border-t border-border/20" {...props}>{children}</td>,
+    input: ({ checked, ...props }: any) => (
+      <span className={cn("inline-flex items-center justify-center w-4 h-4 rounded border mr-2 flex-shrink-0 mt-[2px]",
+        checked ? "bg-primary border-primary text-primary-foreground" : "border-border/60 bg-background"
+      )}>
+        {checked && <Check size={10} strokeWidth={3} />}
+      </span>
+    ),
+  }), []);
 
-    if (/^\s*[-•]\s/.test(trimmed)) {
-      const listItems: string[] = [];
-      while (i < rawLines.length && /^\s*[-•]\s/.test(rawLines[i].trim())) {
-        listItems.push(rawLines[i].trim().replace(/^\s*[-•]\s+/, ""));
-        i++;
-      }
-      elements.push(
-        <ul key={key++} className="my-2 space-y-1 ml-1">
-          {listItems.map((item, li) => (
-            <li key={li} className="flex gap-2 items-start">
-              <span className="text-muted-foreground/50 mt-[3px] flex-shrink-0 text-[8px]">●</span>
-              <span>{renderInline(item)}</span>
-            </li>
-          ))}
-        </ul>
-      );
-      continue;
-    }
-
-    if (/^\s*\d+\.\s/.test(trimmed)) {
-      const listItems: { num: string; text: string }[] = [];
-      while (i < rawLines.length && /^\s*\d+\.\s/.test(rawLines[i].trim())) {
-        const m = rawLines[i].trim().match(/^\s*(\d+)\.\s+(.*)/);
-        listItems.push({ num: m?.[1] || `${listItems.length + 1}`, text: m?.[2] || "" });
-        i++;
-      }
-      elements.push(
-        <ol key={key++} className="my-2 space-y-1 ml-1">
-          {listItems.map((item, li) => (
-            <li key={li} className="flex gap-2 items-start">
-              <span className="text-muted-foreground/60 text-xs font-mono mt-[1px] flex-shrink-0 min-w-[18px]">{item.num}.</span>
-              <span>{renderInline(item.text)}</span>
-            </li>
-          ))}
-        </ol>
-      );
-      continue;
-    }
-
-    const paraLines: string[] = [];
-    while (i < rawLines.length && rawLines[i].trim() && !/^(#{1,4}\s|```|>\s?|- |\d+\.\s|-{3,}|\*{3,}|_{3,})/.test(rawLines[i].trim())) {
-      paraLines.push(rawLines[i]);
-      i++;
-    }
-    if (paraLines.length > 0) {
-      elements.push(
-        <p key={key++} className="my-1.5 first:mt-0 last:mb-0">
-          {paraLines.map((pl, pli) => (
-            <span key={pli}>
-              {renderInline(pl)}
-              {pli < paraLines.length - 1 && <br />}
-            </span>
-          ))}
-        </p>
-      );
-    } else {
-      i++;
-    }
-  }
-  return elements;
+  return (
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      {content}
+    </ReactMarkdown>
+  );
 }
 
 // ─── Message components ─────────────────────────────────────────────────────────
@@ -503,8 +484,8 @@ function MessageBubble({ msg, executedActions }: { msg: Message; executedActions
           <Zap size={12} className="text-primary" />
         </div>
         <div className="flex-1 min-w-0 group">
-          <div className="text-[13.5px] text-foreground/90 leading-[1.75]">
-            {renderMarkdown(cleanText)}
+          <div className="text-[13.5px] text-foreground/90 leading-[1.75] chat-markdown">
+            <MarkdownContent content={cleanText} />
           </div>
           <div className="mt-2 flex items-center gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <CopyButton text={cleanText} />
@@ -560,53 +541,100 @@ export default function Chat() {
 
   const processFile = useCallback((file: File): Promise<Attachment | null> => {
     return new Promise(resolve => {
+      const name = file.name;
+      const ext = name.toLowerCase().split(".").pop() || "";
+
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
         reader.onload = e => resolve({
           id: crypto.randomUUID(), type: "image",
-          name: file.name, preview: e.target?.result as string, size: file.size,
+          name, preview: e.target?.result as string, size: file.size,
         });
         reader.onerror = () => resolve(null);
         reader.readAsDataURL(file);
       } else if (
-        file.name.toLowerCase().endsWith(".eml") ||
+        ext === "eml" ||
         file.type === "message/rfc822" ||
-        file.type === "message/rfc2822" ||
-        file.type === "application/octet-stream" && file.name.toLowerCase().endsWith(".eml")
+        file.type === "message/rfc2822"
       ) {
-        // Parse .eml files as RFC 822 email content
         const reader = new FileReader();
         reader.onload = e => {
           const text = e.target?.result as string;
-          const att = parseEmlContent(text, file.name);
+          const att = parseEmlContent(text, name);
           resolve(att);
         };
         reader.onerror = () => resolve(null);
         reader.readAsText(file);
+      } else if (
+        // Text-readable documents — read as text and send content to LLM
+        ["txt", "csv", "json", "xml", "html", "htm", "md", "log", "ini", "cfg", "yaml", "yml", "toml"].includes(ext) ||
+        file.type.startsWith("text/") ||
+        file.type === "application/json" ||
+        file.type === "application/xml"
+      ) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const text = e.target?.result as string;
+          resolve({
+            id: crypto.randomUUID(), type: "file",
+            name, size: file.size,
+            fileText: text,
+          });
+        };
+        reader.onerror = () => resolve(null);
+        reader.readAsText(file);
       } else {
-        // Unknown file type — skip silently (don't add useless chips)
-        resolve(null);
+        // Binary documents (PDF, Word, Excel, etc.) — read as data URL for attachment
+        const reader = new FileReader();
+        reader.onload = e => {
+          resolve({
+            id: crypto.randomUUID(), type: "file",
+            name, size: file.size,
+            preview: e.target?.result as string,
+          });
+        };
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
       }
     });
   }, []);
 
-  const processHtmlEmail = useCallback((html: string): Attachment | null => {
+  const processHtmlEmail = useCallback((html: string, extraPlainText?: string): Attachment | null => {
     if (!html || html.trim().length < 20) return null;
     const meta = extractEmailMeta(html);
-    const plain = htmlToText(html);
-    const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
+    const htmlPlain = htmlToText(html);
 
-    // Detect if there's real body content beyond the header fields
-    const headerLineRe = /^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To|De|Objet)\s*[:\s]/i;
-    const nonHeaderContent = plain.split("\n").filter(l => l.trim() && !headerLineRe.test(l.trim()));
-    const emailHasBody = nonHeaderContent.join("").replace(/\s/g, "").length > 120;
+    const headerLineRe = /^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To|De|Objet|Importance|Attachments?|Categories|Sensitivity|Priority)\s*[:\s]/i;
+    const metaJunkRe = /^(mailto:|https?:\/\/|www\.|javascript:|#|[\s•–—·|]+$)/i;
+    const extractBody = (text: string): string => {
+      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+      const nonHeaders = lines.filter(l => !headerLineRe.test(l) && !metaJunkRe.test(l) && l.length > 2);
+      return nonHeaders.join(" ").replace(/\s+/g, " ").trim();
+    };
+
+    let bodyFromHtml = extractBody(htmlPlain);
+    let bodyFromPlain = extraPlainText ? extractBody(extraPlainText) : "";
+
+    const bestBody = bodyFromPlain.length > bodyFromHtml.length ? bodyFromPlain : bodyFromHtml;
+    const emailHasBody = bestBody.length > 60 && bestBody.split(/\s+/).length > 8;
+
+    let mergedHtml = html;
+    if (!emailHasBody && extraPlainText && extraPlainText.trim().length > htmlPlain.length) {
+      mergedHtml = `${html}\n<div style="white-space:pre-wrap;margin-top:12px;font-family:sans-serif">${extraPlainText.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+    } else if (bodyFromPlain.length > bodyFromHtml.length + 40) {
+      mergedHtml = `${html}\n<div style="white-space:pre-wrap;margin-top:12px;font-family:sans-serif">${extraPlainText!.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+    }
+
+    const mergedPlain = [htmlPlain, extraPlainText].filter(Boolean).join("\n\n");
+    const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
 
     return {
       id: crypto.randomUUID(),
       type: "email",
       name: meta.subject ? `Email: ${meta.subject.slice(0, 50)}` : "Email dropped",
-      emailHtml: html,
-      emailSummary: parts.join(" · ") || plain.slice(0, 80),
+      emailHtml: mergedHtml,
+      emailPlainText: mergedPlain,
+      emailSummary: parts.join(" · ") || htmlPlain.slice(0, 80),
       emailHasBody,
     };
   }, []);
@@ -659,23 +687,26 @@ export default function Chat() {
 
     const newAttachments: Attachment[] = [];
 
-    // 1. text/html — richest source, works for Outlook desktop drag & OWA drag
     const html = e.dataTransfer.getData("text/html");
+    const plainText = e.dataTransfer.getData("text/plain");
+
     if (html && html.trim().length > 20) {
-      const emailAtt = processHtmlEmail(html);
+      const emailAtt = processHtmlEmail(html, plainText || undefined);
       if (emailAtt) {
         newAttachments.push(emailAtt);
-        toast({ title: "Email captured", description: "Will be triaged automatically when you send." });
+        if (emailAtt.emailHasBody) {
+          toast({ title: "Email captured", description: "Full email ready — will be triaged when you send." });
+        } else {
+          toast({ title: "Email header captured", description: "Paste the email body (Ctrl+V) for full triage, or send as-is." });
+        }
       }
     }
 
-    // 2. Files (images and .eml files)
     if (e.dataTransfer.files.length > 0) {
       const filePromises = Array.from(e.dataTransfer.files).map(processFile);
       const results = await Promise.all(filePromises);
       const valid = results.filter((r): r is Attachment => r !== null);
       valid.forEach(r => {
-        // Don't double-add if we already captured an email via text/html
         if (r.type === "email" && newAttachments.some(a => a.type === "email")) return;
         newAttachments.push(r);
       });
@@ -685,27 +716,27 @@ export default function Chat() {
       if (emlCount > 0) toast({ title: "Email file captured", description: "Will be triaged automatically when you send." });
     }
 
-    // 3. text/plain — fallback: detect email-like plain text or put in input
-    if (newAttachments.length === 0) {
-      const text = e.dataTransfer.getData("text/plain");
-      if (text && text.trim()) {
-        if (looksLikeEmail(text)) {
-          // Plain text that looks like an email header block
-          const meta = { from: text.match(/^From:\s*(.+)/im)?.[1]?.trim() || "",
-                         subject: text.match(/^Subject:\s*(.+)/im)?.[1]?.trim() || "Email",
-                         date: text.match(/^(?:Date|Sent):\s*(.+)/im)?.[1]?.trim() || "" };
-          const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
-          newAttachments.push({
-            id: crypto.randomUUID(), type: "email",
-            name: `Email: ${meta.subject.slice(0, 50)}`,
-            emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text.replace(/</g, "&lt;")}</pre>`,
-            emailSummary: parts.join(" · ").slice(0, 120),
-          });
-          toast({ title: "Email captured", description: "Will be triaged automatically when you send." });
-        } else {
-          setInput(prev => prev ? `${prev}\n${text}` : text);
-          textareaRef.current?.focus();
-        }
+    if (newAttachments.length === 0 && plainText && plainText.trim()) {
+      if (looksLikeEmail(plainText)) {
+        const meta = { from: plainText.match(/^From:\s*(.+)/im)?.[1]?.trim() || "",
+                       subject: plainText.match(/^Subject:\s*(.+)/im)?.[1]?.trim() || "Email",
+                       date: plainText.match(/^(?:Date|Sent):\s*(.+)/im)?.[1]?.trim() || "" };
+        const parts = [meta.from && `From: ${meta.from}`, meta.subject && `Subject: ${meta.subject}`, meta.date].filter(Boolean);
+        const headerLineRe = /^(From|To|Subject|Date|Sent|Cc|Bcc|Reply-To|Importance|Attachments?)\s*[:\s]/i;
+        const bodyLines = plainText.split("\n").map(l => l.trim()).filter(l => l && !headerLineRe.test(l) && l.length > 2);
+        const hasBody = bodyLines.join(" ").length > 60 && bodyLines.length > 2;
+        newAttachments.push({
+          id: crypto.randomUUID(), type: "email",
+          name: `Email: ${meta.subject.slice(0, 50)}`,
+          emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${plainText.replace(/</g, "&lt;")}</pre>`,
+          emailPlainText: plainText,
+          emailSummary: parts.join(" · ").slice(0, 120),
+          emailHasBody: hasBody,
+        });
+        toast({ title: "Email captured", description: hasBody ? "Full email ready — will be triaged when you send." : "Paste the email body (Ctrl+V) for full triage, or send as-is." });
+      } else {
+        setInput(prev => prev ? `${prev}\n${plainText}` : plainText);
+        textareaRef.current?.focus();
       }
     }
 
@@ -736,44 +767,42 @@ export default function Chat() {
       }
     }
 
-    // 2. Pasted HTML — treat as email if it has email headers
+    const hasHeaderOnlyEmail = attachments.some(a => a.type === "email" && !a.emailHasBody);
+
     const html = e.clipboardData.getData("text/html");
+    const text = e.clipboardData.getData("text/plain");
+
+    if (hasHeaderOnlyEmail) {
+      e.preventDefault();
+      const pastedContent = html && html.trim().length > 50 ? html : (text ? `<div style="white-space:pre-wrap;font-family:sans-serif">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>` : "");
+      const pastedPlain = text || (html ? htmlToText(html) : "");
+      if (pastedContent) {
+        setAttachments(prev => prev.map(a =>
+          a.type === "email" && !a.emailHasBody
+            ? {
+                ...a,
+                emailHtml: `<div>${a.emailHtml || ""}</div>\n${pastedContent}`,
+                emailPlainText: [a.emailPlainText, pastedPlain].filter(Boolean).join("\n\n"),
+                emailHasBody: true,
+              }
+            : a
+        ));
+        toast({ title: "Email body merged", description: "Full email ready — send to triage." });
+      }
+      return;
+    }
+
     if (html && html.trim().length > 20 && looksLikeEmail(htmlToText(html))) {
-      const emailAtt = processHtmlEmail(html);
+      const emailAtt = processHtmlEmail(html, text || undefined);
       if (emailAtt) {
         e.preventDefault();
-        // If there's already a header-only email chip, merge the body into it
-        setAttachments(prev => {
-          const existingIdx = prev.findIndex(a => a.type === "email" && !a.emailHasBody);
-          if (existingIdx >= 0) {
-            const updated = [...prev];
-            updated[existingIdx] = { ...updated[existingIdx], emailHtml: emailAtt.emailHtml || updated[existingIdx].emailHtml, emailHasBody: true };
-            return updated;
-          }
-          return [...prev, emailAtt];
-        });
-        toast({ title: "Email body captured", description: "Full email ready — send to triage." });
+        setAttachments(prev => [...prev, emailAtt]);
+        toast({ title: "Email pasted", description: emailAtt.emailHasBody ? "Full email ready — send to triage." : "Header captured — paste body for full triage." });
         return;
       }
     }
 
-    // 3. Pasted plain text — check if it's an email or body content for an existing chip
-    const text = e.clipboardData.getData("text/plain");
     if (text && text.trim().length > 30) {
-      // If there's a header-only email attachment, merge this paste as the body
-      const hasHeaderOnlyEmail = attachments.some(a => a.type === "email" && !a.emailHasBody);
-      if (hasHeaderOnlyEmail) {
-        e.preventDefault();
-        setAttachments(prev => prev.map(a =>
-          a.type === "email" && !a.emailHasBody
-            ? { ...a, emailHtml: `<div>${a.emailHtml || ""}</div><div style="white-space:pre-wrap;margin-top:12px">${text.replace(/</g, "&lt;")}</div>`, emailHasBody: true }
-            : a
-        ));
-        toast({ title: "Email body merged", description: "Full email ready — send to triage." });
-        return;
-      }
-
-      // Detect complete email and create a new attachment
       if (looksLikeEmail(text)) {
         e.preventDefault();
         const meta = {
@@ -786,6 +815,7 @@ export default function Chat() {
           id: crypto.randomUUID(), type: "email",
           name: `Email: ${meta.subject.slice(0, 50)}`,
           emailHtml: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text.replace(/</g, "&lt;")}</pre>`,
+          emailPlainText: text,
           emailSummary: parts.join(" · ").slice(0, 120),
           emailHasBody: true,
         }]);
@@ -793,8 +823,6 @@ export default function Chat() {
         return;
       }
     }
-
-    // Otherwise: let the browser handle it normally (text into textarea)
   }, [processHtmlEmail, processFile, toast, attachments]);
 
   const removeAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id));
@@ -869,7 +897,9 @@ export default function Chat() {
 
     // Build display content for the optimistic message
     let displayContent = msg;
+    const fileAttsDisplay = attachments.filter(a => a.type === "file");
     if (emailAtt) displayContent = `[EMAIL DROPPED]\n${emailAtt.emailSummary || "Email"}${msg ? `\n\n${msg}` : ""}`;
+    else if (fileAttsDisplay.length > 0) displayContent = `[${fileAttsDisplay.map(f => f.name).join(", ")} attached]${msg ? `\n\n${msg}` : ""}`;
     else if (imageAtts.length > 0) displayContent = `[${imageAtts.length} image(s) attached]${msg ? ` — ${msg}` : ""}`;
 
     const userMsg: Message = { id: `opt-${Date.now()}`, role: "user", content: displayContent, createdAt: new Date().toISOString() };
@@ -888,7 +918,22 @@ export default function Chat() {
       if (emailAtt?.emailHtml) {
         body.emailHtml = emailAtt.emailHtml;
       }
+      if (emailAtt?.emailPlainText) {
+        body.emailPlainText = emailAtt.emailPlainText;
+      }
       if (imageAtts.length > 0) body.images = imageAtts.map(a => a.preview as string);
+
+      // Attach file content (text-readable and binary documents)
+      const fileAtts = attachments.filter(a => a.type === "file");
+      if (fileAtts.length > 0) {
+        const fileContents = fileAtts.map(f => ({
+          name: f.name,
+          text: f.fileText || null,
+          dataUrl: !f.fileText ? f.preview || null : null,
+          size: f.size,
+        }));
+        body.files = fileContents;
+      }
 
       const res = await fetch(`${base}/api/anthropic/conversations/${CONVERSATION_ID}/messages`, {
         method: "POST",
@@ -1087,7 +1132,7 @@ export default function Chat() {
               <Paperclip size={17} />
               <input
                 type="file"
-                accept="image/*,.eml,message/rfc822"
+                accept="*/*"
                 multiple
                 className="hidden"
                 onChange={async e => {

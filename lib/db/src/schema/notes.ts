@@ -5,7 +5,7 @@ import { z } from "zod/v4";
 export const notes = pgTable("notes", {
   id: text("id").primaryKey(),
   text: text("text").notNull(),
-  category: text("category").notNull().$type<"Urgent" | "To Do" | "To Ask" | "Schedule" | "Done">(),
+  category: text("category").notNull().$type<"Urgent" | "To Do" | "To Ask" | "Schedule" | "Quote" | "Follow Up" | "Investigate" | "Done">(),
   owner: text("owner").notNull().default("Casper"),
   status: text("status").notNull().$type<"Open" | "Done">().default("Open"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

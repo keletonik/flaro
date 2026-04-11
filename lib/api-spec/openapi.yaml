@@ -977,7 +977,7 @@ components:
           type: string
         category:
           type: string
-          enum: [Urgent, "To Do", "To Ask", Schedule, Done]
+          enum: [Urgent, "To Do", "To Ask", Schedule, Quote, "Follow Up", Investigate, Done]
         owner:
           type: string
         status:
@@ -1000,7 +1000,7 @@ components:
           type: string
         category:
           type: string
-          enum: [Urgent, "To Do", "To Ask", Schedule, Done]
+          enum: [Urgent, "To Do", "To Ask", Schedule, Quote, "Follow Up", Investigate, Done]
         owner:
           type: string
       required:
@@ -1014,7 +1014,7 @@ components:
           type: string
         category:
           type: string
-          enum: [Urgent, "To Do", "To Ask", Schedule, Done]
+          enum: [Urgent, "To Do", "To Ask", Schedule, Quote, "Follow Up", Investigate, Done]
         owner:
           type: string
         status:

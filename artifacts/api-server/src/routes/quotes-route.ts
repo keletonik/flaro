@@ -111,4 +111,24 @@ router.delete("/quotes/:id", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.patch("/quotes/bulk", async (req, res, next) => {
+  try {
+    const { ids, status } = req.body as { ids: string[]; status?: string };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    for (const id of ids) { await db.update(quotes).set(updates).where(eq(quotes.id, id)); }
+    res.json({ updated: ids.length });
+  } catch (err) { next(err); }
+});
+
+router.delete("/quotes/bulk", async (req, res, next) => {
+  try {
+    const { ids } = req.body as { ids: string[] };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    for (const id of ids) { await db.delete(quotes).where(eq(quotes.id, id)); }
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
 export default router;

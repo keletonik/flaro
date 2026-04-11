@@ -14,6 +14,7 @@ import invoicesRouter from "./invoices-route";
 import suppliersRouter from "./suppliers-route";
 import kpiRouter from "./kpi";
 import contextualChatRouter from "./contextual-chat";
+import analyticsRouter from "./analytics";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(invoicesRouter);
 router.use(suppliersRouter);
 router.use(kpiRouter);
 router.use(contextualChatRouter);
+router.use(analyticsRouter);
 
 export default router;

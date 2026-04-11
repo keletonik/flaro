@@ -14,12 +14,13 @@ import Todos from "@/pages/todos";
 import Projects from "@/pages/projects";
 import Operations from "@/pages/operations";
 import Suppliers from "@/pages/suppliers";
+import Analytics from "@/pages/analytics";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
-  Package, ChevronLeft, ChevronRight
+  Package, ChevronLeft, ChevronRight, PieChart
 } from "lucide-react";
 import { useState, createContext, useContext } from "react";
 
@@ -39,6 +40,7 @@ const navGroups = [
       { path: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
       { path: "/chat", icon: MessageCircle, label: "Chat" },
       { path: "/operations", icon: BarChart3, label: "Operations" },
+      { path: "/analytics", icon: PieChart, label: "Analytics" },
     ],
   },
   {
@@ -96,7 +98,7 @@ function SidebarNav() {
 
   return (
     <aside className={cn(
-      "hidden md:flex fixed left-0 top-0 bottom-0 flex-col z-50 bg-sidebar transition-all duration-300",
+      "hidden md:flex fixed left-0 top-0 bottom-0 flex-col z-50 bg-sidebar sidebar-shadow transition-all duration-300",
       collapsed ? "w-[60px]" : "w-[210px]"
     )}>
       {/* Logo */}
@@ -118,11 +120,11 @@ function SidebarNav() {
       <div className={cn("h-px bg-sidebar-border mb-2", collapsed ? "mx-2" : "mx-3")} />
 
       {/* Nav groups */}
-      <nav className="flex-1 overflow-y-auto px-2 space-y-4 scrollbar-hide">
+      <nav className="flex-1 overflow-y-auto px-2 space-y-5 scrollbar-hide">
         {navGroups.map(group => (
           <div key={group.label}>
             {!collapsed && (
-              <p className="px-2 text-[9px] font-bold uppercase tracking-[0.08em] text-sidebar-foreground/20 mb-1.5">{group.label}</p>
+              <p className="px-2 text-[10px] font-bold uppercase tracking-[0.06em] text-sidebar-foreground/30 mb-1.5">{group.label}</p>
             )}
             <div className="space-y-0.5">
               {group.items.map((item) => {
@@ -229,6 +231,7 @@ function Router() {
       <Route path="/" component={() => <Layout><Dashboard /></Layout>} />
       <Route path="/chat" component={() => <Layout><Chat /></Layout>} />
       <Route path="/operations" component={() => <Layout><Operations /></Layout>} />
+      <Route path="/analytics" component={() => <Layout><Analytics /></Layout>} />
       <Route path="/schedule" component={() => <Layout><Schedule /></Layout>} />
       <Route path="/jobs" component={() => <Layout><Jobs /></Layout>} />
       <Route path="/jobs/:id" component={() => <Layout><JobDetail /></Layout>} />

@@ -14,16 +14,22 @@ export function loginRateLimiter(): RateLimitRequestHandler | PassthroughMiddlew
     return (_req: Request, _res: Response, next: NextFunction) => next();
   }
   const windowMs = Number(process.env["LOGIN_RATE_WINDOW_MS"]) || 15 * 60 * 1000;
-  const max = Number(process.env["LOGIN_RATE_MAX"]) || 20;
+  const max = Number(process.env["LOGIN_RATE_MAX"]) || 50;
   return rateLimit({
     windowMs,
     max,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Too many login attempts. Try again later." },
-    // Only throttle failed+successful login posts; everything else in the router
-    // is mounted outside this limiter.
-    skip: (req) => req.method !== "POST",
+    // Only throttle login POSTs; everything else in the router is mounted
+    // outside this limiter. We also exempt the canonical casper account so a
+    // locked-out operator can always recover the deployment.
+    skip: (req) => {
+      if (req.method !== "POST") return true;
+      const u = req.body?.username;
+      if (typeof u === "string" && u.toLowerCase().trim() === "casper") return true;
+      return false;
+    },
   });
 }
 

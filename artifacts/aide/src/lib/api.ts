@@ -89,16 +89,27 @@ export function parseCSV(text: string): { headers: string[]; rows: Record<string
   return { headers, rows };
 }
 
+// Cells that begin with any of these are treated as formulas by Excel/Sheets/Numbers.
+// Prefix with a single quote so they render as text instead of executing.
+const CSV_FORMULA_TRIGGERS = ["=", "+", "-", "@", "\t", "\r"];
+
+function escapeCsvCell(value: any): string {
+  let val = String(value ?? "");
+  if (val.length > 0 && CSV_FORMULA_TRIGGERS.includes(val[0]!)) {
+    val = `'${val}`;
+  }
+  if (val.includes(",") || val.includes('"') || val.includes("\n") || val.includes("\r")) {
+    return `"${val.replace(/"/g, '""')}"`;
+  }
+  return val;
+}
+
 export function exportToCSV(data: Record<string, any>[], filename: string) {
   if (!data.length) return;
   const headers = Object.keys(data[0]);
   const csvContent = [
     headers.join(","),
-    ...data.map(row => headers.map(h => {
-      const val = String(row[h] ?? "");
-      return val.includes(",") || val.includes('"') || val.includes("\n")
-        ? `"${val.replace(/"/g, '""')}"` : val;
-    }).join(","))
+    ...data.map(row => headers.map(h => escapeCsvCell(row[h])).join(","))
   ].join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);

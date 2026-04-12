@@ -76,6 +76,27 @@ router.post("/quotes/import", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Bulk handlers must precede /quotes/:id so Express doesn't match id="bulk".
+router.patch("/quotes/bulk", async (req, res, next) => {
+  try {
+    const { ids, status } = req.body as { ids: string[]; status?: string };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    for (const id of ids) { await db.update(quotes).set(updates).where(eq(quotes.id, id)); }
+    res.json({ updated: ids.length });
+  } catch (err) { next(err); }
+});
+
+router.delete("/quotes/bulk", async (req, res, next) => {
+  try {
+    const { ids } = req.body as { ids: string[] };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    for (const id of ids) { await db.delete(quotes).where(eq(quotes.id, id)); }
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
 router.patch("/quotes/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
@@ -108,26 +129,6 @@ router.delete("/quotes/:id", async (req, res, next) => {
     const [existing] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!existing) { res.status(404).json({ error: "Quote not found" }); return; }
     await db.delete(quotes).where(eq(quotes.id, req.params.id));
-    res.status(204).end();
-  } catch (err) { next(err); }
-});
-
-router.patch("/quotes/bulk", async (req, res, next) => {
-  try {
-    const { ids, status } = req.body as { ids: string[]; status?: string };
-    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (status) updates.status = status;
-    for (const id of ids) { await db.update(quotes).set(updates).where(eq(quotes.id, id)); }
-    res.json({ updated: ids.length });
-  } catch (err) { next(err); }
-});
-
-router.delete("/quotes/bulk", async (req, res, next) => {
-  try {
-    const { ids } = req.body as { ids: string[] };
-    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
-    for (const id of ids) { await db.delete(quotes).where(eq(quotes.id, id)); }
     res.status(204).end();
   } catch (err) { next(err); }
 });

@@ -97,6 +97,39 @@ router.post("/wip/import", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Bulk status update — MUST be declared before the /wip/:id handler, otherwise Express
+// will match ":id" first and route /wip/bulk to the single-record handler with id="bulk".
+router.patch("/wip/bulk", async (req, res, next) => {
+  try {
+    const { ids, status, assignedTech } = req.body as { ids: string[]; status?: string; assignedTech?: string };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    if (assignedTech !== undefined) updates.assignedTech = assignedTech || null;
+    for (const id of ids) {
+      await db.update(wipRecords).set(updates).where(eq(wipRecords.id, id));
+    }
+    res.json({ updated: ids.length });
+  } catch (err) { next(err); }
+});
+
+// Bulk delete — same route-ordering reason as above.
+router.delete("/wip/bulk", async (req, res, next) => {
+  try {
+    const { ids } = req.body as { ids: string[] };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    for (const id of ids) { await db.delete(wipRecords).where(eq(wipRecords.id, id)); }
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
+router.delete("/wip/batch/:batchId", async (req, res, next) => {
+  try {
+    await db.delete(wipRecords).where(eq(wipRecords.importBatchId, req.params.batchId));
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
 router.patch("/wip/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(wipRecords).where(eq(wipRecords.id, req.params.id));
@@ -128,38 +161,6 @@ router.delete("/wip/:id", async (req, res, next) => {
     const [existing] = await db.select().from(wipRecords).where(eq(wipRecords.id, req.params.id));
     if (!existing) { res.status(404).json({ error: "Record not found" }); return; }
     await db.delete(wipRecords).where(eq(wipRecords.id, req.params.id));
-    res.status(204).end();
-  } catch (err) { next(err); }
-});
-
-router.delete("/wip/batch/:batchId", async (req, res, next) => {
-  try {
-    await db.delete(wipRecords).where(eq(wipRecords.importBatchId, req.params.batchId));
-    res.status(204).end();
-  } catch (err) { next(err); }
-});
-
-// Bulk status update
-router.patch("/wip/bulk", async (req, res, next) => {
-  try {
-    const { ids, status, assignedTech } = req.body as { ids: string[]; status?: string; assignedTech?: string };
-    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (status) updates.status = status;
-    if (assignedTech !== undefined) updates.assignedTech = assignedTech || null;
-    for (const id of ids) {
-      await db.update(wipRecords).set(updates).where(eq(wipRecords.id, id));
-    }
-    res.json({ updated: ids.length });
-  } catch (err) { next(err); }
-});
-
-// Bulk delete
-router.delete("/wip/bulk", async (req, res, next) => {
-  try {
-    const { ids } = req.body as { ids: string[] };
-    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
-    for (const id of ids) { await db.delete(wipRecords).where(eq(wipRecords.id, id)); }
     res.status(204).end();
   } catch (err) { next(err); }
 });

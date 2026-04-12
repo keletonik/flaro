@@ -75,6 +75,19 @@ router.post("/defects/import", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Bulk handler must precede /defects/:id so Express doesn't match id="bulk".
+router.patch("/defects/bulk", async (req, res, next) => {
+  try {
+    const { ids, status, severity } = req.body as { ids: string[]; status?: string; severity?: string };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    if (severity) updates.severity = severity;
+    for (const id of ids) { await db.update(defects).set(updates).where(eq(defects.id, id)); }
+    res.json({ updated: ids.length });
+  } catch (err) { next(err); }
+});
+
 router.patch("/defects/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(defects).where(eq(defects.id, req.params.id));
@@ -106,18 +119,6 @@ router.delete("/defects/:id", async (req, res, next) => {
     if (!existing) { res.status(404).json({ error: "Defect not found" }); return; }
     await db.delete(defects).where(eq(defects.id, req.params.id));
     res.status(204).end();
-  } catch (err) { next(err); }
-});
-
-router.patch("/defects/bulk", async (req, res, next) => {
-  try {
-    const { ids, status, severity } = req.body as { ids: string[]; status?: string; severity?: string };
-    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (status) updates.status = status;
-    if (severity) updates.severity = severity;
-    for (const id of ids) { await db.update(defects).set(updates).where(eq(defects.id, id)); }
-    res.json({ updated: ids.length });
   } catch (err) { next(err); }
 });
 

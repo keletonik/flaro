@@ -16,6 +16,11 @@ function setCache(key: string, data: any, ttlMs = 60000) {
   cache.set(key, { data, expires: Date.now() + ttlMs });
 }
 
+// Exposed so mutations elsewhere in the API can invalidate stale analytics snapshots.
+export function invalidateAnalyticsCache() {
+  cache.clear();
+}
+
 router.get("/analytics/wip", async (req, res, next) => {
   const cached = getCached("analytics-wip");
   if (cached) { res.json(cached); return; }

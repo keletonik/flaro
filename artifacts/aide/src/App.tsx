@@ -22,6 +22,7 @@ const Analytics = lazy(() => import("@/pages/analytics"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const PM = lazy(() => import("@/pages/pm"));
 const NotFound = lazy(() => import("@/pages/not-found"));
+const LoginPage = lazy(() => import("@/pages/login"));
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
@@ -375,12 +376,11 @@ function App() {
   if (!authChecked) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   if (!authUser) {
-    const LoginPage = React.lazy(() => import("@/pages/login"));
     return (
       <ThemeProvider>
-        <React.Suspense fallback={<div />}>
+        <Suspense fallback={<div />}>
           <LoginPage onLogin={handleLogin} />
-        </React.Suspense>
+        </Suspense>
       </ThemeProvider>
     );
   }

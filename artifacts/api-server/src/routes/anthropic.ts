@@ -5,11 +5,12 @@ import { eq } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { CreateAnthropicConversationBody, SendAnthropicMessageBody, GetAnthropicConversationParams, DeleteAnthropicConversationParams, ListAnthropicMessagesParams, SendAnthropicMessageParams } from "@workspace/api-zod";
 
-const SYSTEM_PROMPT = `You are the personal operations assistant for Casper Tavitian, Electrical Services Manager (Dry Fire Division), FlameSafe Fire Protection, Rydalmere NSW. Mobile: 0419 272 500. Address: Unit 2, 8-10 Mary Parade, Rydalmere NSW 2116.
+function buildSystemPrompt(userName: string = "the user") {
+  return `You are AIDE, the personal operations assistant for ${userName}, based in Rydalmere NSW.
 
 BUSINESS CONTEXT:
-- FlameSafe is a fire protection company in NSW, Australia
-- Casper manages the Electrical Services / Dry Fire division
+- Fire protection operations in NSW, Australia
+- The user manages the Electrical Services / Dry Fire division
 - Primary system: Uptick (field service management)
 - Standards: AS 1851-2012, AS 1670.1-2018, AS 1670.4-2018
 - NSW framework: EP&A Act 1979, EP&A Regulation 2021, AFSS/EFSM
@@ -48,27 +49,27 @@ ON-CALL ROSTER — DRY FIRE TEAM | APRIL–JUNE 2026:
 5-7 Jun Fri-Sun — Gordon Jenkins
 
 YOUR BEHAVIOUR:
-- Always address Casper by name in your first sentence
+- Always address the user by their first name in your first sentence
 - Be direct, efficient, no corporate waffle, no AI language
 - Australian English throughout (colour, organise, prioritise, etc.)
 - Never say "I'd be happy to", "Certainly!", or any robotic phrasing
 - Be a senior executive assistant, not a chatbot
 - Run a PA check on every interaction — flag missed, overdue, or conflicting items
-- When Casper says "PA Check" — give a crisp summary of open items and what matters today
-- When Casper drops a note — categorise and log it immediately
-- When Casper drops an email — produce: What's Happened / Where Things Stand / What Needs to Happen / Watch Out For + YOUR ACTION REQUIRED flag
+- When the user says "PA Check" — give a crisp summary of open items and what matters today
+- When the user drops a note — categorise and log it immediately
+- When the user drops an email — produce: What's Happened / Where Things Stand / What Needs to Happen / Watch Out For + YOUR ACTION REQUIRED flag
 - Uptick notes — dated dot-point format, first person, written as a qualified fire safety technician
-- Never auto-execute — present options, wait for Casper to confirm
+- Never auto-execute — present options, wait for the user to confirm
 - Flag the Centennial Park evac plans follow-up every status check until done (due Tuesday 15 April, follow up Monday 13 April)
-- When Casper drops an image — describe what you see and extract any relevant information (job details, site names, dates, issues, compliance items, etc.)
-- When Casper mentions needing to do something — proactively offer to log it as a todo or job
+- When the user drops an image — describe what you see and extract any relevant information (job details, site names, dates, issues, compliance items, etc.)
+- When the user mentions needing to do something — proactively offer to log it as a todo or job
 
-DROPPED CONTENT — When Casper drops an email or file:
+DROPPED CONTENT — When the user drops an email or file:
 1. Emails: ALWAYS produce an EMAIL_TRIAGE action block, extract ALL action items as CREATE_TODO actions, and create a CREATE_JOB if a site visit is needed
 2. Images: Describe what you see. If it's a job site photo, document, report or certificate — extract the relevant info and create appropriate jobs/notes/todos
 3. Documents/text: Extract all relevant data, create appropriate records
 
-ACTIONS — You can take real actions in Casper's app:
+ACTIONS — You can take real actions in the app:
 
 1. CREATE_JOB — Creates a new WIP in the WIPs page
 2. CREATE_NOTE — Creates a note in the Notes page
@@ -78,7 +79,7 @@ ACTIONS — You can take real actions in Casper's app:
 
 HOW TO USE ACTIONS (can use multiple in one response):
 <ops-action>{"type":"CREATE_JOB","data":{"site":"...","client":"...","actionRequired":"...","priority":"High","status":"Open"}}</ops-action>
-<ops-action>{"type":"CREATE_NOTE","data":{"text":"...","category":"Urgent|To Do|To Ask|Schedule|Quote|Follow Up|Investigate","owner":"Casper"}}</ops-action>
+<ops-action>{"type":"CREATE_NOTE","data":{"text":"...","category":"Urgent|To Do|To Ask|Schedule|Quote|Follow Up|Investigate","owner":"User"}}</ops-action>
 <ops-action>{"type":"CREATE_TODO","data":{"text":"...","priority":"Critical|High|Medium|Low","category":"Work|Personal|Follow-up|Compliance|Admin"}}</ops-action>
 <ops-action>{"type":"EMAIL_TRIAGE","data":{"site":"...","client":"...","contact":"...","priority":"Critical|High|Medium|Low","whatHappened":"...","whereThingsStand":"...","whatNeedsToHappen":"...","watchOutFor":"...","actionRequired":"..."}}</ops-action>
 
@@ -88,6 +89,9 @@ RULES:
 - For dropped images: describe what you see, then create relevant records
 - Always confirm in your text what actions you've taken
 - Priority assessment: Critical = safety/compliance risk, regulatory deadline; High = client impact, this week; Medium = this fortnight; Low = when convenient`;
+}
+
+const SYSTEM_PROMPT = buildSystemPrompt("Casper Tavitian"); // default fallback
 
 function htmlToPlainText(html: string): string {
   let text = html
@@ -126,6 +130,8 @@ function htmlToPlainText(html: string): string {
     .trim();
   return text;
 }
+
+import { getSessionUser } from "./auth";
 
 const router = Router();
 
@@ -188,11 +194,11 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
     const fromHtml = emailHtml ? htmlToPlainText(emailHtml) : "";
     const fromPlain = emailPlainText || "";
     const emailText = fromPlain.length > fromHtml.length ? fromPlain : fromHtml;
-    dbContent = `[EMAIL DROPPED]\n${emailText}${bodyParsed.data.content ? `\n\nCasper's note: ${bodyParsed.data.content}` : ""}`;
+    dbContent = `[EMAIL DROPPED]\n${emailText}${bodyParsed.data.content ? `\n\nUser's note: ${bodyParsed.data.content}` : ""}`;
   } else if (files.length > 0) {
     const fileNames = files.map(f => f.name).join(", ");
     const textContents = files.filter(f => f.text).map(f => `[${f.name}]\n${f.text}`).join("\n\n");
-    dbContent = `[Files: ${fileNames}]\n${textContents || "(binary files)"}${bodyParsed.data.content ? `\n\nCasper's note: ${bodyParsed.data.content}` : ""}`;
+    dbContent = `[Files: ${fileNames}]\n${textContents || "(binary files)"}${bodyParsed.data.content ? `\n\nUser's note: ${bodyParsed.data.content}` : ""}`;
   } else if (images.length > 0) {
     dbContent = `[${images.length} image(s) attached]${bodyParsed.data.content ? ` — ${bodyParsed.data.content}` : ""}`;
   }
@@ -239,22 +245,22 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
     if (secondSource && secondSource.length > 30 && Math.abs(secondSource.length - emailText.length) > 50) {
       combined += `\n\n--- ADDITIONAL EMAIL CONTENT (secondary extraction) ---\n${secondSource}`;
     }
-    textContent = `[EMAIL DROPPED BY CASPER — TRIAGE THIS IMMEDIATELY]\n\n${combined}`;
-    if (bodyParsed.data.content) textContent += `\n\nCasper's note: ${bodyParsed.data.content}`;
+    textContent = `[EMAIL DROPPED — TRIAGE THIS IMMEDIATELY]\n\n${combined}`;
+    if (bodyParsed.data.content) textContent += `\n\nUser's note: ${bodyParsed.data.content}`;
   } else if (files.length > 0) {
     // Build file content for the LLM
     const fileParts = files.map(f => {
       if (f.text) return `=== FILE: ${f.name} ===\n${f.text}`;
       return `=== FILE: ${f.name} (${f.size ? Math.round(f.size / 1024) + " KB" : "binary"}) === [Binary file — content not extractable in browser]`;
     });
-    textContent = `Casper has attached ${files.length} file(s). Analyse the content and extract any relevant information, action items, or data.\n\n${fileParts.join("\n\n")}`;
+    textContent = `The user has attached ${files.length} file(s). Analyse the content and extract any relevant information, action items, or data.\n\n${fileParts.join("\n\n")}`;
     if (bodyParsed.data.content && bodyParsed.data.content !== "Please triage and analyse the attached content.") {
-      textContent += `\n\nCasper's note: ${bodyParsed.data.content}`;
+      textContent += `\n\nUser's note: ${bodyParsed.data.content}`;
     }
   } else if (images.length > 0) {
     textContent = bodyParsed.data.content
-      ? `Casper has attached ${images.length} image(s). His note: ${bodyParsed.data.content}`
-      : `Casper has dropped ${images.length} image(s) for you to analyse. Describe what you see and extract any relevant job/site/compliance information.`;
+      ? `The user has attached ${images.length} image(s). His note: ${bodyParsed.data.content}`
+      : `The user has dropped ${images.length} image(s) for you to analyse. Describe what you see and extract any relevant job/site/compliance information.`;
   } else {
     textContent = bodyParsed.data.content;
   }
@@ -262,7 +268,7 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   latestContent.push({ type: "text", text: textContent });
 
   // Compose the full messages array for LLM
-  const claudeMessages: any[] = [
+  const llmMessages: any[] = [
     ...historyMessages,
     {
       role: "user",
@@ -287,8 +293,8 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
     const stream = anthropic.messages.stream({
       model: "claude-sonnet-4-6",
       max_tokens: 8192,
-      system: SYSTEM_PROMPT,
-      messages: claudeMessages,
+      system: buildSystemPrompt(getSessionUser(req.headers.authorization)?.displayName || "the user"),
+      messages: llmMessages,
     });
 
     for await (const event of stream) {

@@ -20,7 +20,8 @@ export default function Login({ onLogin }: LoginProps) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+      const res = await fetch(`${base}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: username.trim().toLowerCase(), password }),

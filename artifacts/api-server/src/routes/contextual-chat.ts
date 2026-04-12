@@ -9,7 +9,7 @@ type SectionType = "wip" | "quotes" | "defects" | "invoices" | "suppliers" | "da
 
 const UPTICK_CONTEXT = `
 UPTICK DOMAIN KNOWLEDGE:
-- Uptick is the primary field service management platform used by FlameSafe Fire Protection
+- Uptick is the primary field service management platform used by the business
 - Task types: I&T (Inspection & Testing from routines), Callout (ad-hoc), Repair (from approved defect quotes)
 - Task statuses: Not Ready → Ready → Scheduled → In Progress → Performed → Office Review/Revisit/On Hold → Completed → Archived
 - Remark severity levels: Informational, Recommendation, Non-Conformance, Non-Critical Defect, Impairment (Severity 10 — system out of order)

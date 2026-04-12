@@ -67,7 +67,7 @@ export default function AideSplash({ durationMs = 10000, onDone }: AideSplashPro
           />
         </div>
         <div className="aide-splash-tag">
-          <span>FlameSafe Service Ops</span>
+          <span>Service Operations</span>
           <span className="aide-splash-dot" aria-hidden />
           <span>Rydalmere NSW</span>
         </div>

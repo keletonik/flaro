@@ -148,7 +148,7 @@ function SidebarNav() {
           {!collapsed && (
             <div className="flex flex-col">
               <AideWordmark color="#22d3ee" height={16} />
-              <span className="text-sidebar-foreground/30 text-[9px] font-medium tracking-wider uppercase mt-0.5">FlameSafe Ops</span>
+              <span className="text-sidebar-foreground/30 text-[9px] font-medium tracking-wider uppercase mt-0.5">Service Ops</span>
             </div>
           )}
         </button>

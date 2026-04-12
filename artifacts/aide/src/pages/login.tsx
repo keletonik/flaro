@@ -67,7 +67,7 @@ export default function Login({ onLogin }: LoginProps) {
           </div>
           <AideWordmark color="#0891b2" height={34} className="dark:hidden" />
           <AideWordmark color="#22d3ee" height={34} className="hidden dark:block" />
-          <p className="text-sm text-muted-foreground mt-2">FlameSafe Service Ops</p>
+          <p className="text-sm text-muted-foreground mt-2">Service Operations</p>
         </div>
 
         {/* Form */}
@@ -117,7 +117,7 @@ export default function Login({ onLogin }: LoginProps) {
           </button>
         </form>
 
-        <p className="text-[10px] text-muted-foreground text-center mt-6">FlameSafe Fire Protection &middot; Rydalmere NSW</p>
+        <p className="text-[10px] text-muted-foreground text-center mt-6">AIDE &middot; Rydalmere NSW</p>
       </div>
     </div>
   );

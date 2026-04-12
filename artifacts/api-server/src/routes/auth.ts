@@ -108,10 +108,8 @@ function startSessionCleanup() {
 // Preference order:
 //   1. SEED_ADMIN_USERNAME + SEED_ADMIN_PASSWORD env vars → create a single admin.
 //   2. ALLOW_LEGACY_SEED=1 (rollback path) → recreate the original three-user seed.
-//   3. Otherwise → do nothing and log a warning. Existing rows are never touched.
-//
-// Legacy seed kept because removing it could lock out a live deployment mid-rollout.
-// To purge it, set SEED_ADMIN_* and leave ALLOW_LEGACY_SEED unset.
+//   3. Otherwise → seed Casper as the default admin so a fresh deploy isn't locked out.
+//      Existing rows are never touched.
 let seeded = false;
 async function seedUsers() {
   if (seeded) return;
@@ -163,7 +161,20 @@ async function seedUsers() {
       return;
     }
 
-    console.warn("users table empty but no seed configured. Set SEED_ADMIN_USERNAME and SEED_ADMIN_PASSWORD (or ALLOW_LEGACY_SEED=1) to bootstrap an admin.");
+    // Default bootstrap: seed Casper as admin so a fresh deploy can log in.
+    const salt = randomBytes(16).toString("hex");
+    await db.insert(users).values({
+      id: randomUUID(),
+      username: "casper",
+      displayName: "Casper Tavitian",
+      passwordHash: hashScrypt("Ramekin881!", salt),
+      passwordAlgo: "scrypt",
+      passwordSalt: salt,
+      role: "admin",
+      email: "casper@flamesafe.com.au",
+      mustChangePassword: "false",
+    }).onConflictDoNothing();
+    console.log("Seeded default admin user 'casper'.");
   } catch (e) { console.error("User seeding error:", e); }
 }
 

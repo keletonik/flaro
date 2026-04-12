@@ -354,7 +354,8 @@ function App() {
   React.useEffect(() => {
     const token = localStorage.getItem("ops-auth-token");
     if (!token) { setAuthChecked(true); return; }
-    fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
+    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+    fetch(`${base}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(user => { setAuthUser(user); setAuthToken(token); setAuthChecked(true); })
       .catch(() => { localStorage.removeItem("ops-auth-token"); setAuthChecked(true); });
@@ -367,7 +368,8 @@ function App() {
   };
 
   const handleLogout = () => {
-    if (authToken) fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${authToken}` } }).catch(() => {});
+    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+    if (authToken) fetch(`${base}/api/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${authToken}` } }).catch(() => {});
     localStorage.removeItem("ops-auth-token");
     setAuthToken(null);
     setAuthUser(null);

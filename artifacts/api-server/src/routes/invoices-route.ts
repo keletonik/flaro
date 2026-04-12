@@ -79,6 +79,19 @@ router.post("/invoices/import", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Bulk handler must precede /invoices/:id so Express doesn't match id="bulk".
+router.patch("/invoices/bulk", async (req, res, next) => {
+  try {
+    const { ids, status } = req.body as { ids: string[]; status?: string };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    if (status === "Paid") updates.datePaid = new Date().toISOString().split("T")[0];
+    for (const id of ids) { await db.update(invoices).set(updates).where(eq(invoices.id, id)); }
+    res.json({ updated: ids.length });
+  } catch (err) { next(err); }
+});
+
 router.patch("/invoices/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
@@ -111,18 +124,6 @@ router.delete("/invoices/:id", async (req, res, next) => {
     if (!existing) { res.status(404).json({ error: "Invoice not found" }); return; }
     await db.delete(invoices).where(eq(invoices.id, req.params.id));
     res.status(204).end();
-  } catch (err) { next(err); }
-});
-
-router.patch("/invoices/bulk", async (req, res, next) => {
-  try {
-    const { ids, status } = req.body as { ids: string[]; status?: string };
-    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (status) updates.status = status;
-    if (status === "Paid") updates.datePaid = new Date().toISOString().split("T")[0];
-    for (const id of ids) { await db.update(invoices).set(updates).where(eq(invoices.id, id)); }
-    res.json({ updated: ids.length });
   } catch (err) { next(err); }
 });
 

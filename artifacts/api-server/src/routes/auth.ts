@@ -1,18 +1,107 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { users } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { randomUUID, createHash } from "crypto";
+import { users, sessions } from "@workspace/db";
+import { eq, lt } from "drizzle-orm";
+import { randomUUID, createHash, scryptSync, randomBytes, timingSafeEqual } from "crypto";
 
 const router = Router();
 
-// Simple hash (not bcrypt — avoids native dependency for Replit compatibility)
-function hashPassword(password: string): string {
-  return createHash("sha256").update(password + "flamesafe-ops-salt-2026").digest("hex");
+const LEGACY_SALT = "flamesafe-ops-salt-2026";
+const SCRYPT_KEYLEN = 64;
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+// Legacy hash — kept so existing rows continue to log in during dual-read.
+function hashLegacy(password: string): string {
+  return createHash("sha256").update(password + LEGACY_SALT).digest("hex");
 }
 
-// In-memory session store (sufficient for single-instance Replit)
-const sessions = new Map<string, { userId: string; username: string; displayName: string; role: string; expiresAt: number }>();
+function hashScrypt(password: string, salt: string): string {
+  return scryptSync(password, salt, SCRYPT_KEYLEN).toString("hex");
+}
+
+function verifyScrypt(password: string, salt: string, expected: string): boolean {
+  const computed = scryptSync(password, salt, SCRYPT_KEYLEN);
+  const expectedBuf = Buffer.from(expected, "hex");
+  if (computed.length !== expectedBuf.length) return false;
+  return timingSafeEqual(computed, expectedBuf);
+}
+
+type SessionRecord = {
+  userId: string;
+  username: string;
+  displayName: string;
+  role: string;
+  expiresAt: number;
+};
+
+// In-process cache in front of the DB-backed sessions table. Purely a latency optimisation;
+// the source of truth is the `sessions` table so a process restart keeps users logged in.
+const sessionCache = new Map<string, SessionRecord>();
+
+async function loadSession(token: string): Promise<SessionRecord | null> {
+  const cached = sessionCache.get(token);
+  if (cached) {
+    if (cached.expiresAt < Date.now()) {
+      sessionCache.delete(token);
+      await db.delete(sessions).where(eq(sessions.token, token)).catch(() => {});
+      return null;
+    }
+    return cached;
+  }
+  try {
+    const [row] = await db.select().from(sessions).where(eq(sessions.token, token));
+    if (!row) return null;
+    const expiresAt = row.expiresAt.getTime();
+    if (expiresAt < Date.now()) {
+      await db.delete(sessions).where(eq(sessions.token, token)).catch(() => {});
+      return null;
+    }
+    const record: SessionRecord = {
+      userId: row.userId,
+      username: row.username,
+      displayName: row.displayName,
+      role: row.role,
+      expiresAt,
+    };
+    sessionCache.set(token, record);
+    return record;
+  } catch {
+    return null;
+  }
+}
+
+async function persistSession(token: string, record: SessionRecord): Promise<void> {
+  sessionCache.set(token, record);
+  await db.insert(sessions).values({
+    token,
+    userId: record.userId,
+    username: record.username,
+    displayName: record.displayName,
+    role: record.role,
+    expiresAt: new Date(record.expiresAt),
+  }).onConflictDoNothing();
+}
+
+async function dropSession(token: string): Promise<void> {
+  sessionCache.delete(token);
+  await db.delete(sessions).where(eq(sessions.token, token)).catch(() => {});
+}
+
+// Best-effort periodic cleanup of expired rows. Runs once per process.
+let cleanupStarted = false;
+function startSessionCleanup() {
+  if (cleanupStarted) return;
+  cleanupStarted = true;
+  const tick = async () => {
+    try {
+      await db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
+    } catch {
+      // ignore — table may not exist yet on first boot before push
+    }
+  };
+  setInterval(tick, 60 * 60 * 1000).unref?.();
+  tick();
+}
 
 // Seed default users on first call
 let seeded = false;
@@ -24,32 +113,69 @@ async function seedUsers() {
     if (existing.length > 0) return;
 
     const defaultUsers = [
-      { id: randomUUID(), username: "casper", displayName: "Casper Tavitian", passwordHash: hashPassword("Ramekin881!"), role: "admin" as const, email: "casper@flamesafe.com.au", mustChangePassword: "false" },
-      { id: randomUUID(), username: "jade", displayName: "Jade Ogony", passwordHash: hashPassword("FlameSafe2026!"), role: "manager" as const, email: "jade.ogony@flamesafe.com.au", mustChangePassword: "true" },
-      { id: randomUUID(), username: "killian", displayName: "Killian Jordan", passwordHash: hashPassword("OpsManager2026!"), role: "manager" as const, email: "killian@flamesafe.com.au", mustChangePassword: "true" },
+      { id: randomUUID(), username: "casper", displayName: "Casper Tavitian", password: "Ramekin881!", role: "admin" as const, email: "casper@flamesafe.com.au", mustChangePassword: "false" },
+      { id: randomUUID(), username: "jade", displayName: "Jade Ogony", password: "FlameSafe2026!", role: "manager" as const, email: "jade.ogony@flamesafe.com.au", mustChangePassword: "true" },
+      { id: randomUUID(), username: "killian", displayName: "Killian Jordan", password: "OpsManager2026!", role: "manager" as const, email: "killian@flamesafe.com.au", mustChangePassword: "true" },
     ];
 
     for (const u of defaultUsers) {
-      await db.insert(users).values(u).onConflictDoNothing();
+      const salt = randomBytes(16).toString("hex");
+      await db.insert(users).values({
+        id: u.id,
+        username: u.username,
+        displayName: u.displayName,
+        passwordHash: hashScrypt(u.password, salt),
+        passwordAlgo: "scrypt",
+        passwordSalt: salt,
+        role: u.role,
+        email: u.email,
+        mustChangePassword: u.mustChangePassword,
+      }).onConflictDoNothing();
     }
   } catch (e) { console.error("User seeding error:", e); }
 }
 
+async function verifyAndUpgrade(user: typeof users.$inferSelect, password: string): Promise<boolean> {
+  if (user.passwordAlgo === "scrypt" && user.passwordSalt) {
+    return verifyScrypt(password, user.passwordSalt, user.passwordHash);
+  }
+  // Legacy sha256 path — verify with constant-time compare, then upgrade in place.
+  const legacyHex = hashLegacy(password);
+  const legacyBuf = Buffer.from(legacyHex, "hex");
+  const storedBuf = Buffer.from(user.passwordHash, "hex");
+  if (legacyBuf.length !== storedBuf.length || !timingSafeEqual(legacyBuf, storedBuf)) return false;
+  const salt = randomBytes(16).toString("hex");
+  await db.update(users)
+    .set({
+      passwordHash: hashScrypt(password, salt),
+      passwordAlgo: "scrypt",
+      passwordSalt: salt,
+    })
+    .where(eq(users.id, user.id));
+  return true;
+}
+
 router.post("/auth/login", async (req, res) => {
   await seedUsers();
+  startSessionCleanup();
   const { username, password } = req.body;
   if (!username || !password) { res.status(400).json({ error: "Username and password required" }); return; }
 
-  const [user] = await db.select().from(users).where(eq(users.username, username.toLowerCase().trim()));
+  const [user] = await db.select().from(users).where(eq(users.username, String(username).toLowerCase().trim()));
   if (!user) { res.status(401).json({ error: "Invalid credentials" }); return; }
 
-  if (user.passwordHash !== hashPassword(password)) { res.status(401).json({ error: "Invalid credentials" }); return; }
+  const ok = await verifyAndUpgrade(user, String(password));
+  if (!ok) { res.status(401).json({ error: "Invalid credentials" }); return; }
 
   const token = randomUUID();
-  sessions.set(token, {
-    userId: user.id, username: user.username, displayName: user.displayName,
-    role: user.role, expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-  });
+  const record: SessionRecord = {
+    userId: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    role: user.role,
+    expiresAt: Date.now() + SESSION_TTL_MS,
+  };
+  await persistSession(token, record);
 
   res.json({
     token,
@@ -57,50 +183,66 @@ router.post("/auth/login", async (req, res) => {
   });
 });
 
-router.get("/auth/me", (req, res) => {
+router.get("/auth/me", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
   if (!token) { res.status(401).json({ error: "Not authenticated" }); return; }
 
-  const session = sessions.get(token);
-  if (!session || session.expiresAt < Date.now()) {
-    if (session) sessions.delete(token);
-    res.status(401).json({ error: "Session expired" });
-    return;
-  }
+  const session = await loadSession(token);
+  if (!session) { res.status(401).json({ error: "Session expired" }); return; }
 
   res.json({ id: session.userId, username: session.username, displayName: session.displayName, role: session.role });
 });
 
-router.post("/auth/logout", (req, res) => {
+router.post("/auth/logout", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
-  if (token) sessions.delete(token);
+  if (token) await dropSession(token);
   res.json({ ok: true });
 });
 
 router.post("/auth/change-password", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
   if (!token) { res.status(401).json({ error: "Not authenticated" }); return; }
-  const session = sessions.get(token);
+  const session = await loadSession(token);
   if (!session) { res.status(401).json({ error: "Not authenticated" }); return; }
 
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) { res.status(400).json({ error: "Both passwords required" }); return; }
-  if (newPassword.length < 6) { res.status(400).json({ error: "Password must be at least 6 characters" }); return; }
+  if (String(newPassword).length < 6) { res.status(400).json({ error: "Password must be at least 6 characters" }); return; }
 
   const [user] = await db.select().from(users).where(eq(users.id, session.userId));
-  if (!user || user.passwordHash !== hashPassword(currentPassword)) { res.status(401).json({ error: "Current password incorrect" }); return; }
+  if (!user) { res.status(401).json({ error: "Current password incorrect" }); return; }
 
-  await db.update(users).set({ passwordHash: hashPassword(newPassword), mustChangePassword: "false" }).where(eq(users.id, session.userId));
+  const ok = await verifyAndUpgrade(user, String(currentPassword));
+  if (!ok) { res.status(401).json({ error: "Current password incorrect" }); return; }
+
+  const salt = randomBytes(16).toString("hex");
+  await db.update(users).set({
+    passwordHash: hashScrypt(String(newPassword), salt),
+    passwordAlgo: "scrypt",
+    passwordSalt: salt,
+    mustChangePassword: "false",
+  }).where(eq(users.id, session.userId));
   res.json({ ok: true });
 });
 
-// Export session lookup for other routes
+// Synchronous cache-only lookup for hot paths that can't wait for a DB round-trip.
+// Returns null on miss; the caller falls back to "the user" etc. unchanged.
 export function getSessionUser(token: string | undefined) {
   if (!token) return null;
   const t = token.replace("Bearer ", "");
-  const session = sessions.get(t);
+  const session = sessionCache.get(t);
   if (!session || session.expiresAt < Date.now()) return null;
   return session;
 }
+
+// Async version that falls through to the DB when the cache is cold (e.g. after a process restart).
+export async function getSessionUserAsync(token: string | undefined): Promise<SessionRecord | null> {
+  if (!token) return null;
+  const t = token.replace("Bearer ", "");
+  return loadSession(t);
+}
+
+// Expose a test hook so we can silence the once-per-process cleanup timer from tests.
+export const __authInternals = { sessionCache, hashLegacy, hashScrypt, verifyScrypt };
 
 export default router;

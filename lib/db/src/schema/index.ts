@@ -16,3 +16,4 @@ export * from "./on-call";
 export * from "./clients";
 export * from "./chat-history";
 export * from "./users";
+export * from "./sessions";

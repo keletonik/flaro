@@ -1,12 +1,51 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
-import cors from "cors";
+import cors, { type CorsOptions } from "cors";
+import helmet from "helmet";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { addSSEClient, broadcastEvent } from "./lib/events";
 import { invalidateAnalyticsCache } from "./routes/analytics";
+import { requireAuth } from "./middlewares/require-auth";
+import { apiRateLimiter, loginRateLimiter } from "./middlewares/rate-limit";
 
 const app: Express = express();
+
+// ───────────────────────────────────────────────────────────────────────────
+// Security headers
+// ───────────────────────────────────────────────────────────────────────────
+// Helmet ships with sensible defaults. CSP is the one header that regularly
+// breaks SPAs by blocking inline styles / vite runtime; disable it unless the
+// operator explicitly opts in with HELMET_CSP=1. Rollback: set HELMET_DISABLED=1.
+if (process.env["HELMET_DISABLED"] !== "1") {
+  app.use(
+    helmet({
+      contentSecurityPolicy: process.env["HELMET_CSP"] === "1" ? undefined : false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CORS
+// ───────────────────────────────────────────────────────────────────────────
+// ALLOWED_ORIGIN can be a comma-separated list. If unset, we keep the previous
+// wide-open behaviour so this change is a no-op until an operator configures it.
+function buildCorsOptions(): CorsOptions {
+  const raw = process.env["ALLOWED_ORIGIN"];
+  if (!raw) return { origin: true, credentials: true };
+  const allowed = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  return {
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // same-origin / curl
+      if (allowed.includes(origin)) return cb(null, true);
+      return cb(new Error(`Origin ${origin} not allowed`));
+    },
+    credentials: true,
+  };
+}
+app.use(cors(buildCorsOptions()));
 
 app.use(
   pinoHttp({
@@ -21,17 +60,38 @@ app.use(
     },
   }),
 );
-app.use(cors());
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true }));
 
-// SSE event stream for real-time dashboard updates.
-// Registered before the API router so it isn't caught by the 404 handler.
-app.get("/api/events", (req, res) => { addSSEClient(res); });
+// ───────────────────────────────────────────────────────────────────────────
+// Body parsers
+// ───────────────────────────────────────────────────────────────────────────
+// Default 1 MB cap on every endpoint, with a targeted 50 MB limit mounted only
+// on the anthropic message route (images + email HTML can be large).
+// Override with DEFAULT_BODY_LIMIT / CHAT_BODY_LIMIT. Rollback: set both to 50mb.
+const defaultBodyLimit = process.env["DEFAULT_BODY_LIMIT"] || "1mb";
+const chatBodyLimit = process.env["CHAT_BODY_LIMIT"] || "50mb";
 
-// Broadcast mutations + invalidate the analytics cache. MUST be installed before the
-// API router — Express middleware runs in registration order, so wrapping res.json
-// after the router is mounted never takes effect.
+app.use(
+  /^(?!\/api\/anthropic\/conversations\/[^\/]+\/messages$).*/,
+  express.json({ limit: defaultBodyLimit }),
+);
+app.use(
+  "/api/anthropic/conversations/:id/messages",
+  express.json({ limit: chatBodyLimit }),
+);
+app.use(express.urlencoded({ extended: true, limit: defaultBodyLimit }));
+
+// ───────────────────────────────────────────────────────────────────────────
+// Rate limiting
+// ───────────────────────────────────────────────────────────────────────────
+app.use("/api/auth/login", loginRateLimiter());
+app.use("/api", apiRateLimiter());
+
+// SSE stream registered before the API router so the router 404 handler can't
+// swallow it.
+app.get("/api/events", (_req, res) => { addSSEClient(res); });
+
+// Broadcast mutations + invalidate the analytics cache. MUST be installed before
+// the API router so the res.json wrapper is in place when a handler responds.
 app.use("/api", (req, res, next) => {
   if (req.method === "GET" || req.method === "OPTIONS" || req.method === "HEAD") {
     next();
@@ -47,9 +107,8 @@ app.use("/api", (req, res, next) => {
     return originalJson(body);
   };
   const originalEnd = res.end.bind(res);
-  // DELETE handlers typically use res.status(204).end() rather than res.json, so wrap end too.
   res.end = ((...args: any[]) => {
-    if (res.statusCode < 400 && (req.method === "DELETE")) {
+    if (res.statusCode < 400 && req.method === "DELETE") {
       const path = req.originalUrl.replace(/^\/api/, "");
       broadcastEvent("data_change", { path, method: req.method });
       invalidateAnalyticsCache();
@@ -59,6 +118,12 @@ app.use("/api", (req, res, next) => {
   next();
 });
 
+// Authentication. In AUTH_ENFORCE=true mode the middleware rejects unauthenticated
+// requests with 401 (except /auth/*, /healthz, /events). Otherwise it passes
+// through with a warning log, so the frontend Bearer-header change can ship
+// ahead of the flag flip.
+app.use("/api", requireAuth);
+
 app.use("/api", router);
 
 // 404 — must be after all routes
@@ -66,14 +131,18 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: "Not found" });
 });
 
-// Global error handler — must have 4 params for Express to recognise it
+// Global error handler — must have 4 params for Express to recognise it.
+// In production (NODE_ENV=production and ERROR_VERBOSE!=1), only a generic
+// message is returned to the client; the full error is still logged server-side.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  const message = err instanceof Error ? err.message : "Internal server error";
   logger.error({ err }, "Unhandled error");
-  if (!res.headersSent) {
-    res.status(500).json({ error: message });
-  }
+  if (res.headersSent) return;
+  const verbose = process.env["NODE_ENV"] !== "production" || process.env["ERROR_VERBOSE"] === "1";
+  const message = verbose
+    ? (err instanceof Error ? err.message : "Internal server error")
+    : "Internal server error";
+  res.status(500).json({ error: message });
 });
 
 export default app;

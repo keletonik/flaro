@@ -24,6 +24,7 @@ export const quotes = pgTable("quotes", {
   importBatchId: text("import_batch_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (table) => [
   index("quotes_status_idx").on(table.status),
   index("quotes_client_idx").on(table.client),

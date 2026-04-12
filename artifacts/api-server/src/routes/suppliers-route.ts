@@ -160,12 +160,18 @@ router.post("/suppliers/:supplierId/products", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+const MAX_IMPORT_ROWS = Number(process.env["MAX_IMPORT_ROWS"]) || 10000;
+
 router.post("/suppliers/:supplierId/products/import", async (req, res, next) => {
   try {
     const [supplier] = await db.select().from(suppliers).where(eq(suppliers.id, req.params.supplierId));
     if (!supplier) { res.status(404).json({ error: "Supplier not found" }); return; }
     const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
     if (!rows?.length) { res.status(400).json({ error: "No data rows provided" }); return; }
+    if (rows.length > MAX_IMPORT_ROWS) {
+      res.status(413).json({ error: `Too many rows (${rows.length}). Limit is ${MAX_IMPORT_ROWS}.` });
+      return;
+    }
     const batchId = randomUUID();
     const now = new Date();
     const records = rows.map(row => {

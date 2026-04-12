@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { jobs } from "@workspace/db";
-import { eq, and, or, ilike, sql } from "drizzle-orm";
+import { eq, and, or, ilike, sql, isNull } from "drizzle-orm";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { CreateJobBody, UpdateJobBody, ListJobsQueryParams, GetJobParams, UpdateJobParams, DeleteJobParams } from "@workspace/api-zod";
 import { randomUUID } from "crypto";
+import { deleteRow, softDeleteEnabled } from "../lib/soft-delete";
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.get("/jobs", async (req, res, next) => {
     let query = db.select().from(jobs).$dynamic();
     const conditions = [];
 
+    if (softDeleteEnabled()) conditions.push(isNull(jobs.deletedAt));
     if (status) conditions.push(eq(jobs.status, status));
     if (priority) conditions.push(eq(jobs.priority, priority));
     if (search) {
@@ -120,7 +122,7 @@ router.delete("/jobs/:id", async (req, res, next) => {
     const [existing] = await db.select().from(jobs).where(eq(jobs.id, parsed.data.id));
     if (!existing) { res.status(404).json({ error: "Job not found" }); return; }
 
-    await db.delete(jobs).where(eq(jobs.id, parsed.data.id));
+    await deleteRow(jobs, parsed.data.id);
     res.status(204).end();
   } catch (err) { next(err); }
 });

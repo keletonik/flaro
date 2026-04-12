@@ -74,15 +74,33 @@ async function run() {
   try {
     await client.query('BEGIN');
 
-    // Clear existing imported data to reload fresh
-    await client.query('DELETE FROM wip_records');
-    await client.query('DELETE FROM quotes');
-    await client.query('DELETE FROM jobs');
-    await client.query('DELETE FROM invoices WHERE import_batch_id = $1', ['spreadsheet-import']);
-    // Only delete imported notes (contain [T- or [N/A] prefix), preserve manually created ones
-    await client.query(`DELETE FROM notes WHERE text LIKE '[T-%' OR text LIKE '[N/A]%'`);
-    await client.query('DELETE FROM schedule_events WHERE 1=1').catch(() => {});
-    console.log('Cleared existing data for fresh import');
+    // ADDITIVE RE-IMPORT
+    // This script used to DELETE every row in wip_records/quotes/jobs/schedule_events,
+    // which destroyed manually-created records. It now only touches rows that belong
+    // to this script's own import batch ('spreadsheet-import'), and upserts jobs by
+    // task_number. Any hand-entered row is preserved.
+    //
+    // If you need to force a full wipe, set env var FLAMESAFE_FULL_WIPE=1 and run
+    // manually — the default path never deletes outside its batch.
+    const BATCH_ID = 'spreadsheet-import';
+    const fullWipe = process.env.FLAMESAFE_FULL_WIPE === '1';
+    if (fullWipe) {
+      console.warn('⚠ FLAMESAFE_FULL_WIPE=1 — deleting all rows, including manual entries.');
+      await client.query('DELETE FROM wip_records');
+      await client.query('DELETE FROM quotes');
+      await client.query('DELETE FROM jobs');
+      await client.query('DELETE FROM invoices WHERE import_batch_id = $1', [BATCH_ID]);
+      await client.query(`DELETE FROM notes WHERE text LIKE '[T-%' OR text LIKE '[N/A]%'`);
+      await client.query('DELETE FROM schedule_events WHERE 1=1').catch(() => {});
+    } else {
+      await client.query('DELETE FROM wip_records WHERE import_batch_id = $1', [BATCH_ID]);
+      await client.query('DELETE FROM quotes WHERE import_batch_id = $1', [BATCH_ID]);
+      await client.query('DELETE FROM invoices WHERE import_batch_id = $1', [BATCH_ID]);
+      // Notes: leave existing notes in place entirely. The importer appends new ones; duplicates
+      // can be deduped manually in the UI. This is the least-destructive behaviour.
+      // Jobs are upserted by task_number below, so no pre-delete needed.
+    }
+    console.log(fullWipe ? 'Full wipe complete.' : 'Cleared spreadsheet-import batch only (manual rows preserved).');
 
     // 1. REPAIRS → wip_records
     const rep = parseSheet(wb, 'REPAIRS', h => h === 'PRIORITY' || h === 'REF');
@@ -108,25 +126,35 @@ async function run() {
     }
     console.log(`  → ${wipCount} WIP records`);
 
-    // 2. ACTION LIST → jobs
+    // 2. ACTION LIST → jobs (upsert by task_number; never touches manual rows with no task_number match)
     const al = parseSheet(wb, 'ACTION LIST', h => h === '#' || h === 'REF');
     console.log(`\nACTION LIST: ${al.rows.length} data rows`);
     let jobCount = 0;
     for (const row of al.rows) {
       const d = mapRow(al.headers, row);
       if (!d['REF']) continue;
-      await client.query(
-        `INSERT INTO jobs (id, task_number, site, client, action_required, priority, status, assigned_tech, due_date, notes, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW(),NOW())`,
-        [uid(), d['REF'], d['PROPERTY / SITE'] || 'Unknown', d['CLIENT'] || 'Unknown',
-         `${d['CATEGORY'] || 'Task'} — $${Number(d['VALUE ($)'] || 0).toFixed(0)} value, ${d['DAYS OPEN'] || '?'} days open${d['INVOICED'] === 'Yes' ? ' (invoiced)' : ''}`,
-         mapPriority(d['PRIORITY']), mapJobStatus(d['STATUS']),
-         d['TECHNICIAN'] || null, excelDateToISO(d['SCHED DATE']),
-         `Auth: $${Number(d['AUTH ($)'] || 0).toFixed(2)} | Category: ${d['CATEGORY'] || 'N/A'} | Invoiced: ${d['INVOICED'] || 'No'}`]
-      );
+      const existing = await client.query('SELECT id FROM jobs WHERE task_number = $1', [d['REF']]);
+      const actionRequired = `${d['CATEGORY'] || 'Task'} — $${Number(d['VALUE ($)'] || 0).toFixed(0)} value, ${d['DAYS OPEN'] || '?'} days open${d['INVOICED'] === 'Yes' ? ' (invoiced)' : ''}`;
+      const notes = `Auth: $${Number(d['AUTH ($)'] || 0).toFixed(2)} | Category: ${d['CATEGORY'] || 'N/A'} | Invoiced: ${d['INVOICED'] || 'No'}`;
+      if (existing.rows.length > 0) {
+        await client.query(
+          `UPDATE jobs SET site=$1, client=$2, action_required=$3, priority=$4, status=$5, assigned_tech=$6, due_date=$7, notes=$8, updated_at=NOW() WHERE task_number=$9`,
+          [d['PROPERTY / SITE'] || 'Unknown', d['CLIENT'] || 'Unknown', actionRequired,
+           mapPriority(d['PRIORITY']), mapJobStatus(d['STATUS']),
+           d['TECHNICIAN'] || null, excelDateToISO(d['SCHED DATE']), notes, d['REF']]
+        );
+      } else {
+        await client.query(
+          `INSERT INTO jobs (id, task_number, site, client, action_required, priority, status, assigned_tech, due_date, notes, created_at, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW(),NOW())`,
+          [uid(), d['REF'], d['PROPERTY / SITE'] || 'Unknown', d['CLIENT'] || 'Unknown', actionRequired,
+           mapPriority(d['PRIORITY']), mapJobStatus(d['STATUS']),
+           d['TECHNICIAN'] || null, excelDateToISO(d['SCHED DATE']), notes]
+        );
+      }
       jobCount++;
     }
-    console.log(`  → ${jobCount} jobs`);
+    console.log(`  → ${jobCount} jobs (upserted by task_number)`);
 
     // 3. QUOTES → quotes
     const q = parseSheet(wb, 'QUOTES', h => h === 'REF' || h === 'PROPERTY');
@@ -171,7 +199,7 @@ async function run() {
     }
     console.log(`  → ${schedCount} additional scheduled jobs`);
 
-    // 5. NOTES LOG → notes
+    // 5. NOTES LOG → notes (dedup by text on re-run, so this loop is idempotent)
     const nl = parseSheet(wb, 'NOTES LOG', h => h === 'DATE / TIME' || h === 'NOTE');
     console.log(`\nNOTES LOG: ${nl.rows.length} data rows`);
     let noteCount = 0;
@@ -179,17 +207,22 @@ async function run() {
       const d = mapRow(nl.headers, row);
       if (!d['NOTE']) continue;
       const noteText = `[${d['TASK REF'] || 'N/A'}] ${d['PROPERTY / CLIENT'] || ''} — ${d['NOTE']}`;
-      const statusBefore = d['STATUS — BEFORE'] || '';
       const statusAfter = d['STATUS — AFTER'] || '';
       const category = statusAfter.includes('QUOTE') ? 'To Do' : statusAfter.includes('COMPLETED') ? 'Done' : 'To Do';
+      const owner = d['LOGGED BY'] || 'Casper';
+      const existingNote = await client.query(
+        'SELECT id FROM notes WHERE text = $1 AND owner = $2 LIMIT 1',
+        [noteText, owner]
+      );
+      if (existingNote.rows.length > 0) continue;
       await client.query(
         `INSERT INTO notes (id, text, category, owner, status, created_at)
          VALUES ($1,$2,$3,$4,$5,NOW())`,
-        [uid(), noteText, category, d['LOGGED BY'] || 'Casper', 'Open']
+        [uid(), noteText, category, owner, 'Open']
       );
       noteCount++;
     }
-    console.log(`  → ${noteCount} notes`);
+    console.log(`  → ${noteCount} new notes (existing notes preserved and skipped)`);
 
     // 6. Generate INVOICES from REPAIRS where INVOICED = Yes
     console.log(`\nGENERATING INVOICES from invoiced repairs...`);

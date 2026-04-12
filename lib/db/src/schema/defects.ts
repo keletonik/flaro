@@ -22,6 +22,7 @@ export const defects = pgTable("defects", {
   importBatchId: text("import_batch_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (table) => [
   index("defects_status_idx").on(table.status),
   index("defects_severity_idx").on(table.severity),

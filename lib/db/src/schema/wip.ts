@@ -23,6 +23,7 @@ export const wipRecords = pgTable("wip_records", {
   importBatchId: text("import_batch_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (table) => [
   index("wip_status_idx").on(table.status),
   index("wip_client_idx").on(table.client),

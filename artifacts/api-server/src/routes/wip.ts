@@ -1,9 +1,12 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { wipRecords } from "@workspace/db";
-import { eq, and, or, ilike, desc, sql } from "drizzle-orm";
+import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
+import { deleteRow, deleteRows, softDeleteEnabled } from "../lib/soft-delete";
+
+const MAX_IMPORT_ROWS = Number(process.env["MAX_IMPORT_ROWS"]) || 10000;
 
 const router = Router();
 
@@ -19,6 +22,7 @@ router.get("/wip", async (req, res, next) => {
   try {
     const { status, priority, search, client, assignedTech, jobType } = req.query as Record<string, string>;
     const conditions = [];
+    if (softDeleteEnabled()) conditions.push(isNull(wipRecords.deletedAt));
     if (status) conditions.push(eq(wipRecords.status, status));
     if (priority) conditions.push(eq(wipRecords.priority, priority));
     if (client) conditions.push(ilike(wipRecords.client, `%${client.replace(/[%_\\]/g, "\\$&")}%`));
@@ -62,6 +66,10 @@ router.post("/wip/import", async (req, res, next) => {
   try {
     const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
     if (!rows?.length) { res.status(400).json({ error: "No data rows provided" }); return; }
+    if (rows.length > MAX_IMPORT_ROWS) {
+      res.status(413).json({ error: `Too many rows (${rows.length}). Limit is ${MAX_IMPORT_ROWS}.` });
+      return;
+    }
     const batchId = randomUUID();
     const now = new Date();
     const records = rows.map(row => {
@@ -97,6 +105,43 @@ router.post("/wip/import", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Bulk status update — MUST be declared before the /wip/:id handler, otherwise Express
+// will match ":id" first and route /wip/bulk to the single-record handler with id="bulk".
+router.patch("/wip/bulk", async (req, res, next) => {
+  try {
+    const { ids, status, assignedTech } = req.body as { ids: string[]; status?: string; assignedTech?: string };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    if (assignedTech !== undefined) updates.assignedTech = assignedTech || null;
+    for (const id of ids) {
+      await db.update(wipRecords).set(updates).where(eq(wipRecords.id, id));
+    }
+    res.json({ updated: ids.length });
+  } catch (err) { next(err); }
+});
+
+// Bulk delete — same route-ordering reason as above.
+router.delete("/wip/bulk", async (req, res, next) => {
+  try {
+    const { ids } = req.body as { ids: string[] };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    await deleteRows(wipRecords, ids);
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
+router.delete("/wip/batch/:batchId", async (req, res, next) => {
+  try {
+    if (softDeleteEnabled()) {
+      await db.update(wipRecords).set({ deletedAt: new Date() }).where(eq(wipRecords.importBatchId, req.params.batchId));
+    } else {
+      await db.delete(wipRecords).where(eq(wipRecords.importBatchId, req.params.batchId));
+    }
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
 router.patch("/wip/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(wipRecords).where(eq(wipRecords.id, req.params.id));
@@ -127,39 +172,7 @@ router.delete("/wip/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(wipRecords).where(eq(wipRecords.id, req.params.id));
     if (!existing) { res.status(404).json({ error: "Record not found" }); return; }
-    await db.delete(wipRecords).where(eq(wipRecords.id, req.params.id));
-    res.status(204).end();
-  } catch (err) { next(err); }
-});
-
-router.delete("/wip/batch/:batchId", async (req, res, next) => {
-  try {
-    await db.delete(wipRecords).where(eq(wipRecords.importBatchId, req.params.batchId));
-    res.status(204).end();
-  } catch (err) { next(err); }
-});
-
-// Bulk status update
-router.patch("/wip/bulk", async (req, res, next) => {
-  try {
-    const { ids, status, assignedTech } = req.body as { ids: string[]; status?: string; assignedTech?: string };
-    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (status) updates.status = status;
-    if (assignedTech !== undefined) updates.assignedTech = assignedTech || null;
-    for (const id of ids) {
-      await db.update(wipRecords).set(updates).where(eq(wipRecords.id, id));
-    }
-    res.json({ updated: ids.length });
-  } catch (err) { next(err); }
-});
-
-// Bulk delete
-router.delete("/wip/bulk", async (req, res, next) => {
-  try {
-    const { ids } = req.body as { ids: string[] };
-    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
-    for (const id of ids) { await db.delete(wipRecords).where(eq(wipRecords.id, id)); }
+    await deleteRow(wipRecords, req.params.id);
     res.status(204).end();
   } catch (err) { next(err); }
 });

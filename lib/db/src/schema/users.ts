@@ -5,6 +5,8 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   displayName: text("display_name").notNull(),
   passwordHash: text("password_hash").notNull(),
+  passwordAlgo: text("password_algo").notNull().default("sha256-legacy"),
+  passwordSalt: text("password_salt"),
   role: text("role").notNull().$type<"admin" | "manager" | "user">().default("user"),
   email: text("email"),
   mustChangePassword: text("must_change_password").default("false"),

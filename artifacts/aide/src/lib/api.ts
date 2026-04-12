@@ -1,10 +1,27 @@
 const BASE = "/api";
+const TOKEN_STORAGE_KEY = "ops-auth-token";
+
+function authHeader(): Record<string, string> {
+  try {
+    const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
 
 export async function apiFetch<T = any>(path: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(opts?.headers || {}) },
     ...opts,
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader(),
+      ...(opts?.headers || {}),
+    },
   });
+  if (res.status === 401) {
+    try { localStorage.removeItem(TOKEN_STORAGE_KEY); } catch { /* ignore */ }
+  }
   if (res.status === 204) return null as T;
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
@@ -89,16 +106,27 @@ export function parseCSV(text: string): { headers: string[]; rows: Record<string
   return { headers, rows };
 }
 
+// Cells that begin with any of these are treated as formulas by Excel/Sheets/Numbers.
+// Prefix with a single quote so they render as text instead of executing.
+const CSV_FORMULA_TRIGGERS = ["=", "+", "-", "@", "\t", "\r"];
+
+export function escapeCsvCell(value: any): string {
+  let val = String(value ?? "");
+  if (val.length > 0 && CSV_FORMULA_TRIGGERS.includes(val[0]!)) {
+    val = `'${val}`;
+  }
+  if (val.includes(",") || val.includes('"') || val.includes("\n") || val.includes("\r")) {
+    return `"${val.replace(/"/g, '""')}"`;
+  }
+  return val;
+}
+
 export function exportToCSV(data: Record<string, any>[], filename: string) {
   if (!data.length) return;
   const headers = Object.keys(data[0]);
   const csvContent = [
     headers.join(","),
-    ...data.map(row => headers.map(h => {
-      const val = String(row[h] ?? "");
-      return val.includes(",") || val.includes('"') || val.includes("\n")
-        ? `"${val.replace(/"/g, '""')}"` : val;
-    }).join(","))
+    ...data.map(row => headers.map(h => escapeCsvCell(row[h])).join(","))
   ].join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);

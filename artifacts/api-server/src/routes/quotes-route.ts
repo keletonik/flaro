@@ -1,9 +1,12 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { quotes } from "@workspace/db";
-import { eq, and, or, ilike, desc, sql } from "drizzle-orm";
+import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { randomUUID } from "crypto";
+import { deleteRow, deleteRows, softDeleteEnabled } from "../lib/soft-delete";
+
+const MAX_IMPORT_ROWS = Number(process.env["MAX_IMPORT_ROWS"]) || 10000;
 
 const router = Router();
 
@@ -18,6 +21,7 @@ router.get("/quotes", async (req, res, next) => {
   try {
     const { status, search, client } = req.query as Record<string, string>;
     const conditions = [];
+    if (softDeleteEnabled()) conditions.push(isNull(quotes.deletedAt));
     if (status) conditions.push(eq(quotes.status, status));
     if (client) conditions.push(ilike(quotes.client, `%${client.replace(/[%_\\]/g, "\\$&")}%`));
     if (search) {
@@ -52,6 +56,10 @@ router.post("/quotes/import", async (req, res, next) => {
   try {
     const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
     if (!rows?.length) { res.status(400).json({ error: "No data rows provided" }); return; }
+    if (rows.length > MAX_IMPORT_ROWS) {
+      res.status(413).json({ error: `Too many rows (${rows.length}). Limit is ${MAX_IMPORT_ROWS}.` });
+      return;
+    }
     const batchId = randomUUID();
     const now = new Date();
     const records = rows.map(row => {
@@ -73,6 +81,27 @@ router.post("/quotes/import", async (req, res, next) => {
     });
     const inserted = await db.insert(quotes).values(records).returning();
     res.status(201).json({ imported: inserted.length, batchId, records: inserted.map(serialize) });
+  } catch (err) { next(err); }
+});
+
+// Bulk handlers must precede /quotes/:id so Express doesn't match id="bulk".
+router.patch("/quotes/bulk", async (req, res, next) => {
+  try {
+    const { ids, status } = req.body as { ids: string[]; status?: string };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    for (const id of ids) { await db.update(quotes).set(updates).where(eq(quotes.id, id)); }
+    res.json({ updated: ids.length });
+  } catch (err) { next(err); }
+});
+
+router.delete("/quotes/bulk", async (req, res, next) => {
+  try {
+    const { ids } = req.body as { ids: string[] };
+    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
+    await deleteRows(quotes, ids);
+    res.status(204).end();
   } catch (err) { next(err); }
 });
 
@@ -107,27 +136,7 @@ router.delete("/quotes/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!existing) { res.status(404).json({ error: "Quote not found" }); return; }
-    await db.delete(quotes).where(eq(quotes.id, req.params.id));
-    res.status(204).end();
-  } catch (err) { next(err); }
-});
-
-router.patch("/quotes/bulk", async (req, res, next) => {
-  try {
-    const { ids, status } = req.body as { ids: string[]; status?: string };
-    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (status) updates.status = status;
-    for (const id of ids) { await db.update(quotes).set(updates).where(eq(quotes.id, id)); }
-    res.json({ updated: ids.length });
-  } catch (err) { next(err); }
-});
-
-router.delete("/quotes/bulk", async (req, res, next) => {
-  try {
-    const { ids } = req.body as { ids: string[] };
-    if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
-    for (const id of ids) { await db.delete(quotes).where(eq(quotes.id, id)); }
+    await deleteRow(quotes, req.params.id);
     res.status(204).end();
   } catch (err) { next(err); }
 });

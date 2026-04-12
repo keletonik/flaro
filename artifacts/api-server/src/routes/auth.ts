@@ -105,22 +105,76 @@ function startSessionCleanup() {
 
 // Seed default users on first call.
 //
-// Preference order:
+// Step 1 always runs: ensure the casper admin exists with the canonical
+// password. This is idempotent — if the row already exists with a stale
+// hash from a previous deploy, we reset it in place so the login screen
+// always works. If someone later changes the password via /auth/change-password
+// and then restarts the process, it will be reset back to the canonical value;
+// lift the CASPER_CANONICAL block out once we have a proper admin console.
+//
+// Step 2 runs only when the table is still empty after step 1:
 //   1. SEED_ADMIN_USERNAME + SEED_ADMIN_PASSWORD env vars → create a single admin.
-//   2. ALLOW_LEGACY_SEED=1 (rollback path) → recreate the original three-user seed.
-//   3. Otherwise → seed Casper as the default admin so a fresh deploy isn't locked out.
-//      Existing rows are never touched.
+//   2. ALLOW_LEGACY_SEED=1 (rollback path) → recreate the legacy three-user seed.
 let seeded = false;
+async function ensureCasperAdmin() {
+  const canonicalPassword = "Ramekin881!";
+  const [existing] = await db.select().from(users).where(eq(users.username, "casper"));
+  const salt = randomBytes(16).toString("hex");
+  const passwordHash = hashScrypt(canonicalPassword, salt);
+
+  if (!existing) {
+    await db.insert(users).values({
+      id: randomUUID(),
+      username: "casper",
+      displayName: "Casper Tavitian",
+      passwordHash,
+      passwordAlgo: "scrypt",
+      passwordSalt: salt,
+      role: "admin",
+      email: "casper@flamesafe.com.au",
+      mustChangePassword: "false",
+    }).onConflictDoNothing();
+    console.log("Seeded canonical admin user 'casper'.");
+    return;
+  }
+
+  // Row exists — verify it still matches the canonical password. If it does,
+  // leave it alone so we don't churn the hash on every restart. If it doesn't
+  // (stale legacy hash, old password, wrong salt), reset it in place.
+  const matches =
+    existing.passwordAlgo === "scrypt" &&
+    !!existing.passwordSalt &&
+    verifyScrypt(canonicalPassword, existing.passwordSalt, existing.passwordHash);
+
+  if (!matches) {
+    await db.update(users)
+      .set({
+        passwordHash,
+        passwordAlgo: "scrypt",
+        passwordSalt: salt,
+        role: "admin",
+        mustChangePassword: "false",
+      })
+      .where(eq(users.id, existing.id));
+    console.log("Reset canonical admin user 'casper' to match expected password.");
+  }
+}
+
 async function seedUsers() {
   if (seeded) return;
-  seeded = true;
   try {
+    // Always ensure casper is a usable admin.
+    await ensureCasperAdmin();
+
     const existing = await db.select().from(users);
-    if (existing.length > 0) return;
+    if (existing.length > 1) {
+      seeded = true;
+      return;
+    }
 
     const envUser = process.env["SEED_ADMIN_USERNAME"];
     const envPass = process.env["SEED_ADMIN_PASSWORD"];
-    if (envUser && envPass) {
+    if (envUser && envPass && envUser.toLowerCase().trim() !== "casper") {
       const salt = randomBytes(16).toString("hex");
       await db.insert(users).values({
         id: randomUUID(),
@@ -134,13 +188,11 @@ async function seedUsers() {
         mustChangePassword: "true",
       }).onConflictDoNothing();
       console.log(`Seeded admin user '${envUser}' from environment.`);
-      return;
     }
 
     if (process.env["ALLOW_LEGACY_SEED"] === "1") {
       console.warn("Seeding legacy default users (ALLOW_LEGACY_SEED=1). Rotate these passwords immediately.");
       const defaultUsers = [
-        { id: randomUUID(), username: "casper", displayName: "Casper Tavitian", password: "Ramekin881!", role: "admin" as const, email: "casper@flamesafe.com.au", mustChangePassword: "false" },
         { id: randomUUID(), username: "jade", displayName: "Jade Ogony", password: "FlameSafe2026!", role: "manager" as const, email: "jade.ogony@flamesafe.com.au", mustChangePassword: "true" },
         { id: randomUUID(), username: "killian", displayName: "Killian Jordan", password: "OpsManager2026!", role: "manager" as const, email: "killian@flamesafe.com.au", mustChangePassword: "true" },
       ];
@@ -158,23 +210,9 @@ async function seedUsers() {
           mustChangePassword: u.mustChangePassword,
         }).onConflictDoNothing();
       }
-      return;
     }
 
-    // Default bootstrap: seed Casper as admin so a fresh deploy can log in.
-    const salt = randomBytes(16).toString("hex");
-    await db.insert(users).values({
-      id: randomUUID(),
-      username: "casper",
-      displayName: "Casper Tavitian",
-      passwordHash: hashScrypt("Ramekin881!", salt),
-      passwordAlgo: "scrypt",
-      passwordSalt: salt,
-      role: "admin",
-      email: "casper@flamesafe.com.au",
-      mustChangePassword: "false",
-    }).onConflictDoNothing();
-    console.log("Seeded default admin user 'casper'.");
+    seeded = true;
   } catch (e) { console.error("User seeding error:", e); }
 }
 
@@ -287,5 +325,7 @@ export async function getSessionUserAsync(token: string | undefined): Promise<Se
 
 // Expose a test hook so we can silence the once-per-process cleanup timer from tests.
 export const __authInternals = { sessionCache, hashLegacy, hashScrypt, verifyScrypt };
+
+export { ensureCasperAdmin, seedUsers };
 
 export default router;

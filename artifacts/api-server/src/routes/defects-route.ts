@@ -1,9 +1,12 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { defects } from "@workspace/db";
-import { eq, and, or, ilike, desc, sql } from "drizzle-orm";
+import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { randomUUID } from "crypto";
+import { deleteRow, softDeleteEnabled } from "../lib/soft-delete";
+
+const MAX_IMPORT_ROWS = Number(process.env["MAX_IMPORT_ROWS"]) || 10000;
 
 const router = Router();
 
@@ -17,6 +20,7 @@ router.get("/defects", async (req, res, next) => {
   try {
     const { status, severity, search, client } = req.query as Record<string, string>;
     const conditions = [];
+    if (softDeleteEnabled()) conditions.push(isNull(defects.deletedAt));
     if (status) conditions.push(eq(defects.status, status));
     if (severity) conditions.push(eq(defects.severity, severity));
     if (client) conditions.push(ilike(defects.client, `%${client.replace(/[%_\\]/g, "\\$&")}%`));
@@ -52,6 +56,10 @@ router.post("/defects/import", async (req, res, next) => {
   try {
     const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
     if (!rows?.length) { res.status(400).json({ error: "No data rows provided" }); return; }
+    if (rows.length > MAX_IMPORT_ROWS) {
+      res.status(413).json({ error: `Too many rows (${rows.length}). Limit is ${MAX_IMPORT_ROWS}.` });
+      return;
+    }
     const batchId = randomUUID();
     const now = new Date();
     const records = rows.map(row => {
@@ -117,7 +125,7 @@ router.delete("/defects/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(defects).where(eq(defects.id, req.params.id));
     if (!existing) { res.status(404).json({ error: "Defect not found" }); return; }
-    await db.delete(defects).where(eq(defects.id, req.params.id));
+    await deleteRow(defects, req.params.id);
     res.status(204).end();
   } catch (err) { next(err); }
 });

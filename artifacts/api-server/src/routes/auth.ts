@@ -103,7 +103,15 @@ function startSessionCleanup() {
   tick();
 }
 
-// Seed default users on first call
+// Seed default users on first call.
+//
+// Preference order:
+//   1. SEED_ADMIN_USERNAME + SEED_ADMIN_PASSWORD env vars → create a single admin.
+//   2. ALLOW_LEGACY_SEED=1 (rollback path) → recreate the original three-user seed.
+//   3. Otherwise → do nothing and log a warning. Existing rows are never touched.
+//
+// Legacy seed kept because removing it could lock out a live deployment mid-rollout.
+// To purge it, set SEED_ADMIN_* and leave ALLOW_LEGACY_SEED unset.
 let seeded = false;
 async function seedUsers() {
   if (seeded) return;
@@ -112,26 +120,50 @@ async function seedUsers() {
     const existing = await db.select().from(users);
     if (existing.length > 0) return;
 
-    const defaultUsers = [
-      { id: randomUUID(), username: "casper", displayName: "Casper Tavitian", password: "Ramekin881!", role: "admin" as const, email: "casper@flamesafe.com.au", mustChangePassword: "false" },
-      { id: randomUUID(), username: "jade", displayName: "Jade Ogony", password: "FlameSafe2026!", role: "manager" as const, email: "jade.ogony@flamesafe.com.au", mustChangePassword: "true" },
-      { id: randomUUID(), username: "killian", displayName: "Killian Jordan", password: "OpsManager2026!", role: "manager" as const, email: "killian@flamesafe.com.au", mustChangePassword: "true" },
-    ];
-
-    for (const u of defaultUsers) {
+    const envUser = process.env["SEED_ADMIN_USERNAME"];
+    const envPass = process.env["SEED_ADMIN_PASSWORD"];
+    if (envUser && envPass) {
       const salt = randomBytes(16).toString("hex");
       await db.insert(users).values({
-        id: u.id,
-        username: u.username,
-        displayName: u.displayName,
-        passwordHash: hashScrypt(u.password, salt),
+        id: randomUUID(),
+        username: envUser.toLowerCase().trim(),
+        displayName: process.env["SEED_ADMIN_DISPLAY_NAME"] || envUser,
+        passwordHash: hashScrypt(envPass, salt),
         passwordAlgo: "scrypt",
         passwordSalt: salt,
-        role: u.role,
-        email: u.email,
-        mustChangePassword: u.mustChangePassword,
+        role: "admin",
+        email: process.env["SEED_ADMIN_EMAIL"] || null,
+        mustChangePassword: "true",
       }).onConflictDoNothing();
+      console.log(`Seeded admin user '${envUser}' from environment.`);
+      return;
     }
+
+    if (process.env["ALLOW_LEGACY_SEED"] === "1") {
+      console.warn("Seeding legacy default users (ALLOW_LEGACY_SEED=1). Rotate these passwords immediately.");
+      const defaultUsers = [
+        { id: randomUUID(), username: "casper", displayName: "Casper Tavitian", password: "Ramekin881!", role: "admin" as const, email: "casper@flamesafe.com.au", mustChangePassword: "false" },
+        { id: randomUUID(), username: "jade", displayName: "Jade Ogony", password: "FlameSafe2026!", role: "manager" as const, email: "jade.ogony@flamesafe.com.au", mustChangePassword: "true" },
+        { id: randomUUID(), username: "killian", displayName: "Killian Jordan", password: "OpsManager2026!", role: "manager" as const, email: "killian@flamesafe.com.au", mustChangePassword: "true" },
+      ];
+      for (const u of defaultUsers) {
+        const salt = randomBytes(16).toString("hex");
+        await db.insert(users).values({
+          id: u.id,
+          username: u.username,
+          displayName: u.displayName,
+          passwordHash: hashScrypt(u.password, salt),
+          passwordAlgo: "scrypt",
+          passwordSalt: salt,
+          role: u.role,
+          email: u.email,
+          mustChangePassword: u.mustChangePassword,
+        }).onConflictDoNothing();
+      }
+      return;
+    }
+
+    console.warn("users table empty but no seed configured. Set SEED_ADMIN_USERNAME and SEED_ADMIN_PASSWORD (or ALLOW_LEGACY_SEED=1) to bootstrap an admin.");
   } catch (e) { console.error("User seeding error:", e); }
 }
 

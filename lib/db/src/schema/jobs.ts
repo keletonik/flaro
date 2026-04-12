@@ -20,6 +20,7 @@ export const jobs = pgTable("jobs", {
   uptickNotes: text("uptick_notes").array().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (table) => [
   index("jobs_status_idx").on(table.status),
   index("jobs_priority_idx").on(table.priority),

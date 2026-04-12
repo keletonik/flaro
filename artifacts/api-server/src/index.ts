@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { db, pool } from "@workspace/db";
 import { conversations } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { ensureCasperAdmin } from "./routes/auth";
 
 const rawPort = process.env["PORT"];
 
@@ -41,4 +42,7 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
   ensureDefaultConversation();
+  ensureCasperAdmin().catch((err) => {
+    logger.warn({ err }, "Could not ensure casper admin on startup — DB may not be ready");
+  });
 });

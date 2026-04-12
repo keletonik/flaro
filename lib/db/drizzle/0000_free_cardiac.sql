@@ -375,6 +375,63 @@ CREATE TABLE "sessions" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "uptick_facts" (
+	"id" text PRIMARY KEY NOT NULL,
+	"import_id" text NOT NULL,
+	"raw_row_id" text,
+	"fact_type" text NOT NULL,
+	"task_number" text,
+	"quote_number" text,
+	"client" text,
+	"site" text,
+	"service_group" text,
+	"cost_center" text,
+	"branch" text,
+	"account_manager" text,
+	"technician" text,
+	"task_category" text,
+	"status" text,
+	"stage" text,
+	"severity" text,
+	"asset_type" text,
+	"period_date" text,
+	"started_at" timestamp with time zone,
+	"ended_at" timestamp with time zone,
+	"revenue" numeric(14, 2),
+	"cost" numeric(14, 2),
+	"labour_cost" numeric(14, 2),
+	"material_cost" numeric(14, 2),
+	"other_cost" numeric(14, 2),
+	"hours" numeric(10, 2),
+	"quantity" integer,
+	"markup" numeric(10, 4),
+	"data" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone
+);
+--> statement-breakpoint
+CREATE TABLE "uptick_imports" (
+	"id" text PRIMARY KEY NOT NULL,
+	"dashboard_type" text NOT NULL,
+	"source_filename" text,
+	"imported_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"imported_by" text,
+	"row_count" integer DEFAULT 0 NOT NULL,
+	"fact_count" integer DEFAULT 0 NOT NULL,
+	"raw_headers" jsonb,
+	"column_map" jsonb,
+	"detected_confidence" numeric(5, 4),
+	"warnings" jsonb,
+	"deleted_at" timestamp with time zone
+);
+--> statement-breakpoint
+CREATE TABLE "uptick_raw_rows" (
+	"id" text PRIMARY KEY NOT NULL,
+	"import_id" text NOT NULL,
+	"row_index" integer NOT NULL,
+	"data" jsonb NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "messages" ADD CONSTRAINT "messages_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_tasks" ADD CONSTRAINT "project_tasks_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "supplier_products" ADD CONSTRAINT "supplier_products_supplier_id_suppliers_id_fk" FOREIGN KEY ("supplier_id") REFERENCES "public"."suppliers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -437,4 +494,16 @@ CREATE INDEX "sites_client_id_idx" ON "sites" USING btree ("client_id");--> stat
 CREATE INDEX "chat_history_section_idx" ON "chat_history" USING btree ("section");--> statement-breakpoint
 CREATE INDEX "chat_history_updated_idx" ON "chat_history" USING btree ("updated_at");--> statement-breakpoint
 CREATE INDEX "sessions_expires_at_idx" ON "sessions" USING btree ("expires_at");--> statement-breakpoint
-CREATE INDEX "sessions_user_id_idx" ON "sessions" USING btree ("user_id");
+CREATE INDEX "sessions_user_id_idx" ON "sessions" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "uptick_facts_import_idx" ON "uptick_facts" USING btree ("import_id");--> statement-breakpoint
+CREATE INDEX "uptick_facts_type_idx" ON "uptick_facts" USING btree ("fact_type");--> statement-breakpoint
+CREATE INDEX "uptick_facts_client_idx" ON "uptick_facts" USING btree ("client");--> statement-breakpoint
+CREATE INDEX "uptick_facts_technician_idx" ON "uptick_facts" USING btree ("technician");--> statement-breakpoint
+CREATE INDEX "uptick_facts_service_group_idx" ON "uptick_facts" USING btree ("service_group");--> statement-breakpoint
+CREATE INDEX "uptick_facts_period_idx" ON "uptick_facts" USING btree ("period_date");--> statement-breakpoint
+CREATE INDEX "uptick_facts_status_idx" ON "uptick_facts" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "uptick_facts_deleted_at_idx" ON "uptick_facts" USING btree ("deleted_at");--> statement-breakpoint
+CREATE INDEX "uptick_imports_dashboard_type_idx" ON "uptick_imports" USING btree ("dashboard_type");--> statement-breakpoint
+CREATE INDEX "uptick_imports_imported_at_idx" ON "uptick_imports" USING btree ("imported_at");--> statement-breakpoint
+CREATE INDEX "uptick_imports_deleted_at_idx" ON "uptick_imports" USING btree ("deleted_at");--> statement-breakpoint
+CREATE INDEX "uptick_raw_rows_import_idx" ON "uptick_raw_rows" USING btree ("import_id");

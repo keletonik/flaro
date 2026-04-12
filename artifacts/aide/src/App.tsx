@@ -28,6 +28,7 @@ import {
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
   Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal, Settings2
 } from "lucide-react";
+import { AideFavicon, AideWordmark } from "@/components/AideLogo";
 
 const SidebarContext = createContext({ collapsed: false, setCollapsed: (_: boolean) => {} });
 function useSidebar() { return useContext(SidebarContext); }
@@ -141,13 +142,13 @@ function SidebarNav() {
       {/* Logo */}
       <div className={cn("flex items-center pt-5 pb-4", collapsed ? "px-3 justify-center" : "px-4")}>
         <button onClick={() => setLocation("/")} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shrink-0">
-            <BarChart3 size={15} className="text-white" strokeWidth={2.5} />
+          <div className="w-8 h-8 rounded-xl bg-[#0b1014] border border-[#1e293b] flex items-center justify-center shrink-0">
+            <AideFavicon color="#22d3ee" size={22} />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-sidebar-foreground font-bold text-[13px] tracking-tight leading-none">Service Ops</span>
-              <span className="text-sidebar-foreground/30 text-[9px] font-medium tracking-wider uppercase mt-0.5">FlameSafe</span>
+              <AideWordmark color="#22d3ee" height={16} />
+              <span className="text-sidebar-foreground/30 text-[9px] font-medium tracking-wider uppercase mt-0.5">FlameSafe Ops</span>
             </div>
           )}
         </button>

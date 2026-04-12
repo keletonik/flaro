@@ -17,3 +17,4 @@ export * from "./clients";
 export * from "./chat-history";
 export * from "./users";
 export * from "./sessions";
+export * from "./uptick";

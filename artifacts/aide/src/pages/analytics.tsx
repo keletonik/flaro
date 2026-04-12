@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
-import { BarChart3, TrendingUp, Target, DollarSign, Clock, CheckCircle2, Settings2, Palette, ChevronDown } from "lucide-react";
+import { BarChart3, TrendingUp, Target, DollarSign, Clock, CheckCircle2, Settings2, Palette, ChevronDown, Upload, Sparkles } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { apiFetch, formatCurrency } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
+import UptickImportPanel from "@/components/UptickImportPanel";
+import DeepAnalyticsPanel from "@/components/DeepAnalyticsPanel";
 import { cn } from "@/lib/utils";
 
 type ChartType = "bar" | "line" | "area" | "pie";
 type TimePeriod = "day" | "week" | "month";
+type AnalyticsTab = "overview" | "uptick" | "deep";
 
 const COLOR_THEMES: Record<string, string[]> = {
   "Default": ["#D97706", "#2563EB", "#10B981", "#EF4444", "#8B5CF6", "#EC4899"],
@@ -246,6 +249,7 @@ function PatternInsights({ data }: { data: AnalyticsData }) {
 }
 
 export default function Analytics() {
+  const [tab, setTab] = useState<AnalyticsTab>("overview");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [colorTheme, setColorTheme] = useState("Default");
@@ -340,7 +344,45 @@ export default function Analytics() {
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
+      {/* Tab bar */}
+      <div className="px-4 sm:px-6 pt-4">
+        <div className="flex items-center gap-1 bg-muted/40 rounded-xl p-1 w-fit">
+          <button
+            onClick={() => setTab("overview")}
+            className={cn("flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
+              tab === "overview" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+          >
+            <BarChart3 size={12} /> Overview
+          </button>
+          <button
+            onClick={() => setTab("uptick")}
+            className={cn("flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
+              tab === "uptick" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+          >
+            <Upload size={12} /> Uptick Import
+          </button>
+          <button
+            onClick={() => setTab("deep")}
+            className={cn("flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
+              tab === "deep" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+          >
+            <Sparkles size={12} /> Deep Analytics
+          </button>
+        </div>
+      </div>
+
+      {tab === "uptick" && (
+        <div className="px-4 sm:px-6 py-5 max-w-[1400px]">
+          <UptickImportPanel />
+        </div>
+      )}
+      {tab === "deep" && (
+        <div className="px-4 sm:px-6 py-5 max-w-[1400px]">
+          <DeepAnalyticsPanel />
+        </div>
+      )}
+
+      {tab === "overview" && <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
         {/* Pattern Detection — always visible */}
         <PatternInsights data={data} />
 
@@ -444,7 +486,7 @@ export default function Analytics() {
           </div>
         </div>
         </>}
-      </div>
+      </div>}
 
       <AnalyticsPanel section="dashboard" title="Analytics Analyst" />
     </div>

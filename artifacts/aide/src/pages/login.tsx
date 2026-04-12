@@ -1,17 +1,36 @@
-import { useState } from "react";
-import { Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { User, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AideFavicon, AideWordmark } from "@/components/AideLogo";
+import AideSplash from "@/components/AideSplash";
 
 interface LoginProps {
   onLogin: (token: string, user: { id: string; username: string; displayName: string; role: string; mustChangePassword: boolean }) => void;
 }
 
+// sessionStorage key — splash runs once per browser session so signing out
+// mid-session doesn't force the user to wait another 10 seconds.
+const SPLASH_SEEN_KEY = "aide-splash-seen";
+
 export default function Login({ onLogin }: LoginProps) {
+  const [showSplash, setShowSplash] = useState(() => {
+    try {
+      return sessionStorage.getItem(SPLASH_SEEN_KEY) !== "1";
+    } catch {
+      return true;
+    }
+  });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!showSplash) {
+      try { sessionStorage.setItem(SPLASH_SEEN_KEY, "1"); } catch { /* ignore */ }
+    }
+  }, [showSplash]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,16 +53,21 @@ export default function Login({ onLogin }: LoginProps) {
     setLoading(false);
   };
 
+  if (showSplash) {
+    return <AideSplash durationMs={10000} onDone={() => setShowSplash(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <Lock size={24} className="text-primary-foreground" />
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#0b1014] flex items-center justify-center mx-auto mb-4 border border-[#1e293b]">
+            <AideFavicon color="#22d3ee" size={36} />
           </div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Service Ops</h1>
-          <p className="text-sm text-muted-foreground mt-1">FlameSafe Fire Protection</p>
+          <AideWordmark color="#0891b2" height={34} className="dark:hidden" />
+          <AideWordmark color="#22d3ee" height={34} className="hidden dark:block" />
+          <p className="text-sm text-muted-foreground mt-2">FlameSafe Service Ops</p>
         </div>
 
         {/* Form */}

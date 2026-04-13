@@ -222,10 +222,35 @@ export async function dbUpdate(input: any): Promise<any> {
   return { ok: true, id: row.id, row: summariseRow(tableName, row) };
 }
 
+/**
+ * Tables where a delete would destroy a high-value asset (the supplier
+ * catalogue, the FIP knowledge base). The agent is NOT allowed to
+ * delete from these without an explicit `confirm: "yes"` in the tool
+ * input — a soft guardrail in the system prompt isn't enough.
+ *
+ * Added as Pass 1 fix #5 (see docs/audit/PASS_1_architecture.md §6).
+ */
+const CONFIRM_REQUIRED_TABLES = new Set<string>([
+  "suppliers",
+  "fip_manufacturers",
+  "fip_models",
+  "fip_product_families",
+  "fip_fault_signatures",
+]);
+
 export async function dbDelete(input: any): Promise<any> {
-  const { table: tableName, id } = input;
+  const { table: tableName, id, confirm } = input;
   const e = entry(tableName);
   const t = e.table;
+
+  if (CONFIRM_REQUIRED_TABLES.has(tableName) && confirm !== "yes") {
+    throw new Error(
+      `db_delete on "${tableName}" requires an explicit { confirm: "yes" } ` +
+      `in the tool input. Ask the user to confirm this destructive action ` +
+      `before retrying. This is a hard guardrail — soft-prompt instructions ` +
+      `are not enough for this table.`,
+    );
+  }
 
   if (e.softDelete && (t as any).deletedAt && process.env["SOFT_DELETE"] === "1") {
     await db.update(t).set({ deletedAt: new Date() } as any).where(eq((t as any).id, id));
@@ -281,47 +306,15 @@ export async function getKpiSummary(): Promise<any> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Estimation workbench tools — raw pg because cost_price and the estimate
-// tables live outside the Drizzle schema.
+// tables live outside the Drizzle schema. Math helpers come from the shared
+// single-source-of-truth module so REST + agent paths can never disagree.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function num(v: any, fallback = 0): number {
-  const x = typeof v === "number" ? v : parseFloat(String(v ?? ""));
-  return Number.isFinite(x) ? x : fallback;
-}
-
-function computeLine(costPrice: number, markupPct: number, quantity: number) {
-  const sellPrice = Math.round(costPrice * (1 + markupPct / 100) * 100) / 100;
-  const lineCost = Math.round(costPrice * quantity * 100) / 100;
-  const lineSell = Math.round(sellPrice * quantity * 100) / 100;
-  const lineMargin = Math.round((lineSell - lineCost) * 100) / 100;
-  return { sellPrice, lineCost, lineSell, lineMargin };
-}
-
-async function recomputeTotals(client: any, estimateId: string) {
-  const header = await client.query("SELECT gst_rate FROM estimates WHERE id = $1", [estimateId]);
-  if (header.rows.length === 0) return;
-  const gstRate = num(header.rows[0].gst_rate, 10);
-  const sums = await client.query(
-    `SELECT COALESCE(SUM(line_cost), 0) AS subtotal_cost,
-            COALESCE(SUM(line_sell), 0) AS subtotal_sell,
-            COALESCE(SUM(line_margin), 0) AS margin_total
-       FROM estimate_lines
-      WHERE estimate_id = $1 AND deleted_at IS NULL`,
-    [estimateId],
-  );
-  const subtotalCost = num(sums.rows[0].subtotal_cost);
-  const subtotalSell = num(sums.rows[0].subtotal_sell);
-  const marginTotal = num(sums.rows[0].margin_total);
-  const gstTotal = Math.round(subtotalSell * (gstRate / 100) * 100) / 100;
-  const grandTotal = Math.round((subtotalSell + gstTotal) * 100) / 100;
-  await client.query(
-    `UPDATE estimates
-        SET subtotal_cost = $1, subtotal_sell = $2, margin_total = $3,
-            gst_total = $4, grand_total = $5, updated_at = now()
-      WHERE id = $6`,
-    [subtotalCost, subtotalSell, marginTotal, gstTotal, grandTotal, estimateId],
-  );
-}
+import {
+  toNumber as num,
+  computeLineFields as computeLine,
+  recomputeEstimateTotals as recomputeTotals,
+} from "./estimate-totals";
 
 export async function estimateSearchProducts(input: any): Promise<any> {
   const q = input?.query ?? "";

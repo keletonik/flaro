@@ -146,12 +146,21 @@ export const AGENT_TOOLS = [
     description:
       "Delete a row by id. Honours the SOFT_DELETE flag — when soft-delete is on " +
       "it sets deleted_at instead of hard-deleting. Always confirm with the user " +
-      "before calling this for anything other than notes or todos.",
+      "in plain English before calling this for anything other than notes or todos. " +
+      "For high-value tables (suppliers, fip_manufacturers, fip_product_families, " +
+      "fip_models, fip_fault_signatures) a hard guardrail requires you to also pass " +
+      "`confirm: \"yes\"` in the input — if you haven't verbally confirmed with the " +
+      "user first, DO NOT pass confirm: yes.",
     input_schema: {
       type: "object" as const,
       properties: {
         table: { type: "string", enum: TABLE_ALLOWLIST },
         id: { type: "string" },
+        confirm: {
+          type: "string",
+          enum: ["yes"],
+          description: "Set to 'yes' ONLY after the user has explicitly confirmed the deletion in chat for high-value tables. Refuse to set this for any other reason.",
+        },
       },
       required: ["table", "id"],
     },

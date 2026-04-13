@@ -28,6 +28,13 @@ import {
   scheduleEvents,
   projects,
   projectTasks,
+  fipManufacturers,
+  fipProductFamilies,
+  fipModels,
+  fipDocuments,
+  fipStandards,
+  fipFaultSignatures,
+  fipTroubleshootingSessions,
 } from "@workspace/db";
 import { TABLE_ALLOWLIST, type AgentTable } from "./chat-tools";
 import { broadcastEvent } from "./events";
@@ -56,6 +63,13 @@ const REGISTRY: Record<AgentTable, TableEntry> = {
   schedule_events: { table: scheduleEvents, textCols: ["title", "location", "notes"], softDelete: false },
   projects: { table: projects, textCols: ["name", "description", "status"], softDelete: false },
   project_tasks: { table: projectTasks, textCols: ["title", "description", "assignee"], softDelete: false },
+  fip_manufacturers: { table: fipManufacturers, textCols: ["name", "country", "notes"], softDelete: true },
+  fip_product_families: { table: fipProductFamilies, textCols: ["name", "category", "description"], softDelete: true },
+  fip_models: { table: fipModels, textCols: ["name", "model_number", "description", "years_active"], softDelete: true },
+  fip_documents: { table: fipDocuments, textCols: ["title", "notes"], softDelete: true },
+  fip_standards: { table: fipStandards, textCols: ["code", "title", "notes"], softDelete: true },
+  fip_fault_signatures: { table: fipFaultSignatures, textCols: ["code", "display_text", "symptom"], softDelete: true },
+  fip_troubleshooting_sessions: { table: fipTroubleshootingSessions, textCols: ["site_name", "entered_fault_code", "entered_display_text", "entered_symptom", "summary"], softDelete: true },
 };
 
 function entry(table: string): TableEntry {
@@ -85,6 +99,13 @@ function summariseRow(table: string, row: Record<string, any>): Record<string, a
     schedule_events: ["title", "date", "startHour", "endHour", "location"],
     projects: ["name", "description", "status", "priority", "colour", "due_date"],
     project_tasks: ["title", "description", "status", "priority", "assignee", "due_date"],
+    fip_manufacturers: ["name", "slug", "country", "website", "notes"],
+    fip_product_families: ["name", "slug", "category", "description", "manufacturer_id"],
+    fip_models: ["name", "slug", "model_number", "description", "status", "years_active", "family_id", "manufacturer_id"],
+    fip_documents: ["title", "kind", "manufacturer_id", "family_id", "model_id", "publication_date", "tags", "notes"],
+    fip_standards: ["code", "title", "jurisdiction", "year", "current_version", "notes"],
+    fip_fault_signatures: ["code", "display_text", "symptom", "severity", "likely_causes", "first_checks", "next_actions"],
+    fip_troubleshooting_sessions: ["site_name", "entered_fault_code", "entered_display_text", "entered_symptom", "escalation_status", "summary", "started_at", "closed_at"],
   };
   const cols = keep[table] ?? Object.keys(row);
   for (const c of cols) {

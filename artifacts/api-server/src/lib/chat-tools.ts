@@ -27,6 +27,14 @@ export const TABLE_ALLOWLIST = [
   "schedule_events",
   "projects",
   "project_tasks",
+  // FIP / VESDA technical knowledge base tables — drive the /fip page.
+  "fip_manufacturers",
+  "fip_product_families",
+  "fip_models",
+  "fip_documents",
+  "fip_standards",
+  "fip_fault_signatures",
+  "fip_troubleshooting_sessions",
 ] as const;
 
 export type AgentTable = (typeof TABLE_ALLOWLIST)[number];

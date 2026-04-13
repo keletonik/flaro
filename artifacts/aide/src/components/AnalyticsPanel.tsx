@@ -27,6 +27,12 @@ interface SavedChat {
 interface AnalyticsPanelProps {
   section: string;
   title?: string;
+  /**
+   * When true, render the panel inline inside the parent container instead
+   * of as a floating right-hand drawer. Used by the /fip page which embeds
+   * the agent permanently on the right of the browser view.
+   */
+  embedded?: boolean;
 }
 
 function CopyBtn({ text }: { text: string }) {
@@ -72,9 +78,12 @@ function emitDataChanged() {
   }
 }
 
-export default function AnalyticsPanel({ section, title = "Analyst" }: AnalyticsPanelProps) {
+export default function AnalyticsPanel({ section, title = "Analyst", embedded = false }: AnalyticsPanelProps) {
   const [, setLocation] = useLocation();
-  const [open, setOpen] = useState(false);
+  // Embedded panels are always "open" — they live inside the host page's
+  // layout and never collapse to a launcher button. Floating panels start
+  // closed and toggle via the launcher.
+  const [open, setOpen] = useState(embedded);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -220,9 +229,19 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
 
   const panelWidth = wide ? "w-[520px] max-w-[95vw]" : "w-[380px] max-w-[90vw]";
 
+  // Floating mode: fixed drawer + launcher button.
+  // Embedded mode: fills the parent container (whatever width/height the host
+  // layout gives it) and never collapses.
+  const containerClass = embedded
+    ? "h-full w-full flex flex-col bg-card"
+    : cn(
+        "fixed right-0 top-0 bottom-0 z-50 flex flex-col transition-all duration-300",
+        open ? `${panelWidth} border-l border-border bg-card shadow-xl` : "w-0 overflow-hidden",
+      );
+
   return (
     <>
-      {!open && (
+      {!embedded && !open && (
         <button
           onClick={() => setOpen(true)}
           className="fixed right-4 bottom-20 md:bottom-4 z-40 w-11 h-11 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center"
@@ -232,10 +251,7 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
         </button>
       )}
 
-      <div className={cn(
-        "fixed right-0 top-0 bottom-0 z-50 flex flex-col transition-all duration-300",
-        open ? `${panelWidth} border-l border-border bg-card shadow-xl` : "w-0 overflow-hidden"
-      )}>
+      <div className={containerClass}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
@@ -259,10 +275,14 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
               </>
             )}
             <button onClick={() => setShowHistory(v => !v)} className={cn("p-1.5 rounded transition-colors", showHistory ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted")} title="History"><History size={12} /></button>
-            <button onClick={() => setWide(v => !v)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={wide ? "Compact" : "Wide"}>
-              {wide ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-            </button>
-            <button onClick={() => setOpen(false)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><X size={13} /></button>
+            {!embedded && (
+              <button onClick={() => setWide(v => !v)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={wide ? "Compact" : "Wide"}>
+                {wide ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              </button>
+            )}
+            {!embedded && (
+              <button onClick={() => setOpen(false)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><X size={13} /></button>
+            )}
           </div>
         </div>
 

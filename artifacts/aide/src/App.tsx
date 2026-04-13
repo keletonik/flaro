@@ -350,19 +350,6 @@ function App() {
 
   const handleLogout = () => {};
 
-  // When the AIDE sidepanel agent creates/updates/deletes a record it
-  // dispatches a global 'aide-data-changed' event. Invalidate every
-  // react-query cache so list pages refetch immediately, and broadcast
-  // a plain refresh event so non-react-query pages (operations.tsx,
-  // analytics.tsx) can respond the same way.
-  React.useEffect(() => {
-    const handler = () => {
-      queryClient.invalidateQueries();
-    };
-    window.addEventListener("aide-data-changed", handler);
-    return () => window.removeEventListener("aide-data-changed", handler);
-  }, []);
-
   return (
     <ThemeProvider>
       <AuthContext.Provider value={{ user: defaultUser, token: null, logout: handleLogout }}>

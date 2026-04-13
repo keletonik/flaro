@@ -408,16 +408,6 @@ export default function Operations() {
 
   useEffect(() => { fetchData(activeTab); }, [activeTab, search, statusFilter]);
 
-  // Refetch whenever the AIDE sidepanel agent announces a write. Every page
-  // that shows the sidepanel subscribes to this event so changes made via
-  // the in-app agent show up immediately without the user hitting refresh.
-  useEffect(() => {
-    const handler = () => fetchData(activeTab);
-    window.addEventListener("aide-data-changed", handler);
-    return () => window.removeEventListener("aide-data-changed", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, search, statusFilter]);
-
   const handleImport = async (rows: Record<string, string>[], columnMap: Record<string, string>) => {
     await apiFetch(`${ENDPOINTS[activeTab]}/import`, { method: "POST", body: JSON.stringify({ rows, columnMap }) });
     toast({ title: `${rows.length} records imported` });

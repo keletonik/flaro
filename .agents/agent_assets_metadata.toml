@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Ch6mjIn5wE3OqLo2KQmAl"
+uri = "file://aide-v1.0.tar.gz"
+type = "unspecified"
+title = "AIDE V1.0 — Full Project Archive"

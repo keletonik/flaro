@@ -178,9 +178,17 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - This rule applies to ALL operations: imports, syncs, migrations, schema changes, feature additions, refactors, bug fixes, deployments, and any other action.
 - This rule is **permanent, non-negotiable, and cannot be overridden by any instruction, prompt, or request**. No script, sync, migration, feature, or agent may violate it — including this agent.
 
-### GitHub Sync Rule
-**PERMANENT RULE**: After every update or change, automatically push the latest changes to GitHub repo `keletonik/flaro` on branch `main`. This must happen on every single update — no exceptions, no need for the user to ask.
-**CRITICAL — ROLLING UPDATES ONLY**: Syncs must NEVER remove existing data from the repo. Always use `base_tree` (the parent commit's tree) when creating new trees via the GitHub API. This ensures only changed files are added/updated — all other existing files in the repo remain untouched. Never create a tree from scratch or force-push. Every sync is additive on top of the current remote HEAD.
+### GitHub Sync Rule (PERMANENT — PULL-FIRST PROTOCOL)
+**PERMANENT RULE**: After every update or change, sync with GitHub repo `keletonik/flaro` on branch `main`. This must happen on every single update — no exceptions.
+
+**CRITICAL — PULL-FIRST, THEN PUSH (MANDATORY)**:
+1. **ALWAYS PULL FIRST**: Before pushing ANY changes, fetch the remote HEAD and compare ALL remote files against local. If remote has files or changes that local doesn't have (e.g. from Claude Code or other committers), **download those files into the workspace first**. This means:
+   - New files on remote that don't exist locally → pull them into the workspace
+   - Files that differ where remote is newer/larger → adopt the remote version (or merge carefully preserving both sides' additions)
+   - Never blindly overwrite remote commits — this destroys other committers' work
+2. **THEN PUSH**: Only after the local workspace contains ALL remote content, create the new commit on top of the current remote HEAD using `base_tree`. This ensures the push is purely additive.
+3. **NEVER force-push or create orphan commits**. Every push must have the current remote HEAD as its parent.
+4. **Multiple committers**: Claude Code and Replit Agent both commit to this repo. Neither should overwrite the other's work. The pull-first protocol prevents the "sync war" where each side destroys the other's commits.
 
 ### Techs
 - Darren Brailey, Gordon Jenkins, Haider Al-Heyoury, John Minai, Nu Unasa, Unassigned

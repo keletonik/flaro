@@ -44,7 +44,7 @@ import { runAllAudits, type AuditContext } from "../lib/fip/audits";
 const router = Router();
 
 function fipEnabled(): boolean {
-  return process.env["FIP_ENABLED"] === "1";
+  return process.env["FIP_ENABLED"] !== "0";
 }
 
 function gate(res: any): boolean {

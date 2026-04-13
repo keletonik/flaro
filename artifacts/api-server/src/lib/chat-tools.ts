@@ -157,6 +157,116 @@ export const AGENT_TOOLS = [
     },
   },
 
+  // ── Estimation workbench tools ────────────────────────────────────────────
+  {
+    name: "estimate_search_products",
+    description:
+      "Search the supplier product catalogue (1730+ rows from the FireMate export) " +
+      "by free text, supplier name or category. Returns id, product_name, code, " +
+      "supplier, cost_price, unit_price, category. Use this before calling " +
+      "estimate_add_line so the line inherits the correct cost.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        query: { type: "string", description: "Substring match across name, code, supplier, category" },
+        supplier: { type: "string", description: "Exact supplier name filter" },
+        category: { type: "string", description: "Exact category filter" },
+        limit: { type: "number", description: "Max rows (default 20, cap 100)" },
+      },
+    },
+  },
+  {
+    name: "estimate_create",
+    description:
+      "Create a new empty estimate with header info. Returns the estimate id — " +
+      "use that id for every subsequent estimate_add_line call.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        title: { type: "string" },
+        client: { type: "string" },
+        site: { type: "string" },
+        project: { type: "string" },
+        default_markup_pct: { type: "number", description: "Applied to every product line unless overridden. Default 40." },
+        labour_rate: { type: "number", description: "Hourly labour rate (default 120)" },
+        notes: { type: "string" },
+      },
+      required: ["title"],
+    },
+  },
+  {
+    name: "estimate_add_line",
+    description:
+      "Add a line to an existing estimate. Supply either product_id (resolved " +
+      "via estimate_search_products) to pull the cost automatically, OR a " +
+      "description + cost_price for free-form / labour lines. Markup defaults " +
+      "to the estimate's default_markup_pct.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        estimate_id: { type: "string" },
+        product_id: { type: "string" },
+        kind: { type: "string", enum: ["product", "labour", "misc"] },
+        description: { type: "string" },
+        quantity: { type: "number" },
+        unit: { type: "string" },
+        cost_price: { type: "number" },
+        markup_pct: { type: "number", description: "Override the estimate default for this line" },
+        supplier_name: { type: "string" },
+        category: { type: "string" },
+        notes: { type: "string" },
+      },
+      required: ["estimate_id"],
+    },
+  },
+  {
+    name: "estimate_update_line",
+    description:
+      "Modify an existing line on an estimate. Any field left unset keeps its " +
+      "current value. Totals are recomputed server-side automatically.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        estimate_id: { type: "string" },
+        line_id: { type: "string" },
+        quantity: { type: "number" },
+        cost_price: { type: "number" },
+        markup_pct: { type: "number" },
+        description: { type: "string" },
+      },
+      required: ["estimate_id", "line_id"],
+    },
+  },
+  {
+    name: "estimate_set_markup",
+    description:
+      "Change the default markup on an estimate and reprice every existing " +
+      "line to match. Use this for 'apply 45% markup to every line' or " +
+      "'drop the margin on the whole estimate to 25%'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        estimate_id: { type: "string" },
+        default_markup_pct: { type: "number" },
+      },
+      required: ["estimate_id", "default_markup_pct"],
+    },
+  },
+  {
+    name: "estimate_get",
+    description: "Fetch an estimate with all its lines and recomputed totals.",
+    input_schema: {
+      type: "object" as const,
+      properties: { estimate_id: { type: "string" } },
+      required: ["estimate_id"],
+    },
+  },
+  {
+    name: "estimate_list",
+    description: "List the most recent 50 estimates (id, number, title, client, grand_total, status).",
+    input_schema: { type: "object" as const, properties: {} },
+  },
+
   {
     name: "get_kpi_summary",
     description:

@@ -36,6 +36,7 @@ import {
   fipFaultSignatures,
   fipTroubleshootingSessions,
 } from "@workspace/db";
+import { pool } from "@workspace/db";
 import { TABLE_ALLOWLIST, type AgentTable } from "./chat-tools";
 import { broadcastEvent } from "./events";
 
@@ -279,6 +280,300 @@ export async function getKpiSummary(): Promise<any> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Estimation workbench tools — raw pg because cost_price and the estimate
+// tables live outside the Drizzle schema.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function num(v: any, fallback = 0): number {
+  const x = typeof v === "number" ? v : parseFloat(String(v ?? ""));
+  return Number.isFinite(x) ? x : fallback;
+}
+
+function computeLine(costPrice: number, markupPct: number, quantity: number) {
+  const sellPrice = Math.round(costPrice * (1 + markupPct / 100) * 100) / 100;
+  const lineCost = Math.round(costPrice * quantity * 100) / 100;
+  const lineSell = Math.round(sellPrice * quantity * 100) / 100;
+  const lineMargin = Math.round((lineSell - lineCost) * 100) / 100;
+  return { sellPrice, lineCost, lineSell, lineMargin };
+}
+
+async function recomputeTotals(client: any, estimateId: string) {
+  const header = await client.query("SELECT gst_rate FROM estimates WHERE id = $1", [estimateId]);
+  if (header.rows.length === 0) return;
+  const gstRate = num(header.rows[0].gst_rate, 10);
+  const sums = await client.query(
+    `SELECT COALESCE(SUM(line_cost), 0) AS subtotal_cost,
+            COALESCE(SUM(line_sell), 0) AS subtotal_sell,
+            COALESCE(SUM(line_margin), 0) AS margin_total
+       FROM estimate_lines
+      WHERE estimate_id = $1 AND deleted_at IS NULL`,
+    [estimateId],
+  );
+  const subtotalCost = num(sums.rows[0].subtotal_cost);
+  const subtotalSell = num(sums.rows[0].subtotal_sell);
+  const marginTotal = num(sums.rows[0].margin_total);
+  const gstTotal = Math.round(subtotalSell * (gstRate / 100) * 100) / 100;
+  const grandTotal = Math.round((subtotalSell + gstTotal) * 100) / 100;
+  await client.query(
+    `UPDATE estimates
+        SET subtotal_cost = $1, subtotal_sell = $2, margin_total = $3,
+            gst_total = $4, grand_total = $5, updated_at = now()
+      WHERE id = $6`,
+    [subtotalCost, subtotalSell, marginTotal, gstTotal, grandTotal, estimateId],
+  );
+}
+
+export async function estimateSearchProducts(input: any): Promise<any> {
+  const q = input?.query ?? "";
+  const supplier = input?.supplier ?? "";
+  const category = input?.category ?? "";
+  const limit = Math.max(1, Math.min(100, num(input?.limit, 20)));
+
+  const params: any[] = [];
+  const where: string[] = [];
+  if (q) {
+    params.push(`%${String(q).replace(/[%_\\]/g, "\\$&")}%`);
+    const i = params.length;
+    where.push(`(p.product_name ILIKE $${i} OR p.product_code ILIKE $${i} OR s.name ILIKE $${i} OR p.category ILIKE $${i})`);
+  }
+  if (supplier) { params.push(supplier); where.push(`s.name = $${params.length}`); }
+  if (category) { params.push(category); where.push(`p.category = $${params.length}`); }
+  params.push(limit);
+  const limitIdx = params.length;
+
+  const client = await pool.connect();
+  try {
+    const rows = await client.query(
+      `SELECT p.id, p.product_name, p.product_code, p.category,
+              p.cost_price, p.unit_price, p.unit, s.name AS supplier_name
+         FROM supplier_products p
+         LEFT JOIN suppliers s ON s.id = p.supplier_id
+        ${where.length ? "WHERE " + where.join(" AND ") : ""}
+        ORDER BY p.product_name ASC
+        LIMIT $${limitIdx}`,
+      params,
+    );
+    return { total: rows.rows.length, rows: rows.rows };
+  } finally {
+    client.release();
+  }
+}
+
+export async function estimateCreate(input: any): Promise<any> {
+  const client = await pool.connect();
+  try {
+    const id = randomUUID();
+    const last = await client.query("SELECT number FROM estimates ORDER BY created_at DESC LIMIT 1");
+    const year = new Date().getFullYear();
+    let number = `EST-${year}-0001`;
+    if (last.rows.length > 0) {
+      const match = String(last.rows[0].number || "").match(/EST-\d{4}-(\d+)/);
+      const next = (match ? parseInt(match[1], 10) + 1 : 1).toString().padStart(4, "0");
+      number = `EST-${year}-${next}`;
+    }
+    const now = new Date();
+    await client.query(
+      `INSERT INTO estimates
+       (id, number, title, client, site, project, status, default_markup_pct,
+        labour_rate, gst_rate, notes, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [
+        id, number,
+        input?.title ?? "Untitled estimate",
+        input?.client ?? null,
+        input?.site ?? null,
+        input?.project ?? null,
+        "Draft",
+        num(input?.default_markup_pct, 40),
+        num(input?.labour_rate, 120),
+        10,
+        input?.notes ?? null,
+        now, now,
+      ],
+    );
+    broadcastEvent("data_change", { path: "/estimates", method: "POST" });
+    return { ok: true, id, number, title: input?.title ?? "Untitled estimate" };
+  } finally {
+    client.release();
+  }
+}
+
+export async function estimateAddLine(input: any): Promise<any> {
+  const client = await pool.connect();
+  try {
+    const est = await client.query(
+      "SELECT default_markup_pct FROM estimates WHERE id = $1 AND deleted_at IS NULL",
+      [input?.estimate_id],
+    );
+    if (est.rows.length === 0) throw new Error(`Estimate ${input?.estimate_id} not found`);
+    const defaultMarkup = num(est.rows[0].default_markup_pct, 40);
+
+    let costPrice = num(input?.cost_price);
+    let description = input?.description ?? "";
+    let productCode: string | null = null;
+    let supplierName = input?.supplier_name ?? null;
+    let category = input?.category ?? null;
+    let unit = input?.unit ?? "each";
+
+    if (input?.product_id) {
+      const prod = await client.query(
+        `SELECT p.*, s.name AS supplier_name
+           FROM supplier_products p
+           LEFT JOIN suppliers s ON s.id = p.supplier_id
+          WHERE p.id = $1`,
+        [input.product_id],
+      );
+      if (prod.rows.length > 0) {
+        const r = prod.rows[0];
+        if (!input.cost_price) costPrice = num(r.cost_price);
+        if (!description) description = r.product_name;
+        productCode = r.product_code;
+        if (!supplierName) supplierName = r.supplier_name;
+        if (!category) category = r.category;
+        if (!input.unit) unit = r.unit ?? "each";
+      }
+    }
+
+    const kind = input?.kind ?? "product";
+    const markupPct = input?.markup_pct != null ? num(input.markup_pct) : kind === "labour" ? 0 : defaultMarkup;
+    const quantity = num(input?.quantity, 1);
+    const { sellPrice, lineCost, lineSell, lineMargin } = computeLine(costPrice, markupPct, quantity);
+
+    const posRow = await client.query(
+      "SELECT COALESCE(MAX(position), -1) + 1 AS next FROM estimate_lines WHERE estimate_id = $1",
+      [input.estimate_id],
+    );
+    const position = num(posRow.rows[0].next, 0);
+
+    const id = randomUUID();
+    const now = new Date();
+    await client.query(
+      `INSERT INTO estimate_lines
+       (id, estimate_id, kind, product_id, product_code, description, supplier_name,
+        category, quantity, unit, cost_price, markup_pct, sell_price,
+        line_cost, line_sell, line_margin, position, notes,
+        created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+      [
+        id, input.estimate_id, kind, input?.product_id ?? null, productCode, description,
+        supplierName, category, quantity, unit, costPrice, markupPct, sellPrice,
+        lineCost, lineSell, lineMargin, position, input?.notes ?? null, now, now,
+      ],
+    );
+    await recomputeTotals(client, input.estimate_id);
+    broadcastEvent("data_change", { path: `/estimates/${input.estimate_id}/lines`, method: "POST" });
+    return {
+      ok: true, id, description, quantity, cost_price: costPrice,
+      markup_pct: markupPct, sell_price: sellPrice, line_sell: lineSell, line_margin: lineMargin,
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export async function estimateUpdateLine(input: any): Promise<any> {
+  const client = await pool.connect();
+  try {
+    const existing = await client.query(
+      "SELECT * FROM estimate_lines WHERE id = $1 AND deleted_at IS NULL",
+      [input.line_id],
+    );
+    if (existing.rows.length === 0) throw new Error(`Line ${input.line_id} not found`);
+    const prev = existing.rows[0];
+
+    const costPrice = input.cost_price != null ? num(input.cost_price) : num(prev.cost_price);
+    const markupPct = input.markup_pct != null ? num(input.markup_pct) : num(prev.markup_pct);
+    const quantity = input.quantity != null ? num(input.quantity) : num(prev.quantity);
+    const description = input.description ?? prev.description;
+    const { sellPrice, lineCost, lineSell, lineMargin } = computeLine(costPrice, markupPct, quantity);
+
+    await client.query(
+      `UPDATE estimate_lines
+          SET description=$1, quantity=$2, cost_price=$3, markup_pct=$4, sell_price=$5,
+              line_cost=$6, line_sell=$7, line_margin=$8, updated_at=now()
+        WHERE id=$9`,
+      [description, quantity, costPrice, markupPct, sellPrice, lineCost, lineSell, lineMargin, input.line_id],
+    );
+    await recomputeTotals(client, input.estimate_id);
+    broadcastEvent("data_change", { path: `/estimates/${input.estimate_id}/lines/${input.line_id}`, method: "PATCH" });
+    return { ok: true, id: input.line_id, sell_price: sellPrice, line_sell: lineSell, line_margin: lineMargin };
+  } finally {
+    client.release();
+  }
+}
+
+export async function estimateSetMarkup(input: any): Promise<any> {
+  const client = await pool.connect();
+  try {
+    const newMarkup = num(input.default_markup_pct);
+    await client.query(
+      `UPDATE estimates SET default_markup_pct = $1, updated_at = now() WHERE id = $2`,
+      [newMarkup, input.estimate_id],
+    );
+    const lines = await client.query(
+      "SELECT * FROM estimate_lines WHERE estimate_id = $1 AND deleted_at IS NULL",
+      [input.estimate_id],
+    );
+    for (const ln of lines.rows) {
+      const cost = num(ln.cost_price);
+      const qty = num(ln.quantity, 1);
+      const { sellPrice, lineCost, lineSell, lineMargin } = computeLine(cost, newMarkup, qty);
+      await client.query(
+        `UPDATE estimate_lines
+            SET markup_pct=$1, sell_price=$2, line_cost=$3, line_sell=$4,
+                line_margin=$5, updated_at=now()
+          WHERE id=$6`,
+        [newMarkup, sellPrice, lineCost, lineSell, lineMargin, ln.id],
+      );
+    }
+    await recomputeTotals(client, input.estimate_id);
+    broadcastEvent("data_change", { path: `/estimates/${input.estimate_id}`, method: "PATCH" });
+    return { ok: true, estimate_id: input.estimate_id, default_markup_pct: newMarkup, repriced: lines.rows.length };
+  } finally {
+    client.release();
+  }
+}
+
+export async function estimateGet(input: any): Promise<any> {
+  const client = await pool.connect();
+  try {
+    const header = await client.query(
+      "SELECT * FROM estimates WHERE id = $1 AND deleted_at IS NULL",
+      [input.estimate_id],
+    );
+    if (header.rows.length === 0) throw new Error("Estimate not found");
+    const lines = await client.query(
+      `SELECT id, description, supplier_name, quantity, cost_price, markup_pct,
+              sell_price, line_sell, line_margin
+         FROM estimate_lines
+        WHERE estimate_id = $1 AND deleted_at IS NULL
+        ORDER BY position ASC`,
+      [input.estimate_id],
+    );
+    return { ...header.rows[0], lines: lines.rows };
+  } finally {
+    client.release();
+  }
+}
+
+export async function estimateList(): Promise<any> {
+  const client = await pool.connect();
+  try {
+    const rows = await client.query(
+      `SELECT id, number, title, client, status, default_markup_pct,
+              subtotal_sell, margin_total, grand_total, created_at
+         FROM estimates
+        WHERE deleted_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 50`,
+    );
+    return { total: rows.rows.length, rows: rows.rows };
+  } finally {
+    client.release();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Dispatcher
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -299,6 +594,20 @@ export async function executeAgentTool(
       return { result: await dbDelete(input), uiAction: { type: "refresh" } };
     case "get_kpi_summary":
       return { result: await getKpiSummary() };
+    case "estimate_search_products":
+      return { result: await estimateSearchProducts(input) };
+    case "estimate_create":
+      return { result: await estimateCreate(input), uiAction: { type: "refresh" } };
+    case "estimate_add_line":
+      return { result: await estimateAddLine(input), uiAction: { type: "refresh" } };
+    case "estimate_update_line":
+      return { result: await estimateUpdateLine(input), uiAction: { type: "refresh" } };
+    case "estimate_set_markup":
+      return { result: await estimateSetMarkup(input), uiAction: { type: "refresh" } };
+    case "estimate_get":
+      return { result: await estimateGet(input) };
+    case "estimate_list":
+      return { result: await estimateList() };
     case "ui_navigate":
       return { result: { ok: true, path: input?.path }, uiAction: { type: "navigate", path: input?.path } };
     case "ui_refresh":

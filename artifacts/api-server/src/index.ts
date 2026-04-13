@@ -7,6 +7,7 @@ import { ensureCasperAdmin } from "./routes/auth";
 import { seedProductionData } from "./seed-prod";
 import { seedAdditionalData } from "./seed-additional";
 import { seedFipKnowledgeBase } from "./seed-fip";
+import { seedEstimationWorkbench } from "./seed-estimation";
 
 const rawPort = process.env["PORT"];
 
@@ -56,6 +57,8 @@ async function reportDataState() {
     "fip_models",
     "fip_documents",
     "fip_standards",
+    "estimates",
+    "estimate_lines",
   ];
   const counts: Record<string, number | string> = {};
   for (const t of labels) {
@@ -85,6 +88,8 @@ async function runStartupSeed() {
     await seedAdditionalData();
     logger.info("[boot] running seedFipKnowledgeBase");
     await seedFipKnowledgeBase();
+    logger.info("[boot] running seedEstimationWorkbench");
+    await seedEstimationWorkbench();
     await reportDataState();
     logger.info("[boot] seed pipeline complete — site is ready");
   } catch (err) {

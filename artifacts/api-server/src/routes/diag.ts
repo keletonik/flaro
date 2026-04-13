@@ -1,7 +1,32 @@
 import { Router } from "express";
 import { pool } from "@workspace/db";
+import { getRecentToolCalls, getToolCallStats } from "../lib/agent-observability";
 
 const router = Router();
+
+/**
+ * GET /api/diag/agent — agent observability dump.
+ *
+ * Returns the last 50 tool calls plus per-tool 24h stats (call count,
+ * success/error, avg/max duration). Added in Pass 3 fix #3. No auth —
+ * whitelisted in require-auth.ts alongside /api/diag.
+ */
+router.get("/diag/agent", async (_req, res, next) => {
+  try {
+    const [recent, stats] = await Promise.all([
+      getRecentToolCalls(50),
+      getToolCallStats(),
+    ]);
+    res.json({
+      ok: true,
+      now: new Date().toISOString(),
+      stats24h: stats,
+      recent,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 /**
  * GET /api/diag — read-only health and data-presence probe.

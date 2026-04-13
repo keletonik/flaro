@@ -30,6 +30,7 @@ import {
   Shield
 } from "lucide-react";
 import AidePA from "@/components/AidePA";
+import AIDEAssistant from "@/components/AIDEAssistant";
 import { AideFavicon, AideWordmark } from "@/components/AideLogo";
 
 const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>> }>({ collapsed: false, setCollapsed: () => {} });
@@ -280,7 +281,11 @@ function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </div>
       <BottomNav />
-      {location !== "/chat" && <AidePA currentPath={location} />}
+      {/* Unified tool-use AI surface — replaces AidePA / AnalyticsPanel mounts.
+          Uses /chat/agent under the hood so it can actually take action on
+          every page, not just describe data. See docs/audit/PASS_2_ux.md
+          target 1 and docs/FULL_AUDIT_REBUILD_PROMPT.md Phase 2. */}
+      {location !== "/chat" && <AIDEAssistant />}
     </div>
   );
 }

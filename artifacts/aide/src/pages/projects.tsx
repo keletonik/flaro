@@ -135,13 +135,13 @@ function ProjectFormModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 block">Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground">
+              <select value={status} onChange={e => setStatus(e.target.value as any)} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground">
                 {PROJECT_STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
               <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 block">Priority</label>
-              <select value={priority} onChange={e => setPriority(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground">
+              <select value={priority} onChange={e => setPriority(e.target.value as any)} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground">
                 {PRIORITIES.map(p => <option key={p}>{p}</option>)}
               </select>
             </div>
@@ -363,7 +363,7 @@ function ProjectCard({
 
   const handleUpdateTask = (taskId: string, data: Partial<ProjectTask>) => {
     updateTask.mutate(
-      { projectId: project.id, taskId, data },
+      { projectId: project.id, taskId, data: data as any },
       {
         onSuccess: () => invalidateTasks(),
         onError: () => toast({ title: "Failed to update task", variant: "destructive" }),
@@ -521,7 +521,7 @@ export default function Projects() {
   const handleSave = (data: { name: string; description: string; status: string; priority: string; colour: string; dueDate: string }) => {
     if (editingProject) {
       updateProject.mutate(
-        { id: editingProject.id, data },
+        { id: editingProject.id, data: data as any },
         {
           onSuccess: () => { invalidateProjects(); setShowModal(false); setEditingProject(null); toast({ title: "Project updated" }); },
           onError: () => toast({ title: "Failed to update project", variant: "destructive" }),
@@ -529,7 +529,7 @@ export default function Projects() {
       );
     } else {
       createProject.mutate(
-        { data },
+        { data: data as any },
         {
           onSuccess: (newProject) => { invalidateProjects(); setShowModal(false); setExpandedIds(prev => new Set(prev).add(newProject.id)); toast({ title: "Project created" }); },
           onError: () => toast({ title: "Failed to create project", variant: "destructive" }),

@@ -19,8 +19,8 @@ router.get("/notes", async (req, res, next) => {
 
     const { category, status } = parsed.data;
     const conditions = [];
-    if (category) conditions.push(eq(notes.category, category));
-    if (status) conditions.push(eq(notes.status, status));
+    if (category) conditions.push(eq(notes.category, category as any));
+    if (status) conditions.push(eq(notes.status, status as any));
 
     let query = db.select().from(notes).$dynamic();
     if (conditions.length > 0) query = query.where(and(...conditions));

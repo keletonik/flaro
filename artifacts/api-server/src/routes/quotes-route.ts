@@ -22,7 +22,7 @@ router.get("/quotes", async (req, res, next) => {
     const { status, search, client } = req.query as Record<string, string>;
     const conditions = [];
     if (softDeleteEnabled()) conditions.push(isNull(quotes.deletedAt));
-    if (status) conditions.push(eq(quotes.status, status));
+    if (status) conditions.push(eq(quotes.status, status as any));
     if (client) conditions.push(ilike(quotes.client, `%${client.replace(/[%_\\]/g, "\\$&")}%`));
     if (search) {
       const s = search.replace(/[%_\\]/g, "\\$&");

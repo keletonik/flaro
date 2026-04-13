@@ -34,8 +34,8 @@ router.get("/jobs", async (req, res, next) => {
     const conditions = [];
 
     if (softDeleteEnabled()) conditions.push(isNull(jobs.deletedAt));
-    if (status) conditions.push(eq(jobs.status, status));
-    if (priority) conditions.push(eq(jobs.priority, priority));
+    if (status) conditions.push(eq(jobs.status, status as any));
+    if (priority) conditions.push(eq(jobs.priority, priority as any));
     if (search) {
       const safe = search.replace(/[%_\\]/g, "\\$&");
       conditions.push(or(

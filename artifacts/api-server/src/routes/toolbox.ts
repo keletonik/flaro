@@ -28,7 +28,7 @@ router.get("/toolbox", async (req, res, next) => {
     if (!parsed.success) { res.status(400).json({ error: "Invalid query params" }); return; }
 
     let query = db.select().from(toolbox).$dynamic();
-    if (parsed.data.status) query = query.where(eq(toolbox.status, parsed.data.status));
+    if (parsed.data.status) query = query.where(eq(toolbox.status, parsed.data.status as any));
 
     const result = await query.orderBy(toolbox.createdAt);
     res.json(result.map(serializeToolbox));

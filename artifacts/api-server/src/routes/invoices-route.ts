@@ -24,7 +24,7 @@ router.get("/invoices", async (req, res, next) => {
     const { status, search, client } = req.query as Record<string, string>;
     const conditions = [];
     if (softDeleteEnabled()) conditions.push(isNull(invoices.deletedAt));
-    if (status) conditions.push(eq(invoices.status, status));
+    if (status) conditions.push(eq(invoices.status, status as any));
     if (client) conditions.push(ilike(invoices.client, `%${client.replace(/[%_\\]/g, "\\$&")}%`));
     if (search) {
       const s = search.replace(/[%_\\]/g, "\\$&");

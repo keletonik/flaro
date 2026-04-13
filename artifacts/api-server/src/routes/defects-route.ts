@@ -21,8 +21,8 @@ router.get("/defects", async (req, res, next) => {
     const { status, severity, search, client } = req.query as Record<string, string>;
     const conditions = [];
     if (softDeleteEnabled()) conditions.push(isNull(defects.deletedAt));
-    if (status) conditions.push(eq(defects.status, status));
-    if (severity) conditions.push(eq(defects.severity, severity));
+    if (status) conditions.push(eq(defects.status, status as any));
+    if (severity) conditions.push(eq(defects.severity, severity as any));
     if (client) conditions.push(ilike(defects.client, `%${client.replace(/[%_\\]/g, "\\$&")}%`));
     if (search) {
       const s = search.replace(/[%_\\]/g, "\\$&");

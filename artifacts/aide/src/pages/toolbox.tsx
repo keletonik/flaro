@@ -4,7 +4,8 @@ import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { useListToolboxNotes, useCreateToolboxNote, useUpdateToolboxNote, useDeleteToolboxNote, getListToolboxNotesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { SkeletonCard } from "@/components/SkeletonCard";
+import PageSkeleton from "@/components/ui/PageSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
 import type { ToolboxNote } from "@workspace/api-client-react";
 
@@ -174,18 +175,16 @@ export default function Toolbox() {
 
         {/* Notes list */}
         {isLoading ? (
-          <div className="space-y-3">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>
+          <PageSkeleton shape="list" rows={5} />
         ) : displayedNotes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center mb-3">
-              <Download size={20} className="text-muted-foreground" />
-            </div>
-            <p className="text-foreground font-medium text-sm">No toolbox notes</p>
-            <p className="text-muted-foreground text-xs mt-1">Add notes for team briefings and safety reminders.</p>
-            <button onClick={() => setShowAdd(true)} className="mt-4 px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity">
-              + Add Note
-            </button>
-          </div>
+          <EmptyState
+            icon={<Download size={22} />}
+            title="No toolbox notes"
+            body="Add notes for team briefings and safety reminders. Use references like TB-001 so techs can find them on-site."
+            primaryLabel="+ Add Note"
+            onPrimary={() => setShowAdd(true)}
+            tip="Tip: press Cmd-K, type 'new note', press enter."
+          />
         ) : (
           <div className="space-y-2.5">
             {displayedNotes.map((note, i) => (

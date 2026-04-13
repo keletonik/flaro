@@ -4,6 +4,7 @@ import { conversations, messages } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { CreateAnthropicConversationBody, SendAnthropicMessageBody, GetAnthropicConversationParams, DeleteAnthropicConversationParams, ListAnthropicMessagesParams, SendAnthropicMessageParams } from "@workspace/api-zod";
+import { PERTRONIC_KNOWLEDGE } from "../lib/pertronic-knowledge";
 
 function buildSystemPrompt(userName: string = "the user") {
   return `You are AIDE, the personal operations assistant for ${userName}, based in Rydalmere NSW.
@@ -88,7 +89,10 @@ RULES:
 - For dropped emails: EMAIL_TRIAGE is mandatory. Also create todos for each action item
 - For dropped images: describe what you see, then create relevant records
 - Always confirm in your text what actions you've taken
-- Priority assessment: Critical = safety/compliance risk, regulatory deadline; High = client impact, this week; Medium = this fortnight; Low = when convenient`;
+- Priority assessment: Critical = safety/compliance risk, regulatory deadline; High = client impact, this week; Medium = this fortnight; Low = when convenient
+
+TECHNICAL REFERENCE — PERTRONIC SYSTEMS:
+${PERTRONIC_KNOWLEDGE}`;
 }
 
 const SYSTEM_PROMPT = buildSystemPrompt("Casper Tavitian"); // default fallback

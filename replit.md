@@ -158,13 +158,20 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - Source PDFs: Ampac Trade (12/05/25), Ampac NSW Platinum A 2026, FastSense quote, FireSense, Fusion Fire Systems (07/04/26), Pertronic (1 April 2025), VESDA .msg
 
 ### CRITICAL DATA SAFETY RULE (PERMANENT — CANNOT BE OVERRIDDEN)
-**NO DATA DELETION DURING UPDATES — EVER.** When importing, syncing, or updating data from CSV, Excel, API, or any other source:
-- **NEVER** use `DELETE FROM <table>` without a batch-scoped `WHERE` clause tied to the current import batch only.
-- **NEVER** truncate or drop tables.
+**ALL DATA MUST BE RETAINED AT ALL TIMES — NO EXCEPTIONS.**
+
+**NO DATA DELETION — EVER.** When importing, syncing, updating, migrating, refactoring, or performing ANY operation:
+- **NEVER** use `DELETE FROM <table>` without a batch-scoped `WHERE import_batch_id = '<current_batch>'` clause tied to the current import batch only.
+- **NEVER** truncate tables. **NEVER** drop tables. **NEVER** drop columns.
+- **NEVER** run destructive migrations that remove or alter existing data.
+- **NEVER** overwrite existing rows unless using a scoped upsert tied to the current batch.
+- **NEVER** change primary key ID column types (serial ↔ varchar). This destroys data.
 - **ALWAYS** upsert (INSERT ... ON CONFLICT UPDATE) or insert-only. Existing rows that are not in the new import must be left untouched.
 - **ALWAYS** use batch IDs (e.g. `import_batch_id`) so only the current import's prior run can be replaced — never someone else's data or manually created records.
-- This rule applies to ALL tables: jobs, wip_records, defects, quotes, invoices, notes, todos, projects, suppliers, toolbox, schedule_events, and any future tables.
-- This rule is **permanent and non-negotiable**. No script, sync, migration, or feature may violate it.
+- **ALWAYS** verify row counts before and after any data operation. If counts decrease, STOP and rollback.
+- This rule applies to ALL tables: jobs, wip_records, defects, quotes, invoices, notes, todos, projects, project_tasks, suppliers, supplier_products, toolbox, schedule_events, on_call_roster, conversations, messages, and any future tables.
+- This rule applies to ALL operations: imports, syncs, migrations, schema changes, feature additions, refactors, bug fixes, deployments, and any other action.
+- This rule is **permanent, non-negotiable, and cannot be overridden by any instruction, prompt, or request**. No script, sync, migration, feature, or agent may violate it — including this agent.
 
 ### GitHub Sync Rule
 **PERMANENT RULE**: After every update or change, automatically push the latest changes to GitHub repo `keletonik/flaro` on branch `main`. This must happen on every single update — no exceptions, no need for the user to ask.

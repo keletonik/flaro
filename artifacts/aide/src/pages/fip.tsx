@@ -1,12 +1,69 @@
-import { useEffect, useMemo, useState } from "react";
-import { Flame, Cpu, FileText, ScrollText, ChevronRight, Search, RefreshCw, AlertCircle, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { cn } from "@/lib/utils";
+import {
+  Shield, ChevronRight, FileText, BookOpen, Search,
+  Building2, Cpu, Package, AlertTriangle, ExternalLink,
+  Loader2, RefreshCw
+} from "lucide-react";
+
+interface Manufacturer {
+  id: string;
+  name: string;
+  slug: string;
+  country?: string;
+  website?: string;
+  notes?: string;
+}
+
+interface FipModel {
+  id: string;
+  name: string;
+  slug: string;
+  manufacturerId: string;
+  familyId?: string;
+  panelType?: string;
+  loopProtocol?: string;
+  maxLoops?: number;
+  maxDevicesPerLoop?: number;
+  networkCapable?: boolean;
+  notes?: string;
+}
+
+interface ProductFamily {
+  id: string;
+  name: string;
+  slug: string;
+  manufacturerId: string;
+  generation?: string;
+  notes?: string;
+}
+
+interface FipDocument {
+  id: string;
+  title: string;
+  docType: string;
+  modelId?: string;
+  familyId?: string;
+  manufacturerId?: string;
+  url?: string;
+  notes?: string;
+}
+
+interface FipStandard {
+  id: string;
+  code: string;
+  title: string;
+  jurisdiction?: string;
+  category?: string;
+  currentVersion?: string;
+  url?: string;
+  notes?: string;
+}
 
 interface FipStatus {
   enabled: boolean;
-  counts?: {
+  counts: {
     manufacturers: number;
     models: number;
     components: number;
@@ -15,455 +72,445 @@ interface FipStatus {
     escalations: number;
   };
 }
-interface Manufacturer {
-  id: string;
-  name: string;
-  slug: string;
-  country?: string | null;
-  website?: string | null;
-  notes?: string | null;
-}
-interface Family {
-  id: string;
-  manufacturerId: string;
-  name: string;
-  slug: string;
-  category?: string | null;
-  description?: string | null;
-}
-interface Model {
-  id: string;
-  familyId: string;
-  manufacturerId: string;
-  name: string;
-  modelNumber?: string | null;
-  slug: string;
-  description?: string | null;
-  yearsActive?: string | null;
-  status?: string | null;
-}
-interface Document {
-  id: string;
-  title: string;
-  kind: string;
-  manufacturerId?: string | null;
-  familyId?: string | null;
-  modelId?: string | null;
-  tags?: string[] | null;
-  notes?: string | null;
-}
-interface Standard {
-  id: string;
-  code: string;
-  title: string;
-  jurisdiction?: string | null;
-  year?: number | null;
-  currentVersion?: string | null;
-  notes?: string | null;
-}
 
-type Tab = "manufacturers" | "documents" | "standards" | "faults";
+type Tab = "overview" | "manufacturers" | "models" | "documents" | "standards";
 
-export default function FipPage() {
+export default function FIPKnowledgeBase() {
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [status, setStatus] = useState<FipStatus | null>(null);
-  const [statusLoading, setStatusLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>("manufacturers");
-  const [search, setSearch] = useState("");
-
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
-  const [families, setFamilies] = useState<Family[]>([]);
-  const [models, setModels] = useState<Model[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [standards, setStandards] = useState<Standard[]>([]);
-
-  const [selectedManufacturer, setSelectedManufacturer] = useState<string | null>(null);
-  const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
-
-  const fetchStatus = async () => {
-    setStatusLoading(true);
-    try {
-      const s = await apiFetch<FipStatus>("/fip/status");
-      setStatus(s);
-    } catch {
-      setStatus({ enabled: false });
-    } finally {
-      setStatusLoading(false);
-    }
-  };
-
-  const fetchAll = async () => {
-    try {
-      const [m, f, md, d, s] = await Promise.all([
-        apiFetch<Manufacturer[]>("/fip/manufacturers"),
-        apiFetch<Family[]>("/fip/product-families"),
-        apiFetch<Model[]>("/fip/models"),
-        apiFetch<Document[]>("/fip/documents"),
-        apiFetch<Standard[]>("/fip/standards"),
-      ]);
-      setManufacturers(Array.isArray(m) ? m : []);
-      setFamilies(Array.isArray(f) ? f : []);
-      setModels(Array.isArray(md) ? md : []);
-      setDocuments(Array.isArray(d) ? d : []);
-      setStandards(Array.isArray(s) ? s : []);
-    } catch {
-      // Endpoints return 503 when FIP_ENABLED is off. Leave lists empty;
-      // the status banner covers the UX.
-    }
-  };
+  const [models, setModels] = useState<FipModel[]>([]);
+  const [families, setFamilies] = useState<ProductFamily[]>([]);
+  const [documents, setDocuments] = useState<FipDocument[]>([]);
+  const [standards, setStandards] = useState<FipStandard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedMfr, setSelectedMfr] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStatus();
+    loadData();
   }, []);
 
-  useEffect(() => {
-    if (status?.enabled) fetchAll();
-  }, [status?.enabled]);
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [st, mfrs, mods, fams, docs, stds] = await Promise.all([
+        apiFetch<FipStatus>("/fip/status"),
+        apiFetch<Manufacturer[]>("/fip/manufacturers").catch(() => []),
+        apiFetch<FipModel[]>("/fip/models").catch(() => []),
+        apiFetch<ProductFamily[]>("/fip/product-families").catch(() => []),
+        apiFetch<FipDocument[]>("/fip/documents").catch(() => []),
+        apiFetch<FipStandard[]>("/fip/standards").catch(() => []),
+      ]);
+      setStatus(st);
+      setManufacturers(mfrs);
+      setModels(mods);
+      setFamilies(fams);
+      setDocuments(docs);
+      setStandards(stds);
+    } catch (e) {
+      console.error("FIP load error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  // The agent emits aide-data-changed after any write. Refresh FIP lists so
-  // anything Claude creates or updates in the knowledge base shows up live.
-  useEffect(() => {
-    const handler = () => {
-      if (status?.enabled) fetchAll();
-    };
-    window.addEventListener("aide-data-changed", handler);
-    return () => window.removeEventListener("aide-data-changed", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status?.enabled]);
+  const tabs: { key: Tab; label: string; icon: typeof Shield; count?: number }[] = [
+    { key: "overview", label: "Overview", icon: Shield },
+    { key: "manufacturers", label: "Manufacturers", icon: Building2, count: manufacturers.length },
+    { key: "models", label: "Panel Models", icon: Cpu, count: models.length },
+    { key: "documents", label: "Documents", icon: FileText, count: documents.length },
+    { key: "standards", label: "Standards", icon: BookOpen, count: standards.length },
+  ];
 
-  const filteredManufacturers = useMemo(() => {
-    if (!search) return manufacturers;
+  const mfrMap = Object.fromEntries(manufacturers.map(m => [m.id, m.name]));
+  const famMap = Object.fromEntries(families.map(f => [f.id, f.name]));
+
+  const filteredModels = models.filter(m => {
     const q = search.toLowerCase();
-    return manufacturers.filter(m =>
-      m.name.toLowerCase().includes(q) ||
-      m.country?.toLowerCase().includes(q) ||
-      m.notes?.toLowerCase().includes(q),
-    );
-  }, [manufacturers, search]);
+    const matchSearch = !q || m.name.toLowerCase().includes(q) || mfrMap[m.manufacturerId]?.toLowerCase().includes(q);
+    const matchMfr = !selectedMfr || m.manufacturerId === selectedMfr;
+    return matchSearch && matchMfr;
+  });
 
-  const visibleFamilies = useMemo(() => {
-    if (!selectedManufacturer) return [];
-    return families.filter(f => f.manufacturerId === selectedManufacturer);
-  }, [families, selectedManufacturer]);
-
-  const visibleModels = useMemo(() => {
-    if (!selectedFamily) return [];
-    return models.filter(m => m.familyId === selectedFamily);
-  }, [models, selectedFamily]);
-
-  const visibleDocuments = useMemo(() => {
+  const filteredDocs = documents.filter(d => {
     const q = search.toLowerCase();
-    let list = documents;
-    if (selectedModel) list = list.filter(d => d.modelId === selectedModel);
-    else if (selectedFamily) list = list.filter(d => d.familyId === selectedFamily);
-    else if (selectedManufacturer) list = list.filter(d => d.manufacturerId === selectedManufacturer);
-    if (q) list = list.filter(d => d.title.toLowerCase().includes(q) || d.notes?.toLowerCase().includes(q));
-    return list;
-  }, [documents, search, selectedManufacturer, selectedFamily, selectedModel]);
+    return !q || d.title.toLowerCase().includes(q) || d.docType?.toLowerCase().includes(q);
+  });
 
-  const filteredStandards = useMemo(() => {
-    if (!search) return standards;
+  const filteredStandards = standards.filter(s => {
     const q = search.toLowerCase();
-    return standards.filter(s =>
-      s.code.toLowerCase().includes(q) ||
-      s.title.toLowerCase().includes(q) ||
-      s.notes?.toLowerCase().includes(q),
-    );
-  }, [standards, search]);
+    return !q || s.code.toLowerCase().includes(q) || s.title.toLowerCase().includes(q);
+  });
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Disabled state — FIP_ENABLED=1 is a Replit Secret
-  // ─────────────────────────────────────────────────────────────────────────
-  if (statusLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!status?.enabled) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-6">
-        <div className="max-w-lg text-center">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Flame size={26} className="text-primary" />
-          </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">FIP Technical Reference</h1>
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            This module is disabled by default. It exposes the seeded fire panel knowledge base
-            (5 manufacturers, 27 families, 36 models, 40 documents, 20 Australian standards)
-            plus troubleshooting session and fault code tools, all behind the agent sidepanel.
-          </p>
-          <div className="bg-card border border-border rounded-xl p-4 text-left">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-2">To enable</p>
-            <ol className="text-[12px] text-foreground space-y-1.5 list-decimal list-inside">
-              <li>Open the Replit Secrets panel on the api-server artifact</li>
-              <li>Add <code className="font-mono bg-muted px-1 rounded">FIP_ENABLED</code> = <code className="font-mono bg-muted px-1 rounded">1</code></li>
-              <li>Redeploy and reload this page</li>
-            </ol>
-          </div>
-          <button
-            onClick={fetchStatus}
-            className="mt-4 inline-flex items-center gap-2 text-[12px] text-primary hover:underline"
-          >
-            <RefreshCw size={12} /> Re-check status
-          </button>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-8">
+        <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 flex items-center justify-center mb-4">
+          <AlertTriangle className="w-8 h-8 text-yellow-500" />
         </div>
+        <h2 className="text-lg font-semibold text-foreground mb-2">FIP Knowledge Base Disabled</h2>
+        <p className="text-muted-foreground text-sm">Set FIP_ENABLED=1 in environment to activate.</p>
       </div>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Enabled — split-pane: browse left, embedded agent right
-  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5 shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-foreground font-bold text-lg tracking-tight flex items-center gap-2">
-              <Flame size={18} className="text-primary" /> FIP Technical Reference
-            </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Fire panel knowledge base · manufacturers, models, documents, standards · agent embedded right
-            </p>
-          </div>
-          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span><strong className="text-foreground">{status.counts?.manufacturers ?? 0}</strong> makers</span>
-            <span><strong className="text-foreground">{status.counts?.models ?? 0}</strong> models</span>
-            <span><strong className="text-foreground">{status.counts?.faultSignatures ?? 0}</strong> fault codes</span>
-            <span><strong className="text-foreground">{status.counts?.sessions ?? 0}</strong> sessions</span>
-          </div>
+    <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            FIP Knowledge Base
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            Fire Indicator Panel reference — manufacturers, models, documents & standards
+          </p>
         </div>
+        <button onClick={loadData} className="p-2 rounded-lg hover:bg-accent transition-colors" title="Refresh">
+          <RefreshCw className="w-4 h-4 text-muted-foreground" />
+        </button>
+      </div>
 
-        <div className="flex items-center gap-2">
-          {[
-            { key: "manufacturers", label: "Manufacturers", icon: Cpu },
-            { key: "documents", label: "Documents", icon: FileText },
-            { key: "standards", label: "Standards", icon: ScrollText },
-            { key: "faults", label: "Fault Codes", icon: AlertCircle },
-          ].map(({ key, label, icon: Icon }) => (
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {tabs.map(tab => {
+          const Icon = tab.icon;
+          return (
             <button
-              key={key}
-              onClick={() => setActiveTab(key as Tab)}
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
-                activeTab === key
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted border-border",
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                activeTab === tab.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
             >
-              <Icon size={12} /> {label}
+              <Icon className="w-3.5 h-3.5" />
+              {tab.label}
+              {tab.count !== undefined && (
+                <span className={cn(
+                  "ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold",
+                  activeTab === tab.key ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  {tab.count}
+                </span>
+              )}
             </button>
-          ))}
+          );
+        })}
+      </div>
 
-          <div className="ml-auto relative w-64">
-            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      {activeTab !== "overview" && (
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input
+              type="text"
+              placeholder="Search..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search everything in this tab..."
-              className="w-full pl-8 pr-3 py-1.5 text-[12px] bg-muted/30 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-9 pr-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
+          </div>
+          {activeTab === "models" && manufacturers.length > 0 && (
+            <select
+              value={selectedMfr || ""}
+              onChange={e => setSelectedMfr(e.target.value || null)}
+              className="px-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">All Manufacturers</option>
+              {manufacturers.map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+
+      {activeTab === "overview" && <OverviewTab status={status} manufacturers={manufacturers} models={models} families={families} documents={documents} standards={standards} />}
+      {activeTab === "manufacturers" && <ManufacturersTab manufacturers={manufacturers} models={models} families={families} onSelectMfr={(id) => { setSelectedMfr(id); setActiveTab("models"); }} />}
+      {activeTab === "models" && <ModelsTab models={filteredModels} mfrMap={mfrMap} famMap={famMap} />}
+      {activeTab === "documents" && <DocumentsTab documents={filteredDocs} mfrMap={mfrMap} />}
+      {activeTab === "standards" && <StandardsTab standards={filteredStandards} />}
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon: Icon, color }: { label: string; value: number; icon: typeof Shield; color: string }) {
+  return (
+    <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", color)}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div>
+        <p className="text-2xl font-bold text-foreground">{value}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function OverviewTab({ status, manufacturers, models, families, documents, standards }: {
+  status: FipStatus;
+  manufacturers: Manufacturer[];
+  models: FipModel[];
+  families: ProductFamily[];
+  documents: FipDocument[];
+  standards: FipStandard[];
+}) {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Manufacturers" value={manufacturers.length} icon={Building2} color="bg-blue-500/10 text-blue-500" />
+        <StatCard label="Panel Models" value={models.length} icon={Cpu} color="bg-emerald-500/10 text-emerald-500" />
+        <StatCard label="Documents" value={documents.length} icon={FileText} color="bg-amber-500/10 text-amber-500" />
+        <StatCard label="Standards" value={standards.length} icon={BookOpen} color="bg-purple-500/10 text-purple-500" />
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-primary" />
+            Manufacturers
+          </h3>
+          <div className="space-y-2">
+            {manufacturers.map(m => {
+              const modelCount = models.filter(mod => mod.manufacturerId === m.id).length;
+              const familyCount = families.filter(f => f.manufacturerId === m.id).length;
+              return (
+                <div key={m.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-accent/50 transition-colors">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{m.name}</p>
+                    <p className="text-xs text-muted-foreground">{familyCount} families, {modelCount} models</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Package className="w-4 h-4 text-primary" />
+            Product Families
+          </h3>
+          <div className="space-y-2">
+            {families.map(f => {
+              const modelCount = models.filter(m => m.familyId === f.id).length;
+              return (
+                <div key={f.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-accent/50 transition-colors">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{f.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {mfrName(f.manufacturerId)} · {modelCount} models
+                      {f.generation && ` · Gen ${f.generation}`}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+            {families.length === 0 && <p className="text-xs text-muted-foreground py-2">No product families yet.</p>}
           </div>
         </div>
       </div>
+    </div>
+  );
 
-      {/* Main split — content left, embedded agent right */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left — browsable lists */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin">
-          {activeTab === "manufacturers" && (
-            <div className="flex h-full">
-              {/* Manufacturer list */}
-              <div className="w-56 border-r border-border shrink-0 overflow-y-auto">
-                <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground border-b border-border">
-                  Manufacturer ({filteredManufacturers.length})
-                </div>
-                {filteredManufacturers.map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => { setSelectedManufacturer(m.id); setSelectedFamily(null); setSelectedModel(null); }}
-                    className={cn(
-                      "w-full text-left px-3 py-2 border-b border-border/40 hover:bg-muted/40 transition-colors",
-                      selectedManufacturer === m.id && "bg-primary/8 border-l-2 border-l-primary",
-                    )}
-                  >
-                    <div className="text-[13px] font-medium text-foreground">{m.name}</div>
-                    {m.country && <div className="text-[10px] text-muted-foreground">{m.country}</div>}
-                  </button>
-                ))}
-                {filteredManufacturers.length === 0 && (
-                  <div className="p-4 text-[11px] text-muted-foreground text-center">No matches</div>
-                )}
-              </div>
+  function mfrName(id: string) {
+    return manufacturers.find(m => m.id === id)?.name || "Unknown";
+  }
+}
 
-              {/* Family list */}
-              <div className="w-56 border-r border-border shrink-0 overflow-y-auto">
-                <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground border-b border-border">
-                  Family ({visibleFamilies.length})
-                </div>
-                {visibleFamilies.map(f => (
-                  <button
-                    key={f.id}
-                    onClick={() => { setSelectedFamily(f.id); setSelectedModel(null); }}
-                    className={cn(
-                      "w-full text-left px-3 py-2 border-b border-border/40 hover:bg-muted/40 transition-colors",
-                      selectedFamily === f.id && "bg-primary/8 border-l-2 border-l-primary",
-                    )}
-                  >
-                    <div className="text-[13px] font-medium text-foreground">{f.name}</div>
-                    {f.category && <div className="text-[10px] text-muted-foreground">{f.category}</div>}
-                  </button>
-                ))}
-                {!selectedManufacturer && (
-                  <div className="p-4 text-[11px] text-muted-foreground text-center">Pick a manufacturer</div>
-                )}
+function ManufacturersTab({ manufacturers, models, families, onSelectMfr }: {
+  manufacturers: Manufacturer[];
+  models: FipModel[];
+  families: ProductFamily[];
+  onSelectMfr: (id: string) => void;
+}) {
+  return (
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {manufacturers.map(m => {
+        const mfrModels = models.filter(mod => mod.manufacturerId === m.id);
+        const mfrFamilies = families.filter(f => f.manufacturerId === m.id);
+        return (
+          <div key={m.id} className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-colors">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-primary" />
               </div>
-
-              {/* Model / detail pane */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground border-b border-border">
-                  Model ({visibleModels.length})
-                </div>
-                {visibleModels.map(m => (
-                  <div
-                    key={m.id}
-                    onClick={() => setSelectedModel(m.id)}
-                    className={cn(
-                      "px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer",
-                      selectedModel === m.id && "bg-primary/5",
-                    )}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="text-[14px] font-semibold text-foreground">{m.name}</div>
-                      {m.modelNumber && <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{m.modelNumber}</code>}
-                      {m.status && (
-                        <span className={cn(
-                          "text-[9px] px-1.5 py-0.5 rounded",
-                          m.status === "current" ? "bg-emerald-500/10 text-emerald-600" :
-                          m.status === "legacy" ? "bg-amber-500/10 text-amber-600" :
-                          "bg-muted text-muted-foreground",
-                        )}>{m.status}</span>
-                      )}
-                    </div>
-                    {m.description && <p className="text-[11px] text-muted-foreground leading-relaxed">{m.description}</p>}
-                    {selectedModel === m.id && (
-                      <div className="mt-3 pt-3 border-t border-border/50">
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">Linked documents</p>
-                        {documents.filter(d => d.modelId === m.id).map(d => (
-                          <div key={d.id} className="flex items-start gap-2 py-1">
-                            <FileText size={10} className="text-muted-foreground mt-0.5 shrink-0" />
-                            <div className="min-w-0">
-                              <div className="text-[11px] text-foreground truncate">{d.title}</div>
-                              <div className="text-[9px] text-muted-foreground uppercase tracking-wide">{d.kind}</div>
-                            </div>
-                          </div>
-                        ))}
-                        {documents.filter(d => d.modelId === m.id).length === 0 && (
-                          <p className="text-[10px] text-muted-foreground italic">No documents linked yet — ask the agent to find the manual.</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {!selectedFamily && (
-                  <div className="p-4 text-[11px] text-muted-foreground text-center">Pick a family</div>
-                )}
-              </div>
+              {m.website && (
+                <a href={m.website} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
             </div>
-          )}
-
-          {activeTab === "documents" && (
-            <div className="p-4">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-2">
-                Documents ({visibleDocuments.length})
-              </div>
-              <div className="space-y-2">
-                {visibleDocuments.map(d => (
-                  <div key={d.id} className="p-3 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <FileText size={12} className="text-primary shrink-0" />
-                          <p className="text-[13px] font-medium text-foreground">{d.title}</p>
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                          <span className="uppercase tracking-wide">{d.kind}</span>
-                          {d.tags && d.tags.length > 0 && (
-                            <>
-                              <span>·</span>
-                              <span>{d.tags.join(" · ")}</span>
-                            </>
-                          )}
-                        </div>
-                        {d.notes && <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">{d.notes}</p>}
-                      </div>
-                      <ChevronRight size={14} className="text-muted-foreground shrink-0 mt-0.5" />
-                    </div>
-                  </div>
+            <h3 className="text-base font-semibold text-foreground mb-1">{m.name}</h3>
+            {m.country && <p className="text-xs text-muted-foreground mb-3">{m.country}</p>}
+            {m.notes && <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{m.notes}</p>}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+              <span>{mfrFamilies.length} families</span>
+              <span>·</span>
+              <span>{mfrModels.length} models</span>
+            </div>
+            {mfrFamilies.length > 0 && (
+              <div className="border-t border-border pt-3 space-y-1">
+                {mfrFamilies.map(f => (
+                  <p key={f.id} className="text-xs text-muted-foreground">
+                    <span className="text-foreground font-medium">{f.name}</span>
+                    {f.generation && <span className="ml-1 text-primary/60">Gen {f.generation}</span>}
+                  </p>
                 ))}
-                {visibleDocuments.length === 0 && (
-                  <div className="text-center py-12 text-[11px] text-muted-foreground">
-                    No documents {search ? "match" : "available"}. Ask the agent: "find every Pertronic F220 manual".
-                  </div>
-                )}
               </div>
-            </div>
-          )}
+            )}
+            <button
+              onClick={() => onSelectMfr(m.id)}
+              className="mt-3 w-full px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+            >
+              View Models →
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-          {activeTab === "standards" && (
-            <div className="p-4">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-2">
-                Australian Standards ({filteredStandards.length})
-              </div>
-              <div className="space-y-2">
-                {filteredStandards.map(s => (
-                  <div key={s.id} className="p-3 bg-card border border-border rounded-lg">
-                    <div className="flex items-start justify-between gap-3 mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <ScrollText size={12} className="text-primary shrink-0" />
-                        <code className="text-[12px] font-mono font-semibold text-foreground">{s.code}</code>
-                        {s.year && <span className="text-[10px] text-muted-foreground">{s.year}</span>}
-                      </div>
-                      {s.jurisdiction && (
-                        <span className="text-[9px] uppercase tracking-wide text-muted-foreground">{s.jurisdiction}</span>
-                      )}
-                    </div>
-                    <p className="text-[12px] text-foreground mb-1">{s.title}</p>
-                    {s.notes && <p className="text-[10px] text-muted-foreground leading-relaxed">{s.notes}</p>}
-                  </div>
-                ))}
-                {filteredStandards.length === 0 && (
-                  <div className="text-center py-12 text-[11px] text-muted-foreground">
-                    No standards match. Ask the agent: "show every AS 1670 revision we have".
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+function ModelsTab({ models, mfrMap, famMap }: { models: FipModel[]; mfrMap: Record<string, string>; famMap: Record<string, string> }) {
+  if (models.length === 0) {
+    return <p className="text-sm text-muted-foreground py-8 text-center">No models match your search.</p>;
+  }
 
-          {activeTab === "faults" && (
-            <div className="p-4 text-center">
-              <AlertCircle size={24} className="text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-[13px] font-medium text-foreground mb-1">Fault code library</p>
-              <p className="text-[11px] text-muted-foreground max-w-md mx-auto mb-4">
-                {status.counts?.faultSignatures ?? 0} fault signatures seeded so far. Ask the agent to add more:
-              </p>
-              <div className="text-[11px] text-muted-foreground max-w-md mx-auto">
-                Try: <em>"Add a fault signature for Pertronic F220 code E-03 — loop 1 earth fault, first check the shield drain wire, next step swap the loop card"</em>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right — embedded agent */}
-        <div className="w-[400px] border-l border-border shrink-0 flex flex-col">
-          <AnalyticsPanel section="fip" title="FIP Technician Agent" embedded />
-        </div>
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Model</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Manufacturer</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Family</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Loops</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Protocol</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Network</th>
+            </tr>
+          </thead>
+          <tbody>
+            {models.map(m => (
+              <tr key={m.id} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
+                <td className="px-4 py-3">
+                  <span className="font-medium text-foreground">{m.name}</span>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">{mfrMap[m.manufacturerId] || "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground">{m.familyId ? famMap[m.familyId] || "—" : "—"}</td>
+                <td className="px-4 py-3">
+                  {m.panelType && (
+                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">{m.panelType}</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">{m.maxLoops || "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground text-xs">{m.loopProtocol || "—"}</td>
+                <td className="px-4 py-3">
+                  {m.networkCapable !== undefined && m.networkCapable !== null && (
+                    <span className={cn("text-xs font-medium", m.networkCapable ? "text-emerald-500" : "text-muted-foreground")}>
+                      {m.networkCapable ? "Yes" : "No"}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+    </div>
+  );
+}
+
+function DocumentsTab({ documents, mfrMap }: { documents: FipDocument[]; mfrMap: Record<string, string> }) {
+  if (documents.length === 0) {
+    return <p className="text-sm text-muted-foreground py-8 text-center">No documents match your search.</p>;
+  }
+
+  const docTypeColors: Record<string, string> = {
+    manual: "bg-blue-500/10 text-blue-500",
+    datasheet: "bg-emerald-500/10 text-emerald-500",
+    installation_guide: "bg-amber-500/10 text-amber-500",
+    programming_guide: "bg-purple-500/10 text-purple-500",
+    certificate: "bg-red-500/10 text-red-500",
+  };
+
+  return (
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+      {documents.map(d => (
+        <div key={d.id} className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <FileText className="w-4 h-4 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-medium text-foreground line-clamp-2">{d.title}</h4>
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                {d.docType && (
+                  <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-medium", docTypeColors[d.docType] || "bg-muted text-muted-foreground")}>
+                    {d.docType.replace(/_/g, " ")}
+                  </span>
+                )}
+                {d.manufacturerId && (
+                  <span className="text-[10px] text-muted-foreground">{mfrMap[d.manufacturerId] || ""}</span>
+                )}
+              </div>
+              {d.notes && <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{d.notes}</p>}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StandardsTab({ standards }: { standards: FipStandard[] }) {
+  if (standards.length === 0) {
+    return <p className="text-sm text-muted-foreground py-8 text-center">No standards match your search.</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {standards.map(s => (
+        <div key={s.id} className="bg-card border border-border rounded-xl p-4 flex items-start gap-3 hover:border-primary/30 transition-colors">
+          <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+            <BookOpen className="w-4 h-4 text-purple-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-foreground">{s.code}</h4>
+              {s.jurisdiction && (
+                <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-medium">{s.jurisdiction}</span>
+              )}
+              {s.category && (
+                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">{s.category}</span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{s.title}</p>
+            {s.currentVersion && <p className="text-[10px] text-muted-foreground mt-1">Version: {s.currentVersion}</p>}
+            {s.notes && <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{s.notes}</p>}
+          </div>
+          {s.url && (
+            <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary shrink-0">
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

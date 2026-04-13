@@ -246,7 +246,7 @@ export default function Notes() {
     try {
       await createNote.mutateAsync({ data: {
         text,
-        category: category as "Urgent" | "To Do" | "To Ask" | "Schedule" | "Quote" | "Follow Up" | "Investigate" | "Done",
+        category: category as any,
         owner,
       }});
       queryClient.invalidateQueries({ queryKey: getListNotesQueryKey() });

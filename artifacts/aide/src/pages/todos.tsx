@@ -262,7 +262,7 @@ export default function Todos() {
 
   const handleAdd = async (data: any) => {
     try {
-      await createTodo.mutateAsync({ data: { text: data.text, priority: data.priority, category: data.category, dueDate: data.dueDate || undefined, assignee: data.assignee || undefined, notes: data.notes || undefined, nextSteps: data.nextSteps || undefined, urgencyTag: data.urgencyTag || undefined } });
+      await createTodo.mutateAsync({ data: { text: data.text, priority: data.priority, category: data.category, dueDate: data.dueDate || undefined, assignee: data.assignee || undefined, notes: data.notes || undefined, nextSteps: data.nextSteps || undefined, urgencyTag: data.urgencyTag || undefined } as any });
       queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() });
       toast({ title: "Task added" });
       setShowModal(false);
@@ -272,7 +272,7 @@ export default function Todos() {
   const handleUpdate = async (data: any) => {
     if (!editingTodo) return;
     try {
-      await updateTodo.mutateAsync({ id: editingTodo.id, data: { text: data.text, priority: data.priority, category: data.category, dueDate: data.dueDate || undefined, assignee: data.assignee || undefined, notes: data.notes || undefined, nextSteps: data.nextSteps || undefined, urgencyTag: data.urgencyTag || undefined } });
+      await updateTodo.mutateAsync({ id: editingTodo.id, data: { text: data.text, priority: data.priority, category: data.category, dueDate: data.dueDate || undefined, assignee: data.assignee || undefined, notes: data.notes || undefined, nextSteps: data.nextSteps || undefined, urgencyTag: data.urgencyTag || undefined } as any });
       queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() });
       toast({ title: "Task updated" });
       setShowModal(false); setEditingTodo(undefined);

@@ -1,4 +1,10 @@
-const BASE = "/api";
+// Base URL for the api server. Defaults to the same origin (the Replit
+// all-in-one deployment routes /api/* to the api-server artifact). When the
+// frontend is hosted on a different origin (e.g. a Vercel static deploy
+// pointing at a Replit-hosted api), set VITE_API_BASE to the full origin
+// (e.g. `https://my-repl.replit.dev`) — /api is appended automatically.
+const API_ORIGIN = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/+$/, "") ?? "";
+const BASE = `${API_ORIGIN}/api`;
 const TOKEN_STORAGE_KEY = "ops-auth-token";
 
 function authHeader(): Record<string, string> {

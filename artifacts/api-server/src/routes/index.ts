@@ -23,6 +23,7 @@ import chatHistoryRouter from "./chat-history";
 import authRouter from "./auth";
 import uptickRouter from "./uptick";
 import fipRouter from "./fip";
+import diagRouter from "./diag";
 
 const router: IRouter = Router();
 
@@ -50,5 +51,6 @@ router.use(chatHistoryRouter);
 router.use(authRouter);
 router.use(uptickRouter);
 router.use(fipRouter);
+router.use(diagRouter);
 
 export default router;

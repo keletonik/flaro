@@ -19,8 +19,8 @@ router.get("/suppliers", async (req, res, next) => {
   try {
     const { category, search, rating } = req.query as Record<string, string>;
     const conditions = [];
-    if (category) conditions.push(eq(suppliers.category, category));
-    if (rating) conditions.push(eq(suppliers.rating, rating));
+    if (category) conditions.push(eq(suppliers.category, category as any));
+    if (rating) conditions.push(eq(suppliers.rating, rating as any));
     if (search) {
       const s = search.replace(/[%_\\]/g, "\\$&");
       conditions.push(or(ilike(suppliers.name, `%${s}%`), ilike(suppliers.contactName!, `%${s}%`), ilike(suppliers.suburb!, `%${s}%`)));
@@ -86,10 +86,10 @@ router.get("/suppliers/products/all", async (req, res, next) => {
   try {
     const { search, category } = req.query as Record<string, string>;
     const conditions = [];
-    if (category) conditions.push(eq(supplierProducts.category, category));
+    if (category) conditions.push(eq(supplierProducts.category, category as any));
     if (search) {
       const s = search.replace(/[%_\\]/g, "\\$&");
-      conditions.push(or(ilike(supplierProducts.productName, `%${s}%`), ilike(supplierProducts.productCode!, `%${s}%`), ilike(supplierProducts.brand!, `%${s}%`)));
+      conditions.push(or(ilike(supplierProducts.productName, `%${s}%`), ilike(supplierProducts.productCode!, `%${s}%`), ilike(supplierProducts.brand!, `%${s}%`))!);
     }
     let query = db.select().from(supplierProducts).$dynamic();
     if (conditions.length) query = query.where(and(...conditions));
@@ -132,10 +132,10 @@ router.get("/suppliers/:supplierId/products", async (req, res, next) => {
   try {
     const { search, category } = req.query as Record<string, string>;
     const conditions = [eq(supplierProducts.supplierId, req.params.supplierId)];
-    if (category) conditions.push(eq(supplierProducts.category, category));
+    if (category) conditions.push(eq(supplierProducts.category, category as any));
     if (search) {
       const s = search.replace(/[%_\\]/g, "\\$&");
-      conditions.push(or(ilike(supplierProducts.productName, `%${s}%`), ilike(supplierProducts.productCode!, `%${s}%`), ilike(supplierProducts.brand!, `%${s}%`)));
+      conditions.push(or(ilike(supplierProducts.productName, `%${s}%`), ilike(supplierProducts.productCode!, `%${s}%`), ilike(supplierProducts.brand!, `%${s}%`))!);
     }
     const result = await db.select().from(supplierProducts).where(and(...conditions)).orderBy(supplierProducts.productName);
     res.json(result.map(serializeProduct));

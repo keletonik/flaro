@@ -23,8 +23,8 @@ router.get("/wip", async (req, res, next) => {
     const { status, priority, search, client, assignedTech, jobType } = req.query as Record<string, string>;
     const conditions = [];
     if (softDeleteEnabled()) conditions.push(isNull(wipRecords.deletedAt));
-    if (status) conditions.push(eq(wipRecords.status, status));
-    if (priority) conditions.push(eq(wipRecords.priority, priority));
+    if (status) conditions.push(eq(wipRecords.status, status as any));
+    if (priority) conditions.push(eq(wipRecords.priority, priority as any));
     if (client) conditions.push(ilike(wipRecords.client, `%${client.replace(/[%_\\]/g, "\\$&")}%`));
     if (assignedTech) conditions.push(eq(wipRecords.assignedTech, assignedTech));
     if (jobType) conditions.push(eq(wipRecords.jobType, jobType));

@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { AideFavicon, AideWordmark } from "@/components/AideLogo";
 
-const SidebarContext = createContext({ collapsed: false, setCollapsed: (_: boolean) => {} });
+const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>> }>({ collapsed: false, setCollapsed: () => {} });
 function useSidebar() { return useContext(SidebarContext); }
 
 const queryClient = new QueryClient({

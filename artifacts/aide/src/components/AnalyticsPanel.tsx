@@ -1,11 +1,20 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MessageCircle, X, Send, Trash2, Loader2, Copy, Check, History, ChevronLeft, Maximize2, Minimize2, Download } from "lucide-react";
-import { streamChat, apiFetch } from "@/lib/api";
+import { MessageCircle, X, Send, Trash2, Loader2, Copy, Check, History, ChevronLeft, Maximize2, Minimize2, Download, Wrench, AlertCircle } from "lucide-react";
+import { useLocation } from "wouter";
+import { streamAgent, apiFetch, type AgentToolEvent } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+interface ToolRun {
+  name: string;
+  input?: Record<string, unknown>;
+  status: "running" | "ok" | "error";
+  error?: string;
+}
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  tools?: ToolRun[];
 }
 
 interface SavedChat {
@@ -51,7 +60,20 @@ function formatInline(text: string): string {
     .replace(/\$([0-9,.]+)/g, '<span class="font-mono font-semibold">$$$1</span>');
 }
 
+// Broadcast channel the host page listens on to refetch after the agent
+// creates/updates/deletes something. Every list-style page subscribes via
+// `window.addEventListener("aide-data-changed", handler)`.
+const DATA_CHANGED_EVENT = "aide-data-changed";
+function emitDataChanged() {
+  try {
+    window.dispatchEvent(new CustomEvent(DATA_CHANGED_EVENT));
+  } catch {
+    /* ignore SSR / old browsers */
+  }
+}
+
 export default function AnalyticsPanel({ section, title = "Analyst" }: AnalyticsPanelProps) {
+  const [, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -86,25 +108,57 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
     setMessages(prev => [...prev, userMsg]);
     setStreaming(true);
     let assistantContent = "";
-    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
-    controllerRef.current = streamChat(
-      section, msg, messages,
-      (chunk) => {
-        assistantContent += chunk;
-        setMessages(prev => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-          return updated;
-        });
-      },
-      () => setStreaming(false),
-      (err) => {
-        setMessages(prev => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", content: `Error: ${err}` };
-          return updated;
-        });
-        setStreaming(false);
+    const tools: ToolRun[] = [];
+    setMessages(prev => [...prev, { role: "assistant", content: "", tools: [] }]);
+
+    const updateAssistant = (patch: Partial<Message>) => {
+      setMessages(prev => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last?.role === "assistant") {
+          updated[updated.length - 1] = { ...last, ...patch };
+        }
+        return updated;
+      });
+    };
+
+    controllerRef.current = streamAgent(
+      section,
+      msg,
+      messages.map(m => ({ role: m.role, content: m.content })),
+      {
+        onText: (chunk) => {
+          assistantContent += chunk;
+          updateAssistant({ content: assistantContent });
+        },
+        onToolStart: (ev: AgentToolEvent) => {
+          tools.push({ name: ev.name, input: ev.input, status: "running" });
+          updateAssistant({ tools: [...tools] });
+        },
+        onToolResult: (ev: AgentToolEvent) => {
+          const i = tools.findLastIndex?.(t => t.name === ev.name && t.status === "running") ??
+            (() => { for (let k = tools.length - 1; k >= 0; k--) if (tools[k].name === ev.name && tools[k].status === "running") return k; return -1; })();
+          if (i >= 0) {
+            tools[i] = { ...tools[i], status: ev.ok ? "ok" : "error", error: ev.error };
+            updateAssistant({ tools: [...tools] });
+          }
+          // Any successful write will have emitted a ui_action:refresh
+          // separately; we don't need to duplicate the data-change event here.
+        },
+        onUiAction: (action) => {
+          if (action.type === "navigate" && typeof action.path === "string") {
+            setLocation(action.path);
+          } else if (action.type === "refresh") {
+            emitDataChanged();
+          }
+        },
+        onDone: () => setStreaming(false),
+        onError: (err) => {
+          updateAssistant({
+            content: assistantContent || `Error: ${err}`,
+          });
+          setStreaming(false);
+        },
       },
     );
   };
@@ -240,9 +294,9 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
                   <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center mb-3">
                     <MessageCircle size={18} className="text-primary" />
                   </div>
-                  <p className="text-[13px] font-medium text-foreground mb-1">Ask about your data</p>
+                  <p className="text-[13px] font-medium text-foreground mb-1">AIDE — ask me anything</p>
                   <p className="text-[11px] text-muted-foreground mb-4 leading-relaxed">
-                    Analyses your live {section} data. Ask about revenue, patterns, trends, or specific records.
+                    I can search, create, update or delete records across the app, and navigate between pages. Try one of these or ask in plain English.
                   </p>
                   <div className="space-y-1.5 w-full">
                     {getSuggestions(section).map((s, i) => (
@@ -263,12 +317,36 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
                   )}>
                     {msg.role === "assistant" ? (
                       <>
+                        {msg.tools && msg.tools.length > 0 && (
+                          <div className="mb-2 space-y-1">
+                            {msg.tools.map((t, tk) => (
+                              <div key={tk} className="flex items-center gap-1.5 text-[10.5px]">
+                                {t.status === "running" ? (
+                                  <Loader2 size={10} className="animate-spin text-primary shrink-0" />
+                                ) : t.status === "ok" ? (
+                                  <Check size={10} className="text-emerald-500 shrink-0" />
+                                ) : (
+                                  <AlertCircle size={10} className="text-destructive shrink-0" />
+                                )}
+                                <Wrench size={9} className="text-muted-foreground/50 shrink-0" />
+                                <span className="font-mono text-muted-foreground truncate">
+                                  {t.name}
+                                  {t.input?.table ? `(${String(t.input.table)})` : ""}
+                                  {t.input?.path ? ` → ${String(t.input.path)}` : ""}
+                                </span>
+                                {t.status === "error" && t.error && (
+                                  <span className="text-destructive truncate" title={t.error}>— {t.error}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {msg.content ? (
                           <div>{renderMarkdown(msg.content)}</div>
                         ) : (streaming && i === messages.length - 1 ? (
                           <span className="flex items-center gap-1.5">
                             <Loader2 size={11} className="animate-spin text-primary" />
-                            <span className="text-muted-foreground text-[11px]">Analysing...</span>
+                            <span className="text-muted-foreground text-[11px]">Working...</span>
                           </span>
                         ) : "")}
                         {msg.content && !streaming && (
@@ -291,7 +369,7 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask about your data..."
+                  placeholder="Ask me to search, create, update, or take you somewhere..."
                   rows={1}
                   className="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none min-h-[18px] max-h-[80px]"
                   style={{ height: 'auto', overflow: 'hidden' }}
@@ -313,13 +391,61 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
 
 function getSuggestions(section: string): string[] {
   switch (section) {
-    case "wip": return ["Total value of open WIP?", "Which tech has most jobs?", "Show overdue jobs", "Revenue gap analysis"];
-    case "quotes": return ["Quote conversion rate?", "Highest pending quote?", "Quotes expiring soon", "Revenue from accepted quotes"];
-    case "defects": return ["Critical defects open?", "Site with most defects?", "Defects needing quotes", "Compliance risk summary"];
-    case "invoices": return ["Total outstanding?", "Overdue invoices?", "Revenue this month", "Aged receivables breakdown"];
-    case "suppliers": return ["Price for MFB-1000?", "Compare panel prices", "Cheapest detector supplier?", "Total spend by supplier"];
-    case "dashboard": return ["Performance summary", "What to focus on today?", "Weekly trend analysis", "Revenue vs target status"];
-    case "tasks": return ["Overdue tasks?", "Prioritise for today", "Blocked items?", "Completion rate this week"];
-    default: return ["Summarise the data", "What needs attention?", "Trend analysis", "Key metrics overview"];
+    case "wip":
+      return [
+        "Mark T-39833 as Scheduled and assign it to Gordon",
+        "Show all open repairs worth over $5000",
+        "Set every Gordon-assigned job to In Progress",
+        "Total value of open WIP right now",
+      ];
+    case "quotes":
+      return [
+        "Create a draft quote for Goodman Silverwater, $8500, smoke detector replacement",
+        "Which quotes have been pending longer than 14 days?",
+        "Mark QU30920 as Accepted",
+        "Revenue locked in from accepted quotes",
+      ];
+    case "defects":
+      return [
+        "Show every Critical defect still Open",
+        "Mark the oldest 5 defects as Scheduled",
+        "Which site has the most defects?",
+        "Delete defects that are already Resolved",
+      ];
+    case "invoices":
+      return [
+        "Total outstanding right now",
+        "Mark INV-T39042 as Paid today",
+        "Show overdue invoices grouped by client",
+        "Revenue this month vs $180k target",
+      ];
+    case "suppliers":
+      return [
+        "Find the cheapest smoke detector across all suppliers",
+        "Add a new supplier — Smith Fire Solutions, Fire Panels, Parramatta",
+        "Compare F220 panel pricing by supplier",
+        "Total product lines per supplier",
+      ];
+    case "dashboard":
+      return [
+        "Give me a full KPI snapshot",
+        "What are the three most urgent things today?",
+        "Take me to overdue defects",
+        "Weekly trend summary",
+      ];
+    case "tasks":
+      return [
+        "Add a todo — call Jamie about T-39833, due Friday, High priority",
+        "Mark the FIP program retrieval todo as done",
+        "List every overdue task",
+        "Create 3 follow-up todos for yesterday's quotes",
+      ];
+    default:
+      return [
+        "Summarise what's on this page",
+        "What needs my attention today?",
+        "Trend analysis for the past week",
+        "Take me to the dashboard",
+      ];
   }
 }

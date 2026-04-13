@@ -80,6 +80,110 @@ export function streamChat(
   return controller;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// streamAgent — /chat/agent wire protocol client
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// The agent endpoint streams structured events the sidepanel needs to
+// render (text chunks, tool start/finish badges, UI actions). This is a
+// superset of streamChat — anything that previously went through
+// streamChat can migrate by collapsing text events into the onChunk
+// callback and ignoring tool_* events.
+
+export interface AgentToolEvent {
+  name: string;
+  input?: Record<string, unknown>;
+  ok?: boolean;
+  error?: string;
+}
+
+export interface AgentUiAction {
+  type: "navigate" | "refresh" | string;
+  path?: string;
+  [key: string]: unknown;
+}
+
+export interface AgentStreamHandlers {
+  onText: (chunk: string) => void;
+  onToolStart?: (ev: AgentToolEvent) => void;
+  onToolResult?: (ev: AgentToolEvent) => void;
+  onUiAction?: (action: AgentUiAction) => void;
+  onDone: () => void;
+  onError: (err: string) => void;
+}
+
+export function streamAgent(
+  section: string,
+  message: string,
+  history: { role: string; content: string }[],
+  handlers: AgentStreamHandlers,
+): AbortController {
+  const controller = new AbortController();
+  fetch(`${BASE}/chat/agent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ section, message, history }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        handlers.onError(`Request failed: ${res.status}`);
+        return;
+      }
+      const reader = res.body?.getReader();
+      if (!reader) {
+        handlers.onError("No stream");
+        return;
+      }
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finished = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const ev = JSON.parse(line.slice(6));
+            switch (ev.type) {
+              case "text":
+                if (ev.content) handlers.onText(ev.content);
+                break;
+              case "tool_start":
+                handlers.onToolStart?.({ name: ev.name, input: ev.input });
+                break;
+              case "tool_result":
+                handlers.onToolResult?.({ name: ev.name, ok: ev.ok, error: ev.error });
+                break;
+              case "ui_action":
+                handlers.onUiAction?.(ev.action);
+                break;
+              case "error":
+                handlers.onError(ev.error ?? "agent error");
+                break;
+              case "done":
+                if (!finished) {
+                  finished = true;
+                  handlers.onDone();
+                }
+                break;
+            }
+          } catch {
+            // ignore malformed event line
+          }
+        }
+      }
+      if (!finished) handlers.onDone();
+    })
+    .catch((err) => {
+      if (err?.name !== "AbortError") handlers.onError(err?.message ?? "connection failed");
+    });
+  return controller;
+}
+
 export function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return { headers: [], rows: [] };

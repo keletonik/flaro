@@ -150,6 +150,9 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - Imported: 211 jobs, 87 quotes, 123 WIP records, notes from Action List, Quotes, Repairs, Schedule Register, Notes Log sheets
 - Chat rendering: react-markdown + remark-gfm for polished tables, lists, code blocks, blockquotes
 - **Uptick CSV import** (batch `csv-import-20260413`): 310 jobs (100 new, 203 updated), 165 WIP records, 222 defects
+- **Uptick task export** (4 CSV files, deduplicated): 319 unique tasks → 326 jobs total (upserted by task_number); statuses: In Progress 98, Complete 89, Open 68, Scheduled 54, Cancelled 16
+- **Uptick remarks export** (batch `uptick-remarks-20260413`): 222 remarks → 444 total defects; severity: Critical 184, Non-critical 172, Non-conformance 44, Low 44
+- **Production seed**: `seed-data.json` (6.26MB) auto-seeds empty production DB on startup with all data (326 jobs, 4408 WIP, 89 todos, 444 defects, 288 products, 33 on-call, 87 quotes, etc.)
 - **WIP Financial Analytics** (batch `wip-financial-20260413`): 4,243 WIP records from full Uptick WIP export (`Task-WIP_2026-04-13_10-15-04`) with 37 financial columns: quoted/revised/actual cost/sell/profit/margin, estimated/committed/actual hours, uninvoiced, cash position, billable, cumulative actuals/invoiced, activity fields — stored in `raw_data` JSON; analytics API enriched with financial KPIs, profit by category, margin distribution, cash position by tech, over-budget alerts. 20 techs, 4 categories (I&T 2197, Callout 1367, Repair 678, Billing 1).
 - **Supplier price lists** (batch `supplier-pricelist-20260413`): 288 products from 3 suppliers:
   - Ampac (86 products): Trade + NSW Platinum A pricing (lowest price wins); detectors, FIPs, speakers, sounders, batteries, door holders, ASD, EWIS

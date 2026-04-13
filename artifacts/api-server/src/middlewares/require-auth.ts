@@ -19,6 +19,7 @@ const ALWAYS_PUBLIC = new Set<string>([
   "/auth/me",
   "/healthz",
   "/events",
+  "/diag",
 ]);
 
 function isPublic(req: Request): boolean {

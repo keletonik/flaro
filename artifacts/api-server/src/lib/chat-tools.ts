@@ -296,6 +296,53 @@ export const AGENT_TOOLS = [
     input_schema: { type: "object" as const, properties: {} },
   },
 
+  // ── Metric registry tools (Pass 4 fix #4) ────────────────────────────────
+  {
+    name: "metric_get",
+    description:
+      "Compute a named metric from the lib/metrics registry. Returns a " +
+      "MetricResult: { id, displayName, unit, period, periodStart, periodEnd, " +
+      "rows, headline, previousHeadline, explainQuery }. Use this INSTEAD of " +
+      "db_search + prose summarisation whenever the user asks for a KPI or " +
+      "aggregated number. The metric's own query is always more correct than " +
+      "anything you could synthesise. Current metric ids: revenue_vs_target_mtd.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        metric_id: { type: "string", description: "Registered metric slug" },
+        period: {
+          type: "string",
+          enum: ["today", "7d", "30d", "mtd", "90d", "ytd", "custom"],
+          description: "Defaults to the metric's natural window",
+        },
+        start_date: { type: "string", description: "ISO date — required when period=custom" },
+        end_date: { type: "string", description: "ISO date — required when period=custom" },
+      },
+      required: ["metric_id"],
+    },
+  },
+  {
+    name: "metric_compare",
+    description:
+      "Fetch a metric for two periods side-by-side and return the delta " +
+      "(absolute and percentage). Use when the user asks 'how does this " +
+      "month compare to last month' or 'this week vs last week'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        metric_id: { type: "string" },
+        period_a: { type: "string", enum: ["today", "7d", "30d", "mtd", "90d", "ytd"] },
+        period_b: { type: "string", enum: ["today", "7d", "30d", "mtd", "90d", "ytd"] },
+      },
+      required: ["metric_id", "period_a", "period_b"],
+    },
+  },
+  {
+    name: "metric_list",
+    description: "List every registered metric with its metadata (id, displayName, description, category, unit). Use this when the user asks what KPIs are available.",
+    input_schema: { type: "object" as const, properties: {} },
+  },
+
   {
     name: "get_kpi_summary",
     description:

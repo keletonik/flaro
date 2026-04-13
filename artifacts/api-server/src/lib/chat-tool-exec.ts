@@ -618,6 +618,38 @@ export async function executeAgentTool(
       return { result: await estimateGet(input) };
     case "estimate_list":
       return { result: await estimateList() };
+    case "metric_get": {
+      const { computeMetric } = await import("./metrics/registry");
+      const result = await computeMetric(pool, input?.metric_id, {
+        period: input?.period,
+        startDate: input?.start_date,
+        endDate: input?.end_date,
+      });
+      return { result };
+    }
+    case "metric_compare": {
+      const { computeMetric } = await import("./metrics/registry");
+      const [a, b] = await Promise.all([
+        computeMetric(pool, input?.metric_id, { period: input?.period_a }),
+        computeMetric(pool, input?.metric_id, { period: input?.period_b }),
+      ]);
+      const delta = (a.headline ?? 0) - (b.headline ?? 0);
+      const pct = b.headline && b.headline !== 0 ? (delta / b.headline) * 100 : 0;
+      return {
+        result: {
+          metric_id: a.id,
+          displayName: a.displayName,
+          a: { period: a.period, headline: a.headline, periodStart: a.periodStart, periodEnd: a.periodEnd },
+          b: { period: b.period, headline: b.headline, periodStart: b.periodStart, periodEnd: b.periodEnd },
+          delta: Math.round(delta * 100) / 100,
+          deltaPct: Math.round(pct * 100) / 100,
+        },
+      };
+    }
+    case "metric_list": {
+      const { listMetrics } = await import("./metrics/registry");
+      return { result: { metrics: listMetrics() } };
+    }
     case "ui_navigate":
       return { result: { ok: true, path: input?.path }, uiAction: { type: "navigate", path: input?.path } };
     case "ui_refresh":

@@ -161,6 +161,15 @@ export default function AIDEAssistant() {
     } catch { /* ignore */ }
   }, [open]);
 
+  // Open the drawer automatically when the command palette forwards a
+  // prompt. EmbeddedAgentChat listens for the same event and auto-sends
+  // the message once the drawer is mounted.
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("aide-open-with-prompt", handler);
+    return () => window.removeEventListener("aide-open-with-prompt", handler);
+  }, []);
+
   useEffect(() => {
     try {
       sessionStorage.setItem(WIDE_KEY, wide ? "1" : "0");

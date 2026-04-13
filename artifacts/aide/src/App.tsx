@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import AidePA from "@/components/AidePA";
 import AIDEAssistant from "@/components/AIDEAssistant";
+import CommandPalette from "@/components/CommandPalette";
 import { AideFavicon, AideWordmark } from "@/components/AideLogo";
 
 const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>> }>({ collapsed: false, setCollapsed: () => {} });
@@ -286,6 +287,8 @@ function Layout({ children }: { children: React.ReactNode }) {
           every page, not just describe data. See docs/audit/PASS_2_ux.md
           target 1 and docs/FULL_AUDIT_REBUILD_PROMPT.md Phase 2. */}
       {location !== "/chat" && <AIDEAssistant />}
+      {/* Global Cmd-K command palette. Navigate, create, or ask AIDE. */}
+      <CommandPalette />
     </div>
   );
 }

@@ -68,6 +68,22 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
+  // Listen for the command palette's "ask AIDE" event. When the user
+  // types a question in Cmd-K and hits enter on the Ask-AIDE row, the
+  // palette dispatches `aide-open-with-prompt` with the query; we
+  // pick it up here and auto-send.
+  useEffect(() => {
+    const handler = (ev: Event) => {
+      const prompt = (ev as CustomEvent).detail?.prompt;
+      if (typeof prompt === "string" && prompt.trim()) {
+        setTimeout(() => send(prompt), 100);
+      }
+    };
+    window.addEventListener("aide-open-with-prompt", handler);
+    return () => window.removeEventListener("aide-open-with-prompt", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section]);
+
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, []);

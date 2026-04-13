@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, X, Upload, Download, Phone, Mail, MapPin, Edit2, Trash2, Package, ChevronDown } from "lucide-react";
+import { Search, Plus, X, Upload, Download, Phone, Mail, MapPin, Edit2, Trash2, Package, ChevronDown, Calculator, BookOpen } from "lucide-react";
 import { apiFetch, exportToCSV } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
+import EstimationWorkbench from "@/components/EstimationWorkbench";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -215,6 +216,7 @@ export default function Suppliers() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<"directory" | "estimation">("directory");
   const { toast } = useToast();
 
   const fetchSuppliers = async () => {
@@ -269,6 +271,42 @@ export default function Suppliers() {
     toast({ title: "Exported" });
   };
 
+  // Estimation mode renders a full-screen workbench and short-circuits the
+  // rest of the supplier directory markup below.
+  if (mode === "estimation") {
+    return (
+      <div className="h-screen bg-background flex flex-col overflow-hidden">
+        <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-foreground font-bold text-lg tracking-tight flex items-center gap-2">
+                <Calculator size={18} className="text-primary" /> Suppliers — Estimation Workbench
+              </h1>
+              <p className="text-[11px] text-muted-foreground">1 730 products · 76 suppliers · live markup/margin · agent embedded right</p>
+            </div>
+            <div className="inline-flex rounded-lg border border-border overflow-hidden">
+              <button
+                onClick={() => setMode("directory")}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <BookOpen size={12} /> Directory
+              </button>
+              <button
+                onClick={() => setMode("estimation")}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium bg-primary text-primary-foreground"
+              >
+                <Calculator size={12} /> Estimation
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <EstimationWorkbench />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
@@ -280,6 +318,20 @@ export default function Suppliers() {
             <p className="text-xs text-muted-foreground mt-0.5">Fire protection supplier directory and price lists</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-lg border border-border overflow-hidden">
+              <button
+                onClick={() => setMode("directory")}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium bg-primary text-primary-foreground"
+              >
+                <BookOpen size={12} /> Directory
+              </button>
+              <button
+                onClick={() => setMode("estimation")}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <Calculator size={12} /> Estimation
+              </button>
+            </div>
             <button onClick={handleExportAll} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors">
               <Download size={13} /> Export
             </button>

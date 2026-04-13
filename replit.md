@@ -145,6 +145,12 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - Source: `attached_assets/flamesafe_focused_09apr2026_1775773663737.xlsx` (10 sheets)
 - Imported: 211 jobs, 87 quotes, 123 WIP records, notes from Action List, Quotes, Repairs, Schedule Register, Notes Log sheets
 - Chat rendering: react-markdown + remark-gfm for polished tables, lists, code blocks, blockquotes
+- **Uptick CSV import** (batch `csv-import-20260413`): 310 jobs (100 new, 203 updated), 165 WIP records, 222 defects
+- **Supplier price lists** (batch `supplier-pricelist-20260413`): 288 products from 3 suppliers:
+  - Ampac (86 products): Trade + NSW Platinum A pricing (lowest price wins); detectors, FIPs, speakers, sounders, batteries, door holders, ASD, EWIS
+  - Pertronic Industries (139 products): Panels (F220), modules, detectors, VESDA, FAAST, MCPs, sounders, speakers, PSUs, batteries, door holders, flame detectors
+  - Fusion Fire Systems (63 products): Axis 5000 cards, DDI detectors, TAURUS wireless, modules, sounders, speakers, MCPs, door holders
+- Source PDFs: Ampac Trade (12/05/25), Ampac NSW Platinum A 2026, FastSense quote, FireSense, Fusion Fire Systems (07/04/26), Pertronic (1 April 2025), VESDA .msg
 
 ### CRITICAL DATA SAFETY RULE (PERMANENT — CANNOT BE OVERRIDDEN)
 **NO DATA DELETION DURING UPDATES — EVER.** When importing, syncing, or updating data from CSV, Excel, API, or any other source:

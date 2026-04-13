@@ -394,3 +394,198 @@
   .scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
   input[type="search"]::-webkit-search-cancel-button { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AIDE SPLASH — Pre-login animated screen
+   ═══════════════════════════════════════════════════════════════════════════ */
+.aide-splash-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #09090b;
+  color: #ffffff;
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.aide-splash-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(34, 211, 238, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 70% 80%, rgba(8, 145, 178, 0.12) 0%, transparent 50%),
+    linear-gradient(135deg, #09090b 0%, #0a0e14 50%, #09090b 100%);
+  animation: aide-splash-bg-drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes aide-splash-bg-drift {
+  0%   { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.08) translate(-1%, -1%); }
+}
+
+.aide-splash-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 80%);
+  animation: aide-splash-grid-shift 14s linear infinite;
+}
+
+@keyframes aide-splash-grid-shift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 48px 48px; }
+}
+
+.aide-splash-center {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 0 32px;
+}
+
+.aide-splash-mark {
+  opacity: 0;
+  transform: translateY(8px) scale(0.9);
+  animation: aide-splash-mark-in 600ms cubic-bezier(0.16, 1, 0.3, 1) 100ms forwards,
+             aide-splash-mark-float 4s ease-in-out 800ms infinite;
+}
+
+.aide-splash-favicon {
+  filter: drop-shadow(0 0 16px rgba(34, 211, 238, 0.45));
+}
+
+@keyframes aide-splash-mark-in {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes aide-splash-mark-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+.aide-splash-wordmark-wrap {
+  opacity: 0;
+  animation: aide-splash-wordmark-in 800ms cubic-bezier(0.16, 1, 0.3, 1) 400ms forwards;
+}
+
+@keyframes aide-splash-wordmark-in {
+  to { opacity: 1; }
+}
+
+.aide-splash-wordmark {
+  filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.35));
+}
+
+/* Draw-in animation for each stroke. pathLength=1 lets us animate
+   stroke-dashoffset from 1 to 0 regardless of actual length. */
+.aide-stroke {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  pathLength: 1;
+  animation: aide-draw-in 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.aide-stroke-a  { animation-delay: 500ms; }
+.aide-stroke-i  { animation-delay: 900ms; }
+.aide-stroke-d  { animation-delay: 1100ms; }
+.aide-stroke-e1 { animation-delay: 1400ms; }
+.aide-stroke-e2 { animation-delay: 1500ms; }
+.aide-stroke-e3 { animation-delay: 1600ms; }
+
+@keyframes aide-draw-in {
+  to { stroke-dashoffset: 0; }
+}
+
+.aide-splash-caption {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+  min-height: 16px;
+  opacity: 0;
+  animation: aide-splash-caption-in 600ms ease-out 1800ms forwards;
+  transition: opacity 200ms ease;
+}
+
+@keyframes aide-splash-caption-in {
+  to { opacity: 1; }
+}
+
+.aide-splash-progress {
+  width: 240px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(34, 211, 238, 0.12);
+  overflow: hidden;
+  opacity: 0;
+  animation: aide-splash-caption-in 600ms ease-out 1800ms forwards;
+}
+
+.aide-splash-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #22d3ee 40%, #67e8f9 60%, transparent);
+  background-size: 200% 100%;
+  animation: aide-splash-progress-shimmer 1.6s linear infinite;
+  transition: width 200ms linear;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.6);
+}
+
+@keyframes aide-splash-progress-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.aide-splash-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #3f3f46;
+  margin-top: 12px;
+  opacity: 0;
+  animation: aide-splash-caption-in 600ms ease-out 2000ms forwards;
+}
+
+.aide-splash-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #22d3ee;
+  box-shadow: 0 0 6px #22d3ee;
+  animation: aide-splash-dot-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes aide-splash-dot-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aide-splash-bg,
+  .aide-splash-grid,
+  .aide-splash-mark,
+  .aide-splash-wordmark-wrap,
+  .aide-stroke,
+  .aide-splash-caption,
+  .aide-splash-progress,
+  .aide-splash-progress-bar,
+  .aide-splash-tag,
+  .aide-splash-dot {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}

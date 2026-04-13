@@ -1,0 +1,352 @@
+import { pool } from "@workspace/db";
+import { logger } from "./lib/logger";
+import { FIP_DDL_STATEMENTS } from "./seed-fip-ddl";
+import fipData from "./seed-fip-data.json";
+
+/**
+ * FIP / VESDA technical knowledge bootstrap.
+ *
+ * Runs on every startup. Strictly additive:
+ *   1. CREATE TABLE IF NOT EXISTS for all 22 fip_* tables and their indices.
+ *   2. INSERT ... WHERE NOT EXISTS for the V2 Master Pack seed data.
+ *
+ * Data source: artifacts/api-server/src/seed-fip-data.json, pre-parsed from
+ * FIP_MASTER_PACK_V2.zip (checked in at repo root).
+ *
+ * Dedup keys:
+ *   fip_manufacturers        — slug
+ *   fip_product_families     — (manufacturer_id, slug)
+ *   fip_models               — slug
+ *   fip_source_locations     — uri
+ *   fip_documents            — title
+ *   fip_document_versions    — document_id (one per document)
+ *   fip_standards            — code
+ *   fip_audit_runs           — audit_name
+ *
+ * Errors are logged and swallowed so a bootstrap failure never crashes the
+ * server. The FIP routes remain gated by FIP_ENABLED=1 — this function only
+ * prepares the storage and data so the toggle has something to serve.
+ */
+
+type Row = Record<string, any>;
+interface FipSeedData {
+  manufacturers: Row[];
+  product_families: Row[];
+  models: Row[];
+  source_locations: Row[];
+  documents: Row[];
+  document_versions: Row[];
+  standards: Row[];
+  audit_runs: Row[];
+}
+
+const data = fipData as FipSeedData;
+
+export async function seedFipKnowledgeBase(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    // 1. Schema bootstrap — additive, idempotent.
+    for (const stmt of FIP_DDL_STATEMENTS) {
+      await client.query(stmt);
+    }
+    logger.info({ tables: "fip_*" }, "FIP schema ensured");
+
+    // 2. Per-table seed with natural-key dedup.
+    await seedManufacturers(client);
+    const familyIdMap = await seedFamilies(client);
+    const modelIdMap = await seedModels(client, familyIdMap);
+    const locationIdMap = await seedSourceLocations(client);
+    const documentIdMap = await seedDocuments(client, familyIdMap, modelIdMap);
+    await seedDocumentVersions(client, documentIdMap, locationIdMap);
+    await seedStandards(client);
+    await seedAuditRuns(client);
+
+    logger.info("FIP knowledge base seed complete");
+  } catch (err) {
+    logger.error({ err }, "FIP seed failed (non-fatal)");
+  } finally {
+    client.release();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Manufacturers — dedup by slug
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedManufacturers(client: any): Promise<void> {
+  let inserted = 0;
+  for (const r of data.manufacturers) {
+    const existing = await client.query(
+      "SELECT 1 FROM fip_manufacturers WHERE slug = $1 LIMIT 1",
+      [r.slug],
+    );
+    if (existing.rows.length > 0) continue;
+    await client.query(
+      `INSERT INTO fip_manufacturers
+       (id, name, slug, country, website, notes, created_at, updated_at, deleted_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       ON CONFLICT (slug) DO NOTHING`,
+      [r.id, r.name, r.slug, r.country, r.website, r.notes, r.created_at, r.updated_at, r.deleted_at],
+    );
+    inserted++;
+  }
+  logger.info({ table: "fip_manufacturers", inserted }, "fip seed");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Families — dedup by (manufacturer_slug, family_slug).
+// Returns a map from the JSON's manufacturer_id → the live DB manufacturer id,
+// plus a map from the JSON's family id → the live DB family id.
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedFamilies(client: any): Promise<Map<string, string>> {
+  const familyIdMap = new Map<string, string>();
+
+  // Build a (mfr slug → live id) lookup for the canonical manufacturer ids.
+  const mfrLookup = new Map<string, string>();
+  for (const r of data.manufacturers) {
+    const live = await client.query(
+      "SELECT id FROM fip_manufacturers WHERE slug = $1 LIMIT 1",
+      [r.slug],
+    );
+    if (live.rows.length > 0) mfrLookup.set(r.id, live.rows[0].id);
+  }
+
+  let inserted = 0;
+  for (const r of data.product_families) {
+    const liveMfrId = mfrLookup.get(r.manufacturer_id);
+    if (!liveMfrId) continue;
+    const existing = await client.query(
+      "SELECT id FROM fip_product_families WHERE manufacturer_id = $1 AND slug = $2 LIMIT 1",
+      [liveMfrId, r.slug],
+    );
+    if (existing.rows.length > 0) {
+      familyIdMap.set(r.id, existing.rows[0].id);
+      continue;
+    }
+    await client.query(
+      `INSERT INTO fip_product_families
+       (id, manufacturer_id, name, slug, category, description, created_at, updated_at, deleted_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [r.id, liveMfrId, r.name, r.slug, r.category, r.description, r.created_at, r.updated_at, r.deleted_at],
+    );
+    familyIdMap.set(r.id, r.id);
+    inserted++;
+  }
+  logger.info({ table: "fip_product_families", inserted }, "fip seed");
+  return familyIdMap;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models — dedup by slug
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedModels(client: any, familyIdMap: Map<string, string>): Promise<Map<string, string>> {
+  const modelIdMap = new Map<string, string>();
+
+  // Manufacturer lookup for the models' mfr_id column.
+  const mfrLookup = new Map<string, string>();
+  for (const r of data.manufacturers) {
+    const live = await client.query(
+      "SELECT id FROM fip_manufacturers WHERE slug = $1 LIMIT 1",
+      [r.slug],
+    );
+    if (live.rows.length > 0) mfrLookup.set(r.id, live.rows[0].id);
+  }
+
+  let inserted = 0;
+  for (const r of data.models) {
+    const existing = await client.query(
+      "SELECT id FROM fip_models WHERE slug = $1 LIMIT 1",
+      [r.slug],
+    );
+    if (existing.rows.length > 0) {
+      modelIdMap.set(r.id, existing.rows[0].id);
+      continue;
+    }
+    const liveFamily = familyIdMap.get(r.family_id) ?? r.family_id;
+    const liveMfr = mfrLookup.get(r.manufacturer_id) ?? r.manufacturer_id;
+    await client.query(
+      `INSERT INTO fip_models
+       (id, family_id, manufacturer_id, name, model_number, slug, description, years_active,
+        status, image_checksum, created_at, updated_at, deleted_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [
+        r.id, liveFamily, liveMfr, r.name, r.model_number, r.slug, r.description, r.years_active,
+        r.status ?? "current", r.image_checksum, r.created_at, r.updated_at, r.deleted_at,
+      ],
+    );
+    modelIdMap.set(r.id, r.id);
+    inserted++;
+  }
+  logger.info({ table: "fip_models", inserted }, "fip seed");
+  return modelIdMap;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Source locations — dedup by uri
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedSourceLocations(client: any): Promise<Map<string, string>> {
+  const locationIdMap = new Map<string, string>();
+  let inserted = 0;
+  for (const r of data.source_locations) {
+    if (r.uri) {
+      const existing = await client.query(
+        "SELECT id FROM fip_source_locations WHERE uri = $1 LIMIT 1",
+        [r.uri],
+      );
+      if (existing.rows.length > 0) {
+        locationIdMap.set(r.id, existing.rows[0].id);
+        continue;
+      }
+    }
+    await client.query(
+      `INSERT INTO fip_source_locations
+       (id, kind, uri, bucket, key, checksum, size, content_type, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [r.id, r.kind, r.uri, r.bucket, r.key, r.checksum, r.size, r.content_type, r.created_at],
+    );
+    locationIdMap.set(r.id, r.id);
+    inserted++;
+  }
+  logger.info({ table: "fip_source_locations", inserted }, "fip seed");
+  return locationIdMap;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Documents — dedup by title
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedDocuments(
+  client: any,
+  familyIdMap: Map<string, string>,
+  modelIdMap: Map<string, string>,
+): Promise<Map<string, string>> {
+  const documentIdMap = new Map<string, string>();
+
+  const mfrLookup = new Map<string, string>();
+  for (const r of data.manufacturers) {
+    const live = await client.query(
+      "SELECT id FROM fip_manufacturers WHERE slug = $1 LIMIT 1",
+      [r.slug],
+    );
+    if (live.rows.length > 0) mfrLookup.set(r.id, live.rows[0].id);
+  }
+
+  let inserted = 0;
+  for (const r of data.documents) {
+    const existing = await client.query(
+      "SELECT id FROM fip_documents WHERE title = $1 LIMIT 1",
+      [r.title],
+    );
+    if (existing.rows.length > 0) {
+      documentIdMap.set(r.id, existing.rows[0].id);
+      continue;
+    }
+    const liveMfr = r.manufacturer_id ? (mfrLookup.get(r.manufacturer_id) ?? r.manufacturer_id) : null;
+    const liveFam = r.family_id ? (familyIdMap.get(r.family_id) ?? r.family_id) : null;
+    const liveModel = r.model_id ? (modelIdMap.get(r.model_id) ?? r.model_id) : null;
+    await client.query(
+      `INSERT INTO fip_documents
+       (id, title, kind, manufacturer_id, family_id, model_id, component_id, language,
+        publication_date, latest_version_id, tags, notes, created_at, updated_at, deleted_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+      [
+        r.id, r.title, r.kind, liveMfr, liveFam, liveModel, r.component_id, r.language ?? "en",
+        r.publication_date, r.latest_version_id, r.tags ?? [], r.notes,
+        r.created_at, r.updated_at, r.deleted_at,
+      ],
+    );
+    documentIdMap.set(r.id, r.id);
+    inserted++;
+  }
+  logger.info({ table: "fip_documents", inserted }, "fip seed");
+  return documentIdMap;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Document versions — dedup by document_id (one canonical version per doc)
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedDocumentVersions(
+  client: any,
+  documentIdMap: Map<string, string>,
+  locationIdMap: Map<string, string>,
+): Promise<void> {
+  let inserted = 0;
+  for (const r of data.document_versions) {
+    const liveDocId = documentIdMap.get(r.document_id) ?? r.document_id;
+    const existing = await client.query(
+      "SELECT 1 FROM fip_document_versions WHERE document_id = $1 LIMIT 1",
+      [liveDocId],
+    );
+    if (existing.rows.length > 0) continue;
+    const liveLocId = locationIdMap.get(r.source_location_id) ?? r.source_location_id;
+    await client.query(
+      `INSERT INTO fip_document_versions
+       (id, document_id, version_label, source_location_id, page_count,
+        ingested_at, ingest_status, ingest_error, blob, created_at, deleted_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [
+        r.id, liveDocId, r.version_label, liveLocId, r.page_count,
+        r.ingested_at, r.ingest_status ?? "pending", r.ingest_error, null,
+        r.created_at, r.deleted_at,
+      ],
+    );
+    inserted++;
+  }
+  logger.info({ table: "fip_document_versions", inserted }, "fip seed");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Standards — dedup by code (unique in schema)
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedStandards(client: any): Promise<void> {
+  let inserted = 0;
+  for (const r of data.standards) {
+    const existing = await client.query(
+      "SELECT 1 FROM fip_standards WHERE code = $1 LIMIT 1",
+      [r.code],
+    );
+    if (existing.rows.length > 0) continue;
+    await client.query(
+      `INSERT INTO fip_standards
+       (id, code, title, jurisdiction, year, current_version, superseded_by, notes,
+        created_at, updated_at, deleted_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       ON CONFLICT (code) DO NOTHING`,
+      [
+        r.id, r.code, r.title, r.jurisdiction, r.year, r.current_version,
+        r.superseded_by, r.notes, r.created_at, r.updated_at, r.deleted_at,
+      ],
+    );
+    inserted++;
+  }
+  logger.info({ table: "fip_standards", inserted }, "fip seed");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Audit runs — dedup by audit_name
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedAuditRuns(client: any): Promise<void> {
+  let inserted = 0;
+  for (const r of data.audit_runs) {
+    const existing = await client.query(
+      "SELECT 1 FROM fip_audit_runs WHERE audit_name = $1 LIMIT 1",
+      [r.audit_name],
+    );
+    if (existing.rows.length > 0) continue;
+    await client.query(
+      `INSERT INTO fip_audit_runs
+       (id, audit_name, scope, passed, failed_checks, warnings, blockers,
+        metrics, next_actions, started_at, finished_at, duration_ms)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+      [
+        r.id, r.audit_name, r.scope, r.passed,
+        JSON.stringify(r.failed_checks ?? []),
+        JSON.stringify(r.warnings ?? []),
+        JSON.stringify(r.blockers ?? []),
+        JSON.stringify(r.metrics ?? {}),
+        JSON.stringify(r.next_actions ?? []),
+        r.started_at, r.finished_at, r.duration_ms,
+      ],
+    );
+    inserted++;
+  }
+  logger.info({ table: "fip_audit_runs", inserted }, "fip seed");
+}

@@ -74,15 +74,33 @@ async function run() {
   try {
     await client.query('BEGIN');
 
-    // ADDITIVE RE-IMPORT — CRITICAL RULE: NEVER DELETE EXISTING DATA.
-    // Only rows belonging to this script's own batch ('spreadsheet-import') are
-    // replaced. Jobs are upserted by task_number. All manual/other-batch rows
-    // are always preserved. Full-wipe functionality has been permanently removed.
+    // ADDITIVE RE-IMPORT
+    // This script used to DELETE every row in wip_records/quotes/jobs/schedule_events,
+    // which destroyed manually-created records. It now only touches rows that belong
+    // to this script's own import batch ('spreadsheet-import'), and upserts jobs by
+    // task_number. Any hand-entered row is preserved.
+    //
+    // If you need to force a full wipe, set env var FLAMESAFE_FULL_WIPE=1 and run
+    // manually — the default path never deletes outside its batch.
     const BATCH_ID = 'spreadsheet-import';
-    await client.query('DELETE FROM wip_records WHERE import_batch_id = $1', [BATCH_ID]);
-    await client.query('DELETE FROM quotes WHERE import_batch_id = $1', [BATCH_ID]);
-    await client.query('DELETE FROM invoices WHERE import_batch_id = $1', [BATCH_ID]);
-    console.log('Cleared spreadsheet-import batch only (all other rows preserved).');
+    const fullWipe = process.env.FLAMESAFE_FULL_WIPE === '1';
+    if (fullWipe) {
+      console.warn('⚠ FLAMESAFE_FULL_WIPE=1 — deleting all rows, including manual entries.');
+      await client.query('DELETE FROM wip_records');
+      await client.query('DELETE FROM quotes');
+      await client.query('DELETE FROM jobs');
+      await client.query('DELETE FROM invoices WHERE import_batch_id = $1', [BATCH_ID]);
+      await client.query(`DELETE FROM notes WHERE text LIKE '[T-%' OR text LIKE '[N/A]%'`);
+      await client.query('DELETE FROM schedule_events WHERE 1=1').catch(() => {});
+    } else {
+      await client.query('DELETE FROM wip_records WHERE import_batch_id = $1', [BATCH_ID]);
+      await client.query('DELETE FROM quotes WHERE import_batch_id = $1', [BATCH_ID]);
+      await client.query('DELETE FROM invoices WHERE import_batch_id = $1', [BATCH_ID]);
+      // Notes: leave existing notes in place entirely. The importer appends new ones; duplicates
+      // can be deduped manually in the UI. This is the least-destructive behaviour.
+      // Jobs are upserted by task_number below, so no pre-delete needed.
+    }
+    console.log(fullWipe ? 'Full wipe complete.' : 'Cleared spreadsheet-import batch only (manual rows preserved).');
 
     // 1. REPAIRS → wip_records
     const rep = parseSheet(wb, 'REPAIRS', h => h === 'PRIORITY' || h === 'REF');

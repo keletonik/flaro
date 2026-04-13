@@ -228,7 +228,7 @@ export default function Dashboard() {
             <MetricCard label="Revenue This Week" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={DollarSign} color="bg-emerald-500/8" featured />
           </div>
           <div className="bento-featured card-stagger" style={{ '--stagger-index': 1 } as React.CSSProperties}>
-            <MetricCard label="Active WIPs" value={summary?.active ?? "-"} icon={Briefcase} color="bg-primary/8" onClick={() => setLocation("/jobs")} featured />
+            <MetricCard label="Active Jobs" value={summary?.active ?? "-"} icon={Briefcase} color="bg-primary/8" onClick={() => setLocation("/jobs")} featured />
           </div>
           <div className="bento-featured card-stagger" style={{ '--stagger-index': 2 } as React.CSSProperties}>
             <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={TrendingUp} color="bg-amber-500/8" onClick={() => setLocation("/operations")} featured />

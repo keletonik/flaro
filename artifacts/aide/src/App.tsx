@@ -22,7 +22,6 @@ const Analytics = lazy(() => import("@/pages/analytics"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const PM = lazy(() => import("@/pages/pm"));
 const NotFound = lazy(() => import("@/pages/not-found"));
-const LoginPage = lazy(() => import("@/pages/login"));
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
@@ -52,7 +51,7 @@ const navGroups = [
   {
     label: "Manage",
     items: [
-      { path: "/jobs", icon: Briefcase, label: "Action List" },
+      { path: "/jobs", icon: Briefcase, label: "WIPs" },
       { path: "/todos", icon: CheckSquare, label: "Tasks" },
       { path: "/projects", icon: FolderKanban, label: "Projects" },
       { path: "/suppliers", icon: Package, label: "Suppliers" },
@@ -347,48 +346,13 @@ const AuthContext = createContext<{ user: AuthUser | null; token: string | null;
 export function useAuth() { return useContext(AuthContext); }
 
 function App() {
-  const [authToken, setAuthToken] = useState<string | null>(() => localStorage.getItem("ops-auth-token"));
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
+  const defaultUser: AuthUser = { id: "default", username: "casper", displayName: "Casper Tavitian", role: "admin" };
 
-  // Check existing token on mount
-  React.useEffect(() => {
-    const token = localStorage.getItem("ops-auth-token");
-    if (!token) { setAuthChecked(true); return; }
-    fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(user => { setAuthUser(user); setAuthToken(token); setAuthChecked(true); })
-      .catch(() => { localStorage.removeItem("ops-auth-token"); setAuthChecked(true); });
-  }, []);
-
-  const handleLogin = (token: string, user: any) => {
-    localStorage.setItem("ops-auth-token", token);
-    setAuthToken(token);
-    setAuthUser(user);
-  };
-
-  const handleLogout = () => {
-    if (authToken) fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${authToken}` } }).catch(() => {});
-    localStorage.removeItem("ops-auth-token");
-    setAuthToken(null);
-    setAuthUser(null);
-  };
-
-  if (!authChecked) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-
-  if (!authUser) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<div />}>
-          <LoginPage onLogin={handleLogin} />
-        </Suspense>
-      </ThemeProvider>
-    );
-  }
+  const handleLogout = () => {};
 
   return (
     <ThemeProvider>
-      <AuthContext.Provider value={{ user: authUser, token: authToken, logout: handleLogout }}>
+      <AuthContext.Provider value={{ user: defaultUser, token: null, logout: handleLogout }}>
       <SidebarProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>

@@ -6,13 +6,13 @@ export async function seedProductionData() {
   const client = await pool.connect();
   try {
     const wipCount = await client.query("SELECT COUNT(*) as cnt FROM wip_records");
-    if (parseInt(wipCount.rows[0].cnt) > 100) {
+    const currentWip = parseInt(wipCount.rows[0].cnt);
+    if (currentWip > 100) {
       logger.info({ wipCount: wipCount.rows[0].cnt }, "Production DB already seeded, skipping");
       return;
     }
 
-    logger.info("Seeding production database with dev data...");
-    await client.query("BEGIN");
+    logger.info({ currentWip }, "Seeding production database with dev data...");
 
     const tables: Array<{ name: string; columns: string[] }> = [
       { name: "users", columns: ["id", "username", "display_name", "password_hash", "role", "email", "must_change_password", "created_at", "password_algo", "password_salt"] },
@@ -31,52 +31,78 @@ export async function seedProductionData() {
 
     for (const table of tables) {
       const rows = (seedData as Record<string, any[]>)[table.name];
-      if (!rows || rows.length === 0) continue;
-
-      const batchSize = 50;
-      let inserted = 0;
-
-      for (let b = 0; b < rows.length; b += batchSize) {
-        const chunk = rows.slice(b, b + batchSize);
-        const valuePlaceholders: string[] = [];
-        const params: any[] = [];
-        let paramIndex = 1;
-
-        for (const row of chunk) {
-          const placeholders = table.columns.map(() => `$${paramIndex++}`);
-          valuePlaceholders.push(`(${placeholders.join(",")})`);
-          for (const col of table.columns) {
-            let val = row[col];
-            if (col === "raw_data" && val !== null && typeof val === "object") {
-              val = JSON.stringify(val);
-            }
-            params.push(val ?? null);
-          }
-        }
-
-        const colList = table.columns.map(c => `"${c}"`).join(",");
-        await client.query(
-          `INSERT INTO ${table.name} (${colList}) VALUES ${valuePlaceholders.join(",")} ON CONFLICT DO NOTHING`,
-          params
-        );
-        inserted += chunk.length;
+      if (!rows || rows.length === 0) {
+        logger.warn({ table: table.name }, "SEED: no rows in seed-data.json, skipping");
+        continue;
       }
 
-      logger.info({ table: table.name, rows: inserted }, "Seeded table");
+      try {
+        await client.query("BEGIN");
+
+        const batchSize = 50;
+        let attempted = 0;
+
+        for (let b = 0; b < rows.length; b += batchSize) {
+          const chunk = rows.slice(b, b + batchSize);
+          const valuePlaceholders: string[] = [];
+          const params: any[] = [];
+          let paramIndex = 1;
+
+          for (const row of chunk) {
+            const placeholders = table.columns.map(() => `$${paramIndex++}`);
+            valuePlaceholders.push(`(${placeholders.join(",")})`);
+            for (const col of table.columns) {
+              let val = row[col];
+              if (col === "raw_data" && val !== null && typeof val === "object") {
+                val = JSON.stringify(val);
+              }
+              if (col === "uptick_notes" && Array.isArray(val)) {
+                val = `{${val.map((v: string) => `"${(v || "").replace(/"/g, '\\"')}"`).join(",")}}`;
+              }
+              params.push(val ?? null);
+            }
+          }
+
+          const colList = table.columns.map(c => `"${c}"`).join(",");
+          await client.query(
+            `INSERT INTO ${table.name} (${colList}) VALUES ${valuePlaceholders.join(",")} ON CONFLICT DO NOTHING`,
+            params
+          );
+          attempted += chunk.length;
+        }
+
+        await client.query("COMMIT");
+
+        const verify = await client.query(`SELECT COUNT(*) as cnt FROM ${table.name}`);
+        const actualCount = parseInt(verify.rows[0].cnt);
+        logger.info({ table: table.name, attempted, actual: actualCount, seedRows: rows.length }, "SEED: table complete");
+
+        if (actualCount === 0) {
+          logger.error({ table: table.name }, "SEED ERROR: table is still empty after insert!");
+        }
+      } catch (tableErr) {
+        try { await client.query("ROLLBACK"); } catch (_) {}
+        logger.error({ table: table.name, err: tableErr instanceof Error ? tableErr.message : String(tableErr) }, "SEED ERROR: failed to seed table");
+      }
     }
 
-    const seqTables = ["users", "jobs", "todos", "notes", "quotes", "defects", "invoices", "toolbox", "suppliers", "on_call_roster", "conversations"];
+    const seqTables = ["conversations"];
     for (const t of seqTables) {
       try {
         await client.query(`SELECT setval('${t}_id_seq', GREATEST((SELECT MAX(id) FROM ${t}), 1))`);
-      } catch (_e) {
-      }
+      } catch (_e) {}
     }
 
-    await client.query("COMMIT");
-    logger.info("Production database seeding complete");
+    const finalCheck = await client.query(
+      "SELECT 'jobs' as t, COUNT(*) as c FROM jobs UNION ALL SELECT 'wip_records', COUNT(*) FROM wip_records UNION ALL SELECT 'defects', COUNT(*) FROM defects UNION ALL SELECT 'todos', COUNT(*) FROM todos UNION ALL SELECT 'quotes', COUNT(*) FROM quotes UNION ALL SELECT 'suppliers', COUNT(*) FROM suppliers UNION ALL SELECT 'notes', COUNT(*) FROM notes ORDER BY t"
+    );
+    const summary: Record<string, number> = {};
+    for (const r of finalCheck.rows) {
+      summary[r.t] = parseInt(r.c);
+    }
+    logger.info({ summary }, "Production database seeding complete — final verification");
+
   } catch (err) {
-    await client.query("ROLLBACK");
     logger.error({ err }, "Failed to seed production database");
   } finally {
     client.release();

@@ -107,6 +107,10 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - `POST /api/suppliers/:supplierId/products/import` — price list CSV import
 - `PATCH/DELETE /api/suppliers/products/:id` — product CRUD
 
+**Analytics:**
+- `GET /api/analytics/wip` — comprehensive analytics: revenue tracking (day/week/month), WIP by status/tech/type/value, financial KPIs (quoted/revised/actual cost/sell/profit/margin, hours, uninvoiced, cash position), profit by category, margin distribution, cash position by tech, over-budget job alerts, quote conversion funnel, invoice pipeline
+- `GET /api/analytics/pipeline-gaps` — quote-to-invoice gap detection: accepted quotes without WIP, completed WIP without invoices, under-invoiced items
+
 **Notes/Todos/Projects/Toolbox:** Same as before with enhanced todo fields
 
 **AI Chat:**
@@ -145,6 +149,22 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - Source: `attached_assets/flamesafe_focused_09apr2026_1775773663737.xlsx` (10 sheets)
 - Imported: 211 jobs, 87 quotes, 123 WIP records, notes from Action List, Quotes, Repairs, Schedule Register, Notes Log sheets
 - Chat rendering: react-markdown + remark-gfm for polished tables, lists, code blocks, blockquotes
+- **Uptick CSV import** (batch `csv-import-20260413`): 310 jobs (100 new, 203 updated), 165 WIP records, 222 defects
+- **WIP Financial Analytics** (batch `wip-financial-20260413`): 4,243 WIP records from full Uptick WIP export (`Task-WIP_2026-04-13_10-15-04`) with 37 financial columns: quoted/revised/actual cost/sell/profit/margin, estimated/committed/actual hours, uninvoiced, cash position, billable, cumulative actuals/invoiced, activity fields — stored in `raw_data` JSON; analytics API enriched with financial KPIs, profit by category, margin distribution, cash position by tech, over-budget alerts. 20 techs, 4 categories (I&T 2197, Callout 1367, Repair 678, Billing 1).
+- **Supplier price lists** (batch `supplier-pricelist-20260413`): 288 products from 3 suppliers:
+  - Ampac (86 products): Trade + NSW Platinum A pricing (lowest price wins); detectors, FIPs, speakers, sounders, batteries, door holders, ASD, EWIS
+  - Pertronic Industries (139 products): Panels (F220), modules, detectors, VESDA, FAAST, MCPs, sounders, speakers, PSUs, batteries, door holders, flame detectors
+  - Fusion Fire Systems (63 products): Axis 5000 cards, DDI detectors, TAURUS wireless, modules, sounders, speakers, MCPs, door holders
+- Source PDFs: Ampac Trade (12/05/25), Ampac NSW Platinum A 2026, FastSense quote, FireSense, Fusion Fire Systems (07/04/26), Pertronic (1 April 2025), VESDA .msg
+
+### CRITICAL DATA SAFETY RULE (PERMANENT — CANNOT BE OVERRIDDEN)
+**NO DATA DELETION DURING UPDATES — EVER.** When importing, syncing, or updating data from CSV, Excel, API, or any other source:
+- **NEVER** use `DELETE FROM <table>` without a batch-scoped `WHERE` clause tied to the current import batch only.
+- **NEVER** truncate or drop tables.
+- **ALWAYS** upsert (INSERT ... ON CONFLICT UPDATE) or insert-only. Existing rows that are not in the new import must be left untouched.
+- **ALWAYS** use batch IDs (e.g. `import_batch_id`) so only the current import's prior run can be replaced — never someone else's data or manually created records.
+- This rule applies to ALL tables: jobs, wip_records, defects, quotes, invoices, notes, todos, projects, suppliers, toolbox, schedule_events, and any future tables.
+- This rule is **permanent and non-negotiable**. No script, sync, migration, or feature may violate it.
 
 ### GitHub Sync Rule
 **PERMANENT RULE**: After every update or change, automatically push the latest changes to GitHub repo `keletonik/flaro` on branch `main`. This must happen on every single update — no exceptions, no need for the user to ask.

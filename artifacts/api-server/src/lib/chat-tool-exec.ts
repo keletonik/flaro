@@ -179,6 +179,21 @@ export async function dbGet(input: any): Promise<any> {
   return summariseRow(tableName, rows[0]);
 }
 
+/**
+ * Like dbGet but returns the ENTIRE row unclipped. Includes raw_data,
+ * import_batch_id, soft-delete timestamps — whatever Drizzle pulled.
+ * Use when summariseRow drops a field the agent needs to pipe into a
+ * second tool call. Pass 3 fix #7.
+ */
+export async function dbGetFull(input: any): Promise<any> {
+  const { table: tableName, id } = input;
+  const e = entry(tableName);
+  const t = e.table;
+  const rows = await db.select().from(t).where(eq((t as any).id, id)).limit(1);
+  if (!rows.length) throw new Error(`No ${tableName} row with id=${id}`);
+  return rows[0];
+}
+
 export async function dbCreate(input: any): Promise<any> {
   const { table: tableName, data } = input;
   const e = entry(tableName);
@@ -579,6 +594,8 @@ export async function executeAgentTool(
       return { result: await dbSearch(input) };
     case "db_get":
       return { result: await dbGet(input) };
+    case "db_get_full":
+      return { result: await dbGetFull(input) };
     case "db_create":
       return { result: await dbCreate(input), uiAction: { type: "refresh" } };
     case "db_update":

@@ -79,12 +79,32 @@ export const AGENT_TOOLS = [
   {
     name: "db_get",
     description:
-      "Fetch a single record by id from one of the allowlisted tables. Returns the full row.",
+      "Fetch a single record by id from one of the allowlisted tables. Returns " +
+      "a clipped summary shaped to the table (same fields as db_search rows). " +
+      "If you need the complete raw row including fields the summary drops, call " +
+      "db_get_full instead.",
     input_schema: {
       type: "object" as const,
       properties: {
         table: { type: "string", enum: TABLE_ALLOWLIST },
         id: { type: "string", description: "Primary key of the row." },
+      },
+      required: ["table", "id"],
+    },
+  },
+
+  {
+    name: "db_get_full",
+    description:
+      "Fetch a single record by id and return EVERY column, including fields " +
+      "that db_search and db_get drop (raw_data JSONB, import_batch_id, " +
+      "soft-delete timestamps, any legacy columns). Use when debugging, or when " +
+      "a second tool call needs a field the summary clipped.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        table: { type: "string", enum: TABLE_ALLOWLIST },
+        id: { type: "string" },
       },
       required: ["table", "id"],
     },

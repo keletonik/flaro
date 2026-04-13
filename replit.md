@@ -146,6 +146,15 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - Imported: 211 jobs, 87 quotes, 123 WIP records, notes from Action List, Quotes, Repairs, Schedule Register, Notes Log sheets
 - Chat rendering: react-markdown + remark-gfm for polished tables, lists, code blocks, blockquotes
 
+### CRITICAL DATA SAFETY RULE (PERMANENT — CANNOT BE OVERRIDDEN)
+**NO DATA DELETION DURING UPDATES — EVER.** When importing, syncing, or updating data from CSV, Excel, API, or any other source:
+- **NEVER** use `DELETE FROM <table>` without a batch-scoped `WHERE` clause tied to the current import batch only.
+- **NEVER** truncate or drop tables.
+- **ALWAYS** upsert (INSERT ... ON CONFLICT UPDATE) or insert-only. Existing rows that are not in the new import must be left untouched.
+- **ALWAYS** use batch IDs (e.g. `import_batch_id`) so only the current import's prior run can be replaced — never someone else's data or manually created records.
+- This rule applies to ALL tables: jobs, wip_records, defects, quotes, invoices, notes, todos, projects, suppliers, toolbox, schedule_events, and any future tables.
+- This rule is **permanent and non-negotiable**. No script, sync, migration, or feature may violate it.
+
 ### GitHub Sync Rule
 **PERMANENT RULE**: After every update or change, automatically push the latest changes to GitHub repo `keletonik/flaro` on branch `main`. This must happen on every single update — no exceptions, no need for the user to ask.
 **CRITICAL — ROLLING UPDATES ONLY**: Syncs must NEVER remove existing data from the repo. Always use `base_tree` (the parent commit's tree) when creating new trees via the GitHub API. This ensures only changed files are added/updated — all other existing files in the repo remain untouched. Never create a tree from scratch or force-push. Every sync is additive on top of the current remote HEAD.

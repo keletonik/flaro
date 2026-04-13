@@ -53,6 +53,7 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - `/notes` — Notion-style: list/grid toggle, category tabs with counts, expandable cards, mark done, search
 - `/schedule` — Full week calendar grid (7am–6pm); jobs from DB shown by due date (colour-coded by priority); add standalone events
 - `/toolbox` — Toolbox briefing notes with TB-XXX refs, mark briefed, export/copy to clipboard
+- `/fip` — FIP Knowledge Base: tabbed interface (Overview, Manufacturers, Panel Models, Documents, Standards); 5 manufacturers, 36 models, 39 docs, 20 standards; search/filter by manufacturer; gated by FIP_ENABLED=1 env var
 
 ### Design System
 - **Themes**: Light (default) + Dark mode via `.dark` class on `<html>`; toggled by sidebar button, persisted in `localStorage["ops-theme"]`
@@ -60,6 +61,7 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - **Font**: Plus Jakarta Sans (body), JetBrains Mono (code)
 - **Primary**: Warm amber/copper `hsl(18 60% 44%)` light / `hsl(18 60% 55%)` dark
 - **Sidebar**: Dark enterprise sidebar with grouped nav (Command, Manage, Tools), collapsible
+- **AIDE PA**: Embedded floating AI assistant (AidePA component) on every page except Chat; context-aware per page; uses `/api/chat/contextual` streaming; collapsible/expandable panel in bottom-right
 - **Glass**: Glassmorphism header bars with `backdrop-filter: blur(20px)`
 - Priority CSS classes: `priority-critical/high/medium/low` (left border), badge classes
 - Status badge classes for all entity types

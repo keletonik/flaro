@@ -21,12 +21,15 @@ const Suppliers = lazy(() => import("@/pages/suppliers"));
 const Analytics = lazy(() => import("@/pages/analytics"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const PM = lazy(() => import("@/pages/pm"));
+const FIP = lazy(() => import("@/pages/fip"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
-  Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal, Settings2
+  Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal, Settings2,
+  Shield
 } from "lucide-react";
+import AidePA from "@/components/AidePA";
 import { AideFavicon, AideWordmark } from "@/components/AideLogo";
 
 const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>> }>({ collapsed: false, setCollapsed: () => {} });
@@ -63,6 +66,7 @@ const navGroups = [
       { path: "/schedule", icon: CalendarDays, label: "Schedule" },
       { path: "/notes", icon: FileText, label: "Notes" },
       { path: "/toolbox", icon: Wrench, label: "Toolbox" },
+      { path: "/fip", icon: Shield, label: "FIP Knowledge" },
       { path: "/settings", icon: Settings2, label: "Settings" },
     ],
   },
@@ -268,6 +272,7 @@ function BottomNav() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
+  const [location] = useLocation();
   return (
     <div className="min-h-screen bg-background">
       <SidebarNav />
@@ -275,6 +280,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </div>
       <BottomNav />
+      {location !== "/chat" && <AidePA currentPath={location} />}
     </div>
   );
 }
@@ -326,6 +332,7 @@ function Router() {
           <Route path="/projects"><PM /></Route>
           <Route path="/toolbox"><Toolbox /></Route>
           <Route path="/suppliers"><Suppliers /></Route>
+          <Route path="/fip"><FIP /></Route>
           <Route path="/settings"><SettingsPage /></Route>
           <Route><NotFound /></Route>
         </Switch>

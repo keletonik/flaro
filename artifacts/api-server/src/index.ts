@@ -5,6 +5,7 @@ import { conversations } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { ensureCasperAdmin } from "./routes/auth";
 import { seedProductionData } from "./seed-prod";
+import { seedAdditionalData } from "./seed-additional";
 
 const rawPort = process.env["PORT"];
 
@@ -46,7 +47,9 @@ app.listen(port, (err) => {
   ensureCasperAdmin().catch((err) => {
     logger.warn({ err }, "Could not ensure casper admin on startup — DB may not be ready");
   });
-  seedProductionData().catch((err) => {
-    logger.warn({ err }, "Could not seed production data on startup");
-  });
+  seedProductionData()
+    .then(() => seedAdditionalData())
+    .catch((err) => {
+      logger.warn({ err }, "Could not seed production data on startup");
+    });
 });

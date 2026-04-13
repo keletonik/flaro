@@ -43,13 +43,18 @@ import { runAllAudits, type AuditContext } from "../lib/fip/audits";
 
 const router = Router();
 
+// FIP is now enabled by default. The flag used to be opt-in
+// (`FIP_ENABLED=1`) because the module shipped ahead of the UI, but the
+// tables are seeded on startup and the /fip page is live, so there's no
+// reason to keep this gated. Set FIP_ENABLED=0 in Replit Secrets only if
+// you need to temporarily kill the module without reverting code.
 function fipEnabled(): boolean {
-  return process.env["FIP_ENABLED"] === "1";
+  return process.env["FIP_ENABLED"] !== "0";
 }
 
 function gate(res: any): boolean {
   if (!fipEnabled()) {
-    res.status(503).json({ error: "FIP disabled. Set FIP_ENABLED=1 in Replit Secrets to enable." });
+    res.status(503).json({ error: "FIP disabled. Unset FIP_ENABLED=0 in Replit Secrets to re-enable." });
     return false;
   }
   return true;

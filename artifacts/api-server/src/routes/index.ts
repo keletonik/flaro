@@ -25,6 +25,7 @@ import uptickRouter from "./uptick";
 import fipRouter from "./fip";
 import chatAgentRouter from "./chat-agent";
 import estimatesRouter from "./estimates";
+import metricsRouter from "./metrics";
 import diagRouter from "./diag";
 
 const router: IRouter = Router();
@@ -55,6 +56,7 @@ router.use(uptickRouter);
 router.use(fipRouter);
 router.use(chatAgentRouter);
 router.use(estimatesRouter);
+router.use(metricsRouter);
 router.use(diagRouter);
 
 export default router;

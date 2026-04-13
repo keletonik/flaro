@@ -40,7 +40,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
+import EmbeddedAgentChat from "@/components/EmbeddedAgentChat";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -661,12 +661,17 @@ export default function EstimationWorkbench() {
         )}
       </div>
 
-      {/* ═══ RIGHT — Embedded agent ═══ */}
+      {/* ═══ RIGHT — Embedded tool-use agent ═══ */}
       <div className="w-[360px] border-l border-border shrink-0 flex flex-col">
-        <AnalyticsPanel
+        <EmbeddedAgentChat
           section="estimation"
           title="Estimation Agent"
-          embedded
+          suggestions={[
+            "Create a new estimate for Goodman Silverwater, 42% markup",
+            "Find every Pertronic F220 panel",
+            "Add 2 Ampac detectors at 35% markup",
+            "Reprice the current estimate at 30%",
+          ]}
         />
       </div>
     </div>

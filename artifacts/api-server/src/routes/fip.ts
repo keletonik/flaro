@@ -43,13 +43,16 @@ import { runAllAudits, type AuditContext } from "../lib/fip/audits";
 
 const router = Router();
 
+// FIP is on by default. The tables are seeded on startup and /fip is live,
+// so no Replit Secret is required. Set FIP_ENABLED=0 only to temporarily
+// kill the module without reverting code.
 function fipEnabled(): boolean {
-  return process.env["FIP_ENABLED"] === "1";
+  return process.env["FIP_ENABLED"] !== "0";
 }
 
 function gate(res: any): boolean {
   if (!fipEnabled()) {
-    res.status(503).json({ error: "FIP disabled. Set FIP_ENABLED=1 in Replit Secrets to enable." });
+    res.status(503).json({ error: "FIP disabled. Unset FIP_ENABLED=0 in Replit Secrets to re-enable." });
     return false;
   }
   return true;

@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Search, Upload, Download, Filter, X, ChevronDown, BarChart3, MessageCircle, Send, Trash2, PanelRightClose, PanelRightOpen, Loader2, Pencil, Eye, ArrowUpDown } from "lucide-react";
-import { apiFetch, exportToCSV, streamChat } from "@/lib/api";
+import { Search, Upload, Download, Filter, X, ChevronDown, BarChart3, Trash2, Pencil, Eye, ArrowUpDown } from "lucide-react";
+import { apiFetch, exportToCSV } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
+import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -447,39 +448,10 @@ export default function Operations() {
 
   const currentData = data[activeTab];
 
-  // --- Inline Analytics Chat ---
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [chatStreaming, setChatStreaming] = useState(false);
-  const chatScrollRef = useRef<HTMLDivElement>(null);
-  const chatInputRef = useRef<HTMLTextAreaElement>(null);
-  const controllerRef = useRef<AbortController | null>(null);
-
-  const scrollChat = () => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight; };
-  useEffect(() => { scrollChat(); }, [chatMessages]);
-
-  const sendChatMsg = () => {
-    const text = chatInput.trim();
-    if (!text || chatStreaming) return;
-    setChatInput("");
-    setChatMessages(prev => [...prev, { role: "user", content: text }]);
-    setChatStreaming(true);
-    let assistantContent = "";
-    setChatMessages(prev => [...prev, { role: "assistant", content: "" }]);
-    controllerRef.current = streamChat(activeTab, text, chatMessages,
-      (chunk) => { assistantContent += chunk; setChatMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: assistantContent }; return u; }); },
-      () => setChatStreaming(false),
-      () => setChatStreaming(false),
-    );
-  };
-
-  const chatSuggestions: Record<TabKey, string[]> = {
-    wip: ["What's the total value of open WIP?", "Which tech has the most jobs?", "Show me overdue jobs"],
-    quotes: ["What's our quote conversion rate?", "Highest value pending quote?", "Summarise quote pipeline"],
-    defects: ["How many critical defects are open?", "Which site has the most defects?", "Defects needing quotes"],
-    invoices: ["Total outstanding amount?", "Which invoices are overdue?", "Revenue breakdown this month"],
-  };
+  // Chat is now a shared component. AnalyticsPanel mounts its own floating
+  // launcher in the bottom-right and talks to /api/chat/agent, so it can
+  // actually perform actions (create/update/delete records, navigate) in
+  // addition to answering questions. See artifacts/aide/src/components/AnalyticsPanel.tsx.
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -492,9 +464,6 @@ export default function Operations() {
             <p className="text-xs text-muted-foreground mt-0.5">Uptick data management and analytics</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setChatOpen(v => !v)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all", chatOpen ? "bg-primary text-white border-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted border-border")} title="Toggle analyst panel">
-              {chatOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />} Analyst
-            </button>
             <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors" title="Export CSV">
               <Download size={13} /> Export
             </button>
@@ -559,63 +528,16 @@ export default function Operations() {
           )}
         </div>
 
-        {/* Inline Analytics Chat Panel */}
-        {chatOpen && (
-          <div className="w-[380px] max-w-[40vw] border-l border-border bg-card flex flex-col shrink-0">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <MessageCircle size={14} className="text-primary" />
-                <span className="text-sm font-semibold text-foreground">{TABS.find(t => t.key === activeTab)?.label} Analyst</span>
-              </div>
-              <div className="flex items-center gap-1">
-                {chatMessages.length > 0 && <button onClick={() => { if (controllerRef.current) controllerRef.current.abort(); setChatMessages([]); setChatStreaming(false); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"><Trash2 size={12} /></button>}
-                <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><X size={13} /></button>
-              </div>
-            </div>
-
-            <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin">
-              {chatMessages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full text-center px-3">
-                  <MessageCircle size={20} className="text-primary/30 mb-3" />
-                  <p className="text-sm font-medium text-foreground mb-1">Ask about your data</p>
-                  <p className="text-xs text-muted-foreground mb-4">I can analyse your {activeTab} data, find patterns, and give insights.</p>
-                  <div className="space-y-1.5 w-full">
-                    {chatSuggestions[activeTab].map((s, i) => (
-                      <button key={i} onClick={() => { setChatInput(s); chatInputRef.current?.focus(); }}
-                        className="w-full text-left px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent hover:border-border transition-all">{s}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {chatMessages.map((msg, i) => (
-                <div key={i} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
-                  <div className={cn("max-w-[90%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed",
-                    msg.role === "user" ? "chat-user-bubble rounded-br-sm" : "bg-muted/50 text-foreground rounded-bl-sm"
-                  )}>
-                    {msg.role === "assistant" && !msg.content && chatStreaming && i === chatMessages.length - 1 ? (
-                      <span className="flex items-center gap-1.5"><Loader2 size={12} className="animate-spin text-primary" /><span className="text-muted-foreground text-xs">Analysing...</span></span>
-                    ) : <span className="whitespace-pre-wrap">{msg.content}</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t border-border px-3 py-2.5">
-              <div className="flex items-end gap-2 bg-muted/30 rounded-xl px-3 py-2 border border-border focus-within:border-primary/30 transition-all">
-                <textarea ref={chatInputRef} value={chatInput} onChange={e => setChatInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMsg(); } }}
-                  placeholder="Ask about your data..." rows={1}
-                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[20px] max-h-[80px]"
-                  style={{ height: 'auto', overflow: 'hidden' }}
-                  onInput={e => { const t = e.target as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 80) + 'px'; }} />
-                <button onClick={sendChatMsg} disabled={!chatInput.trim() || chatStreaming}
-                  className={cn("shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all",
-                    chatInput.trim() && !chatStreaming ? "bg-primary text-white" : "bg-muted text-muted-foreground/30")}><Send size={12} /></button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Shared agent sidepanel — talks to /api/chat/agent, can search, create,
+          update and delete records and navigate between pages. One component
+          handles every tab because the agent knows the current section from
+          the `section` prop and skews its searches accordingly. */}
+      <AnalyticsPanel
+        section={activeTab}
+        title={`${TABS.find(t => t.key === activeTab)?.label ?? "Operations"} Agent`}
+      />
 
       <CSVImportModal open={importOpen} onClose={() => setImportOpen(false)} onImport={handleImport} availableFields={FIELDS_MAP[activeTab]} title={`Import ${activeTab.toUpperCase()} Data`} />
 

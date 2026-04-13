@@ -290,16 +290,65 @@ export const AGENT_TOOLS = [
     description:
       "Navigate the user's browser to a different page within the app. Supported " +
       "paths: /, /chat, /operations, /analytics, /jobs, /todos, /projects, " +
-      "/suppliers, /schedule, /toolbox, /notes, /pm, /settings, /jobs/:id.",
+      "/suppliers, /schedule, /toolbox, /notes, /pm, /settings, /jobs/:id. " +
+      "Accepts query strings (e.g. /jobs?status=Open).",
     input_schema: {
       type: "object" as const,
       properties: {
         path: {
           type: "string",
-          description: "Route path, starting with /. Use `/jobs/<id>` for a specific job.",
+          description: "Route path, starting with /. Query strings allowed.",
         },
       },
       required: ["path"],
+    },
+  },
+
+  {
+    name: "ui_set_filter",
+    description:
+      "Apply a filter on the page the user is currently looking at. Dispatches a window event " +
+      "the host page listens for. Use this after ui_navigate to land on an already-filtered view. " +
+      "Examples: filter_key='status' value='Open'; filter_key='priority' value='Critical'; " +
+      "filter_key='assigned_tech' value='Gordon Jenkins'. The host page interprets the keys.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        filter_key: { type: "string", description: "Which filter slot to set (e.g. status, priority, tech, client)" },
+        value: { type: "string", description: "The value to apply. Use empty string to clear." },
+      },
+      required: ["filter_key", "value"],
+    },
+  },
+
+  {
+    name: "ui_open_record",
+    description:
+      "Highlight and scroll to a specific row on the currently-visible list page. " +
+      "Call this after db_search + db_update so the user sees exactly which row you just touched.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        table: { type: "string", description: "e.g. wip_records, defects, estimates" },
+        id: { type: "string" },
+      },
+      required: ["table", "id"],
+    },
+  },
+
+  {
+    name: "ui_open_modal",
+    description:
+      "Open a create or edit modal for a specific record kind on the current page. " +
+      "kind is one of: job, wip, quote, defect, invoice, todo, note, estimate, estimate_line. " +
+      "Supply id to edit an existing record; omit for a fresh create modal.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        kind: { type: "string" },
+        id: { type: "string", description: "Optional — omit for create, supply for edit" },
+      },
+      required: ["kind"],
     },
   },
 

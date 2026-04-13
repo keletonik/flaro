@@ -605,6 +605,21 @@ export async function executeAgentTool(
       return { result: { ok: true, path: input?.path }, uiAction: { type: "navigate", path: input?.path } };
     case "ui_refresh":
       return { result: { ok: true }, uiAction: { type: "refresh" } };
+    case "ui_set_filter":
+      return {
+        result: { ok: true, filter_key: input?.filter_key, value: input?.value },
+        uiAction: { type: "set_filter", filter_key: input?.filter_key, value: input?.value },
+      };
+    case "ui_open_record":
+      return {
+        result: { ok: true, table: input?.table, id: input?.id },
+        uiAction: { type: "open_record", table: input?.table, id: input?.id },
+      };
+    case "ui_open_modal":
+      return {
+        result: { ok: true, kind: input?.kind, id: input?.id ?? null },
+        uiAction: { type: "open_modal", kind: input?.kind, id: input?.id ?? null },
+      };
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

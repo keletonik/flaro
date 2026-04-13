@@ -128,8 +128,28 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
           patch({ tools: [...tools] });
         },
         onUiAction: (action) => {
-          if (action.type === "navigate" && typeof action.path === "string") setLocation(action.path);
-          else if (action.type === "refresh") emitDataChanged();
+          // navigate + refresh are the original pair.
+          // set_filter / open_record / open_modal were added in Pass 3
+          // fix #4. Each one dispatches a window custom event that the
+          // host page listens for. Pages opt in by adding a single
+          // useEffect + event listener — zero prop threading.
+          if (action.type === "navigate" && typeof action.path === "string") {
+            setLocation(action.path);
+          } else if (action.type === "refresh") {
+            emitDataChanged();
+          } else if (action.type === "set_filter") {
+            window.dispatchEvent(new CustomEvent("aide-set-filter", {
+              detail: { filter_key: action.filter_key, value: action.value },
+            }));
+          } else if (action.type === "open_record") {
+            window.dispatchEvent(new CustomEvent("aide-open-record", {
+              detail: { table: action.table, id: action.id },
+            }));
+          } else if (action.type === "open_modal") {
+            window.dispatchEvent(new CustomEvent("aide-open-modal", {
+              detail: { kind: action.kind, id: action.id ?? null },
+            }));
+          }
         },
         onDone: () => setStreaming(false),
         onError: (err) => { patch({ content: assistantContent || `Error: ${err}` }); setStreaming(false); },

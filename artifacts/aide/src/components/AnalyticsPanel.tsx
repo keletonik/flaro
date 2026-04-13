@@ -1,11 +1,20 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MessageCircle, X, Send, Trash2, Loader2, Copy, Check, History, ChevronLeft, Maximize2, Minimize2, Download } from "lucide-react";
-import { streamChat, apiFetch } from "@/lib/api";
+import { MessageCircle, X, Send, Trash2, Loader2, Copy, Check, History, ChevronLeft, Maximize2, Minimize2, Download, Wrench, AlertCircle } from "lucide-react";
+import { useLocation } from "wouter";
+import { streamAgent, apiFetch, type AgentToolEvent } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+interface ToolRun {
+  name: string;
+  input?: Record<string, unknown>;
+  status: "running" | "ok" | "error";
+  error?: string;
+}
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  tools?: ToolRun[];
 }
 
 interface SavedChat {
@@ -18,6 +27,15 @@ interface SavedChat {
 interface AnalyticsPanelProps {
   section: string;
   title?: string;
+  /** Embedded mode: always-open inline, no floating launcher. */
+  embedded?: boolean;
+}
+
+const DATA_CHANGED_EVENT = "aide-data-changed";
+function emitDataChanged() {
+  try {
+    window.dispatchEvent(new CustomEvent(DATA_CHANGED_EVENT));
+  } catch { /* ignore */ }
 }
 
 function CopyBtn({ text }: { text: string }) {
@@ -51,8 +69,9 @@ function formatInline(text: string): string {
     .replace(/\$([0-9,.]+)/g, '<span class="font-mono font-semibold">$$$1</span>');
 }
 
-export default function AnalyticsPanel({ section, title = "Analyst" }: AnalyticsPanelProps) {
-  const [open, setOpen] = useState(false);
+export default function AnalyticsPanel({ section, title = "Analyst", embedded = false }: AnalyticsPanelProps) {
+  const [, setLocation] = useLocation();
+  const [open, setOpen] = useState(embedded);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -86,25 +105,52 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
     setMessages(prev => [...prev, userMsg]);
     setStreaming(true);
     let assistantContent = "";
-    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
-    controllerRef.current = streamChat(
-      section, msg, messages,
-      (chunk) => {
-        assistantContent += chunk;
-        setMessages(prev => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-          return updated;
-        });
-      },
-      () => setStreaming(false),
-      (err) => {
-        setMessages(prev => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", content: `Error: ${err}` };
-          return updated;
-        });
-        setStreaming(false);
+    const tools: ToolRun[] = [];
+    setMessages(prev => [...prev, { role: "assistant", content: "", tools: [] }]);
+
+    const updateAssistant = (patch: Partial<Message>) => {
+      setMessages(prev => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last?.role === "assistant") updated[updated.length - 1] = { ...last, ...patch };
+        return updated;
+      });
+    };
+
+    controllerRef.current = streamAgent(
+      section,
+      msg,
+      messages.map(m => ({ role: m.role, content: m.content })),
+      {
+        onText: (chunk) => {
+          assistantContent += chunk;
+          updateAssistant({ content: assistantContent });
+        },
+        onToolStart: (ev: AgentToolEvent) => {
+          tools.push({ name: ev.name, input: ev.input, status: "running" });
+          updateAssistant({ tools: [...tools] });
+        },
+        onToolResult: (ev: AgentToolEvent) => {
+          for (let k = tools.length - 1; k >= 0; k--) {
+            if (tools[k].name === ev.name && tools[k].status === "running") {
+              tools[k] = { ...tools[k], status: ev.ok ? "ok" : "error", error: ev.error };
+              break;
+            }
+          }
+          updateAssistant({ tools: [...tools] });
+        },
+        onUiAction: (action) => {
+          if (action.type === "navigate" && typeof action.path === "string") {
+            setLocation(action.path);
+          } else if (action.type === "refresh") {
+            emitDataChanged();
+          }
+        },
+        onDone: () => setStreaming(false),
+        onError: (err) => {
+          updateAssistant({ content: assistantContent || `Error: ${err}` });
+          setStreaming(false);
+        },
       },
     );
   };
@@ -168,10 +214,16 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
   };
 
   const panelWidth = wide ? "w-[520px] max-w-[95vw]" : "w-[380px] max-w-[90vw]";
+  const containerClass = embedded
+    ? "h-full w-full flex flex-col bg-card"
+    : cn(
+        "fixed right-0 top-0 bottom-0 z-50 flex flex-col transition-all duration-300",
+        open ? `${panelWidth} border-l border-border bg-card shadow-xl` : "w-0 overflow-hidden",
+      );
 
   return (
     <>
-      {!open && (
+      {!embedded && !open && (
         <button
           onClick={() => setOpen(true)}
           className="fixed right-4 bottom-20 md:bottom-4 z-40 w-11 h-11 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center"
@@ -181,10 +233,7 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
         </button>
       )}
 
-      <div className={cn(
-        "fixed right-0 top-0 bottom-0 z-50 flex flex-col transition-all duration-300",
-        open ? `${panelWidth} border-l border-border bg-card shadow-xl` : "w-0 overflow-hidden"
-      )}>
+      <div className={containerClass}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
@@ -208,10 +257,14 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
               </>
             )}
             <button onClick={() => setShowHistory(v => !v)} className={cn("p-1.5 rounded transition-colors", showHistory ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted")} title="History"><History size={12} /></button>
-            <button onClick={() => setWide(v => !v)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={wide ? "Compact" : "Wide"}>
-              {wide ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-            </button>
-            <button onClick={() => setOpen(false)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><X size={13} /></button>
+            {!embedded && (
+              <button onClick={() => setWide(v => !v)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={wide ? "Compact" : "Wide"}>
+                {wide ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              </button>
+            )}
+            {!embedded && (
+              <button onClick={() => setOpen(false)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><X size={13} /></button>
+            )}
           </div>
         </div>
 
@@ -263,12 +316,36 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
                   )}>
                     {msg.role === "assistant" ? (
                       <>
+                        {msg.tools && msg.tools.length > 0 && (
+                          <div className="mb-2 space-y-1">
+                            {msg.tools.map((t, tk) => (
+                              <div key={tk} className="flex items-center gap-1.5 text-[10.5px]">
+                                {t.status === "running" ? (
+                                  <Loader2 size={10} className="animate-spin text-primary shrink-0" />
+                                ) : t.status === "ok" ? (
+                                  <Check size={10} className="text-emerald-500 shrink-0" />
+                                ) : (
+                                  <AlertCircle size={10} className="text-destructive shrink-0" />
+                                )}
+                                <Wrench size={9} className="text-muted-foreground/50 shrink-0" />
+                                <span className="font-mono text-muted-foreground truncate">
+                                  {t.name}
+                                  {t.input?.table ? `(${String(t.input.table)})` : ""}
+                                  {t.input?.path ? ` → ${String(t.input.path)}` : ""}
+                                </span>
+                                {t.status === "error" && t.error && (
+                                  <span className="text-destructive truncate" title={t.error}>— {t.error}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {msg.content ? (
                           <div>{renderMarkdown(msg.content)}</div>
                         ) : (streaming && i === messages.length - 1 ? (
                           <span className="flex items-center gap-1.5">
                             <Loader2 size={11} className="animate-spin text-primary" />
-                            <span className="text-muted-foreground text-[11px]">Analysing...</span>
+                            <span className="text-muted-foreground text-[11px]">Working...</span>
                           </span>
                         ) : "")}
                         {msg.content && !streaming && (

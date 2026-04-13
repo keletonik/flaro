@@ -107,6 +107,10 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - `POST /api/suppliers/:supplierId/products/import` — price list CSV import
 - `PATCH/DELETE /api/suppliers/products/:id` — product CRUD
 
+**Analytics:**
+- `GET /api/analytics/wip` — comprehensive analytics: revenue tracking (day/week/month), WIP by status/tech/type/value, financial KPIs (quoted/revised/actual cost/sell/profit/margin, hours, uninvoiced, cash position), profit by category, margin distribution, cash position by tech, over-budget job alerts, quote conversion funnel, invoice pipeline
+- `GET /api/analytics/pipeline-gaps` — quote-to-invoice gap detection: accepted quotes without WIP, completed WIP without invoices, under-invoiced items
+
 **Notes/Todos/Projects/Toolbox:** Same as before with enhanced todo fields
 
 **AI Chat:**
@@ -146,6 +150,7 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - Imported: 211 jobs, 87 quotes, 123 WIP records, notes from Action List, Quotes, Repairs, Schedule Register, Notes Log sheets
 - Chat rendering: react-markdown + remark-gfm for polished tables, lists, code blocks, blockquotes
 - **Uptick CSV import** (batch `csv-import-20260413`): 310 jobs (100 new, 203 updated), 165 WIP records, 222 defects
+- **WIP Financial Analytics** (batch `wip-financial-20260413`): 319 WIP records from `Task-WIP_2026-04-13_10-13-42` CSV with full financial data: quoted/revised/actual cost/sell/profit/margin, estimated/committed/actual hours, uninvoiced, cash position, billable, cumulative fields — stored in `raw_data` JSON column; analytics API enriched with financial KPIs, profit by category, margin distribution, cash position by tech, over-budget job alerts
 - **Supplier price lists** (batch `supplier-pricelist-20260413`): 288 products from 3 suppliers:
   - Ampac (86 products): Trade + NSW Platinum A pricing (lowest price wins); detectors, FIPs, speakers, sounders, batteries, door holders, ASD, EWIS
   - Pertronic Industries (139 products): Panels (F220), modules, detectors, VESDA, FAAST, MCPs, sounders, speakers, PSUs, batteries, door holders, flame detectors

@@ -745,5 +745,58 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 14. VIDEO SMOKE DETECTION (VSD)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "video-smoke-detection",
+    name: "Video Smoke Detection (VSD / VID)",
+    category: "smoke",
+    summary:
+      "Computer-vision analysis of a live CCTV feed — smoke and flame pattern recognition at the video analytics layer, providing coverage in very large open spaces where point and beam detection is impractical.",
+    operatingPrinciple:
+      "A standard or high-resolution IP camera feeds a video analytics processor. The processor runs pattern-recognition algorithms that look for the characteristic flicker, turbulence, and opacity changes of smoke and the pulsating brightness and colour signature of flame. When the confidence score exceeds a calibrated threshold sustained over several seconds, the system reports an alarm to the FIP via a dry-contact or IP event. Modern implementations (Bosch Aviotec, Fike FireVu, VisionProtect) use deep-learning models trained on thousands of labelled fire and false-alarm videos.",
+    sensingTechnology:
+      "Video analytics running on a dedicated server or camera edge processor. Two detection modes: smoke (turbulence + opacity analysis) and flame (colour + flicker + motion). False-alarm rejection comes from masking regions that produce regular non-fire motion (conveyors, machinery) and from temporal correlation (fire grows over seconds-to-minutes, while false alarms resolve in milliseconds). IR and thermal cameras can extend detection into dark areas and smoke-obscured spaces.",
+    typicalApplications: [
+      "Very large open spaces: warehouses, stadiums, logistics hubs, atria",
+      "Tunnels — the camera network already exists for traffic, video detection adds fire without new cabling",
+      "Outdoor fuel storage yards",
+      "Power plants and generator halls",
+      "Heritage buildings where visible detectors are unacceptable",
+    ],
+    unsuitableApplications: [
+      "Small rooms — cost is disproportionate; point detection is cheaper and more reliable",
+      "Dense smoke / fog / steam conditions that saturate the camera",
+      "Spaces without stable lighting — variable lighting defeats the analytics baseline",
+      "Any space where the camera is not in the specified line of sight to the monitored area",
+    ],
+    installationRequirements:
+      "Camera placement is the critical engineering task. Each camera's protected field of view (PFOV) must cover the area to be monitored with sufficient pixel density that the analytics can distinguish smoke from background — typically 320×240 minimum resolution on the smoke region. Avoid backlighting (camera facing a bright window or light source), mirror-like floor finishes, and moving machinery that overlaps the detection region. Run a commissioning test with a standardised smoke pellet at the farthest point of the PFOV and confirm alarm within the system-rated response time. The system must fail-safe to a supervisory signal on camera loss, video loss, or analytics CPU failure.",
+    failureModes: [
+      { mode: "Masked region false negative", symptom: "Known smoke event not detected", cause: "Analytics mask was drawn too aggressively during commissioning to reject a false-alarm source", action: "Review and shrink the mask; verify coverage with a commissioning smoke test." },
+      { mode: "Camera disturbance", symptom: "Analytics fault; PFOV changed", cause: "Camera knocked or moved — the analytics is view-calibrated", action: "Restore camera position and re-run PFOV calibration." },
+      { mode: "Lighting change false alarm", symptom: "Alarm at dusk or dawn", cause: "Automatic camera gain changing rapidly during ambient light transitions", action: "Fit supplementary lighting to smooth the transition, or use an IR-cut camera with more stable exposure." },
+      { mode: "Algorithm training gap", symptom: "System does not recognise an unusual smoke type", cause: "Model was not trained on the specific combustion signature", action: "Capture footage of the missed event; request a model update from the vendor." },
+    ],
+    testProcedure:
+      "AS 1670.1 does not yet classify VSD alongside AS 7240 types — acceptance is via the manufacturer's certification (often EN 54 under a provisional clause) and a site-specific FPAA listing. Commissioning test uses a standardised smoke pellet at the farthest point of each camera's PFOV. Log response time, alarm location, and any detection faults.",
+    maintenance:
+      "Quarterly: verify every camera image is clean and in correct position. 6-monthly: walk each PFOV with the commissioning test. 12-monthly: review detection model for updates.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.31", note: "Alternative detection technologies — requires FPAA and project-specific fire engineering" },
+      { code: "FPAA Technical Bulletin", note: "Video Smoke Detection acceptance guidance" },
+      { code: "AS 1851", clause: "6.5", note: "Routine service — treat as very-early-warning system" },
+    ],
+    exampleModels: [
+      { manufacturer: "Bosch", model: "Aviotec IP Starlight 8000", notes: "Edge-processing IP camera with integrated smoke and flame detection" },
+      { manufacturer: "Fike", model: "FireVu", notes: "VSD platform with dedicated analytics server" },
+      { manufacturer: "Honeywell", model: "VESDA VSD200", notes: "Integrates with VESDA panel for unified alarm annunciation" },
+    ],
+    lifeSpanYears: 7,
+    costBand: "$$$",
+    addressable: true,
+  },
 ];
 

@@ -1,0 +1,120 @@
+"ID","Reference","Created","Status","Author","Salesperson","Supervisor","Property Branch","Branch","Property ID","Property","Property Ref","Property Account Manager","Property Certification Date","Client","Severity","Date","Due Date","Review Date","Expiry Date","Submitted Date","Last Actioned","Date Authorised","Authorisation Note","Authorisation Ref","Authorisation Name","Description","Estimated Time (mins)","Subtotal","Tax","Total","Total material cost","Total labour cost","Total Cost","Subtotal material sell","Subtotal labour sell","Subtotal margin","Tags","Service Group","Scope of Works"
+25147,"QD-2680","2026-04-08 15:23:46","DRAFT","Casper Tavitian","","Casper Tavitian","","","180","Goodman AU106 - M5 Industry Park - Building 1 -  1 Moorebank Avenue, Moorebank, NSW 2170","39A116 AU106","","2021-04-06","Goodman Property Services (Aust) Pty Limited  SC01822","","2026-04-08","2026-05-08","","2026-07-07","","2026-04-10 13:15:33","","","","","Defects Identified - April 2026 Monthly FIP Routine Inspection Testing",-4,2826.0000,282.6000,3108.6000,1682.1600,650.0000,2332.1600,2076.0000,750.0000,17.4749,"","R DETECTION",""
+24652,"QD-2646","2026-04-01 09:14:34","DRAFT","Jade Ogony","","","","","69","Goodman AU543 - 15-23 Quarry Road, Erskine Park, NSW 2759","39409 AU543","","2021-03-24","Goodman Property Services (Aust) Pty Limited SC01822","","2026-04-01","2026-05-01","","2026-06-30","","2026-04-01 13:10:30","","","","","Monthly Defect March - FIP door Broken",0,260.0000,26.0000,286.0000,15.2100,0.0000,15.2100,260.0000,0.0000,94.1500,"","R DETECTION","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support."
+21387,"QD-2445","2026-03-03 08:14:07","DRAFT","Jamie Wright","","","","","214","LAPP - 12 Grevillea Street,  Eastern Creek, NSW 2766","39A253","","2026-03-22","Tammatali Pty Ltd as Trustee for TMA Unit Trust","","2026-03-03","2026-04-03","","2026-06-01","","2026-03-03 08:14:07","","","","","FIP Monthly Battery defects",0,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,"","","R DETECTION","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support."
+21352,"QD-2442","2026-03-02 15:47:51","DRAFT","Jamie Wright","","","","","73","Goodman AU543 - Zirco Data - 15-23 Quarry Road, Erskine Park, NSW 2759","39418 A AU543","","2021-03-24","Goodman Property Services (Aust) Pty Limited SC01822","","2026-03-02","2026-04-02","","2026-05-31","","2026-03-02 15:50:45","","","","","Replacement of the faulty Vesda #3",0,8874.4100,887.4400,9761.8500,5666.0900,630.0000,6296.0900,8094.4100,780.0000,29.0534,"","R DETECTION","As per scope of Works:
+
+Attended site, found Vesda #3 contaminated, checked with the supplier, recommended replacement as parts are unavailable, replacement of filter in number 10."
+19801,"QD-2312","2026-02-13 11:29:50","DRAFT","Jamie Wright","","","","","543","63 Jedda Road, Prestons, NSW 2170","39A636","","2025-08-12","Vanilla Australian Sub II TC Pty Ltd ATF Jedda II Trust","","2026-02-13","2026-03-13","","2026-05-14","","2026-02-23 09:12:23","","","","","AFSS Inspection report",1080,66371.1400,6637.1100,73008.2500,17293.5000,34250.0000,51543.5000,24021.0600,42350.0800,22.3405,"","R DETECTION","As per scope of Works
+
+This quote is to supply and install the required cabling for the requested Fire Trips to the 8 gates.
+
+We have not allowed for the connection of the trip to the gate, site required to engage gate company to connect and be onsite for the testing.
+
+As the diagrams supplied do not have lengths, we assume the length of cabling that will be required, may require further estimates if more cable will be required.
+
+We have allowed for the cable as conduit is in the ground, if the conduit is unable to be used further quotes will be required to run new under ground conduit.
+
+AS installed documentation supplied, if documentation isn't correct require to submit 
+
+We have not included any extra loop cards for the FIP, if required further quotes will be provided for rectification
+
+We may require cabling contractors for the installation."
+11683,"QD-1686","2025-11-03 07:20:59","DRAFT","Jamie Wright","","","","","528","20 Eastern Creek Drive, Eastern Creek, NSW 2766","39A626","","2024-09-18","Bieson Pty Ltd C/- CBRE Pty Ltd CBRE","","2025-11-03","2025-12-03","","2026-02-01","","2025-11-03 07:24:28","","","","","Overrides fire pump fan",0,2227.0000,222.7000,2449.7000,307.4000,1490.0000,1797.4000,437.0000,1790.0000,19.2905,"","R DETECTION","Require to install Overrides for fire pump fan to be wired in by fire guys and commissioned at FIP (need proof of operation)"
+11257,"QD-1654","2025-10-27 12:36:42","DRAFT","Jamie Wright","","","","","180","Goodman AU106 - M5 Industry Park - Building 1 -  1 Moorebank Avenue, Moorebank, NSW 2170","39A116 AU106","","2021-04-06","Goodman Property Services (Aust) Pty Limited  SC01822","","2025-10-27","2025-11-27","","2026-01-25","","2025-11-06 09:57:49","","","","","Monthly Testing October 2025",0,421.0600,42.1100,463.1700,113.4200,210.0000,323.4200,161.0600,260.0000,23.1891,"","R DETECTION","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support."
+8292,"QD-1340","2025-09-02 11:33:30","DRAFT","Jamie Wright","","","","","312","Goodman AU079 Greystanes Park East - (BLDG 3) Iron Mountain 3 Reconciliation Rise PEMULWUY, 2145, NSW","39A424 AU079","","2023-11-13","Goodman Property Services (Aust) Pty Limited SC01822","","2025-09-02","2025-10-02","","2025-12-01","","2025-09-02 11:33:30","","","","","5 Yearly Detection and Warning System",0,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,"","","R DETECTION","**Comprehensive Fire Alarm System Testing & Maintenance**
+Ensure your building is fully compliant and safe with our expert 5-yearly sensitivity testing of the fire detection system, in line with the Fire Alarm standards AS 1851.6-2012. Our team will perform a thorough inspection of both the detection system and the Fire Indicator Panel, ensuring that everything operates smoothly and efficiently.
+
+**Enhanced Sound System Testing for Emergencies**
+Safety is our priority. We’ll test the sound pressure levels and intelligibility of your emergency sound system in all buildings to ensure your building meets the Australian standards. 
+
+**What’s Not Included**:
+Please note that the following are outside the scope of this service:
+•	Security and parking arrangements (if required).
+•	Use of lifts for heavy equipment transportation (if applicable).
+•	Work outside of the designated areas or beyond normal working hours.
+•	High-reach equipment for specialized tasks.
+
+**Let’s Make Sure Your Building Stays Safe and Compliant**
+Contact us today to schedule your testing and stay ahead of potential issues. We're here to help ensure your building’s fire safety systems are ready for whatever comes your way!"
+7400,"QD-1263","2025-08-14 15:59:20","DRAFT","Jamie Wright","","","","","3268","298 Sydney Rd, Balgowlah NSW 2093","0","","","GC Built","","2025-08-14","2025-09-14","","2025-11-12","","2026-04-13 12:47:31","","","","","Fire Order - 298 Sydney Rd Balgowlah FIP Installation",60,21651.5200,2165.1500,23816.6700,12005.0000,4620.0000,16625.0000,15931.5000,5720.0200,23.2156,"","R DETECTION","Installation of a Wireless Fire System to comply with Australian Standards
+
+2018 shall be installed within all common areas, with the
+following additional design requirements:
+(i) A heat detector is to be provided inside each SOU within
+1.5 m of the entry door, and within 1 m of openings within
+the retail underfloor area; and
+(ii) Heat detectors are to be provided in retail areas, with
+spacing in accordance with AS 1670.1-2018.
+(iii) Smoke detectors are to be provided in the top ceiling
+void on Level 2. Multicriteria alarms (heat and smoke) are
+permitted if spurious alarms are likely in this location.
+(c) An Occupant Warning System (OWS) associated with
+the AS 1670.1-2018 detection system to be installed in
+accordance with AS 1670.4-2018.
+2.2 - System monitoring
+(a) The subject building's FIP is to be provided with Alarm
+Signalling Equipment (ASE) in accordance with AS
+1670.3-2018. The ASE shall comply with the following
+requirements:
+(i) Activation of any AS 1670.1-2018 smoke or heat
+detector shall initiate the alarm signalling equipment.
+
+8651-0110 1 FIREFINDER+ 1LOOP 5A SP1X
+210-0003 2 12V 18AH SLA Battery
+4107-1156 1 VXB-VW Red Flash Deep Red Body (AS7240-23)
+4210-0148 1 VAD Fire Legend Plate (AS1670.1)
+4110-2101 3 Reach Protocol Loop Interface Module
+4106-5403 17 Reach Multi-sensor Detector(Optical/Heat)
+4107-8401 14 Reach Sounder Base (white)
+4106-5400 3 Reach Standard Base (white)
+
+Owners must engage fire alarm monitoring company for
+the ASE connection upon completion.
+
+Exclusions
+- Patching and painting
+- Design and design certification
+- Works Outside normal hours
+
+A smoke alarm system complying with AS 3786-2014 to be
+installed in each SOU and be powered from the main
+power supply. Our price is to install 1 x hardwired smoke
+alarm per unit."
+7397,"QD-1260","2025-08-14 15:13:27","DRAFT","Jamie Wright","","","","","68","Goodman AU181 -Homemaker Centre -  49-59 O'Riordan Street, Alexandria, NSW 2015","39399 AU181","","2022-09-16","Goodman Property Services (Aust) Pty Limited SC01822","","2025-08-14","2025-09-14","","2025-11-12","","2025-08-14 15:13:27","","","","","Monthly Testing August 2025",0,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,"","","R DETECTION","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+2 x 12V18Ah FIP
+2 x 12V40ah EWIS
+2 x 80Ah Pump
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support."

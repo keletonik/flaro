@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { exportToCSV } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
+import { EditableCell } from "@/components/EditableCell";
 
 const PRIORITIES = ["Critical", "High", "Medium", "Low"] as const;
 const CATEGORIES = ["Work", "Personal", "Follow-up", "Compliance", "Admin"] as const;
@@ -286,6 +287,38 @@ export default function Todos() {
     } catch { toast({ title: "Could not update", variant: "destructive" }); }
   };
 
+  /**
+   * patchField — commit a single-field inline edit from EditableCell.
+   *
+   * Returns a promise<boolean> matching EditableCell's onCommit contract
+   * so the cell can render saving + failure states correctly. Empty
+   * strings on optional fields are normalised to undefined so the API
+   * clears the value instead of storing "".
+   */
+  const patchField = async (
+    id: string,
+    field: "text" | "priority" | "category" | "assignee" | "dueDate" | "notes",
+    next: string,
+  ): Promise<boolean> => {
+    try {
+      const payload: Record<string, any> = {};
+      if (field === "text") {
+        if (!next.trim()) return false;
+        payload.text = next.trim();
+      } else if (field === "dueDate") {
+        payload.dueDate = next || undefined;
+      } else {
+        payload[field] = next || undefined;
+      }
+      await updateTodo.mutateAsync({ id, data: payload as any });
+      queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() });
+      return true;
+    } catch {
+      toast({ title: "Could not save", variant: "destructive" });
+      return false;
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this task?")) return;
     try {
@@ -507,22 +540,64 @@ export default function Todos() {
                         </button>
                       </td>
                       <td className={cn(tdBase, todo.completed && "line-through text-muted-foreground")}>
-                        <div className="truncate max-w-[280px] font-medium text-foreground" title={todo.text}>{todo.text}</div>
+                        <EditableCell
+                          type="text"
+                          value={todo.text || ""}
+                          onCommit={(next) => patchField(todo.id, "text", next)}
+                          display={
+                            <div className="truncate max-w-[280px] font-medium text-foreground" title={todo.text}>
+                              {todo.text}
+                            </div>
+                          }
+                        />
                         {todo.urgencyTag && (
                           <span className="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-bold bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">{todo.urgencyTag}</span>
                         )}
                       </td>
                       <td className={tdBase}>
-                        <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold", ps.text, ps.bg)}>
-                          <span className={cn("w-1.5 h-1.5 rounded-full", ps.dot)} />{todo.priority}
-                        </span>
+                        <EditableCell
+                          type="select"
+                          value={todo.priority || "Medium"}
+                          options={PRIORITIES.map((p) => ({ value: p }))}
+                          onCommit={(next) => patchField(todo.id, "priority", next)}
+                          display={
+                            <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold", ps.text, ps.bg)}>
+                              <span className={cn("w-1.5 h-1.5 rounded-full", ps.dot)} />{todo.priority}
+                            </span>
+                          }
+                        />
                       </td>
                       <td className={tdBase}>
-                        {todo.category && <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-semibold border", CAT_STYLES[todo.category] || CAT_STYLES.Work)}>{todo.category}</span>}
+                        <EditableCell
+                          type="select"
+                          value={todo.category || ""}
+                          options={CATEGORIES.map((c) => ({ value: c }))}
+                          onCommit={(next) => patchField(todo.id, "category", next)}
+                          display={
+                            todo.category ? (
+                              <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-semibold border", CAT_STYLES[todo.category] || CAT_STYLES.Work)}>
+                                {todo.category}
+                              </span>
+                            ) : undefined
+                          }
+                        />
                       </td>
-                      <td className={tdBase}>{todo.assignee || <span className="text-muted-foreground/30">—</span>}</td>
+                      <td className={tdBase}>
+                        <EditableCell
+                          type="select"
+                          value={todo.assignee || ""}
+                          options={[...TECHS.map((t) => ({ value: t }))]}
+                          placeholder="Unassigned"
+                          onCommit={(next) => patchField(todo.id, "assignee", next)}
+                        />
+                      </td>
                       <td className={cn(tdBase, "tabular-nums", overdue ? "text-red-500 font-bold" : "text-muted-foreground")}>
-                        {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short" }) : "—"}
+                        <EditableCell
+                          type="date"
+                          value={todo.dueDate ? String(todo.dueDate).split("T")[0] : ""}
+                          onCommit={(next) => patchField(todo.id, "dueDate", next)}
+                          display={todo.dueDate ? new Date(todo.dueDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short" }) : undefined}
+                        />
                       </td>
                       <td className={tdBase}>
                         <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-semibold",
@@ -530,7 +605,17 @@ export default function Todos() {
                         )}>{todo.completed ? "Done" : "Active"}</span>
                       </td>
                       <td className={cn(tdBase, "hidden lg:table-cell text-muted-foreground")}>
-                        <div className="truncate max-w-[150px]" title={todo.notes || ""}>{todo.notes || "—"}</div>
+                        <EditableCell
+                          type="text"
+                          multiline
+                          value={todo.notes || ""}
+                          onCommit={(next) => patchField(todo.id, "notes", next)}
+                          display={
+                            <div className="truncate max-w-[150px]" title={todo.notes || ""}>
+                              {todo.notes || "—"}
+                            </div>
+                          }
+                        />
                       </td>
                       <td className={cn(tdBase, "w-8 text-center")}>
                         <ActionMenu todo={todo}

@@ -1005,5 +1005,55 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$",
     addressable: false,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 19. ADDRESSABLE LOOP ISOLATOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "loop-isolator",
+    name: "Addressable Loop Isolator",
+    category: "multi",
+    summary:
+      "Short-circuit protection device that automatically isolates a faulted segment of an addressable loop so a single wiring fault cannot take the entire loop offline. A mandatory topology element per AS 1670.1 Clause 3.34 on any loop serving > 32 devices.",
+    operatingPrinciple:
+      "Each isolator contains a solid-state electronic switch that monitors the loop current and voltage. Under normal conditions it is closed and passes all current. When the upstream loop voltage collapses (indicating a short circuit downstream), the isolator opens, disconnecting the downstream segment from the rest of the loop. Class A (Style 6/7) loops are wired back to the panel at both ends, so when an isolator opens at either end of the faulted segment the panel can still reach every device on the loop — just via the opposite direction.",
+    sensingTechnology:
+      "Solid-state switch (typically MOSFET) with voltage and current sense. Transparent to the addressable protocol under normal operation. Isolator operation is supervisory-reported to the panel — the panel logs 'isolator active' and flags which segment is isolated. Base isolators are integrated into the detector base so every detector has its own isolator; standalone isolator modules protect a group of devices. Best practice on long loops is isolators every 20–32 devices to maintain the '1 short = 1 segment lost' guarantee.",
+    typicalApplications: [
+      "Every long loop in every addressable FIP system (AS 1670.1 Clause 3.34)",
+      "Between zones / fire compartments — isolates a compartment fault",
+      "At the panel loop output — always an isolator on the first device so a short right at the panel doesn't damage the loop driver",
+      "Base isolators (integrated into every detector base) for high-reliability systems like hospitals and data centres",
+    ],
+    unsuitableApplications: [
+      "Radial (Class B / Style 4) loops serving < 32 devices — can be covered by a single isolator at the panel",
+      "Loops designed with isolators every device already (no incremental value from adding more)",
+    ],
+    installationRequirements:
+      "AS 1670.1 Clause 3.34 — on any loop serving more than 32 detection devices or spanning more than one fire compartment, isolators must be positioned such that a single short-circuit affects at most one fire compartment or 32 devices, whichever is smaller. Isolators must be commissioned walk-tested: apply a short at each segment and confirm only the correct segment drops out. Class A wiring is strongly recommended — at least 90% of modern installations use Class A so loop redundancy is available.",
+    failureModes: [
+      { mode: "Isolator welded closed", symptom: "Short circuit affects a larger segment than expected; panel loses multiple addresses", cause: "Isolator MOSFET failed to open", action: "Replace isolator module; investigate root cause (possible overcurrent beyond rating)." },
+      { mode: "Isolator stuck open", symptom: "Segment downstream of isolator shows as 'missing' without any short", cause: "Isolator failed open", action: "Replace isolator; test loop continuity through the bypass." },
+      { mode: "Nuisance operation", symptom: "Intermittent isolator activations during normal operation", cause: "Loop voltage transients from sounder current spikes", action: "Check loop current budget; add booster PSU; upsize cable if voltage drop is marginal." },
+    ],
+    testProcedure:
+      "Walk-test commissioning: apply a calibrated short across each segment's wiring and confirm the correct isolator opens, the panel annunciates the correct segment, and all other devices remain online. Annual re-test after any loop extension. The AS 1851 routine test includes applying a short at the far end of each segment.",
+    maintenance:
+      "Walk-test annually. Integrated base isolators are maintenance-free within the detector's service life; standalone isolator modules should be replaced at 15 years.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.34", note: "Loop isolator positioning — single fault containment" },
+      { code: "AS 7240.17", note: "Short-circuit isolators — product performance standard" },
+      { code: "AS 1851", clause: "6.4", note: "Loop fault test as part of routine service" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Isolator Module", partNumber: "55000-700APO", notes: "Standalone DIN-rail isolator" },
+      { manufacturer: "Apollo", model: "XP95 Isolator Base", partNumber: "45681-242APO", notes: "Detector base with integrated isolator" },
+      { manufacturer: "Hochiki", model: "YBO-BSB2-I Isolator Base", notes: "Integrated isolator in the detector base" },
+      { manufacturer: "System Sensor", model: "M502MAC Isolator Module", notes: "Standalone isolator for SLC protection" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: true,
+  },
 ];
 

@@ -215,5 +215,57 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 4. RATE-OF-RISE HEAT DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "rate-of-rise-heat",
+    name: "Rate-of-Rise Heat Detector",
+    category: "heat",
+    summary:
+      "Thermistor-based heat detector that triggers on temperature rise-rate (typically 8.3 °C/min) AND a fixed back-stop (57–65 °C).",
+    operatingPrinciple:
+      "Two thermistors track local air temperature. Firmware compares the current value against a rolling baseline to compute a rate of change. If the rise rate exceeds a calibrated threshold (usually 8.3 °C per minute, matching AS 7240.5 Class A1R), the detector alarms immediately regardless of absolute temperature. A fixed-threshold back-stop at 57–65 °C (Class A1 / A2) catches slow-onset fires that never trigger the rate channel.",
+    sensingTechnology:
+      "Dual NTC thermistor with analogue reporting. On addressable heads (Apollo XP95 Heat, Hochiki ALG-H, Notifier FST-851) the panel reads both the instantaneous temperature and the rate of rise every poll. Class A1R is the Australian default; higher ambient spaces use Class B (75 °C) or Class C (90 °C). Heat detectors do NOT suffer the optical false-alarm modes of photoelectric, which makes them the default in dusty or steamy spaces.",
+    typicalApplications: [
+      "Kitchens and cooking areas (AS 1670.1 Clause 3.23 — heat detection where smoke detection is impractical)",
+      "Laundries, showers, saunas, indoor pools",
+      "Garages and vehicle workshops",
+      "Mechanical plant rooms and boiler rooms",
+      "Dusty storage areas where photoelectric would false-alarm",
+    ],
+    unsuitableApplications: [
+      "Sleeping areas — heat detectors respond too late to save sleeping occupants (photoelectric is mandatory per AS 1670.1 Clause 3.22.2)",
+      "Large open warehouses with high ceilings — heat stratifies before reaching the detector",
+      "Unheated outdoor spaces with wide diurnal temperature swings — can false-alarm on rapid solar-driven warming",
+    ],
+    installationRequirements:
+      "AS 1670.1 Clause 3.23 — maximum coverage area 50 m² per detector at ceiling heights ≤ 4 m, maximum spacing 7.1 m between detectors. Reduced coverage above 4 m — see Table 3.23 for the exact reduction. Mount 500 mm minimum from walls. Heat detectors are NOT a substitute for smoke detection where smoke detection is feasible.",
+    failureModes: [
+      { mode: "Thermistor drift", symptom: "Gradual baseline temperature offset shown on the panel analogue read", cause: "Thermistor aging or contamination", action: "Replace head on 15-year service life or when drift exceeds 5 °C." },
+      { mode: "Airflow cooling false negative", symptom: "Known heat event failed to trigger", cause: "Forced air conditioning supply sweeping heat away from the detector", action: "Relocate away from supply vents; consider line-type linear heat cable for critical areas." },
+      { mode: "Base disconnection", symptom: "Panel reports missing detector", cause: "Loose terminal on loop base", action: "Re-seat and re-torque the loop terminals." },
+    ],
+    testProcedure:
+      "Heat test per AS 1851 Section 6.4 — use a certified heat-test tool (Testifire, Solo heat) that delivers hot air at a controlled temperature. Detector must alarm within 30 seconds of reaching its rated threshold. Do NOT use a naked flame or butane torch — excessive heat damages the sensor and contaminates nearby photoelectric heads.",
+    maintenance:
+      "6-monthly visual + loop communications check, 12-monthly functional heat test. Service life is typically 15 years versus 10 for optical heads because there is no chamber to contaminate.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.23", note: "Heat detection spacing, coverage, and where it is permitted instead of smoke" },
+      { code: "AS 7240.5", note: "Point-type heat detectors — classification A1, A1R, A2, B, C based on fixed + rate-of-rise thresholds" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service with certified heat-test tooling" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Heat A1R", partNumber: "55000-400APO", notes: "Analogue addressable, Class A1R" },
+      { manufacturer: "Hochiki", model: "ALG-EN Heat", partNumber: "ALG-EN", notes: "ESP protocol" },
+      { manufacturer: "Notifier", model: "FST-851", partNumber: "FST-851", notes: "Addressable thermal detector" },
+      { manufacturer: "System Sensor", model: "5251B", partNumber: "5251B", notes: "Combination fixed/rate-of-rise" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: true,
+  },
 ];
 

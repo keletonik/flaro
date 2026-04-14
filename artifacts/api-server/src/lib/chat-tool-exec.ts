@@ -813,6 +813,153 @@ async function executeAgentToolInner(
         uiAction: { type: "refresh" },
       };
     }
+    // ─── Smart PA tools (Smart Mode phase G) ─────────────────────────
+    case "pa_get_stale_tasks": {
+      const { computeStaleTodos } = await import("./pa-staleness");
+      const rows = await computeStaleTodos({
+        limit: Math.min(Number(input?.limit) || 5, 20),
+        minDays: Number(input?.minDays) || 0,
+      });
+      return { result: { staleTodos: rows, count: rows.length } };
+    }
+    case "pa_get_daily_focus": {
+      const { computeStaleTodos } = await import("./pa-staleness");
+      const { paReminders, todos } = await import("@workspace/db");
+      const { db } = await import("@workspace/db");
+      const { and, desc, eq, isNull } = await import("drizzle-orm");
+
+      const [stale, reminderRows, recentTodoRows] = await Promise.all([
+        computeStaleTodos({ limit: 5 }),
+        db.select().from(paReminders)
+          .where(and(isNull(paReminders.deletedAt), eq(paReminders.status, "pending" as any)))
+          .orderBy(paReminders.remindAt)
+          .limit(5),
+        db.select().from(todos)
+          .where(eq(todos.completed, false))
+          .orderBy(desc(todos.updatedAt))
+          .limit(5),
+      ]);
+
+      // Key numbers — reuse the existing revenue_vs_target_mtd metric
+      let keyNumbers: Record<string, any> = {};
+      try {
+        const { computeMetric } = await import("./metrics/registry");
+        const { pool } = await import("@workspace/db");
+        const mtd = await computeMetric(pool as any, "revenue_vs_target_mtd", { period: "mtd" });
+        keyNumbers.revenueMtd = Math.round((mtd.headline ?? 0) * 100) / 100;
+      } catch { /* non-fatal */ }
+
+      return {
+        result: {
+          staleTasks: stale,
+          upcomingReminders: reminderRows.map((r) => ({
+            id: r.id,
+            title: r.title,
+            remindAt: r.remindAt.toISOString(),
+          })),
+          recentTodos: recentTodoRows.map((r) => ({
+            id: r.id,
+            text: r.text,
+            priority: r.priority,
+            dueDate: r.dueDate,
+          })),
+          keyNumbers,
+          generatedAt: new Date().toISOString(),
+        },
+      };
+    }
+    case "pa_instruction_add": {
+      const { paInstructions } = await import("@workspace/db");
+      const { db } = await import("@workspace/db");
+      if (!input?.title || !input?.content) {
+        throw new Error("pa_instruction_add requires title + content");
+      }
+      const [row] = await db.insert(paInstructions).values({
+        id: randomUUID(),
+        title: String(input.title).slice(0, 200),
+        content: String(input.content).slice(0, 2000),
+        scope: (input.scope ?? "global") as any,
+        priority: Math.min(5, Math.max(1, Number(input.priority) || 3)),
+        enabled: true,
+        source: "user" as any,
+      }).returning();
+      return {
+        result: { ok: true, id: row.id, title: row.title, scope: row.scope, priority: row.priority },
+        uiAction: { type: "refresh" },
+      };
+    }
+    case "pa_instruction_list": {
+      const { paInstructions } = await import("@workspace/db");
+      const { db } = await import("@workspace/db");
+      const { and, eq, isNull } = await import("drizzle-orm");
+      const conds: any[] = [isNull(paInstructions.deletedAt)];
+      if (input?.scope) conds.push(eq(paInstructions.scope, input.scope as any));
+      if (input?.enabled === true) conds.push(eq(paInstructions.enabled, true));
+      if (input?.enabled === false) conds.push(eq(paInstructions.enabled, false));
+      const rows = await db.select().from(paInstructions)
+        .where(and(...conds))
+        .orderBy(paInstructions.priority);
+      return {
+        result: {
+          instructions: rows.map((r) => ({
+            id: r.id,
+            title: r.title,
+            content: r.content,
+            scope: r.scope,
+            priority: r.priority,
+            enabled: r.enabled,
+          })),
+          count: rows.length,
+        },
+      };
+    }
+    case "pa_instruction_update": {
+      const { paInstructions } = await import("@workspace/db");
+      const { db } = await import("@workspace/db");
+      const { and, eq, isNull } = await import("drizzle-orm");
+      if (!input?.id) throw new Error("pa_instruction_update requires id");
+      const updates: Record<string, any> = { updatedAt: new Date() };
+      if (input.title !== undefined) updates.title = String(input.title).slice(0, 200);
+      if (input.content !== undefined) updates.content = String(input.content).slice(0, 2000);
+      if (input.scope !== undefined) updates.scope = input.scope;
+      if (input.priority !== undefined) updates.priority = Math.min(5, Math.max(1, Number(input.priority)));
+      if (input.enabled !== undefined) updates.enabled = Boolean(input.enabled);
+      const [row] = await db.update(paInstructions)
+        .set(updates)
+        .where(and(eq(paInstructions.id, input.id), isNull(paInstructions.deletedAt)))
+        .returning();
+      if (!row) throw new Error(`pa_instruction_update: no instruction with id ${input.id}`);
+      return {
+        result: { ok: true, id: row.id, title: row.title, enabled: row.enabled },
+        uiAction: { type: "refresh" },
+      };
+    }
+    case "pa_instruction_delete": {
+      const { paInstructions } = await import("@workspace/db");
+      const { db } = await import("@workspace/db");
+      const { and, eq, ilike, isNull } = await import("drizzle-orm");
+      let targetId = input?.id as string | undefined;
+      if (!targetId && input?.titleMatch) {
+        const [match] = await db.select().from(paInstructions)
+          .where(and(
+            isNull(paInstructions.deletedAt),
+            ilike(paInstructions.title, `%${String(input.titleMatch)}%`),
+          ))
+          .limit(1);
+        targetId = match?.id;
+      }
+      if (!targetId) throw new Error("pa_instruction_delete needs id or titleMatch that resolves");
+      const [row] = await db.update(paInstructions)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(paInstructions.id, targetId), isNull(paInstructions.deletedAt)))
+        .returning();
+      if (!row) throw new Error(`pa_instruction_delete: no instruction with id ${targetId}`);
+      return {
+        result: { ok: true, id: row.id, title: row.title },
+        uiAction: { type: "refresh" },
+      };
+    }
+
     case "reminder_delete": {
       const { paReminders } = await import("@workspace/db");
       const { db } = await import("@workspace/db");

@@ -432,6 +432,99 @@ export const AGENT_TOOLS = [
     },
   },
 
+  // ─── Smart PA tools (Smart Mode phase G) ───────────────────────────────
+  {
+    name: "pa_get_daily_focus",
+    description:
+      "Return the operator's daily focus brief: stale tasks, upcoming reminders, and a short set of " +
+      "key numbers (revenue MTD, outstanding invoices, pending quotes). Use at the start of a PA " +
+      "conversation, whenever the user says 'brief me' / 'what's on my plate' / 'what do I need to " +
+      "handle today'. The result is structured — summarise it in plain English, don't dump raw JSON.",
+    input_schema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "pa_get_stale_tasks",
+    description:
+      "Return the top N active todos sorted by staleness score (days since update × priority weight, " +
+      "with an overdue bonus). Use when the user asks 'what have I been neglecting', 'what's getting " +
+      "old', or when you need to pick a task to check in on proactively.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        limit: { type: "number", description: "Max rows to return (default 5, cap 20)" },
+        minDays: { type: "number", description: "Minimum days since last update to include (default 0)" },
+      },
+    },
+  },
+  {
+    name: "pa_instruction_add",
+    description:
+      "Capture a user-authored training rule for the PA. Use whenever the user says 'from now on', " +
+      "'always', 'never', or otherwise tells you how to behave going forward. Stores the rule in " +
+      "pa_instructions and the memory builder injects it into every future turn.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        title: { type: "string", description: "Short human label, e.g. 'Never ask about insurance claim'" },
+        content: { type: "string", description: "The actual rule text the PA should follow" },
+        scope: {
+          type: "string",
+          enum: ["global", "on_open", "on_stale_check", "on_todo_create"],
+          description: "When the rule applies. Default: global.",
+        },
+        priority: { type: "number", description: "1 (must obey) to 5 (nice to have). Default 3." },
+      },
+      required: ["title", "content"],
+    },
+  },
+  {
+    name: "pa_instruction_list",
+    description:
+      "List every user-authored training rule. Use when the user says 'what are my PA rules' or " +
+      "'show me my training instructions'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        scope: {
+          type: "string",
+          enum: ["global", "on_open", "on_stale_check", "on_todo_create"],
+        },
+        enabled: { type: "boolean" },
+      },
+    },
+  },
+  {
+    name: "pa_instruction_update",
+    description:
+      "Patch an existing PA training rule. Accepts id + any of title, content, scope, priority, enabled. " +
+      "Use when the user says 'pause that rule', 'turn off the insurance one', 'change it to only on open'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        id: { type: "string" },
+        title: { type: "string" },
+        content: { type: "string" },
+        scope: { type: "string" },
+        priority: { type: "number" },
+        enabled: { type: "boolean" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "pa_instruction_delete",
+    description:
+      "Soft-delete a PA training rule. Use when the user says 'remove that rule', 'delete the rule " +
+      "about X'. Accepts id OR titleMatch.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        id: { type: "string" },
+        titleMatch: { type: "string" },
+      },
+    },
+  },
+
   {
     name: "ui_navigate",
     description:

@@ -162,5 +162,77 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
       "Mid-range Ampac panel. Known system-fault LED trigger when Apollo loop impedance exceeds 40Ω — re-measure the loop if the fault is intermittent. Battery charger is current-limited at 1.5A, so heavy discharge recovery can take overnight.",
     typicalPriceBand: "$$",
   },
+
+  // ─── Notifier ──────────────────────────────────────────────────────
+  {
+    slug: "notifier-nfs-320",
+    maxLoops: 1,
+    devicesPerLoop: 318,
+    loopProtocol: "Notifier CLIP / FlashScan",
+    networkCapable: true,
+    maxNetworkedPanels: 103,
+    batteryStandbyAh: 26,
+    batteryAlarmAh: 26,
+    recommendedBatterySize: "2 × 12V 26Ah SLA",
+    configOptions: [
+      { label: "Programming tool", value: "VeriFire Tools (USB or Ethernet)" },
+      { label: "Loops", value: "1 built-in SLC, expandable to 2 via LEM-320" },
+      { label: "Zones", value: "Up to 99 software zones" },
+      { label: "Sounder circuits", value: "4 supervised Class B NACs (Class A upgradable)" },
+      { label: "Network", value: "NOTI-FIRE-NET up to 103 panels" },
+      { label: "Smoke verification", value: "PAS + alarm verification by zone" },
+    ],
+    approvals: ["ActivFire scheme (current)", "AS 4428.1 / AS 7240.2 listed", "UL 864 9th ed."],
+    commissioningNotes:
+      "VeriFire Tools: build the job offline, upload via USB, then auto-program the SLC. NFS-320 defaults to CLIP protocol — switch to FlashScan for the faster polling and the device-LED wink. Panel will NOT latch an alarm if the SLC is set to FlashScan and any CLIP-only devices are on the loop.",
+    typicalPriceBand: "$$$",
+  },
+  {
+    slug: "notifier-nfs2-640",
+    maxLoops: 2,
+    devicesPerLoop: 318,
+    loopProtocol: "Notifier CLIP / FlashScan",
+    networkCapable: true,
+    maxNetworkedPanels: 103,
+    batteryStandbyAh: 55,
+    batteryAlarmAh: 55,
+    recommendedBatterySize: "2 × 12V 55Ah SLA in external cabinet",
+    configOptions: [
+      { label: "Programming tool", value: "VeriFire Tools (Ethernet preferred)" },
+      { label: "Loops", value: "2 built-in, expandable to 10 via loop expanders" },
+      { label: "Zones", value: "Up to 200 software zones" },
+      { label: "Sounder circuits", value: "6 × Class B NACs, Class A upgradable" },
+      { label: "Network", value: "NOTI-FIRE-NET + ONYXWorks graphics interface" },
+      { label: "Event log", value: "4,000 events non-volatile" },
+    ],
+    approvals: ["ActivFire scheme", "AS 4428.1 / AS 7240.2 listed", "UL 864 9th ed."],
+    commissioningNotes:
+      "Big brother of NFS-320. Battery cabinet is external once you exceed 26Ah — factory accessory CHG-120F charger required. Loop expanders must be powered from the same 24V rail as the mainboard or the supervision will flag a fault.",
+    typicalPriceBand: "$$$",
+  },
+
+  // ─── Simplex ───────────────────────────────────────────────────────
+  {
+    slug: "simplex-4010es",
+    maxLoops: 1,
+    devicesPerLoop: 250,
+    loopProtocol: "Simplex IDNet or MAPNET II",
+    networkCapable: true,
+    maxNetworkedPanels: 98,
+    batteryStandbyAh: 18,
+    batteryAlarmAh: 18,
+    recommendedBatterySize: "2 × 12V 18Ah SLA",
+    configOptions: [
+      { label: "Programming tool", value: "ES Panel Programmer (Simplex ES Series)" },
+      { label: "Loops", value: "1 × IDNet or MAPNET II" },
+      { label: "Zones", value: "Up to 125 software zones" },
+      { label: "Sounder circuits", value: "4 supervised NACs, auto-synchronising" },
+      { label: "Network", value: "SafeLINC / ES-Net up to 98 nodes" },
+    ],
+    approvals: ["UL 864", "Simplex ActivFire listed (legacy)"],
+    commissioningNotes:
+      "ES Series panels are LEGACY in Australia — new installs are rare. Service mainly involves replacing MAPNET II sensors with IDNet equivalents. Walk-test mode is menu-driven; carry the ES Panel Programmer USB stick for any non-trivial service.",
+    typicalPriceBand: "$$$",
+  },
 ];
 

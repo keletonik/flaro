@@ -28,6 +28,7 @@ import chatAgentRouter from "./chat-agent";
 import estimatesRouter from "./estimates";
 import metricsRouter from "./metrics";
 import remindersRouter from "./reminders";
+import paInstructionsRouter from "./pa-instructions";
 import diagRouter from "./diag";
 
 const router: IRouter = Router();
@@ -61,6 +62,7 @@ router.use(chatAgentRouter);
 router.use(estimatesRouter);
 router.use(metricsRouter);
 router.use(remindersRouter);
+router.use(paInstructionsRouter);
 router.use(diagRouter);
 
 export default router;

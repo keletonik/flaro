@@ -125,22 +125,33 @@ function mapDefectStatus(s) {
 }
 
 // ─── build each collection ────────────────────────────────────────────
+function discoverFiles(prefix) {
+  // Scan the repo root for every CSV starting with the prefix. Returns
+  // them sorted chronologically (lexicographic ordering on the file
+  // name matches the real timestamp because the Uptick export
+  // naming is YYYY-MM-DD_HH-mm-ss). Later files win on dedup when
+  // the same task_number appears twice — preserves the freshest
+  // status/assignment while still capturing every historical row.
+  return fs
+    .readdirSync(REPO_ROOT)
+    .filter((f) => f.startsWith(prefix) && f.endsWith('.csv'))
+    .sort();
+}
+
 function buildWip() {
-  const files = [
-    'flamesafe_tasks_2026-04-15_07-48-11.csv',
-    'flamesafe_tasks_2026-04-15_07-48-47.csv',
-    'flamesafe_tasks_2026-04-15_07-48-59.csv',
-  ];
-  const out = [];
-  const seen = new Set();
+  const files = discoverFiles('flamesafe_tasks_');
+  console.log('[wip] discovered', files.length, 'task CSVs');
+  // Map keyed by task_number so the LAST file to mention a task
+  // wins. Files are sorted chronologically above, so the newest
+  // export's status/assignment/value is what lands in the seed.
+  const byRef = new Map();
   for (const f of files) {
     const rows = readCsv(f);
     console.log(`[wip] ${f}: ${rows.length} rows`);
     for (const r of rows) {
       const taskNumber = String(r['Ref'] || r['ID'] || '').trim();
-      if (!taskNumber || seen.has(taskNumber)) continue;
-      seen.add(taskNumber);
-      out.push({
+      if (!taskNumber) continue;
+      byRef.set(taskNumber, {
         task_number: taskNumber,
         site: r['Property Name'] || r['Property Client Ref'] || 'Unknown',
         address: r['Address'] || null,
@@ -158,24 +169,20 @@ function buildWip() {
       });
     }
   }
-  return out;
+  return [...byRef.values()];
 }
 
 function buildQuotes() {
-  const files = [
-    'flamesafe_quotes_2026-04-15_07-48-36.csv',
-    'flamesafe_quotes_2026-04-15_07-49-25.csv',
-  ];
-  const out = [];
-  const seen = new Set();
+  const files = discoverFiles('flamesafe_quotes_');
+  console.log('[quotes] discovered', files.length, 'quote CSVs');
+  const byRef = new Map();
   for (const f of files) {
     const rows = readCsv(f);
     console.log(`[quotes] ${f}: ${rows.length} rows`);
     for (const r of rows) {
       const quoteNumber = String(r['Reference'] || r['ID'] || '').trim();
-      if (!quoteNumber || seen.has(quoteNumber)) continue;
-      seen.add(quoteNumber);
-      out.push({
+      if (!quoteNumber) continue;
+      byRef.set(quoteNumber, {
         quote_number: quoteNumber,
         task_number: r['Property Ref'] || null,
         site: r['Property'] || r['Property Branch'] || 'Unknown',
@@ -191,51 +198,49 @@ function buildQuotes() {
       });
     }
   }
-  return out;
+  return [...byRef.values()];
 }
 
 function buildDefects() {
-  const rows = readCsv('flamesafe_remarks_2026-04-15_07-48-17.csv');
-  console.log(`[defects] ${rows.length} rows`);
-  const out = [];
-  const seen = new Set();
-  for (const r of rows) {
-    const upId = String(r['ID'] || '').trim();
-    if (!upId || seen.has(upId)) continue;
-    seen.add(upId);
-    out.push({
-      uptick_id: upId,
-      task_number: r['Created on Task Ref'] || r['Repair Task Ref'] || null,
-      site: r['Property Name'] || 'Unknown',
-      client: r['Client'] || 'Unknown',
-      description: r['Description'] || r['Notes'] || r['Remark Type'] || 'Remark',
-      severity: mapDefectSeverity(r['Severity']),
-      status: mapDefectStatus(r['Status']),
-      asset_type: r['Asset Type'] || null,
-      location: r['Location'] || r['Asset Location'] || null,
-      recommendation: r['Resolution'] || null,
-      date_identified: isoDate(r['Created']),
-      notes: r['Notes'] || null,
-    });
+  const files = discoverFiles('flamesafe_remarks_');
+  console.log('[defects] discovered', files.length, 'remarks CSVs');
+  const byId = new Map();
+  for (const f of files) {
+    const rows = readCsv(f);
+    console.log(`[defects] ${f}: ${rows.length} rows`);
+    for (const r of rows) {
+      const upId = String(r['ID'] || '').trim();
+      if (!upId) continue;
+      byId.set(upId, {
+        uptick_id: upId,
+        task_number: r['Created on Task Ref'] || r['Repair Task Ref'] || null,
+        site: r['Property Name'] || 'Unknown',
+        client: r['Client'] || 'Unknown',
+        description: r['Description'] || r['Notes'] || r['Remark Type'] || 'Remark',
+        severity: mapDefectSeverity(r['Severity']),
+        status: mapDefectStatus(r['Status']),
+        asset_type: r['Asset Type'] || null,
+        location: r['Location'] || r['Asset Location'] || null,
+        recommendation: r['Resolution'] || null,
+        date_identified: isoDate(r['Created']),
+        notes: r['Notes'] || null,
+      });
+    }
   }
-  return out;
+  return [...byId.values()];
 }
 
 function buildCycleTimes() {
-  const files = [
-    'Days-To-Complete-Tasks_2026-04-15_07-52-25.csv',
-    'Days-To-Complete-Tasks_2026-04-15_07-52-50.csv',
-  ];
-  const out = [];
-  const seen = new Set();
+  const files = discoverFiles('Days-To-Complete-Tasks_');
+  console.log('[cycle] discovered', files.length, 'cycle CSVs');
+  const byRef = new Map();
   for (const f of files) {
     const rows = readCsv(f);
     console.log(`[cycle] ${f}: ${rows.length} rows`);
     for (const r of rows) {
       const taskRef = String(r['Task Ref'] || '').trim();
-      if (!taskRef || seen.has(taskRef)) continue;
-      seen.add(taskRef);
-      out.push({
+      if (!taskRef) continue;
+      byRef.set(taskRef, {
         task_ref: taskRef,
         task_property: r['Task Property'] || null,
         task_category: r['Task Category'] || null,
@@ -257,7 +262,7 @@ function buildCycleTimes() {
       });
     }
   }
-  return out;
+  return [...byRef.values()];
 }
 
 function buildEmailNotes() {

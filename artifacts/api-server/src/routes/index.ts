@@ -27,6 +27,7 @@ import fipAssistantRouter from "./fip-assistant";
 import chatAgentRouter from "./chat-agent";
 import estimatesRouter from "./estimates";
 import metricsRouter from "./metrics";
+import remindersRouter from "./reminders";
 import diagRouter from "./diag";
 
 const router: IRouter = Router();
@@ -59,6 +60,7 @@ router.use(fipAssistantRouter);
 router.use(chatAgentRouter);
 router.use(estimatesRouter);
 router.use(metricsRouter);
+router.use(remindersRouter);
 router.use(diagRouter);
 
 export default router;

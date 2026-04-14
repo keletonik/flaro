@@ -17,11 +17,11 @@
  * Supported metrics (as of this commit):
  *   - revenue_vs_target_mtd
  *   - top_wips_by_value
- *
- * Planned (Pass 4 fix set items 2c–2j):
  *   - overdue_defects_by_severity
  *   - aged_receivables_heatmap
  *   - quote_conversion_30d
+ *
+ * Planned (Pass 4 fix set items 2f–2j):
  *   - tech_utilisation_7d
  *   - avg_time_to_invoice
  *   - margin_by_client_top10
@@ -32,11 +32,17 @@
 import type { MetricDefinition, MetricResult, MetricParams, PgLikePool } from "./types";
 import { revenueVsTargetMtd } from "./revenue-vs-target-mtd";
 import { topWipsByValue } from "./top-wips-by-value";
+import { overdueDefectsBySeverity } from "./overdue-defects-by-severity";
+import { agedReceivablesHeatmap } from "./aged-receivables-heatmap";
+import { quoteConversion30d } from "./quote-conversion-30d";
 
 const DEFINITIONS: MetricDefinition[] = [
   revenueVsTargetMtd,
   topWipsByValue,
-  // More will land as Pass 4 fix items 2c onward ship.
+  overdueDefectsBySeverity,
+  agedReceivablesHeatmap,
+  quoteConversion30d,
+  // More will land as Pass 4 fix items 2f onward ship.
 ];
 
 const BY_ID = new Map(DEFINITIONS.map((d) => [d.id, d]));

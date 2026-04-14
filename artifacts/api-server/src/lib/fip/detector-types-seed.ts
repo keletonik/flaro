@@ -902,5 +902,55 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 17. WATERFLOW SWITCH (SPRINKLER SYSTEM)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "waterflow-switch",
+    name: "Waterflow Switch",
+    category: "multi",
+    summary:
+      "Mechanical or paddle-vane switch installed on a sprinkler riser or branch line — triggers alarm to the FIP when water flow exceeds the single-sprinkler retard threshold, confirming that a sprinkler has activated.",
+    operatingPrinciple:
+      "A paddle vane projects into the pipe's water flow. Normal static water exerts no force on the paddle. When a sprinkler head opens, water begins flowing and pushes the paddle out of alignment; a mechanical linkage closes an electrical contact that reports to the FIP. A built-in pneumatic retard chamber introduces a 20–60 second delay before the alarm trips, preventing false alarms from pressure transients and small leaks.",
+    sensingTechnology:
+      "Paddle-type vane switch with a pneumatic retard chamber. The retard is adjustable on site to match the sprinkler system design: fast-response sprinklers need a shorter retard so the alarm is not suppressed below the activation threshold. Pressure switch types (alternative to paddle) detect the small pressure drop caused by a sprinkler opening on wet pipe systems, and the pressure rise on dry-pipe or pre-action systems when the main valve opens.",
+    typicalApplications: [
+      "Every sprinkler zone riser (AS 2118.1 / AS 1670.1 Clause 3.32 — waterflow alarm signalling)",
+      "Every sprinkler branch line serving > 20 heads",
+      "Pre-action sprinkler systems — double interlock verification",
+      "Deluge systems — alarm on actuator operation",
+    ],
+    unsuitableApplications: [
+      "Small dry-pipe systems < 2 heads — use a pressure switch instead",
+      "Low-pressure water systems (< 100 kPa) — paddle may not close reliably",
+    ],
+    installationRequirements:
+      "Install on a horizontal run of pipe, not on a vertical drop, so the paddle sits in the flow. The paddle must be sized to the pipe: too large and it rattles in normal static conditions, too small and it misses the flow. Bond to the system earth and verify the tamper-switch cover wiring so removal of the cover annunciates on the panel. The retard must be tested during commissioning at the maximum allowable flow rate for a single sprinkler — typically 90 L/min for a K80 head.",
+    failureModes: [
+      { mode: "Retard drift", symptom: "Intermittent waterflow alarms with no real flow", cause: "Retard chamber orifice dirty or seal degraded", action: "Service retard chamber annually; replace every 5 years." },
+      { mode: "Paddle corrosion", symptom: "Paddle binds, fails to return or fails to trigger", cause: "Corrosion at the pivot point or galvanic reaction with pipe material", action: "Replace switch; use bronze/stainless for high-pressure or non-potable systems." },
+      { mode: "Pipe vibration false alarm", symptom: "Alarm triggers when adjacent pump starts", cause: "Pipe vibration shakes the paddle past the retard", action: "Fit vibration-damping mounts; tune retard higher." },
+      { mode: "Cover tamper missed", symptom: "Cover removed during inspection does not annunciate", cause: "Tamper switch wiring not commissioned", action: "Recommission — every supervised tamper must annunciate on the FIP." },
+    ],
+    testProcedure:
+      "AS 1851 Section 5.2 — open the test drain downstream of the waterflow switch at a rate equal to a single sprinkler, verify the switch trips within the retard time, and that the FIP annunciates the correct zone. Annual 15-minute drain test confirms sustained flow and alarm hold.",
+    maintenance:
+      "Quarterly visual, 6-monthly drain-and-alarm test, annual full retard service. Waterflow switches are THE most commonly failed item on a commissioned sprinkler system — they need attention.",
+    standardsRefs: [
+      { code: "AS 2118.1", note: "Automatic sprinkler systems for general applications — waterflow monitoring requirements" },
+      { code: "AS 1670.1", clause: "3.32", note: "Waterflow alarm signal to the FIP" },
+      { code: "AS 1851", clause: "5.2", note: "Routine service, drain test, retard service" },
+    ],
+    exampleModels: [
+      { manufacturer: "Potter Electric", model: "VSR", partNumber: "VSR", notes: "Paddle vane waterflow switch, adjustable retard 0–90 s" },
+      { manufacturer: "System Sensor", model: "WFD20", notes: "Waterflow alarm switch for 20 mm pipe" },
+      { manufacturer: "Tyco", model: "WFS", notes: "Central-sourced waterflow alarm switch" },
+    ],
+    lifeSpanYears: 20,
+    costBand: "$",
+    addressable: false,
+  },
 ];
 

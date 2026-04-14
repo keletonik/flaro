@@ -195,13 +195,48 @@ router.post("/chat/agent", async (req, res, next) => {
     // Stable block is sent as a cache-control block; each subsequent
     // request within ~5 minutes hits the cached token prefix and
     // pays cached-input rate (~80% cheaper, ~400ms faster).
+    //
+    // Smart Mode (phase F): when section === "pa" we swap the core
+    // prompt for PA_SYSTEM_PROMPT AND prepend a <pa_memory> working
+    // memory block as a second cached system segment. The memory
+    // block invalidates the cache when todos/reminders/instructions
+    // change; the core prompt stays cached across that boundary.
+    const isPaMode = section === "pa";
+    const corePrompt = isPaMode ? PA_SYSTEM_PROMPT : AGENT_SYSTEM_PROMPT;
     const systemBlocks: any[] = [
       {
         type: "text",
-        text: AGENT_SYSTEM_PROMPT,
+        text: corePrompt,
         cache_control: { type: "ephemeral" },
       },
     ];
+
+    if (isPaMode) {
+      try {
+        const { buildPaMemory, serialisePaMemory } = await import("../lib/pa-memory");
+        // Pull text from the last 3 user turns so the memory builder
+        // can drop todos the operator just talked about.
+        const recentUserText = (history ?? [])
+          .filter((h) => h.role === "user")
+          .slice(-3)
+          .map((h) => h.content)
+          .concat([message])
+          .join(" ");
+        const memory = await buildPaMemory({ recentUserText });
+        const serialized = serialisePaMemory(memory);
+        systemBlocks.push({
+          type: "text",
+          text: `\n\n${serialized}\n\nUse the data above when deciding what to check in on. The "staleTodos" array is already priority-sorted — pick from the top.`,
+          cache_control: { type: "ephemeral" },
+        });
+      } catch (memErr) {
+        // Never crash the turn if memory fails — fall through with
+        // just the core prompt and an observability log line.
+        // eslint-disable-next-line no-console
+        console.warn("[pa] memory builder failed, continuing without memory:", (memErr as Error)?.message);
+      }
+    }
+
     if (section) {
       systemBlocks.push({
         type: "text",

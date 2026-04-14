@@ -100,6 +100,73 @@ router.get("/diag/pa", async (_req, res, next) => {
   }
 });
 
+/**
+ * GET /api/diag/apr15 — verification probe for the 15 Apr 2026 data batch.
+ *
+ * Returns:
+ *  - batch_id of the active apr15 load
+ *  - rows tagged with that batch_id in each target table
+ *  - sample row from each (to prove the shape is right)
+ *  - task_cycle_times: days-to-complete distribution (min/p50/p95/max)
+ *
+ * Hit this after the next Replit restart to confirm the load
+ * landed. Whitelisted alongside the other diag probes.
+ */
+router.get("/diag/apr15", async (_req, res, next) => {
+  try {
+    const { db } = await import("@workspace/db");
+    const { wipRecords, quotes, defects, taskCycleTimes } = await import("@workspace/db");
+    const { eq, sql } = await import("drizzle-orm");
+    const BATCH = "apr15-batch-2026-04-15";
+
+    const [wipCount, quoteCount, defectCount, cycleCount, emailCount] = await Promise.all([
+      db.select({ n: sql<number>`count(*)::int` }).from(wipRecords).where(eq(wipRecords.importBatchId, BATCH)),
+      db.select({ n: sql<number>`count(*)::int` }).from(quotes).where(eq(quotes.importBatchId, BATCH)),
+      db.select({ n: sql<number>`count(*)::int` }).from(defects).where(eq(defects.importBatchId, BATCH)),
+      db.select({ n: sql<number>`count(*)::int` }).from(taskCycleTimes).where(eq(taskCycleTimes.importBatchId, BATCH)),
+      db.execute(sql`SELECT COUNT(*)::int AS n FROM notes WHERE raw_data->>'kind' = 'email-triage'`),
+    ]);
+
+    // Cycle time distribution
+    const cycleStats = await db.execute(sql`
+      SELECT
+        MIN(days_to_complete)::int AS min,
+        MAX(days_to_complete)::int AS max,
+        AVG(days_to_complete)::numeric(10,1) AS avg,
+        percentile_cont(0.5) WITHIN GROUP (ORDER BY days_to_complete)::numeric(10,1) AS p50,
+        percentile_cont(0.95) WITHIN GROUP (ORDER BY days_to_complete)::numeric(10,1) AS p95
+      FROM task_cycle_times
+      WHERE days_to_complete IS NOT NULL AND deleted_at IS NULL
+    `);
+
+    // Sample rows
+    const [wipSample] = await db.select().from(wipRecords)
+      .where(eq(wipRecords.importBatchId, BATCH)).limit(1);
+    const [cycleSample] = await db.select().from(taskCycleTimes)
+      .where(eq(taskCycleTimes.importBatchId, BATCH)).limit(1);
+
+    res.json({
+      ok: true,
+      batch_id: BATCH,
+      now: new Date().toISOString(),
+      counts: {
+        wip_records: Number(wipCount[0]?.n ?? 0),
+        quotes: Number(quoteCount[0]?.n ?? 0),
+        defects: Number(defectCount[0]?.n ?? 0),
+        task_cycle_times: Number(cycleCount[0]?.n ?? 0),
+        email_triage_notes: Number((emailCount as any)?.rows?.[0]?.n ?? 0),
+      },
+      cycleTimeStats: cycleStats.rows?.[0] ?? null,
+      samples: {
+        wip: wipSample ? { task_number: wipSample.taskNumber, site: wipSample.site, client: wipSample.client, status: wipSample.status } : null,
+        cycle: cycleSample ? { task_ref: cycleSample.taskRef, days_to_complete: cycleSample.daysToComplete, category: cycleSample.taskCategory } : null,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/diag/agent", async (_req, res, next) => {
   try {
     const [recent, stats] = await Promise.all([

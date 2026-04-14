@@ -193,10 +193,10 @@ export async function seedApr15Batch(): Promise<void> {
         [
           randomUUID(),
           e.text,
-          "email-triage",
+          "Follow Up",
           "casper",
           "open",
-          JSON.stringify({ hash: e.hash, title: e.title, source: "FlameSafe_Email_Batch_14Apr2026.md" }),
+          JSON.stringify({ hash: e.hash, title: e.title, source: "FlameSafe_Email_Batch_14Apr2026.md", kind: "email-triage" }),
         ],
       );
       summary.emails.inserted++;

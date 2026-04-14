@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { apiFetch, formatCurrency } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
+import { InboxPanel } from "@/components/InboxPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/App";
@@ -222,6 +223,11 @@ export default function Dashboard() {
       </div>
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
+        {/* Pass 7 fix 1 — inbox block. Three columns: critical defects,
+            overdue invoices, top open WIPs. Every row is clickable and
+            drops the user on the filtered operations tab. */}
+        <InboxPanel />
+
         {/* Bento Grid — featured metrics prominent, secondary compact.
             Every card now drill-throughs to a filtered destination per
             Pass 2 target 4. Destinations use query params so the target

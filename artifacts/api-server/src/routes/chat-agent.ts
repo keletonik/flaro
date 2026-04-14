@@ -140,14 +140,15 @@ SAFETY:
 
 router.post("/chat/agent", async (req, res, next) => {
   try {
-    const { section, message, history } = req.body as {
+    const { section, message, history, attachmentIds } = req.body as {
       section?: string;
       message: string;
       history?: { role: "user" | "assistant"; content: string }[];
+      attachmentIds?: string[];
     };
 
-    if (!message) {
-      res.status(400).json({ error: "message is required" });
+    if (!message && (!attachmentIds || attachmentIds.length === 0)) {
+      res.status(400).json({ error: "message or attachmentIds is required" });
       return;
     }
 
@@ -187,7 +188,63 @@ router.post("/chat/agent", async (req, res, next) => {
         messages.push({ role: h.role, content: h.content });
       }
     }
-    messages.push({ role: "user", content: message });
+
+    // Build the user message content. When there are attachments the
+    // user message becomes a multi-block content array: an image or
+    // document block per attachment, then the text block. This is the
+    // standard Messages API shape for Claude vision / PDF support.
+    const userContent: any[] = [];
+    if (attachmentIds && attachmentIds.length > 0) {
+      try {
+        const { attachments } = await import("@workspace/db");
+        const { db } = await import("@workspace/db");
+        const { inArray, isNull, and } = await import("drizzle-orm");
+        const rows = await db
+          .select()
+          .from(attachments)
+          .where(and(inArray(attachments.id, attachmentIds), isNull(attachments.deletedAt)));
+        for (const row of rows) {
+          if (row.kind === "image") {
+            userContent.push({
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: row.contentType,
+                data: (row.blob as Buffer).toString("base64"),
+              },
+            });
+          } else if (row.kind === "document") {
+            userContent.push({
+              type: "document",
+              source: {
+                type: "base64",
+                media_type: "application/pdf",
+                data: (row.blob as Buffer).toString("base64"),
+              },
+            });
+          } else if (row.kind === "text") {
+            const text = (row.blob as Buffer).toString("utf8").slice(0, 50_000);
+            userContent.push({
+              type: "text",
+              text: `<attachment filename="${row.filename ?? "file"}">\n${text}\n</attachment>`,
+            });
+          }
+          // "other" kinds are skipped silently — stored but not injected
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn("[chat-agent] attachment fetch failed:", (err as Error)?.message);
+      }
+    }
+    if (message) {
+      userContent.push({ type: "text", text: message });
+    }
+    messages.push({
+      role: "user",
+      content: userContent.length > 1 || userContent[0]?.type !== "text"
+        ? userContent
+        : userContent[0].text,
+    });
 
     // Split the system prompt so the stable block can be cached by
     // Anthropic and the dynamic tail (current section) is appended

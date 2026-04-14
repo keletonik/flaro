@@ -255,7 +255,7 @@ router.post("/fip/assistant/chat", async (req, res) => {
     return;
   }
 
-  const { message, history, imageId } = req.body ?? {};
+  const { message, history, imageId, attachmentIds } = req.body ?? {};
   if (!message || typeof message !== "string") {
     res.status(400).json({ error: "message required" });
     return;
@@ -283,9 +283,46 @@ router.post("/fip/assistant/chat", async (req, res) => {
   // Build the conversation. If an imageId was supplied the frontend
   // passes it as a hint — Claude can then call fip_analyse_image to
   // run vision on it.
-  const userContent = imageId
+  const textWithHint = imageId
     ? `${message}\n\n(The operator just uploaded an image — call fip_analyse_image with imageId="${imageId}" to identify it.)`
     : message;
+
+  // Build the multi-block user content if generic attachments are present.
+  const userContent: any[] = [];
+  if (Array.isArray(attachmentIds) && attachmentIds.length > 0) {
+    try {
+      const { attachments } = await import("@workspace/db");
+      const { inArray, isNull, and } = await import("drizzle-orm");
+      const rows = await db
+        .select()
+        .from(attachments)
+        .where(and(inArray(attachments.id, attachmentIds), isNull(attachments.deletedAt)));
+      for (const row of rows) {
+        if (row.kind === "image") {
+          userContent.push({
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: row.contentType,
+              data: (row.blob as Buffer).toString("base64"),
+            },
+          });
+        } else if (row.kind === "document") {
+          userContent.push({
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data: (row.blob as Buffer).toString("base64") },
+          });
+        } else if (row.kind === "text") {
+          const text = (row.blob as Buffer).toString("utf8").slice(0, 50_000);
+          userContent.push({ type: "text", text: `<attachment filename="${row.filename ?? "file"}">\n${text}\n</attachment>` });
+        }
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[fip-assistant] attachment fetch failed:", (err as Error)?.message);
+    }
+  }
+  if (textWithHint) userContent.push({ type: "text", text: textWithHint });
 
   const messages: any[] = [];
   if (Array.isArray(history)) {
@@ -293,7 +330,12 @@ router.post("/fip/assistant/chat", async (req, res) => {
       if (h?.role && h?.content) messages.push({ role: h.role, content: h.content });
     }
   }
-  messages.push({ role: "user", content: userContent });
+  messages.push({
+    role: "user",
+    content: userContent.length > 1 || userContent[0]?.type !== "text"
+      ? userContent
+      : userContent[0]?.text ?? textWithHint,
+  });
 
   try {
     let iter = 0;

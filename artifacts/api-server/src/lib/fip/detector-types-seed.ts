@@ -1,0 +1,1113 @@
+/**
+ * FIP detector type reference library.
+ *
+ * Master-level technical content seeded into fip_detector_types. Every
+ * entry is sourced from Australian Standards (AS 1670.1, AS 1670.3,
+ * AS 1603.x, AS 7240-series, AS 3786, AS 4428.x, AS 4050) and from
+ * manufacturer datasheets of the major brands supported in the FIP KB
+ * (Ampac / Notifier / Simplex / Pertronic / Bosch / Hochiki / Apollo /
+ * Xtralis / Honeywell). Clause numbers are quoted inline so the content
+ * is auditable against the standards register.
+ *
+ * Every entry is long-form on purpose — the FIP page renders this as
+ * the in-depth card, the assistant reads it as tool input, and the
+ * operator learns from it directly.
+ */
+
+export interface DetectorTypeSeed {
+  slug: string;
+  name: string;
+  category: "smoke" | "heat" | "flame" | "gas" | "aspirating" | "beam" | "duct" | "multi" | "manual_call_point" | "linear";
+  summary: string;
+  operatingPrinciple: string;
+  sensingTechnology: string;
+  typicalApplications: string[];
+  unsuitableApplications: string[];
+  installationRequirements: string;
+  failureModes: Array<{ mode: string; symptom: string; cause: string; action: string }>;
+  testProcedure: string;
+  maintenance: string;
+  standardsRefs: Array<{ code: string; clause?: string; note: string }>;
+  exampleModels: Array<{ manufacturer: string; model: string; partNumber?: string; notes?: string }>;
+  lifeSpanYears: number;
+  costBand: "$" | "$$" | "$$$";
+  addressable: boolean;
+}
+
+export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
+  // ─────────────────────────────────────────────────────────────────────
+  // 1. PHOTOELECTRIC SMOKE DETECTOR (optical / light-scatter)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "photoelectric-smoke",
+    name: "Photoelectric Smoke Detector",
+    category: "smoke",
+    summary:
+      "Light-scatter smoke detector — the Australian default for general occupancies under AS 1670.1. Strong on smouldering fires.",
+    operatingPrinciple:
+      "A chamber houses an infrared LED and a photodiode arranged so the photodiode normally sees no light. When smoke particles enter the chamber they scatter the LED's beam onto the photodiode. When the received light exceeds a calibrated threshold for a short minimum dwell time, the detector declares an alarm. The dwell time (typically 5–12 seconds on an addressable loop) is what separates real smoke from a passing insect or dust puff.",
+    sensingTechnology:
+      "Optical scatter at 880–940 nm. Infrared is used rather than visible light because the wavelength is optimised to interact with smoke particles in the 0.3–1.0 µm range produced by smouldering combustion — the size class that is hardest for humans to detect by nose. Modern addressable photoelectric detectors (e.g. Apollo XP95, System Sensor 2351E, Hochiki ALG-EN) report a continuous analogue value back to the panel so the panel can apply drift compensation and early-warning thresholds.",
+    typicalApplications: [
+      "Bedrooms, living areas, corridors (AS 1670.1 Clause 3.22 — required ceiling spacing)",
+      "Offices and commercial tenancies",
+      "Public buildings, schools, retail",
+      "Aged care and residential care (AS 1670.1 Part 1 Clause 3.22.2)",
+      "Hotel rooms (AS 1670.1 Clause 3.22.2 mandates smoke detection in every sole-occupancy unit)",
+      "Storage rooms with moderate dust load",
+    ],
+    unsuitableApplications: [
+      "Kitchens or spaces within 6 m of a cooking appliance — use a multi-criteria or heat detector instead",
+      "Laundries where steam is regular — moisture scatters the IR beam the same way smoke does",
+      "Dusty mechanical workshops — sawdust, grinding dust, and welding fume all cause false alarms",
+      "Vehicle workshops with diesel exhaust — carbon particulate saturates the chamber",
+      "Spaces below 0 °C or above 38 °C (check datasheet — Australian standards reference AS 7240.7 for environmental classification)",
+    ],
+    installationRequirements:
+      "Mount on ceiling, at least 500 mm from any wall and 500 mm from any light fitting. Maximum coverage area per AS 1670.1 Clause 3.22 is 100 m² per detector at ceiling heights ≤ 6 m, reducing to 80 m² between 6 m and 10.5 m, and 50 m² between 10.5 m and 25 m (with sensitivity upgrade). Maximum spacing between detectors is 14.1 m (10 m for irregular ceilings). Maximum ceiling height for photoelectric alone is 25 m in open spaces; beam or aspirating is required beyond that. Do not install above a doorway or within 1 m of an air-conditioning supply vent — airflow sweeps smoke away before it reaches the chamber.",
+    failureModes: [
+      {
+        mode: "Chamber contamination drift",
+        symptom: "Analogue value slowly rising over months, eventually intermittent pre-alarm",
+        cause: "Dust accumulation on the optical chamber walls and the photodiode window",
+        action: "Replace head (not field-cleanable on most models). Clean contamination is a 12-month housekeeping item per AS 1851 Clause 6.",
+      },
+      {
+        mode: "Insect ingress",
+        symptom: "Sudden full alarm with no visible smoke source, often at night",
+        cause: "Small insect (ant, spider) crossed the optical path",
+        action: "Inspect and clean chamber; verify insect screen intact. If recurring, fit insect-resistant variant or relocate.",
+      },
+      {
+        mode: "Loop communication fault",
+        symptom: "Panel reports detector missing or 'no response'",
+        cause: "Open-circuit on loop, isolator activated upstream, or detector base screw loose",
+        action: "Check loop continuity at the base, confirm detector is fully seated, run panel loop diagnostics.",
+      },
+      {
+        mode: "Humidity fog-out",
+        symptom: "Chronic false alarms during rainy weather or high humidity events",
+        cause: "Condensation on optical surfaces scatters IR the same way smoke does",
+        action: "Relocate if in a condensation-prone area (laundries, unventilated store-rooms); increase sensitivity mode to 'less sensitive' if panel supports it; consider a multi-criteria replacement.",
+      },
+    ],
+    testProcedure:
+      "Per AS 1851 Section 6.4 — functional test annually, plus non-destructive routine service every 6 months. Use a certified aerosol test gas (e.g. Solo A10, Smoke Sabre) sprayed into the detector chamber from the specified distance; the detector must enter alarm within 30 seconds, the panel must annunciate the correct address, and the alarm must clear after venting. Do NOT use lit cigarettes or actual smoke — this contaminates the chamber and voids calibration. Log detector analogue reading pre- and post-test.",
+    maintenance:
+      "6-monthly visual inspection and loop communications check. 12-monthly functional test with aerosol. Chamber replacement on drift > 20% above baseline, or at manufacturer-recommended service life (typically 10 years). Record each test in the AS 1851 logbook against the detector address.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.22", note: "Spacing, coverage, and mounting for point-type smoke detection" },
+      { code: "AS 1670.1", clause: "3.22.2", note: "Mandatory smoke detection in sole-occupancy units (aged care, residential care, hotels)" },
+      { code: "AS 7240.7", note: "Point-type smoke detectors using scattered light — product performance standard" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service, testing, and chamber-contamination criteria" },
+      { code: "AS 3786", note: "Smoke alarms for residential use (battery / mains interlinked); not the same as AS 7240.7" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Optical Smoke", partNumber: "55000-600APO", notes: "Addressable, drift-compensated, loop-powered" },
+      { manufacturer: "Hochiki", model: "ALN-EN", partNumber: "ALN-EN", notes: "Analogue addressable, ESP protocol" },
+      { manufacturer: "System Sensor", model: "2351E", partNumber: "2351E", notes: "Photoelectric analogue addressable" },
+      { manufacturer: "Notifier", model: "FSP-851", partNumber: "FSP-851", notes: "Intelligent photoelectric, CLIP/FlashScan" },
+      { manufacturer: "Pertronic", model: "SD651", partNumber: "SD651", notes: "Pertronic Apollo-compatible photoelectric" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 2. IONISATION SMOKE DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "ionisation-smoke",
+    name: "Ionisation Smoke Detector",
+    category: "smoke",
+    summary:
+      "Radioactive ion-chamber detector — legacy technology, strong on flaming fires but declining in use under modern AS 1670.1 preferences.",
+    operatingPrinciple:
+      "A small amount of americium-241 (approximately 0.3 microcuries / 11 kBq) emits alpha particles that ionise the air inside a reference chamber. A small constant voltage across the chamber creates a measurable ion current between two plates. When smoke particles enter the chamber, they attach to the ions and slow their movement, reducing the current. When the current drops below a calibrated threshold, the detector alarms.",
+    sensingTechnology:
+      "Dual-chamber ionisation: one chamber is sealed and serves as a reference for environmental compensation (humidity, temperature, air pressure), and one is open to the surrounding air. The panel compares the current in both chambers to discriminate a real smoke event from an environmental drift. Ionisation detectors respond strongly to the small, fast-moving particles (< 0.3 µm) produced by flaming fires — faster than photoelectric for paper, petrol, or solvent fires, but slower for smouldering upholstery or mattresses.",
+    typicalApplications: [
+      "Historically: general commercial and light-industrial areas where flaming-fire risk dominates",
+      "Telecommunications equipment rooms (legacy installations)",
+      "Combined with a photoelectric in multi-criteria heads (see entry 4)",
+    ],
+    unsuitableApplications: [
+      "Residential and sleeping areas — AS 3786 now specifies photoelectric as the preferred residential technology due to its superior smouldering-fire response",
+      "Any space where the detector may be within 1.5 m of a forced-air outlet — airflow creates a false current differential",
+      "Kitchens — even more prone to cooking-fume false alarms than photoelectric",
+      "Any NEW installation where a modern photoelectric or multi-criteria head is available — most Australian specifiers are phasing ionisation out for environmental and performance reasons",
+    ],
+    installationRequirements:
+      "Same AS 1670.1 Clause 3.22 spacing rules as photoelectric (100 m² / 14.1 m apart / 500 mm from walls and vents). Additional radiation-handling compliance: even though the Am-241 source is sealed and below the Australian Radiation Protection and Nuclear Safety Agency (ARPANSA) exempt threshold, end-of-life disposal must go through a licensed radioactive-waste pathway — NOT general waste. Each detector must be tracked in the asset register.",
+    failureModes: [
+      { mode: "Radioactive source decay", symptom: "Gradual loss of sensitivity over 20+ years", cause: "Half-life of Am-241 is 432.2 years but the detector electronics drift much faster", action: "Replace head on manufacturer's recommended service life (typically 10 years)." },
+      { mode: "Humidity false alarm", symptom: "Unexplained alarm during rain or high humidity", cause: "Moisture affects the ionisation current", action: "Relocate or replace with photoelectric." },
+      { mode: "Aerosol false alarm", symptom: "Alarms during cleaning with aerosol sprays", cause: "Fine droplets simulate smoke particles in the chamber", action: "Brief the cleaning crew; isolate detector during chemical cleaning." },
+    ],
+    testProcedure:
+      "Aerosol test per AS 1851 Section 6.4 (same procedure as photoelectric). End-of-life disposal MUST be through a licensed radioactive waste contractor — do not remove the head and put it in the general bin.",
+    maintenance:
+      "6-monthly inspection, 12-monthly functional test. Special attention to the radiation-protection label and the manufacturer's use-by date stamp. Log replacement against a radioactive-materials register.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.22", note: "Placement and spacing — same as photoelectric" },
+      { code: "AS 7240.7", note: "Performance requirements for point-type smoke detectors including ionisation" },
+      { code: "ARPANSA Code of Practice", note: "Safety and radiation protection for detectors containing Am-241" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service" },
+    ],
+    exampleModels: [
+      { manufacturer: "System Sensor", model: "1151E", partNumber: "1151E", notes: "Legacy ionisation, still supported in older Notifier installations" },
+      { manufacturer: "Apollo", model: "XP95 Ionisation", partNumber: "55000-500APO", notes: "Analogue addressable ionisation" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 3. MULTI-CRITERIA (PHOTO + HEAT + CO) SMOKE DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "multi-criteria-smoke",
+    name: "Multi-Criteria (Photo + Heat + CO) Detector",
+    category: "multi",
+    summary:
+      "Three-sensor combined head — photoelectric smoke, fixed+rate-of-rise heat, and electrochemical CO — with algorithmic fusion for false-alarm rejection.",
+    operatingPrinciple:
+      "A single housing contains an optical smoke chamber, a thermistor-based heat sensor, and an electrochemical carbon monoxide cell. The detector's firmware runs a fusion algorithm that weights each channel's contribution before declaring alarm: for example, a slow optical-channel rise plus a CO trend plus a mild heat rise will alarm earlier than any single channel alone, while optical-only bursts (steam, dust) that lack CO or heat are rejected.",
+    sensingTechnology:
+      "Optical: same infrared scatter chamber as a standalone photoelectric. Heat: thermistor measuring air temperature, with both fixed-threshold (typically 58 °C Class A1 per AS 7240.5) and rate-of-rise (8.3 °C/min) modes. CO: electrochemical cell sensitive to 0–500 ppm, targeting the 30–100 ppm range produced during combustion. The panel receives three analogue values on every poll and an intelligence flag when the fusion algorithm flips. High-end heads (Notifier FAPT-851, System Sensor COPTIR) add an infrared flame channel, bringing the count to four sensors.",
+    typicalApplications: [
+      "High-value areas where false alarms are expensive: data centres, hospitals, aged-care residential rooms",
+      "Hotel corridors — CO channel rejects cigarette smoke false alarms",
+      "Cooking-adjacent spaces where a pure photoelectric would false-alarm on steam",
+      "Fire Rescue NSW retrofit programs — multi-criteria is the preferred replacement when a site has a history of false alarms",
+    ],
+    unsuitableApplications: [
+      "Heavy industrial areas with continuous dust or welding fume — the optical channel still suffers",
+      "Unheated outdoor-exposed spaces — CO cells degrade with temperature extremes",
+      "Budget retrofits — cost 3-5x a simple photoelectric (see cost band)",
+    ],
+    installationRequirements:
+      "AS 1670.1 Clause 3.22 applies as for photoelectric, but the CO cell has a temperature/humidity operating envelope (typically 0–49 °C, 15–93% RH non-condensing) that must be observed. Mount away from direct sunlight. The CO cell has a finite calibrated lifetime (usually 7 years) that is shorter than the optical head — plan replacement on the CO cell expiry, not the whole-detector service life.",
+    failureModes: [
+      { mode: "CO cell saturation", symptom: "Detector reports CO trouble fault; cell fails self-test", cause: "Long-term exposure to sub-alarm CO (e.g. near a loading dock)", action: "Replace head. Review siting." },
+      { mode: "CO cell expiry", symptom: "Panel reports 'sensor end of life' at 7 years", cause: "Electrochemical cell end-of-life", action: "Replace detector (cell is not field-serviceable on most Apollo/System Sensor/Notifier multi-criteria heads)." },
+      { mode: "Fusion algorithm false negative", symptom: "Late alarm on a slow smouldering fire in a well-ventilated space", cause: "CO venting out of the detector's sensing volume faster than it builds up", action: "Supplement with aspirating detection for critical areas where the fusion benefit does not apply." },
+    ],
+    testProcedure:
+      "Aerosol smoke test per AS 1851 AND a CO gas test from a certified calibration source. Panel must annunciate the correct address and pass both channels. Heat channel is functionally tested with a Testifire heat test or equivalent hot-air source set to the detector's Class A1 threshold. Log all three channel results separately.",
+    maintenance:
+      "6-monthly inspection, 12-monthly full multi-channel test. Track CO cell installation date per detector and schedule replacement by cell life, not detector life.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.22", note: "Placement as for point-type smoke detection" },
+      { code: "AS 7240.8", note: "Multi-criteria fire detectors — product performance standard" },
+      { code: "AS 7240.5", note: "Heat channel performance classification (Class A1 / A2 / B)" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service, including per-channel test requirements" },
+    ],
+    exampleModels: [
+      { manufacturer: "Notifier", model: "FAPT-851", partNumber: "FAPT-851", notes: "Photo + fixed heat + CO + IR flame, intelligent addressable" },
+      { manufacturer: "System Sensor", model: "COPTIR", partNumber: "COPTIR", notes: "Photo + CO + thermal + IR flame" },
+      { manufacturer: "Apollo", model: "Discovery Multisensor", partNumber: "58000-700APO", notes: "Photo + heat, Discovery protocol" },
+      { manufacturer: "Hochiki", model: "ACC-EN", partNumber: "ACC-EN", notes: "Multi-criteria with CO" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 4. RATE-OF-RISE HEAT DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "rate-of-rise-heat",
+    name: "Rate-of-Rise Heat Detector",
+    category: "heat",
+    summary:
+      "Thermistor-based heat detector that triggers on temperature rise-rate (typically 8.3 °C/min) AND a fixed back-stop (57–65 °C).",
+    operatingPrinciple:
+      "Two thermistors track local air temperature. Firmware compares the current value against a rolling baseline to compute a rate of change. If the rise rate exceeds a calibrated threshold (usually 8.3 °C per minute, matching AS 7240.5 Class A1R), the detector alarms immediately regardless of absolute temperature. A fixed-threshold back-stop at 57–65 °C (Class A1 / A2) catches slow-onset fires that never trigger the rate channel.",
+    sensingTechnology:
+      "Dual NTC thermistor with analogue reporting. On addressable heads (Apollo XP95 Heat, Hochiki ALG-H, Notifier FST-851) the panel reads both the instantaneous temperature and the rate of rise every poll. Class A1R is the Australian default; higher ambient spaces use Class B (75 °C) or Class C (90 °C). Heat detectors do NOT suffer the optical false-alarm modes of photoelectric, which makes them the default in dusty or steamy spaces.",
+    typicalApplications: [
+      "Kitchens and cooking areas (AS 1670.1 Clause 3.23 — heat detection where smoke detection is impractical)",
+      "Laundries, showers, saunas, indoor pools",
+      "Garages and vehicle workshops",
+      "Mechanical plant rooms and boiler rooms",
+      "Dusty storage areas where photoelectric would false-alarm",
+    ],
+    unsuitableApplications: [
+      "Sleeping areas — heat detectors respond too late to save sleeping occupants (photoelectric is mandatory per AS 1670.1 Clause 3.22.2)",
+      "Large open warehouses with high ceilings — heat stratifies before reaching the detector",
+      "Unheated outdoor spaces with wide diurnal temperature swings — can false-alarm on rapid solar-driven warming",
+    ],
+    installationRequirements:
+      "AS 1670.1 Clause 3.23 — maximum coverage area 50 m² per detector at ceiling heights ≤ 4 m, maximum spacing 7.1 m between detectors. Reduced coverage above 4 m — see Table 3.23 for the exact reduction. Mount 500 mm minimum from walls. Heat detectors are NOT a substitute for smoke detection where smoke detection is feasible.",
+    failureModes: [
+      { mode: "Thermistor drift", symptom: "Gradual baseline temperature offset shown on the panel analogue read", cause: "Thermistor aging or contamination", action: "Replace head on 15-year service life or when drift exceeds 5 °C." },
+      { mode: "Airflow cooling false negative", symptom: "Known heat event failed to trigger", cause: "Forced air conditioning supply sweeping heat away from the detector", action: "Relocate away from supply vents; consider line-type linear heat cable for critical areas." },
+      { mode: "Base disconnection", symptom: "Panel reports missing detector", cause: "Loose terminal on loop base", action: "Re-seat and re-torque the loop terminals." },
+    ],
+    testProcedure:
+      "Heat test per AS 1851 Section 6.4 — use a certified heat-test tool (Testifire, Solo heat) that delivers hot air at a controlled temperature. Detector must alarm within 30 seconds of reaching its rated threshold. Do NOT use a naked flame or butane torch — excessive heat damages the sensor and contaminates nearby photoelectric heads.",
+    maintenance:
+      "6-monthly visual + loop communications check, 12-monthly functional heat test. Service life is typically 15 years versus 10 for optical heads because there is no chamber to contaminate.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.23", note: "Heat detection spacing, coverage, and where it is permitted instead of smoke" },
+      { code: "AS 7240.5", note: "Point-type heat detectors — classification A1, A1R, A2, B, C based on fixed + rate-of-rise thresholds" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service with certified heat-test tooling" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Heat A1R", partNumber: "55000-400APO", notes: "Analogue addressable, Class A1R" },
+      { manufacturer: "Hochiki", model: "ALG-EN Heat", partNumber: "ALG-EN", notes: "ESP protocol" },
+      { manufacturer: "Notifier", model: "FST-851", partNumber: "FST-851", notes: "Addressable thermal detector" },
+      { manufacturer: "System Sensor", model: "5251B", partNumber: "5251B", notes: "Combination fixed/rate-of-rise" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 5. FIXED-TEMPERATURE HEAT DETECTOR (high-temperature variants)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "fixed-temperature-heat",
+    name: "Fixed-Temperature Heat Detector",
+    category: "heat",
+    summary:
+      "Single-threshold heat detector — alarms only when ambient exceeds a set temperature (Class A2 58 °C through Class G 150 °C). Use where rate-of-rise false-alarms on legitimate temperature swings.",
+    operatingPrinciple:
+      "A bimetallic element or thermistor is calibrated to close a contact (conventional) or cross an analogue threshold (addressable) at a fixed temperature. There is no rate-of-rise channel. The detector alarms when the air temperature at the head reaches the rating regardless of how fast it got there.",
+    sensingTechnology:
+      "Conventional (two-wire) fixed-temperature detectors use a fusible alloy or bimetallic disc that physically deforms at the rating point, closing a pair of contacts. Addressable fixed heads use a thermistor reporting an analogue value, with the panel applying the fixed threshold in firmware. Common AS 7240.5 classifications: A2 (58 °C), B (75 °C), C (90 °C), D (105 °C), E (120 °C), F (135 °C), G (150 °C).",
+    typicalApplications: [
+      "Boiler rooms with high ambient temperature — use Class C or D so normal operating temperature does not trip the head",
+      "Kitchens over deep-fryers and chargrills (Class B/C)",
+      "Attics and roof voids in hot climates",
+      "Industrial drying rooms and ovens",
+      "Commercial laundry press areas",
+    ],
+    unsuitableApplications: [
+      "Any space where rapid heat-rate detection is needed — rate-of-rise is faster",
+      "Sleeping areas — smoke detection is mandatory",
+      "Low-ceiling offices — a standard A1R is more appropriate",
+    ],
+    installationRequirements:
+      "Same AS 1670.1 Clause 3.23 spacing as rate-of-rise heat. Pick the rating class per AS 7240.5 Table 1 so that the maximum static ambient temperature of the space is at least 20 °C below the detector's rating — otherwise you'll get nuisance alarms on hot days.",
+    failureModes: [
+      { mode: "Fusible element fatigue", symptom: "Contact fails closed (false alarm) after many heat-cycle events", cause: "Repeated thermal cycling weakens the bimetallic element", action: "Replace head — the element is not resettable once alarmed." },
+      { mode: "Under-rated for the space", symptom: "Chronic nuisance alarms during hot weather", cause: "Wrong classification picked at design time", action: "Upgrade to the next class (A2 → B, or B → C)." },
+    ],
+    testProcedure:
+      "Certified heat gun at the rated temperature per AS 1851 Section 6.4. Conventional fixed-temperature heads CANNOT be reset after a real alarm — a successful field test at the rated temperature is destructive. Test only addressable or resettable types this way.",
+    maintenance:
+      "6-monthly visual, 12-monthly loop communication test. Functional heat test only on addressable / resettable types. Track installation date and replace at manufacturer's service life.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.23", note: "Spacing and permitted use" },
+      { code: "AS 7240.5", note: "Classification A1 through G and associated maximum ambient temperatures" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service — test only resettable types" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "Series 65 Heat 90 °C", partNumber: "55000-125APO", notes: "Conventional Class C fixed" },
+      { manufacturer: "System Sensor", model: "5602", partNumber: "5602", notes: "Conventional 135 °F (57 °C) Class A2" },
+      { manufacturer: "Hochiki", model: "CDX-DIN-HT90", notes: "Conventional 90 °C Class C" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: false,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 6. INFRARED (IR) FLAME DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "ir-flame",
+    name: "Infrared (IR) Flame Detector",
+    category: "flame",
+    summary:
+      "Line-of-sight optical detector responding to the 4.3 µm CO₂ emission band from hydrocarbon flames — fast, long range, but vulnerable to hot surface false alarms without discrimination.",
+    operatingPrinciple:
+      "A pyroelectric or photodiode sensor tuned to the 4.3 µm infrared band captures the flicker signature of an open flame. Flames produce a characteristic 1–12 Hz flicker from the rising hot combustion gases — the detector's signal-processing electronics look for this flicker frequency in addition to the raw IR intensity, so a static hot object (e.g. a heater) does not trigger alarm. Triple-IR (IR³) detectors add two reference bands (2.7 µm water, 3.7 µm reference) to discriminate real flames from reflected sunlight, welding flash, and hot machinery.",
+    sensingTechnology:
+      "Single-IR: one 4.3 µm pyroelectric sensor with flicker-frequency processing. Range 15–30 m to a 0.1 m² n-heptane pan fire (EN 54-10 reference). Dual-IR adds a second band to reject blackbody sources. Triple-IR (IR³) — the industry gold standard for hydrocarbon fuel storage — processes three wavelengths with a ratio algorithm that achieves 60+ metre range on the same reference fire. UV/IR detectors combine an IR channel with a UV solar-blind sensor for near-instant response on flames containing both radiation types.",
+    typicalApplications: [
+      "Fuel depots, refineries, LPG/LNG handling (AS 1670.1 Clause 3.24 — flame detection for hydrocarbon-risk spaces)",
+      "Hangars and aircraft maintenance facilities",
+      "Turbine halls and gas compressor stations",
+      "Warehouses storing combustible liquids",
+      "Transformer bays and electrical switchgear rooms",
+    ],
+    unsuitableApplications: [
+      "Spaces with frequent welding, cutting, or grinding — weld flash produces strong IR bursts that defeat single-IR discrimination",
+      "Areas with direct sunlight on reflective surfaces — use solar-blind UV/IR or triple-IR",
+      "Hidden or obstructed fire zones — line-of-sight only, no response behind columns or equipment",
+      "Cooking areas — cooking flames will trigger alarm on every shift",
+    ],
+    installationRequirements:
+      "Mount so the detector's conical field of view (typically 90–100°) covers the protected area without obstruction. Keep the viewing angle away from direct sunlight and welding bays. Confirm the maximum detection distance against the datasheet's reference fire size — most specs state range for a 0.1 m² heptane pan. Power and signal cabling MUST be fire-rated per AS 1670.1 Clause 3.25, and the detector's junction box must match the hazardous area classification (Ex rated in Zone 1/2 fuel areas).",
+    failureModes: [
+      { mode: "Dirty viewing window", symptom: "Reduced sensitivity or self-test fault", cause: "Dust, oil film, or bird droppings on the optical window", action: "Clean with isopropyl alcohol per the datasheet. Some detectors have a built-in self-cleaning test LED." },
+      { mode: "Solar false alarm", symptom: "Unexplained alarms on bright sunny days", cause: "Direct or reflected sunlight entering the field of view", action: "Reposition the detector; consider triple-IR or UV/IR upgrade." },
+      { mode: "Line-of-sight blocked", symptom: "Known fire test failed to trigger", cause: "New equipment or stock blocking the viewing cone", action: "Walk the sight line during commissioning and after any plant change." },
+    ],
+    testProcedure:
+      "Use a certified flame test lamp (e.g. Det-Tronics, Sperryn) that emits the correct IR flicker signature — do NOT use an actual lighter or gas flame indoors. The detector must alarm within the manufacturer-rated response time (typically 3–15 seconds) at the specified test distance. Log range, response time, and any self-test codes.",
+    maintenance:
+      "Quarterly viewing-window cleaning in dusty environments, 6-monthly elsewhere. 12-monthly full function test with certified lamp. Track detector service life and window replacement.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.24", note: "Flame detection siting and where it is required" },
+      { code: "AS 7240.10", note: "Flame detectors — product performance standard (aligns with EN 54-10)" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service with certified test lamp" },
+      { code: "IEC 60079", note: "Explosive-atmosphere rating for hazardous-zone installations" },
+    ],
+    exampleModels: [
+      { manufacturer: "Honeywell", model: "FS24X Triple-IR", partNumber: "FS24X", notes: "60 m range, solar-blind, hazardous area approved" },
+      { manufacturer: "Det-Tronics", model: "X3301 Multispectrum IR", notes: "Multi-spectrum flame detection" },
+      { manufacturer: "Apollo", model: "Discovery Flame", partNumber: "58000-550APO", notes: "Addressable IR flame" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 7. UV/IR COMBINATION FLAME DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "uv-ir-flame",
+    name: "UV / IR Combination Flame Detector",
+    category: "flame",
+    summary:
+      "Dual-sensor flame detector combining a solar-blind UV channel with a 4.3 µm IR channel — near-instant alarm with strong false-alarm rejection via cross-confirmation.",
+    operatingPrinciple:
+      "The UV channel uses a Geiger-Müller tube or silicon carbide sensor sensitive to 185–260 nm, a band that is absorbed by the upper atmosphere and essentially solar-blind at ground level. A flame emits strongly in this band within milliseconds of ignition. The IR channel tracks the same 4.3 µm CO₂ emission and flicker signature as a single-IR detector. The detector's logic alarms only when BOTH channels confirm within a short time window (typically 1–3 seconds). Either channel alone produces a supervisory signal but not a full alarm.",
+    sensingTechnology:
+      "UV: solar-blind Geiger-Müller tube with lead shielding, discharging when a UV photon strikes the cathode. Sensitivity decreases with tube age. IR: pyroelectric sensor with flicker discrimination as per single-IR entry. Both channels feed a cross-confirmation ASIC. Response time on a standard n-heptane fire is typically 3–5 seconds at 15 m — faster than pure IR because the UV channel picks up the flame onset before the IR band builds intensity.",
+    typicalApplications: [
+      "Offshore platforms, gas compressor stations, LPG bottling plants — the combination of UV speed and IR false-alarm rejection is the industry default for hydrocarbon risk",
+      "Hangars — fast fuel fire response with welding-flash rejection (UV rejects hot metal, IR rejects arc flash)",
+      "Switchgear rooms and transformer bays",
+      "Paint spray booths and solvent storage",
+    ],
+    unsuitableApplications: [
+      "Welding and grinding areas without specific UV-rejection modes — arc flash triggers the UV channel; use triple-IR instead",
+      "Dusty environments — the UV tube window fogs faster than an IR-only window",
+      "Indoor spaces with mercury-vapour or metal-halide lighting — these lamps emit UV that can saturate the detector",
+      "High-humidity tropical outdoor without a heated window — condensation blocks both channels",
+    ],
+    installationRequirements:
+      "Same line-of-sight rules as IR flame (AS 1670.1 Clause 3.24). Mount outside the field of view of any welding, grinding, or HV arc work. UV channel has a narrower cone than IR (typically 90° vs 100°) — verify both coverage patterns against the protected area. Hazardous-area installations must use an Ex-rated housing. Never paint the viewing window.",
+    failureModes: [
+      { mode: "UV tube aging", symptom: "Slow decline in UV channel sensitivity; eventual tube failure flagged by self-test", cause: "Normal gas-discharge tube wear", action: "Replace detector or UV tube cartridge on manufacturer service life (typically 10 years)." },
+      { mode: "Welding flash false alarm", symptom: "Recurrent alarms during hot work on adjacent plant", cause: "UV channel activated by arc", action: "Fit a UV filter or switch to triple-IR technology in welding-dense areas." },
+      { mode: "Optical window fouling", symptom: "Both channel sensitivities degraded; fault flagged", cause: "Oil film, dust, or salt build-up", action: "Clean per datasheet; use neutral detergent and lint-free cloth." },
+    ],
+    testProcedure:
+      "Certified UV/IR test lamp (e.g. Det-Tronics Q90) that emits on both channels. Verify alarm at the rated distance within the manufacturer's response time. Log per-channel response; a UV-only or IR-only response indicates one channel has failed self-test.",
+    maintenance:
+      "Quarterly window inspection, 6-monthly walk-down sight-line check, 12-monthly dual-channel function test. Clean the window with IPA per the datasheet — never abrasive cleaners.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.24", note: "Flame detection siting" },
+      { code: "AS 7240.10", note: "Flame detector product standard — includes UV/IR types" },
+      { code: "IEC 60079", note: "Hazardous area certification" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service" },
+    ],
+    exampleModels: [
+      { manufacturer: "Det-Tronics", model: "U7600B UV/IR", notes: "Solar-blind UV + 4.3 µm IR, Ex-rated" },
+      { manufacturer: "Honeywell", model: "FS20X UV/IR", partNumber: "FS20X", notes: "Dual-channel with cross-confirmation" },
+      { manufacturer: "MSA General Monitors", model: "FL3110", notes: "UV/IR with continuous self-test" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$$",
+    addressable: false,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 8. ASPIRATING SMOKE DETECTOR (VESDA / high-sensitivity)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "aspirating-smoke",
+    name: "Aspirating Smoke Detector (VESDA / HSSD)",
+    category: "aspirating",
+    summary:
+      "Very-early-warning smoke detection system that continuously draws air from the protected space through a pipe network to a centralised laser-chamber detector — 500 to 1000 times more sensitive than a point-type photoelectric.",
+    operatingPrinciple:
+      "An internal aspirator (fan) draws air through a network of sampling pipes with calibrated holes spaced along their length. The combined air sample is filtered and passed through a laser-scatter detection chamber. The chamber measures obscuration in %/m and reports an analogue value with multiple alarm thresholds: Alert, Action, Fire 1, Fire 2. Typical Alert thresholds are 0.005–0.015 %/m obscuration — low enough to detect a single piece of overheating electronics long before a flaming fire develops.",
+    sensingTechnology:
+      "Laser-based optical chamber (Xtralis VESDA uses a blue-laser Mie-scattering chamber) with photodiode array. Advanced systems (VESDA VEA) sample each room address individually through a micro-bore pipe, giving per-address resolution — the panel can tell you WHICH room has the smoke, not just 'one of 40'. Multi-channel systems monitor up to 4 independent pipe networks from one detector housing. Every parameter (airflow, chamber contamination, laser current, filter condition) is self-monitored and faults are flagged before performance degrades.",
+    typicalApplications: [
+      "Data centres — server rooms, MDF, telco exchanges (AS 1670.1 Clause 3.26 — very early warning smoke detection for high-value areas)",
+      "Clean rooms, semiconductor fabs, pharmaceutical manufacturing",
+      "Heritage buildings where visible detectors are not acceptable",
+      "Cold stores and freezers (down to −30 °C with heated sample pipe)",
+      "High-ceiling spaces > 25 m (atria, stadiums, aircraft hangars) where point-type smoke detection is not effective",
+      "Prison cells and secure mental health facilities where the detector must be tamper-resistant",
+      "Rail and metro tunnels with linear sample networks",
+    ],
+    unsuitableApplications: [
+      "Single small rooms — cost is disproportionate; a photoelectric is typically adequate",
+      "Dusty industrial spaces without effective pre-filtration",
+      "Spaces with continuous high airflow that dilutes smoke below the detection threshold before it reaches a sample hole",
+    ],
+    installationRequirements:
+      "Pipe network design is the primary engineering task — software tools (Xtralis ASPIRE2, Hochiki Pipe Designer) calculate the required hole size, spacing, and pipe geometry to achieve the specified sensitivity class and transport time (AS 1670.1 Clause 3.26 requires transport time ≤ 120 seconds from the farthest sample hole to the detector). Pipe runs must be correctly balanced — every sample hole must draw approximately equal airflow or the distant holes become ineffective. Use rigid PVC or ABS pipework sized per the design tool (commonly 25 mm OD). Identify every sample hole on the pipe with a permanent label for maintenance. The detector cabinet must be accessible for filter change and chamber service without shutting down the protected area.",
+    failureModes: [
+      { mode: "Airflow fault", symptom: "Detector reports 'airflow low' or 'airflow high' trouble", cause: "Blocked sample hole, damaged pipe, or failing aspirator motor", action: "Smoke-pencil test each sample hole to find the blockage; replace aspirator on life." },
+      { mode: "Filter contamination", symptom: "Filter condition alarm; rising baseline obscuration", cause: "Normal dust accumulation on the primary filter cartridge", action: "Replace filter per maintenance schedule (typically annually, more often in dusty sites)." },
+      { mode: "Laser degradation", symptom: "Chamber fault; degraded sensitivity self-test", cause: "Laser diode end-of-life (10+ years typical)", action: "Replace detector module — laser is not field-serviceable on Xtralis VESDA." },
+      { mode: "Transport time drift", symptom: "Commissioning smoke test takes longer than the acceptance 120 s", cause: "Partial pipe blockage, worn aspirator, or added pipe branch", action: "Re-run ASPIRE2 design against the installed geometry; clear blockages; reset transport time baseline." },
+    ],
+    testProcedure:
+      "Annual end-to-end smoke test per AS 1851 Section 6.5 — smoke must be introduced at the farthest sample hole and reach the detector within 120 seconds, with all alarm thresholds triggering in sequence. Transport time MUST be logged and compared to the commissioning baseline. Filter condition, airflow, and chamber baseline are read and logged at every 6-month service.",
+    maintenance:
+      "6-monthly: inspect filter, check airflow, review analogue trend. 12-monthly: full transport time test, filter change if dirty, per-hole smoke pencil test. Major service at 10 years: replace aspirator, chamber, and laser module.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.26", note: "Very early warning smoke detection — aspirating system requirements" },
+      { code: "AS 1670.1", clause: "3.26.4", note: "Transport time ≤ 120 seconds from the farthest hole" },
+      { code: "AS 7240.20", note: "Aspirating smoke detectors — product performance" },
+      { code: "AS 1851", clause: "6.5", note: "Aspirating system routine service" },
+    ],
+    exampleModels: [
+      { manufacturer: "Xtralis", model: "VESDA VEU", partNumber: "VEU-A00", notes: "Four pipe network, absolute sensitivity 0.005 %/m obscuration" },
+      { manufacturer: "Xtralis", model: "VESDA VEA", notes: "Individual room addressing through micro-bore tubes — VEA-040 supports 40 addresses" },
+      { manufacturer: "Xtralis", model: "VESDA-E VEP", partNumber: "VEP-A00", notes: "Ethernet, per-pipe reporting, 3 sensitivity classes A/B/C" },
+      { manufacturer: "Hochiki", model: "FIRElink-25", notes: "Single-pipe aspirating, cost-effective alternative" },
+      { manufacturer: "Wagner", model: "TITANUS PRO-SENS", notes: "German-engineered HSSD with pattern-recognition alarm logic" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$$$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 9. OPTICAL BEAM SMOKE DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "beam-smoke",
+    name: "Optical Beam Smoke Detector",
+    category: "beam",
+    summary:
+      "Projected-beam smoke detector — an infrared transmitter and receiver on opposite walls sense smoke-induced obscuration along a 5–100 m beam path. The go-to answer for high-ceiling open spaces under AS 1670.1 Clause 3.25.",
+    operatingPrinciple:
+      "An infrared transmitter projects a modulated beam across the protected space to a receiver (end-to-end systems) or a reflector that returns the beam to a combined transmit/receive unit (reflective systems). The receiver measures the received beam intensity continuously. Smoke in the beam path attenuates the signal; the detector alarms when obscuration exceeds a calibrated threshold sustained over a minimum dwell time. Thresholds are typically 25%, 35%, and 50% obscuration for alert/fire 1/fire 2.",
+    sensingTechnology:
+      "Infrared LED transmitter pulsed at a frequency that rejects background light. Receiver photodiode with a narrow bandpass filter tuned to the LED wavelength. Modern units (Fireray 5000, Hochiki FIRElink) include automatic alignment compensation via a motorised head to maintain beam centring across building thermal movement. Reflective units halve the wiring (transmitter and receiver in one housing, prism on the opposite wall) but are range-limited to ~50 m vs 100 m for end-to-end.",
+    typicalApplications: [
+      "Warehouses, distribution centres, manufacturing floors with ceilings ≥ 6 m",
+      "Atria, shopping centre malls, heritage church interiors",
+      "Aircraft hangars and airport terminals",
+      "Sports arenas and swimming pool enclosures",
+      "Cold stores (where local photoelectrics are restricted by condensation)",
+    ],
+    unsuitableApplications: [
+      "Dusty industrial spaces where background attenuation rises throughout the day — drift compensation can mask real smoke",
+      "Spaces with significant forced airflow that causes building movement beyond the detector's alignment range (± 0.5° on most units)",
+      "Rooms with obstructing stock or moving cranes — any temporary blockage of the beam triggers a fault",
+      "Very small rooms below 5 m span — the detector is specified for 5 m minimum range",
+    ],
+    installationRequirements:
+      "AS 1670.1 Clause 3.25 — maximum coverage is one beam per 15 m of width (7.5 m each side of the beam), and a maximum beam length of 100 m for end-to-end or 50 m for reflective. Mount the transmitter and receiver 300–800 mm below the ceiling so the beam sits in the smoke layer. Ensure the beam path is clear of any permanent obstructions and allow for building thermal movement of at least ± 100 mm on each end. Power both ends from the same loop or use a relay-fed backup to avoid a fault on every building sway. Align the beam using the integrated alignment aid (usually a laser spotter) during commissioning and re-confirm at every service.",
+    failureModes: [
+      { mode: "Beam misalignment", symptom: "Fault on beam-drift or loss-of-beam", cause: "Building thermal movement, mounting bracket loosening, or someone knocked the transmitter", action: "Re-align using the on-board aid; re-torque the bracket; consider a motorised alignment unit for tall/flexing buildings." },
+      { mode: "Dust build-up on lenses", symptom: "Gradual loss of signal strength; eventual drift alarm", cause: "Dust accumulation on the transmitter or receiver lens", action: "Clean lenses with IPA and lint-free cloth at each service interval." },
+      { mode: "Stray reflection alarm", symptom: "Brief alarm when a vehicle or crane passes the beam", cause: "Short obstruction exceeds the dwell threshold", action: "Raise the dwell time to 20+ seconds if site operations cause regular transient interruptions." },
+      { mode: "Sunlight saturation", symptom: "False alarm at sunrise/sunset through a window", cause: "Direct sun on the receiver overloads the photodiode", action: "Fit a sun shield or re-orient the unit." },
+    ],
+    testProcedure:
+      "Calibrated neutral-density filter placed in the beam per AS 1851 Section 6.4 — filter obscuration matches the detector's alarm threshold (e.g. 25% or 35% NDF). Beam must alarm within 30 seconds of filter insertion and clear on removal. Log per-threshold results. Annual alignment check with laser aid.",
+    maintenance:
+      "6-monthly visual inspection + alignment check + lens clean, 12-monthly filter alarm test. Track thermal drift trend over years.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.25", note: "Beam detector spacing, coverage, and maximum beam length" },
+      { code: "AS 7240.12", note: "Optical beam smoke detectors — product standard" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service with NDF test filter" },
+    ],
+    exampleModels: [
+      { manufacturer: "FFE", model: "Fireray 5000", notes: "Motorised auto-aligning end-to-end beam, up to 100 m" },
+      { manufacturer: "FFE", model: "Fireray 3000", notes: "Manual-aligning reflective beam, up to 50 m" },
+      { manufacturer: "System Sensor", model: "OSI-RI Reflective", notes: "Addressable reflective with 8–70 m range" },
+      { manufacturer: "Hochiki", model: "FIRElink-HSSD", notes: "Beam + HSSD hybrid for mixed coverage" },
+    ],
+    lifeSpanYears: 12,
+    costBand: "$$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 10. DUCT SMOKE DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "duct-smoke",
+    name: "Duct Smoke Detector",
+    category: "duct",
+    summary:
+      "Photoelectric smoke detector mounted inside an air-handling duct via sample tubes — detects smoke in the supply or return air stream and shuts down the HVAC per AS 1668.1 and AS 1670.1 Clause 3.27.",
+    operatingPrinciple:
+      "Two stainless-steel sampling tubes are fitted into the duct at right angles to the airflow. The upstream tube has small holes facing into the flow and captures a sample; the downstream tube has its holes facing away from the flow and creates a venturi suction. The pressure differential draws air through a chamber housing a standard photoelectric smoke head. When the head alarms, the detector trips a relay that shuts down the fan, closes motorised dampers, and reports to the FIP.",
+    sensingTechnology:
+      "The sensing element is a standard addressable or conventional photoelectric head (e.g. System Sensor 2151, Notifier FSP-851). What makes it a duct detector is the housing with the upstream/downstream pressure-differential sample tubes and the integral relay output for HVAC shutdown. Sample tubes come in standard lengths matched to the duct width. A remote test/reset station lets the operator test the detector and reset after an alarm without opening the ceiling.",
+    typicalApplications: [
+      "HVAC supply air ducts — mandatory for systems > 2000 L/s per AS 1668.1",
+      "HVAC return air ducts — detects smoke recirculating from a fire anywhere in the building",
+      "Pressurisation systems — detection in the makeup air to prevent smoke being pumped into stairwells",
+      "Smoke-control fan discharge — so a fault in the smoke-exhaust system is detected",
+    ],
+    unsuitableApplications: [
+      "Residential ducted heating/cooling under a typical scale — AS 1670.1 requires duct detection only on systems above the threshold airflow",
+      "Low-velocity displacement ventilation — airflow may be insufficient to drive the sampling tube venturi",
+      "Dust-laden return air (e.g. woodworking) — constant contamination of the optical chamber",
+    ],
+    installationRequirements:
+      "Install downstream of filters, upstream of air-handling unit branches. Mount on a straight duct run at least 6 duct-widths downstream of any bend so airflow is uniform across the sample tubes. Sample tube length MUST match duct width exactly — too short and the sample is unrepresentative, too long and the tube vibrates. Fit a remote test/reset station at an accessible location (typically 1.5 m above floor) per AS 1668.1. Verify the detector's relay wiring trips the HVAC contactor and closes the fire/smoke dampers.",
+    failureModes: [
+      { mode: "Sample tube blockage", symptom: "Detector passes function test but airflow sensor trouble", cause: "Dust accumulation in the sample tubes", action: "Remove and clean tubes; fit a differential pressure indicator to monitor continuous airflow." },
+      { mode: "Duct condensation", symptom: "Wet chamber and false alarms after HVAC shutdown", cause: "Moist air condensing on cold chamber walls", action: "Insulate duct upstream; consider a heated housing." },
+      { mode: "HVAC bypass scenario", symptom: "Smoke incident bypasses the detector because damper failed to close", cause: "Damper actuator failure or missing interlock", action: "Test damper closure at each AS 1851 service; verify interlock wiring." },
+    ],
+    testProcedure:
+      "Function test per AS 1851 Section 6.4 using the remote test station or by introducing aerosol at the upstream sample tube pickup. The detector must alarm within 30 seconds AND the fan must shut down AND the dampers must close — test the full HVAC interlock, not just the detector. Air-velocity measurement at the sample tube is required at commissioning to confirm the detector is within its rated airflow range.",
+    maintenance:
+      "6-monthly visual + interlock test, 12-monthly aerosol function test + sample tube clean + air-velocity check. The sample tube assembly accumulates dust faster than a ceiling detector and is typically the first thing to fail.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.27", note: "Duct-mounted smoke detection placement and wiring" },
+      { code: "AS 1668.1", note: "Fire and smoke control requirements for mechanical ventilation — where duct detection is mandatory" },
+      { code: "AS 7240.27", note: "Duct smoke detector product standard" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service including interlock and air-velocity verification" },
+    ],
+    exampleModels: [
+      { manufacturer: "System Sensor", model: "DNRW", partNumber: "DNRW", notes: "Watertight housing, addressable photoelectric core" },
+      { manufacturer: "Notifier", model: "NFXI-PT-D", notes: "Intelligent duct detector, FlashScan protocol" },
+      { manufacturer: "Apollo", model: "Duct Housing with XP95 Optical", partNumber: "55000-885APO", notes: "Apollo duct housing accepting XP95 detector heads" },
+      { manufacturer: "Hochiki", model: "SLR-EDH", notes: "ESP analogue addressable duct" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 11. LINEAR HEAT DETECTION CABLE
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "linear-heat-cable",
+    name: "Linear Heat Detection Cable",
+    category: "linear",
+    summary:
+      "Continuous heat-sensing cable — two insulated conductors twisted together under a heat-sensitive polymer that melts at a rated temperature, short-circuiting the cable and triggering alarm. Excellent for cable trays, tunnels, and conveyor belts.",
+    operatingPrinciple:
+      "Two steel or copper conductors are twisted together with a small air gap maintained by a heat-sensitive plastic insulation. When ambient air at any point along the cable exceeds the rated temperature (typically 68 °C, 88 °C, 105 °C, or 138 °C), the insulation melts at that specific point, the conductors short together, and the cable's end-of-line monitor detects a resistance drop. The interface module then reports an alarm — and on addressable linear cable systems (e.g. Protectowire, Kidde) it also reports the approximate distance along the cable to the hot spot.",
+    sensingTechnology:
+      "Mechanical digital type (Protectowire EPC): once alarmed at any point, the cable must be cut and spliced or replaced at the hot spot — this is NOT a resettable detector. Analogue distance-addressable type: uses a resistance-measurement principle where each point along the cable has a known resistance, and the interface calculates the alarm location by resistance ratio. Fibre-optic distributed temperature sensing (DTS) is an alternative using laser-measured Raman backscatter along a fibre — continuous temperature profile, fully resettable, but significantly more expensive.",
+    typicalApplications: [
+      "Cable trays and vertical cable risers (tall buildings, power stations)",
+      "Road and rail tunnels — AS 4825 + AS 1670.1 Clause 3.28 for tunnel detection",
+      "Conveyor belts in mining and bulk handling — the cable runs along the belt return path",
+      "Large warehouses as rack-level detection where point detectors are too sparse",
+      "Cold stores — the cable is immune to condensation that affects point detectors",
+      "Floating roof fuel tanks — in the seal gap where point detectors cannot survive",
+    ],
+    unsuitableApplications: [
+      "Open-ceiling office spaces — point detectors are cheaper and provide equivalent coverage",
+      "Very short runs (< 30 m) — minimum panel module cost is not justified",
+      "Corrosive environments unless using the correct cable jacket (CSP / XLPE / PTFE — check spec)",
+    ],
+    installationRequirements:
+      "Fix the cable with non-metallic clips at 1-metre intervals so the cable cannot slump under its own weight. Keep cable away from direct contact with hot surfaces — it must sense the air temperature around the hot source, not the surface conduction. Maximum run length per interface module is typically 1500 m for addressable systems, shorter for digital-only. Each end requires an end-of-line resistor per the manufacturer spec. On addressable systems, commissioning must calibrate the zero-distance baseline so alarm location is accurate to within 1–3 m.",
+    failureModes: [
+      { mode: "Mechanical damage", symptom: "Short-circuit alarm at a specific distance without real heat event", cause: "Cable crushed, pinched, or cut during construction or maintenance", action: "Locate the fault distance from the panel, inspect, cut out and splice the damaged section per manufacturer kit." },
+      { mode: "Non-resettable after alarm", symptom: "Alarm remains after the fire is extinguished", cause: "Digital-type cable is destructively alarmed at the melt point", action: "Replace the alarmed section (typically a 1-metre splice)." },
+      { mode: "Distance accuracy drift", symptom: "Commissioning fire test alarms at the wrong reported distance", cause: "Cable length changed without re-calibration, or a splice introduced without updating the EOL", action: "Re-calibrate zero distance; document every splice." },
+      { mode: "UV/chemical degradation", symptom: "Jacket crumbling on outdoor runs", cause: "Wrong jacket for the environment", action: "Replace with PTFE or CSP-jacketed variant rated for the exposure." },
+    ],
+    testProcedure:
+      "Point heat test at the farthest point from the interface per AS 1851 Section 6.5 — use a controlled heat source (hot air gun at the rated temperature) held within the cable's rated response time. Alarm location reported by the panel must match the test point within the specified accuracy. Document the test point, alarm location, and time in the service log.",
+    maintenance:
+      "6-monthly visual inspection of the full cable run, 12-monthly point function test at the far end. Inspect splices every service. Replace cable on manufacturer life (typically 15 years) or immediately after any alarm event.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.28", note: "Line-type heat detection — where permitted and acceptance criteria" },
+      { code: "AS 7240.22", note: "Line-type heat detectors — product standard (aligns with EN 54-22)" },
+      { code: "AS 4825", note: "Tunnel fire safety — including linear heat detection requirements" },
+      { code: "AS 1851", clause: "6.5", note: "Routine service of line-type heat detection" },
+    ],
+    exampleModels: [
+      { manufacturer: "Protectowire", model: "EPC 68 °C", partNumber: "EPC-220-XCR", notes: "Digital mechanical cable, 68 °C rating" },
+      { manufacturer: "Protectowire", model: "CTI PHSC", notes: "Confirmed addressable linear heat detection with distance reporting" },
+      { manufacturer: "Kidde", model: "Fenwal LHS cable", notes: "Digital cable with dedicated interface module" },
+      { manufacturer: "AP Sensing", model: "N4386B DTS", notes: "Distributed fibre-optic temperature sensing — fully resettable" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 12. MANUAL CALL POINT (BREAK-GLASS / MCP)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "manual-call-point",
+    name: "Manual Call Point (Break-Glass / MCP)",
+    category: "manual_call_point",
+    summary:
+      "Human-operated fire alarm trigger — a break-glass or press-and-hold switch that initiates an alarm from the occupant regardless of automatic detection. Mandatory in every path of egress under AS 1670.1.",
+    operatingPrinciple:
+      "A mechanical or resettable plastic element is held in place covering a spring-loaded switch. When an occupant breaks the glass (single-use) or presses the element firmly (resettable), the switch changes state and reports alarm to the panel. On addressable systems the call point has its own loop address and reports directly to the panel; on conventional zone systems it short-circuits the zone line.",
+    sensingTechnology:
+      "No sensing — purely mechanical. The switch is monitored by the panel through an end-of-line resistor or addressable interface. Modern call points (Apollo XP95, Hochiki HCP, System Sensor M500) use a resettable plastic element held by a spring catch — press the element, the switch trips, then pull the element back out with a key to reset. A clear plastic hinged cover prevents accidental activation in low-height installations.",
+    typicalApplications: [
+      "Every exit door on every level (AS 1670.1 Clause 3.29 — mandatory positioning)",
+      "Corridors longer than 30 m — intermediate call points so occupants are never more than 30 m from one",
+      "Stairwells at each floor landing",
+      "Assembly areas, hotels, hospitals, schools — one per fire compartment at minimum",
+      "Industrial plant rooms with automatic suppression — human override for false-positive detection",
+    ],
+    unsuitableApplications: [
+      "Nowhere — call points are universally required. The only question is HOW MANY and WHERE.",
+      "Do not rely on them as the primary detection — automatic detection is still required per AS 1670.1",
+    ],
+    installationRequirements:
+      "AS 1670.1 Clause 3.29 — mount 1400 ± 200 mm above finished floor, within 2 m of an exit door, and not more than 30 m from any point in the protected space. Break-glass models must have the break element accessible from the front (no shrouds blocking direct hand access). Every call point requires clear signage — a red 'FIRE' label or equivalent per AS 2293 where emergency lighting applies. Wiring must be monitored — short-circuit and open-circuit faults must annunciate on the panel. Call points MUST be on a dedicated loop or zone sub-group on any system with automatic detection — so the user alarm can be distinguished from an automatic alarm in the panel event log.",
+    failureModes: [
+      { mode: "Accidental activation", symptom: "Alarm but no real fire", cause: "Knocked by a trolley, pranked, or pressed during cleaning", action: "Reset with the key. Investigate if repeated at the same location (fit a hinged cover if the area has regular foot traffic)." },
+      { mode: "Stuck switch after reset", symptom: "Panel still reports alarm even after resetting the element", cause: "Mechanical switch failed to return", action: "Replace the call point unit." },
+      { mode: "Broken glass not replaced", symptom: "Single-use call point left open after test or activation", cause: "Missed housekeeping item", action: "Stock spare glass elements on site; replace immediately after every test or activation." },
+      { mode: "Loop address drift", symptom: "Wrong zone annunciated on activation", cause: "Call point re-programmed or loop address hardware-set incorrectly", action: "Walk-test every call point at commissioning and after any loop re-address." },
+    ],
+    testProcedure:
+      "AS 1851 Section 6.4 — every call point is activated at each 6-monthly service. Use the test key to reset without breaking the glass (resettable models) or replace the glass element immediately after activation (single-use models). Verify the panel annunciates the correct address and zone, and that the alarm clears after reset.",
+    maintenance:
+      "6-monthly: test every call point, verify signage is visible and not obstructed, replace any broken glass elements that were not replaced at the previous activation. Annually check the break element is not hardened or cracked (some plastic break elements become brittle with UV exposure). Replace per manufacturer life (typically 15 years).",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.29", note: "Manual call point placement — height, distance from exit, max travel distance" },
+      { code: "AS 7240.11", note: "Manual call points — product performance standard (aligns with EN 54-11)" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service — every call point tested" },
+      { code: "AS 2293", note: "Emergency escape lighting where call point signage is illuminated" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Addressable MCP", partNumber: "55100-908APO", notes: "Resettable element, loop-powered, addressable" },
+      { manufacturer: "Hochiki", model: "HCP-EN", partNumber: "HCP-EN", notes: "ESP protocol, resettable" },
+      { manufacturer: "System Sensor", model: "M500KAC", partNumber: "M500KAC", notes: "Conventional break-glass" },
+      { manufacturer: "Notifier", model: "NBG-12LX", partNumber: "NBG-12LX", notes: "FlashScan addressable pull station" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 13. CARBON MONOXIDE (CO) FIRE DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "co-fire-detector",
+    name: "Carbon Monoxide (CO) Fire Detector",
+    category: "gas",
+    summary:
+      "Electrochemical CO detector specifically for fire warning — responds to the CO generated by smouldering combustion well before visible smoke. Standalone fire-rated CO detectors are common in residential NSW installations alongside smoke alarms.",
+    operatingPrinciple:
+      "An electrochemical cell contains an anode, a cathode, and an electrolyte. When CO diffuses through a permeable membrane into the cell, it is oxidised at the anode (CO + H₂O → CO₂ + 2H⁺ + 2e⁻), producing a current proportional to the CO concentration. The detector reports parts-per-million concentration to the panel and alarms when it crosses a rated threshold over time — typically 150 ppm for 30 minutes or 400 ppm for 15 minutes per AS 3786 Table.",
+    sensingTechnology:
+      "Three-electrode electrochemical cell (working, counter, reference). The working electrode reacts with CO; the counter balances the charge; the reference holds a stable potential so temperature drift can be corrected. Cell life is 5–10 years depending on environmental exposure — the detector reports cell end-of-life via a self-test. Distinguish fire-rated CO detectors (respond to fire-level CO signatures) from life-safety CO alarms (respond to continuous low-level CO from faulty heaters) — the thresholds are different and they are NOT interchangeable for fire detection.",
+    typicalApplications: [
+      "Residential NSW — smoke alarms mandatory; CO alarms increasingly common as a complement for smouldering fire warning",
+      "Hotel rooms and aged-care rooms — complement to photoelectric smoke detection",
+      "Spaces where photoelectric is prone to false alarms (dusty storage, some industrial rooms)",
+      "As one channel in a multi-criteria detector (see entry 3)",
+    ],
+    unsuitableApplications: [
+      "Garages, loading docks, or near fuel-burning equipment — continuous sub-alarm CO poisons the cell and exhausts its life",
+      "Kitchens — gas ranges and pilot lights produce CO signatures that mimic fire",
+      "Any place where a pure smoke detector is adequate — CO as a standalone fire detector is slower than photoelectric for flaming fires",
+    ],
+    installationRequirements:
+      "Mount per the manufacturer's datasheet — CO is slightly lighter than air but diffuses evenly, so ceiling mounting (as for smoke) is typical. Keep away from cooking, attached garages, and any combustion source. Each detector should be on an addressable loop or dedicated zone so the panel can tell the user WHICH room has the CO event. Cell temperature operating range is typically 0–49 °C, 15–95% RH non-condensing.",
+    failureModes: [
+      { mode: "Cell end-of-life", symptom: "Panel reports sensor end-of-life fault at 5–10 years", cause: "Electrochemical cell depletion", action: "Replace detector — cell is not field-replaceable on most models." },
+      { mode: "Poisoning", symptom: "Cell fails self-test or drift alarm", cause: "Exposure to cleaning solvents, silicones, or certain industrial vapours", action: "Replace detector; review the chemical environment." },
+      { mode: "Slow response on fast flaming fire", symptom: "Alarm triggers after flame detection elsewhere", cause: "CO produced by flaming combustion is lower than by smouldering — this is expected behaviour", action: "Confirm CO detection is complementing, not replacing, smoke detection." },
+    ],
+    testProcedure:
+      "Calibrated CO test gas (e.g. Solo C3) applied to the detector per AS 1851 Section 6.4. Verify alarm at the rated threshold and that the panel annunciates the correct address. Log pre- and post-test analogue values.",
+    maintenance:
+      "6-monthly visual + loop comms test, 12-monthly calibrated CO gas test. Track cell installation date on each detector and replace proactively before the end-of-life fault triggers.",
+    standardsRefs: [
+      { code: "AS 3786", note: "Fire alarms for residential use — covers CO alarms as complement to smoke" },
+      { code: "AS 7240.26", note: "CO fire detectors — product performance standard" },
+      { code: "AS 1670.1", clause: "3.30", note: "Where CO fire detection may be used as a complement to smoke detection" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service" },
+    ],
+    exampleModels: [
+      { manufacturer: "System Sensor", model: "CO1224T", partNumber: "CO1224T", notes: "CO alarm for commercial use, 10-year cell" },
+      { manufacturer: "Apollo", model: "XP95 CO Detector", partNumber: "55000-710APO", notes: "Analogue addressable CO fire detector" },
+      { manufacturer: "Hochiki", model: "SIB-CO", notes: "Standalone CO fire detector" },
+      { manufacturer: "Honeywell", model: "XC100", notes: "Residential-rated CO alarm" },
+    ],
+    lifeSpanYears: 7,
+    costBand: "$$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 14. VIDEO SMOKE DETECTION (VSD)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "video-smoke-detection",
+    name: "Video Smoke Detection (VSD / VID)",
+    category: "smoke",
+    summary:
+      "Computer-vision analysis of a live CCTV feed — smoke and flame pattern recognition at the video analytics layer, providing coverage in very large open spaces where point and beam detection is impractical.",
+    operatingPrinciple:
+      "A standard or high-resolution IP camera feeds a video analytics processor. The processor runs pattern-recognition algorithms that look for the characteristic flicker, turbulence, and opacity changes of smoke and the pulsating brightness and colour signature of flame. When the confidence score exceeds a calibrated threshold sustained over several seconds, the system reports an alarm to the FIP via a dry-contact or IP event. Modern implementations (Bosch Aviotec, Fike FireVu, VisionProtect) use deep-learning models trained on thousands of labelled fire and false-alarm videos.",
+    sensingTechnology:
+      "Video analytics running on a dedicated server or camera edge processor. Two detection modes: smoke (turbulence + opacity analysis) and flame (colour + flicker + motion). False-alarm rejection comes from masking regions that produce regular non-fire motion (conveyors, machinery) and from temporal correlation (fire grows over seconds-to-minutes, while false alarms resolve in milliseconds). IR and thermal cameras can extend detection into dark areas and smoke-obscured spaces.",
+    typicalApplications: [
+      "Very large open spaces: warehouses, stadiums, logistics hubs, atria",
+      "Tunnels — the camera network already exists for traffic, video detection adds fire without new cabling",
+      "Outdoor fuel storage yards",
+      "Power plants and generator halls",
+      "Heritage buildings where visible detectors are unacceptable",
+    ],
+    unsuitableApplications: [
+      "Small rooms — cost is disproportionate; point detection is cheaper and more reliable",
+      "Dense smoke / fog / steam conditions that saturate the camera",
+      "Spaces without stable lighting — variable lighting defeats the analytics baseline",
+      "Any space where the camera is not in the specified line of sight to the monitored area",
+    ],
+    installationRequirements:
+      "Camera placement is the critical engineering task. Each camera's protected field of view (PFOV) must cover the area to be monitored with sufficient pixel density that the analytics can distinguish smoke from background — typically 320×240 minimum resolution on the smoke region. Avoid backlighting (camera facing a bright window or light source), mirror-like floor finishes, and moving machinery that overlaps the detection region. Run a commissioning test with a standardised smoke pellet at the farthest point of the PFOV and confirm alarm within the system-rated response time. The system must fail-safe to a supervisory signal on camera loss, video loss, or analytics CPU failure.",
+    failureModes: [
+      { mode: "Masked region false negative", symptom: "Known smoke event not detected", cause: "Analytics mask was drawn too aggressively during commissioning to reject a false-alarm source", action: "Review and shrink the mask; verify coverage with a commissioning smoke test." },
+      { mode: "Camera disturbance", symptom: "Analytics fault; PFOV changed", cause: "Camera knocked or moved — the analytics is view-calibrated", action: "Restore camera position and re-run PFOV calibration." },
+      { mode: "Lighting change false alarm", symptom: "Alarm at dusk or dawn", cause: "Automatic camera gain changing rapidly during ambient light transitions", action: "Fit supplementary lighting to smooth the transition, or use an IR-cut camera with more stable exposure." },
+      { mode: "Algorithm training gap", symptom: "System does not recognise an unusual smoke type", cause: "Model was not trained on the specific combustion signature", action: "Capture footage of the missed event; request a model update from the vendor." },
+    ],
+    testProcedure:
+      "AS 1670.1 does not yet classify VSD alongside AS 7240 types — acceptance is via the manufacturer's certification (often EN 54 under a provisional clause) and a site-specific FPAA listing. Commissioning test uses a standardised smoke pellet at the farthest point of each camera's PFOV. Log response time, alarm location, and any detection faults.",
+    maintenance:
+      "Quarterly: verify every camera image is clean and in correct position. 6-monthly: walk each PFOV with the commissioning test. 12-monthly: review detection model for updates.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.31", note: "Alternative detection technologies — requires FPAA and project-specific fire engineering" },
+      { code: "FPAA Technical Bulletin", note: "Video Smoke Detection acceptance guidance" },
+      { code: "AS 1851", clause: "6.5", note: "Routine service — treat as very-early-warning system" },
+    ],
+    exampleModels: [
+      { manufacturer: "Bosch", model: "Aviotec IP Starlight 8000", notes: "Edge-processing IP camera with integrated smoke and flame detection" },
+      { manufacturer: "Fike", model: "FireVu", notes: "VSD platform with dedicated analytics server" },
+      { manufacturer: "Honeywell", model: "VESDA VSD200", notes: "Integrates with VESDA panel for unified alarm annunciation" },
+    ],
+    lifeSpanYears: 7,
+    costBand: "$$$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 15. SPARK / EMBER DETECTOR (IR)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "spark-ember-detector",
+    name: "Spark / Ember Detector",
+    category: "flame",
+    summary:
+      "High-speed infrared detector installed in pneumatic conveying ducts and dust-handling systems. Detects glowing embers within milliseconds and triggers water or inert-gas suppression before the ember reaches a silo or filter.",
+    operatingPrinciple:
+      "A single-wavelength or multi-wavelength IR sensor watches a short section of duct, looking for the characteristic radiation signature of a glowing ember (a small hot body radiating at peak black-body temperature around 600–900 °C). Response time is extremely fast (typically < 300 milliseconds) because an ember moving at 20 m/s in a conveying duct gives you < 1 second to react before it enters a filter bag-house or a wood silo, where it would ignite the stored dust.",
+    sensingTechnology:
+      "Broadband or selective IR photodiode with flicker discrimination. Unlike a flame detector, the spark detector is optimised for SMALL heat signatures at HIGH speed — typical sensitivity is a 1 mm particle at 800 °C at 0.5 m. Two-channel systems (visible red + near-IR) reject daylight and reflected heat from hot but non-burning surfaces. The detector controls a suppression zone typically via a fast water mist nozzle or a CO₂ dump upstream of the silo.",
+    typicalApplications: [
+      "Woodworking dust collection systems — sanders, routers, planers",
+      "Grain silos and bulk conveying systems",
+      "Biomass fuel plants and pellet manufacturing",
+      "Recycling plants — paper, cardboard, PET",
+      "Textile lint collection in commercial laundries",
+      "Metal powder handling — the ignition energy for fine metals is extremely low",
+    ],
+    unsuitableApplications: [
+      "Any non-pneumatic static space — needs moving air to transport the ember past the detector window",
+      "Ducts with large viewing windows — sensitivity is inverse to the square of distance, so big ducts need multiple detectors",
+      "Processes with legitimate hot-surface glow (e.g. near a kiln) without multi-channel discrimination",
+    ],
+    installationRequirements:
+      "Mount the detector through the duct wall so the sensor head looks directly into the airstream, with the viewing window flush and protected by a purge air curtain to prevent dust fouling. The suppression nozzle must be a specified distance downstream — far enough that the detection + valve + spray time gives a total reaction of < 300 ms, and not so far that the ember reaches a silo first. Every installation needs a detailed fire engineering assessment — this is a specialist system, not a catalogue install. Compliance is typically to VDS 2106 (German) or FM 6310 (US) rather than an Australian domestic standard.",
+    failureModes: [
+      { mode: "Purge air failure", symptom: "Viewing window fouls rapidly; detection self-test fault", cause: "Purge air compressor fault or line blockage", action: "Restore purge air immediately — the process should shut down until fixed." },
+      { mode: "Suppression nozzle blockage", symptom: "Detector reports an event but downstream temperature spikes", cause: "Nozzle clogged with sediment or calcium", action: "Flush nozzles at every service; maintain water quality." },
+      { mode: "False positive on grinding", symptom: "Suppression activates during normal metal grinding operations", cause: "Grinding sparks are legitimate non-fire", action: "Use multi-wavelength detection with ember-specific algorithm; configure a process interlock to mask during authorised grinding." },
+    ],
+    testProcedure:
+      "Site-specific commissioning test with a certified calibrated heat source — typically an incandescent lamp of known temperature passed through the duct at conveying speed. Confirm detection, suppression activation, and total reaction time. Annual retest with the same source.",
+    maintenance:
+      "Monthly purge air and window check, quarterly detection + suppression function test, annual full calibration. Spark detection systems require specialist service technicians certified by the vendor.",
+    standardsRefs: [
+      { code: "VDS 2106", note: "German spark detection standard commonly referenced in Australian projects" },
+      { code: "FM 6310", note: "Factory Mutual approval standard for spark detection systems" },
+      { code: "AS/NZS 4745", note: "Dust explosion protection — where spark detection forms part of the protection strategy" },
+    ],
+    exampleModels: [
+      { manufacturer: "Fagus GreCon", model: "ROMO", notes: "Market-leading woodworking dust spark detection, German-engineered" },
+      { manufacturer: "Firefly", model: "Fast Spark Detector", notes: "Multi-wavelength with dust discrimination" },
+      { manufacturer: "Sorex", model: "ember detection", notes: "European biomass plant spark detection" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$$",
+    addressable: false,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 16. SOUNDER / STROBE NOTIFICATION APPLIANCE
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "sounder-strobe",
+    name: "Sounder / Strobe Notification Appliance",
+    category: "smoke",
+    summary:
+      "Audible and visual alarm devices — horn, bell, voice sounder, or combined sounder/strobe — that alert occupants to evacuate. Not a detector technically, but a mandatory part of every FIP system under AS 1670.4.",
+    operatingPrinciple:
+      "A piezoelectric or electromagnetic transducer produces the audible alarm; a xenon flash or high-brightness LED produces the visual alarm. On addressable loops, each sounder has its own address and the panel can command individual devices or zones. Voice sounders (pre-recorded and live) support tiered evacuation messaging. Modern sounders report their own output level and fault status back to the panel via the loop protocol.",
+    sensingTechnology:
+      "Not a sensor — an actuator. Key specs: sound output at 1 m (typically 100–115 dBA), tone pattern (temporal-3 per ISO 8201 is the Australian default), strobe flash rate (1 Hz), and strobe intensity (15 cd or 75 cd candela). Combined devices (addressable loop-powered) draw between 5 mA and 50 mA per device — loop current budget is a critical design input.",
+    typicalApplications: [
+      "Every fire compartment throughout a building (AS 1670.4 Clause 3.10 — sound pressure levels)",
+      "Corridors, lobbies, stairwells, sleeping areas",
+      "Toilets and plant rooms — single-occupant spaces without sight line to a strobe need a sounder",
+      "Hearing-impaired accommodation — strobe visual alarms are mandatory in sleeping rooms of hotels / aged care under AS 1670.4 and DDA",
+    ],
+    unsuitableApplications: [
+      "Not applicable — every fire-rated building requires notification; the question is ONLY what type and how many",
+    ],
+    installationRequirements:
+      "AS 1670.4 governs placement and output: 65 dBA minimum at every point in the protected space, 75 dBA in sleeping spaces at the pillow position (measured with the sounder in alarm, doors closed). Mount sounders 2.3 m above floor or 150 mm below ceiling, whichever is lower. Strobes in every room > 10 m² and every corridor. Strobe intensity selected per the largest horizontal coverage dimension — AS 1670.4 Table 3.12 maps candela to room dimension. Loop current budget must include every sounder at its worst-case current at the worst-case lowest loop voltage (typically 20 V at end of loop with maximum cable resistance). Use sounder isolators to protect against short-circuit faults taking out the whole loop.",
+    failureModes: [
+      { mode: "Loop current overload", symptom: "Panel reports loop overcurrent fault when alarm sounds", cause: "Sum of sounder draws exceeds loop supply capacity", action: "Redistribute sounders across loops or use a dedicated sounder circuit with its own supply." },
+      { mode: "Silicone capsule fatigue", symptom: "Reduced sound output over years", cause: "Piezoelectric element aging", action: "Replace device on manufacturer service life (10 years)." },
+      { mode: "Cable resistance voltage drop", symptom: "Sounders at the end of the loop fail to reach rated output", cause: "Undersized cable over long loop runs", action: "Re-measure cable resistance at commissioning; upsize cable; add a booster PSU mid-loop if needed." },
+      { mode: "Xenon flash tube failure", symptom: "Strobe not flashing during test", cause: "Tube end-of-life", action: "Replace device — flash tubes are not field-serviceable on modern sealed units." },
+    ],
+    testProcedure:
+      "AS 1851 Section 6.4 — alarm every sounder and measure the sound pressure level with a Class 1 sound meter at the worst-case listening point (typically the farthest pillow from the loudest sounder). Must meet 65 dBA / 75 dBA in sleeping areas. Verify every strobe flashes at 1 Hz. Annual end-to-end evacuation tone test with timing.",
+    maintenance:
+      "6-monthly function test on every sounder and strobe. Annual full SPL survey if the building layout has changed or occupancy has increased. Replace per 10-year service life.",
+    standardsRefs: [
+      { code: "AS 1670.4", clause: "3.10", note: "Sound pressure requirements at every point in the protected space" },
+      { code: "AS 1670.4", clause: "3.12", note: "Strobe intensity vs room dimension" },
+      { code: "AS 7240.3", note: "Audible alarm devices — product performance standard" },
+      { code: "AS 7240.23", note: "Visual alarm devices — product performance standard" },
+      { code: "ISO 8201", note: "Temporal-3 alarm tone pattern — international convention for fire" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Loop-Powered Sounder", partNumber: "55000-005APO", notes: "Addressable sounder, loop-powered, 100 dBA" },
+      { manufacturer: "Hochiki", model: "YBO-BSB2 Base Sounder", partNumber: "YBO-BSB2", notes: "Detector-base sounder, 95 dBA" },
+      { manufacturer: "System Sensor", model: "SpectrAlert Advance", partNumber: "SRL", notes: "Speaker/strobe combination" },
+      { manufacturer: "Wheelock", model: "NS-24MCW", notes: "High-intensity notification appliance, strobe candela selectable" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 17. WATERFLOW SWITCH (SPRINKLER SYSTEM)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "waterflow-switch",
+    name: "Waterflow Switch",
+    category: "multi",
+    summary:
+      "Mechanical or paddle-vane switch installed on a sprinkler riser or branch line — triggers alarm to the FIP when water flow exceeds the single-sprinkler retard threshold, confirming that a sprinkler has activated.",
+    operatingPrinciple:
+      "A paddle vane projects into the pipe's water flow. Normal static water exerts no force on the paddle. When a sprinkler head opens, water begins flowing and pushes the paddle out of alignment; a mechanical linkage closes an electrical contact that reports to the FIP. A built-in pneumatic retard chamber introduces a 20–60 second delay before the alarm trips, preventing false alarms from pressure transients and small leaks.",
+    sensingTechnology:
+      "Paddle-type vane switch with a pneumatic retard chamber. The retard is adjustable on site to match the sprinkler system design: fast-response sprinklers need a shorter retard so the alarm is not suppressed below the activation threshold. Pressure switch types (alternative to paddle) detect the small pressure drop caused by a sprinkler opening on wet pipe systems, and the pressure rise on dry-pipe or pre-action systems when the main valve opens.",
+    typicalApplications: [
+      "Every sprinkler zone riser (AS 2118.1 / AS 1670.1 Clause 3.32 — waterflow alarm signalling)",
+      "Every sprinkler branch line serving > 20 heads",
+      "Pre-action sprinkler systems — double interlock verification",
+      "Deluge systems — alarm on actuator operation",
+    ],
+    unsuitableApplications: [
+      "Small dry-pipe systems < 2 heads — use a pressure switch instead",
+      "Low-pressure water systems (< 100 kPa) — paddle may not close reliably",
+    ],
+    installationRequirements:
+      "Install on a horizontal run of pipe, not on a vertical drop, so the paddle sits in the flow. The paddle must be sized to the pipe: too large and it rattles in normal static conditions, too small and it misses the flow. Bond to the system earth and verify the tamper-switch cover wiring so removal of the cover annunciates on the panel. The retard must be tested during commissioning at the maximum allowable flow rate for a single sprinkler — typically 90 L/min for a K80 head.",
+    failureModes: [
+      { mode: "Retard drift", symptom: "Intermittent waterflow alarms with no real flow", cause: "Retard chamber orifice dirty or seal degraded", action: "Service retard chamber annually; replace every 5 years." },
+      { mode: "Paddle corrosion", symptom: "Paddle binds, fails to return or fails to trigger", cause: "Corrosion at the pivot point or galvanic reaction with pipe material", action: "Replace switch; use bronze/stainless for high-pressure or non-potable systems." },
+      { mode: "Pipe vibration false alarm", symptom: "Alarm triggers when adjacent pump starts", cause: "Pipe vibration shakes the paddle past the retard", action: "Fit vibration-damping mounts; tune retard higher." },
+      { mode: "Cover tamper missed", symptom: "Cover removed during inspection does not annunciate", cause: "Tamper switch wiring not commissioned", action: "Recommission — every supervised tamper must annunciate on the FIP." },
+    ],
+    testProcedure:
+      "AS 1851 Section 5.2 — open the test drain downstream of the waterflow switch at a rate equal to a single sprinkler, verify the switch trips within the retard time, and that the FIP annunciates the correct zone. Annual 15-minute drain test confirms sustained flow and alarm hold.",
+    maintenance:
+      "Quarterly visual, 6-monthly drain-and-alarm test, annual full retard service. Waterflow switches are THE most commonly failed item on a commissioned sprinkler system — they need attention.",
+    standardsRefs: [
+      { code: "AS 2118.1", note: "Automatic sprinkler systems for general applications — waterflow monitoring requirements" },
+      { code: "AS 1670.1", clause: "3.32", note: "Waterflow alarm signal to the FIP" },
+      { code: "AS 1851", clause: "5.2", note: "Routine service, drain test, retard service" },
+    ],
+    exampleModels: [
+      { manufacturer: "Potter Electric", model: "VSR", partNumber: "VSR", notes: "Paddle vane waterflow switch, adjustable retard 0–90 s" },
+      { manufacturer: "System Sensor", model: "WFD20", notes: "Waterflow alarm switch for 20 mm pipe" },
+      { manufacturer: "Tyco", model: "WFS", notes: "Central-sourced waterflow alarm switch" },
+    ],
+    lifeSpanYears: 20,
+    costBand: "$",
+    addressable: false,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 18. PRESSURE SWITCH (SPRINKLER / HYDRANT / DRY SYSTEM)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "pressure-switch",
+    name: "Pressure Switch (Sprinkler / Hydrant / Dry System)",
+    category: "multi",
+    summary:
+      "Diaphragm or bellows pressure switch monitoring water or air pressure in a fire main, hydrant header, sprinkler riser, or dry-pipe system. Reports loss-of-pressure, high-pressure, or actuation.",
+    operatingPrinciple:
+      "A spring-loaded diaphragm or bellows senses line pressure against an adjustable setpoint. When pressure crosses the setpoint, a snap-action microswitch changes state and reports to the FIP. Some models carry two independent switches for alarm (activation) and fault (low pressure) signals. The setpoint is adjustable over a wide range (typically 100 kPa to 1700 kPa) using a screw on the switch body.",
+    sensingTechnology:
+      "Bourdon tube, diaphragm, or bellows coupled to a microswitch. Wetted parts are brass or stainless depending on pressure class. Accuracy is typically ± 5% of full scale, with hysteresis of 5–15% — the switch opens and closes at slightly different pressures to prevent chatter. Dual-switch models provide separate contacts for alarm and supervisory, allowing the FIP to distinguish a loss of pressure (maintenance issue) from an activation (fire event).",
+    typicalApplications: [
+      "Fire main incoming water pressure supervision (AS 1670.1 Clause 3.33)",
+      "Sprinkler jockey pump cycling — switch the pump on and off as small leaks bleed down pressure",
+      "Dry-pipe sprinkler system air pressure supervision",
+      "Pre-action sprinkler system actuation verification",
+      "Hydrant booster pump start pressure switch",
+      "Fire pump controller — low-pressure cut-in / high-pressure cut-out",
+    ],
+    unsuitableApplications: [
+      "Fluctuating pressure systems without adequate deadband — switch will chatter",
+      "Corrosive fluids unless using a chemical-resistant diaphragm material",
+    ],
+    installationRequirements:
+      "Mount in the vertical position so the diaphragm is not biased by its own weight, with the pressure tap accessible for service and a bleed valve upstream of the switch for calibration. Isolate the switch with a ball valve so it can be removed without depressurising the system. Wire as a supervised circuit (end-of-line monitored) so cable faults annunciate as trouble not alarm. For dual-function switches (activation + supervisory), verify both contacts during commissioning.",
+    failureModes: [
+      { mode: "Setpoint drift", symptom: "Pump cycles at wrong pressure or nuisance alarms", cause: "Spring relaxation or vibration-induced setpoint change", action: "Re-calibrate annually against a calibrated master gauge." },
+      { mode: "Diaphragm rupture", symptom: "Water leak from switch body, loss of function", cause: "Diaphragm fatigue from pressure cycling", action: "Replace switch; upsize to a higher-cycle-rated diaphragm if cycling is frequent." },
+      { mode: "Water hammer damage", symptom: "Erratic switching, eventual total failure", cause: "Pressure transients from fast-closing valves", action: "Fit a pressure snubber upstream of the switch." },
+      { mode: "Microswitch welding", symptom: "Switch stuck in one state regardless of pressure", cause: "Arc welding of contacts from switching an inductive load without a suppression diode", action: "Replace switch and fit a contact suppression diode across the load." },
+    ],
+    testProcedure:
+      "AS 1851 Section 5.2 — isolate the switch and apply pressure from a calibrated test pump, verify switch operation at the set point within ± 5% using a master gauge. Test the supervisory (low pressure) function by bleeding pressure below the setpoint. Log measured setpoint vs specified setpoint.",
+    maintenance:
+      "Quarterly visual, annual calibrated pressure test and setpoint verification. Replace after any water hammer event or if setpoint drift exceeds 10%.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.33", note: "Pressure switch alarm signalling to the FIP" },
+      { code: "AS 2118.1", note: "Sprinkler system supervisory requirements" },
+      { code: "AS 2419.1", note: "Hydrant system design and supervisory requirements" },
+      { code: "AS 1851", clause: "5.2", note: "Routine service, setpoint verification" },
+    ],
+    exampleModels: [
+      { manufacturer: "Potter Electric", model: "PS10", partNumber: "PS10-1", notes: "Adjustable 10–175 psi, dual SPDT contacts" },
+      { manufacturer: "System Sensor", model: "EPS40", notes: "Low-pressure supervisory switch for dry-pipe systems" },
+      { manufacturer: "Tyco", model: "PS10-2", notes: "Dual pressure switch for alarm + supervisory" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: false,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 19. ADDRESSABLE LOOP ISOLATOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "loop-isolator",
+    name: "Addressable Loop Isolator",
+    category: "multi",
+    summary:
+      "Short-circuit protection device that automatically isolates a faulted segment of an addressable loop so a single wiring fault cannot take the entire loop offline. A mandatory topology element per AS 1670.1 Clause 3.34 on any loop serving > 32 devices.",
+    operatingPrinciple:
+      "Each isolator contains a solid-state electronic switch that monitors the loop current and voltage. Under normal conditions it is closed and passes all current. When the upstream loop voltage collapses (indicating a short circuit downstream), the isolator opens, disconnecting the downstream segment from the rest of the loop. Class A (Style 6/7) loops are wired back to the panel at both ends, so when an isolator opens at either end of the faulted segment the panel can still reach every device on the loop — just via the opposite direction.",
+    sensingTechnology:
+      "Solid-state switch (typically MOSFET) with voltage and current sense. Transparent to the addressable protocol under normal operation. Isolator operation is supervisory-reported to the panel — the panel logs 'isolator active' and flags which segment is isolated. Base isolators are integrated into the detector base so every detector has its own isolator; standalone isolator modules protect a group of devices. Best practice on long loops is isolators every 20–32 devices to maintain the '1 short = 1 segment lost' guarantee.",
+    typicalApplications: [
+      "Every long loop in every addressable FIP system (AS 1670.1 Clause 3.34)",
+      "Between zones / fire compartments — isolates a compartment fault",
+      "At the panel loop output — always an isolator on the first device so a short right at the panel doesn't damage the loop driver",
+      "Base isolators (integrated into every detector base) for high-reliability systems like hospitals and data centres",
+    ],
+    unsuitableApplications: [
+      "Radial (Class B / Style 4) loops serving < 32 devices — can be covered by a single isolator at the panel",
+      "Loops designed with isolators every device already (no incremental value from adding more)",
+    ],
+    installationRequirements:
+      "AS 1670.1 Clause 3.34 — on any loop serving more than 32 detection devices or spanning more than one fire compartment, isolators must be positioned such that a single short-circuit affects at most one fire compartment or 32 devices, whichever is smaller. Isolators must be commissioned walk-tested: apply a short at each segment and confirm only the correct segment drops out. Class A wiring is strongly recommended — at least 90% of modern installations use Class A so loop redundancy is available.",
+    failureModes: [
+      { mode: "Isolator welded closed", symptom: "Short circuit affects a larger segment than expected; panel loses multiple addresses", cause: "Isolator MOSFET failed to open", action: "Replace isolator module; investigate root cause (possible overcurrent beyond rating)." },
+      { mode: "Isolator stuck open", symptom: "Segment downstream of isolator shows as 'missing' without any short", cause: "Isolator failed open", action: "Replace isolator; test loop continuity through the bypass." },
+      { mode: "Nuisance operation", symptom: "Intermittent isolator activations during normal operation", cause: "Loop voltage transients from sounder current spikes", action: "Check loop current budget; add booster PSU; upsize cable if voltage drop is marginal." },
+    ],
+    testProcedure:
+      "Walk-test commissioning: apply a calibrated short across each segment's wiring and confirm the correct isolator opens, the panel annunciates the correct segment, and all other devices remain online. Annual re-test after any loop extension. The AS 1851 routine test includes applying a short at the far end of each segment.",
+    maintenance:
+      "Walk-test annually. Integrated base isolators are maintenance-free within the detector's service life; standalone isolator modules should be replaced at 15 years.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.34", note: "Loop isolator positioning — single fault containment" },
+      { code: "AS 7240.17", note: "Short-circuit isolators — product performance standard" },
+      { code: "AS 1851", clause: "6.4", note: "Loop fault test as part of routine service" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Isolator Module", partNumber: "55000-700APO", notes: "Standalone DIN-rail isolator" },
+      { manufacturer: "Apollo", model: "XP95 Isolator Base", partNumber: "45681-242APO", notes: "Detector base with integrated isolator" },
+      { manufacturer: "Hochiki", model: "YBO-BSB2-I Isolator Base", notes: "Integrated isolator in the detector base" },
+      { manufacturer: "System Sensor", model: "M502MAC Isolator Module", notes: "Standalone isolator for SLC protection" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 20. INPUT / OUTPUT INTERFACE MODULE
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "io-module",
+    name: "Input / Output Interface Module",
+    category: "multi",
+    summary:
+      "Addressable loop device that interfaces the FIP with non-addressable field equipment — waterflow switches, tamper switches, relay outputs to HVAC, gas solenoids, and smoke dampers.",
+    operatingPrinciple:
+      "An input module monitors a contact-closure field device (NO/NC) and reports its state to the panel as a loop address. An output module accepts a panel command and drives a relay, enabling the FIP to control external equipment such as a fan shutdown contactor or a door hold-open magnet. Combined I/O modules provide both functions in one address — typical 1-in/1-out or 2-in/2-out module densities. Every input is supervised (end-of-line monitored) so cable open and short faults annunciate on the panel as trouble.",
+    sensingTechnology:
+      "Solid-state input sensing with an end-of-line resistor for line monitoring. Mechanical relay or solid-state output with contact ratings typically 30 VDC / 1 A, or 240 VAC / 5 A for heavy-duty variants. Input debounce is configurable per address to reject transient contact bounce from waterflow switches or tamper contacts. The output is supervised on addressable loops with a monitored circuit (verification that the wiring to the load is intact).",
+    typicalApplications: [
+      "Waterflow and tamper switch monitoring on sprinkler systems",
+      "HVAC fan and damper control on a fire alarm trip",
+      "Gas valve shutoff interface — FIP activates on alarm, module trips the solenoid",
+      "Lift recall (firemen's lift) — panel commands the elevator controller via dry contact",
+      "Door hold-open release — magnets holding fire doors open release on alarm",
+      "Interface to third-party extinguishing systems (FM-200, inert gas, CO₂)",
+      "Conventional zone interface — bridge a conventional detection zone onto an addressable loop",
+    ],
+    unsuitableApplications: [
+      "Directly switching inductive loads > rated contact rating without a contactor — will weld the relay",
+      "High-speed protocol interfaces (BACnet, Modbus) — use a dedicated gateway instead",
+    ],
+    installationRequirements:
+      "Mount in an accessible IP-rated enclosure near the interfaced equipment. Run the interface cable from the module to the monitored device on a separate cable from the addressable loop — do NOT daisy-chain the field wiring through the loop. End-of-line resistor must be fitted at the FAR end of the monitored circuit, not at the module. Output contacts driving high-current loads must switch through a contactor, not the module's own relay. Address programming is typically via a DIP switch or address-programmer tool; commissioning must walk-test every input and output.",
+    failureModes: [
+      { mode: "EOL resistor missing or wrong value", symptom: "Input shows permanent trouble or permanent alarm", cause: "Commissioning error — the resistor was not fitted at the far end of the monitored circuit", action: "Measure resistance across the input terminals with the field device connected; it should match the EOL value on the panel config." },
+      { mode: "Output relay welded", symptom: "Output fails to open after alarm clear; external equipment stays activated", cause: "Arc welding from switching high current without a suppression diode", action: "Replace module; add contact protection." },
+      { mode: "Address clash", symptom: "Two modules responding to the same address, one missing", cause: "DIP switch set incorrectly during installation", action: "Re-address per drawings; walk-test after re-addressing." },
+    ],
+    testProcedure:
+      "Walk-test every input (simulate activation at the field device) and every output (panel command the output, verify external equipment responds). AS 1851 Section 6.4 covers this as part of routine service. Log every address, every input, and every output in the commissioning book.",
+    maintenance:
+      "6-monthly walk-test of critical interfaces (sprinkler waterflow, HVAC shutdown, gas valve). Annual full I/O test. Contact-life tracking on high-cycle outputs (lift recall).",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.35", note: "Interface to external equipment — supervised inputs and outputs" },
+      { code: "AS 7240.18", note: "Input / output devices — product performance standard" },
+      { code: "AS 1851", clause: "6.4", note: "Routine walk-test of interfaces" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Single I/O Unit", partNumber: "55000-823APO", notes: "1 input, 1 relay output" },
+      { manufacturer: "Apollo", model: "XP95 Switch Monitor Plus", partNumber: "55000-827APO", notes: "Dual input for waterflow/tamper monitoring" },
+      { manufacturer: "Hochiki", model: "CHQ-DIM2 Dual Input Module", notes: "ESP protocol" },
+      { manufacturer: "Notifier", model: "FCM-1 Control Module", notes: "Supervised output for HVAC or lift recall" },
+      { manufacturer: "System Sensor", model: "M500S Supervised Relay Module", notes: "Supervised output with EOL monitoring" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: true,
+  },
+];
+

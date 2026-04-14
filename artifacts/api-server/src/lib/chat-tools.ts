@@ -79,12 +79,32 @@ export const AGENT_TOOLS = [
   {
     name: "db_get",
     description:
-      "Fetch a single record by id from one of the allowlisted tables. Returns the full row.",
+      "Fetch a single record by id from one of the allowlisted tables. Returns " +
+      "a clipped summary shaped to the table (same fields as db_search rows). " +
+      "If you need the complete raw row including fields the summary drops, call " +
+      "db_get_full instead.",
     input_schema: {
       type: "object" as const,
       properties: {
         table: { type: "string", enum: TABLE_ALLOWLIST },
         id: { type: "string", description: "Primary key of the row." },
+      },
+      required: ["table", "id"],
+    },
+  },
+
+  {
+    name: "db_get_full",
+    description:
+      "Fetch a single record by id and return EVERY column, including fields " +
+      "that db_search and db_get drop (raw_data JSONB, import_batch_id, " +
+      "soft-delete timestamps, any legacy columns). Use when debugging, or when " +
+      "a second tool call needs a field the summary clipped.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        table: { type: "string", enum: TABLE_ALLOWLIST },
+        id: { type: "string" },
       },
       required: ["table", "id"],
     },
@@ -146,12 +166,21 @@ export const AGENT_TOOLS = [
     description:
       "Delete a row by id. Honours the SOFT_DELETE flag — when soft-delete is on " +
       "it sets deleted_at instead of hard-deleting. Always confirm with the user " +
-      "before calling this for anything other than notes or todos.",
+      "in plain English before calling this for anything other than notes or todos. " +
+      "For high-value tables (suppliers, fip_manufacturers, fip_product_families, " +
+      "fip_models, fip_fault_signatures) a hard guardrail requires you to also pass " +
+      "`confirm: \"yes\"` in the input — if you haven't verbally confirmed with the " +
+      "user first, DO NOT pass confirm: yes.",
     input_schema: {
       type: "object" as const,
       properties: {
         table: { type: "string", enum: TABLE_ALLOWLIST },
         id: { type: "string" },
+        confirm: {
+          type: "string",
+          enum: ["yes"],
+          description: "Set to 'yes' ONLY after the user has explicitly confirmed the deletion in chat for high-value tables. Refuse to set this for any other reason.",
+        },
       },
       required: ["table", "id"],
     },
@@ -267,6 +296,53 @@ export const AGENT_TOOLS = [
     input_schema: { type: "object" as const, properties: {} },
   },
 
+  // ── Metric registry tools (Pass 4 fix #4) ────────────────────────────────
+  {
+    name: "metric_get",
+    description:
+      "Compute a named metric from the lib/metrics registry. Returns a " +
+      "MetricResult: { id, displayName, unit, period, periodStart, periodEnd, " +
+      "rows, headline, previousHeadline, explainQuery }. Use this INSTEAD of " +
+      "db_search + prose summarisation whenever the user asks for a KPI or " +
+      "aggregated number. The metric's own query is always more correct than " +
+      "anything you could synthesise. Current metric ids: revenue_vs_target_mtd.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        metric_id: { type: "string", description: "Registered metric slug" },
+        period: {
+          type: "string",
+          enum: ["today", "7d", "30d", "mtd", "90d", "ytd", "custom"],
+          description: "Defaults to the metric's natural window",
+        },
+        start_date: { type: "string", description: "ISO date — required when period=custom" },
+        end_date: { type: "string", description: "ISO date — required when period=custom" },
+      },
+      required: ["metric_id"],
+    },
+  },
+  {
+    name: "metric_compare",
+    description:
+      "Fetch a metric for two periods side-by-side and return the delta " +
+      "(absolute and percentage). Use when the user asks 'how does this " +
+      "month compare to last month' or 'this week vs last week'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        metric_id: { type: "string" },
+        period_a: { type: "string", enum: ["today", "7d", "30d", "mtd", "90d", "ytd"] },
+        period_b: { type: "string", enum: ["today", "7d", "30d", "mtd", "90d", "ytd"] },
+      },
+      required: ["metric_id", "period_a", "period_b"],
+    },
+  },
+  {
+    name: "metric_list",
+    description: "List every registered metric with its metadata (id, displayName, description, category, unit). Use this when the user asks what KPIs are available.",
+    input_schema: { type: "object" as const, properties: {} },
+  },
+
   {
     name: "get_kpi_summary",
     description:
@@ -281,16 +357,65 @@ export const AGENT_TOOLS = [
     description:
       "Navigate the user's browser to a different page within the app. Supported " +
       "paths: /, /chat, /operations, /analytics, /jobs, /todos, /projects, " +
-      "/suppliers, /schedule, /toolbox, /notes, /pm, /settings, /jobs/:id.",
+      "/suppliers, /schedule, /toolbox, /notes, /pm, /settings, /jobs/:id. " +
+      "Accepts query strings (e.g. /jobs?status=Open).",
     input_schema: {
       type: "object" as const,
       properties: {
         path: {
           type: "string",
-          description: "Route path, starting with /. Use `/jobs/<id>` for a specific job.",
+          description: "Route path, starting with /. Query strings allowed.",
         },
       },
       required: ["path"],
+    },
+  },
+
+  {
+    name: "ui_set_filter",
+    description:
+      "Apply a filter on the page the user is currently looking at. Dispatches a window event " +
+      "the host page listens for. Use this after ui_navigate to land on an already-filtered view. " +
+      "Examples: filter_key='status' value='Open'; filter_key='priority' value='Critical'; " +
+      "filter_key='assigned_tech' value='Gordon Jenkins'. The host page interprets the keys.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        filter_key: { type: "string", description: "Which filter slot to set (e.g. status, priority, tech, client)" },
+        value: { type: "string", description: "The value to apply. Use empty string to clear." },
+      },
+      required: ["filter_key", "value"],
+    },
+  },
+
+  {
+    name: "ui_open_record",
+    description:
+      "Highlight and scroll to a specific row on the currently-visible list page. " +
+      "Call this after db_search + db_update so the user sees exactly which row you just touched.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        table: { type: "string", description: "e.g. wip_records, defects, estimates" },
+        id: { type: "string" },
+      },
+      required: ["table", "id"],
+    },
+  },
+
+  {
+    name: "ui_open_modal",
+    description:
+      "Open a create or edit modal for a specific record kind on the current page. " +
+      "kind is one of: job, wip, quote, defect, invoice, todo, note, estimate, estimate_line. " +
+      "Supply id to edit an existing record; omit for a fresh create modal.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        kind: { type: "string" },
+        id: { type: "string", description: "Optional — omit for create, supply for edit" },
+      },
+      required: ["kind"],
     },
   },
 

@@ -116,14 +116,26 @@ export function streamAgent(
   handlers: AgentStreamHandlers,
 ): AbortController {
   const controller = new AbortController();
-  fetch(`${BASE}/chat/agent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({ section, message, history }),
-    signal: controller.signal,
-  })
-    .then(async (res) => {
+  // Pass 5 §3.4: retry initial connection up to 2 times with 1s + 3s
+  // backoff. Only retries the open — once we've started reading the
+  // response body, any mid-stream disconnect bails (retrying mid-tool
+  // call would risk double-executing a db_create / db_update).
+  let attempt = 0;
+  const MAX_ATTEMPTS = 3;
+  const attemptOpen = async (): Promise<void> => {
+    attempt += 1;
+    try {
+      const res = await fetch(`${BASE}/chat/agent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({ section, message, history }),
+        signal: controller.signal,
+      });
       if (!res.ok) {
+        if ((res.status >= 500 || res.status === 0) && attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, attempt * 1000));
+          return attemptOpen();
+        }
         handlers.onError(`Request failed: ${res.status}`);
         return;
       }
@@ -171,6 +183,72 @@ export function streamAgent(
           } catch {
             // ignore malformed event line
           }
+        }
+      }
+      if (!finished) handlers.onDone();
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+      // Network-level failure before we got a reader — safe to retry.
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, attempt * 1000));
+        return attemptOpen();
+      }
+      handlers.onError(err?.message ?? "connection failed");
+    }
+  };
+  void attemptOpen();
+  return controller;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// streamFipAssistant — /fip/assistant/chat client.
+// ─────────────────────────────────────────────────────────────────────────────
+// Same wire protocol as streamAgent but talks to the dedicated FIP
+// assistant endpoint (master-level Australian fire-protection knowledge,
+// detector type tools, image vision).
+export function streamFipAssistant(
+  message: string,
+  history: { role: string; content: string }[],
+  imageId: string | undefined,
+  handlers: AgentStreamHandlers,
+): AbortController {
+  const controller = new AbortController();
+  fetch(`${BASE}/fip/assistant/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ message, history, imageId }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        handlers.onError(`Request failed: ${res.status}`);
+        return;
+      }
+      const reader = res.body?.getReader();
+      if (!reader) { handlers.onError("No stream"); return; }
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finished = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const ev = JSON.parse(line.slice(6));
+            switch (ev.type) {
+              case "text": if (ev.content) handlers.onText(ev.content); break;
+              case "tool_start": handlers.onToolStart?.({ name: ev.name, input: ev.input }); break;
+              case "tool_result": handlers.onToolResult?.({ name: ev.name, ok: ev.ok, error: ev.error }); break;
+              case "error": handlers.onError(ev.error ?? "fip assistant error"); break;
+              case "done":
+                if (!finished) { finished = true; handlers.onDone(); }
+                break;
+            }
+          } catch { /* ignore */ }
         }
       }
       if (!finished) handlers.onDone();

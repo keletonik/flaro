@@ -68,6 +68,22 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
+  // Listen for the command palette's "ask AIDE" event. When the user
+  // types a question in Cmd-K and hits enter on the Ask-AIDE row, the
+  // palette dispatches `aide-open-with-prompt` with the query; we
+  // pick it up here and auto-send.
+  useEffect(() => {
+    const handler = (ev: Event) => {
+      const prompt = (ev as CustomEvent).detail?.prompt;
+      if (typeof prompt === "string" && prompt.trim()) {
+        setTimeout(() => send(prompt), 100);
+      }
+    };
+    window.addEventListener("aide-open-with-prompt", handler);
+    return () => window.removeEventListener("aide-open-with-prompt", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section]);
+
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, []);
@@ -112,8 +128,28 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
           patch({ tools: [...tools] });
         },
         onUiAction: (action) => {
-          if (action.type === "navigate" && typeof action.path === "string") setLocation(action.path);
-          else if (action.type === "refresh") emitDataChanged();
+          // navigate + refresh are the original pair.
+          // set_filter / open_record / open_modal were added in Pass 3
+          // fix #4. Each one dispatches a window custom event that the
+          // host page listens for. Pages opt in by adding a single
+          // useEffect + event listener — zero prop threading.
+          if (action.type === "navigate" && typeof action.path === "string") {
+            setLocation(action.path);
+          } else if (action.type === "refresh") {
+            emitDataChanged();
+          } else if (action.type === "set_filter") {
+            window.dispatchEvent(new CustomEvent("aide-set-filter", {
+              detail: { filter_key: action.filter_key, value: action.value },
+            }));
+          } else if (action.type === "open_record") {
+            window.dispatchEvent(new CustomEvent("aide-open-record", {
+              detail: { table: action.table, id: action.id },
+            }));
+          } else if (action.type === "open_modal") {
+            window.dispatchEvent(new CustomEvent("aide-open-modal", {
+              detail: { kind: action.kind, id: action.id ?? null },
+            }));
+          }
         },
         onDone: () => setStreaming(false),
         onError: (err) => { patch({ content: assistantContent || `Error: ${err}` }); setStreaming(false); },

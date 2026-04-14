@@ -19,6 +19,7 @@ const Projects = lazy(() => import("@/pages/projects"));
 const Operations = lazy(() => import("@/pages/operations"));
 const Suppliers = lazy(() => import("@/pages/suppliers"));
 const Analytics = lazy(() => import("@/pages/analytics"));
+const Metrics = lazy(() => import("@/pages/metrics"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const PM = lazy(() => import("@/pages/pm"));
 const FIP = lazy(() => import("@/pages/fip"));
@@ -30,6 +31,9 @@ import {
   Shield
 } from "lucide-react";
 import AidePA from "@/components/AidePA";
+import AIDEAssistant from "@/components/AIDEAssistant";
+import CommandPalette from "@/components/CommandPalette";
+import { KeyboardCheatSheet } from "@/components/KeyboardCheatSheet";
 import { AideFavicon, AideWordmark } from "@/components/AideLogo";
 
 const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>> }>({ collapsed: false, setCollapsed: () => {} });
@@ -49,6 +53,7 @@ const navGroups = [
       { path: "/chat", icon: MessageCircle, label: "Chat" },
       { path: "/operations", icon: BarChart3, label: "Operations" },
       { path: "/analytics", icon: PieChart, label: "Analytics" },
+      { path: "/metrics", icon: BarChart3, label: "Metrics" },
     ],
   },
   {
@@ -280,7 +285,14 @@ function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </div>
       <BottomNav />
-      {location !== "/chat" && <AidePA currentPath={location} />}
+      {/* Unified tool-use AI surface — replaces AidePA / AnalyticsPanel mounts.
+          Uses /chat/agent under the hood so it can actually take action on
+          every page, not just describe data. See docs/audit/PASS_2_ux.md
+          target 1 and docs/FULL_AUDIT_REBUILD_PROMPT.md Phase 2. */}
+      {location !== "/chat" && <AIDEAssistant />}
+      {/* Global Cmd-K command palette. Navigate, create, or ask AIDE. */}
+      <CommandPalette />
+      <KeyboardCheatSheet />
     </div>
   );
 }
@@ -324,6 +336,7 @@ function Router() {
           <Route path="/chat"><Chat /></Route>
           <Route path="/operations"><Operations /></Route>
           <Route path="/analytics"><Analytics /></Route>
+          <Route path="/metrics"><Metrics /></Route>
           <Route path="/schedule"><Schedule /></Route>
           <Route path="/jobs"><Jobs /></Route>
           <Route path="/jobs/:id"><JobDetail /></Route>

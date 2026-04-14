@@ -387,4 +387,35 @@ export const FIP_DDL_STATEMENTS: string[] = [
   `CREATE INDEX IF NOT EXISTS fip_audit_name_idx ON fip_audit_runs (audit_name)`,
   `CREATE INDEX IF NOT EXISTS fip_audit_passed_idx ON fip_audit_runs (passed)`,
   `CREATE INDEX IF NOT EXISTS fip_audit_started_idx ON fip_audit_runs (started_at)`,
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FIP-R1 — Detector type reference library
+  // ─────────────────────────────────────────────────────────────────────────
+  `CREATE TABLE IF NOT EXISTS fip_detector_types (
+    id text PRIMARY KEY,
+    slug text NOT NULL UNIQUE,
+    name text NOT NULL,
+    category text NOT NULL,
+    summary text NOT NULL,
+    operating_principle text NOT NULL,
+    sensing_technology text NOT NULL,
+    typical_applications jsonb NOT NULL,
+    unsuitable_applications jsonb NOT NULL,
+    installation_requirements text NOT NULL,
+    failure_modes jsonb NOT NULL,
+    test_procedure text NOT NULL,
+    maintenance text NOT NULL,
+    standards_refs jsonb NOT NULL,
+    example_models jsonb NOT NULL,
+    life_span_years integer,
+    cost_band text,
+    addressable boolean,
+    hero_image text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone
+  )`,
+  `CREATE INDEX IF NOT EXISTS fip_detector_types_slug_idx ON fip_detector_types (slug)`,
+  `CREATE INDEX IF NOT EXISTS fip_detector_types_category_idx ON fip_detector_types (category)`,
+  `CREATE INDEX IF NOT EXISTS fip_detector_types_deleted_idx ON fip_detector_types (deleted_at)`,
 ];

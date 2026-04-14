@@ -19,6 +19,7 @@ import {
   fipProductFamilies,
   fipModels,
   fipComponents,
+  fipDetectorTypes,
   fipDocuments,
   fipDocumentVersions,
   fipDocumentSections,
@@ -36,7 +37,7 @@ import {
   fipAuditRuns,
 } from "@workspace/db";
 import { composeAnswer, type FaultLike, type GenerationMode } from "../lib/fip/retrieval";
-import { getIdentifier } from "../lib/fip/identification";
+import { getIdentifier, getIdentifierAsync } from "../lib/fip/identification";
 import { buildEstimate, buildEscalationPack } from "../lib/fip/estimation";
 import { parseBinaryInput, sha256 } from "../lib/fip/storage";
 import { runAllAudits, type AuditContext } from "../lib/fip/audits";
@@ -184,6 +185,42 @@ router.post("/fip/components", async (req, res, next) => {
       partNumber: partNumber ?? null, description: description ?? null, specs: specs ?? null,
     }).returning();
     res.status(201).json(serializeDates(row));
+  } catch (err) { next(err); }
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// Detector type reference library (Pass FIP-R1)
+// ───────────────────────────────────────────────────────────────────────────
+
+router.get("/fip/detector-types", async (req, res, next) => {
+  if (!gate(res)) return;
+  try {
+    const { category, search } = req.query as Record<string, string | undefined>;
+    const conds: any[] = [isNull(fipDetectorTypes.deletedAt)];
+    if (category) conds.push(eq(fipDetectorTypes.category, category));
+    const rows = await db.select().from(fipDetectorTypes).where(and(...conds)).orderBy(fipDetectorTypes.name);
+    const filtered = search
+      ? rows.filter((r) => {
+          const q = search.toLowerCase();
+          return (
+            r.name.toLowerCase().includes(q) ||
+            r.summary.toLowerCase().includes(q) ||
+            r.sensingTechnology.toLowerCase().includes(q) ||
+            r.category.toLowerCase().includes(q)
+          );
+        })
+      : rows;
+    res.json(filtered.map(serializeDates));
+  } catch (err) { next(err); }
+});
+
+router.get("/fip/detector-types/:slug", async (req, res, next) => {
+  if (!gate(res)) return;
+  try {
+    const [row] = await db.select().from(fipDetectorTypes)
+      .where(and(isNull(fipDetectorTypes.deletedAt), eq(fipDetectorTypes.slug, req.params.slug)));
+    if (!row) { res.status(404).json({ error: "Detector type not found" }); return; }
+    res.json(serializeDates(row));
   } catch (err) { next(err); }
 });
 
@@ -434,7 +471,7 @@ router.post("/fip/sessions/:sessionId/images/:imageId/identify", async (req, res
     const [image] = await db.select().from(fipSessionImages)
       .where(eq(fipSessionImages.id, req.params.imageId));
     if (!image) { res.status(404).json({ error: "image not found" }); return; }
-    const identifier = getIdentifier();
+    const identifier = await getIdentifierAsync();
     const result = await identifier.identify({
       imageId: image.id,
       sessionId: image.sessionId,

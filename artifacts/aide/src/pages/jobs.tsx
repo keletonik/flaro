@@ -204,7 +204,13 @@ export default function Jobs() {
   const { toast } = useToast();
 
   const [filterPriority, setFilterPriority] = useState<Set<string>>(new Set());
-  const [filterStatus, setFilterStatus] = useState<Set<string>>(new Set());
+  // Honour ?status=<x> so drill-throughs from /dashboard KPI cards
+  // (e.g. "Active Jobs" -> /jobs?status=Open) pre-apply the filter.
+  const [filterStatus, setFilterStatus] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    const s = new URLSearchParams(window.location.search).get("status");
+    return s ? new Set([s]) : new Set();
+  });
   const [filterTech, setFilterTech] = useState<Set<string>>(new Set());
   const [filterClient, setFilterClient] = useState<Set<string>>(new Set());
 

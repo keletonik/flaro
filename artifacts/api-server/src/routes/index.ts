@@ -23,8 +23,10 @@ import chatHistoryRouter from "./chat-history";
 import authRouter from "./auth";
 import uptickRouter from "./uptick";
 import fipRouter from "./fip";
+import fipAssistantRouter from "./fip-assistant";
 import chatAgentRouter from "./chat-agent";
 import estimatesRouter from "./estimates";
+import metricsRouter from "./metrics";
 import diagRouter from "./diag";
 
 const router: IRouter = Router();
@@ -53,8 +55,10 @@ router.use(chatHistoryRouter);
 router.use(authRouter);
 router.use(uptickRouter);
 router.use(fipRouter);
+router.use(fipAssistantRouter);
 router.use(chatAgentRouter);
 router.use(estimatesRouter);
+router.use(metricsRouter);
 router.use(diagRouter);
 
 export default router;

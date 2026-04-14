@@ -19,3 +19,4 @@ export * from "./users";
 export * from "./sessions";
 export * from "./uptick";
 export * from "./fip";
+export * from "./estimates";

@@ -164,7 +164,13 @@ router.post("/chat/contextual", async (req, res, next) => {
 
     let fullResponse = "";
     let clientDisconnected = false;
-    req.on("close", () => { clientDisconnected = true; });
+    // SSE heartbeat — see Pass 5 §3.3.
+    const heartbeat = setInterval(() => {
+      if (res.writableEnded) return;
+      try { res.write(`: heartbeat ${Date.now()}\n\n`); } catch { /* dead */ }
+    }, 15_000);
+    req.on("close", () => { clientDisconnected = true; clearInterval(heartbeat); });
+    res.on("close", () => clearInterval(heartbeat));
 
     try {
       const stream = anthropic.messages.stream({

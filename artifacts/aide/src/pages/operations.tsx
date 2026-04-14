@@ -349,11 +349,35 @@ function SummaryBar({ data, tab }: { data: any[]; tab: TabKey }) {
   );
 }
 
+/**
+ * Parse the current window.location.search on mount so that a
+ * drill-through from the Dashboard KPI cards (and soon every other
+ * surface that deep-links into /operations) can pre-apply the
+ * tab and status filter. Query params honoured:
+ *
+ *   ?tab=wip|quotes|defects|invoices
+ *   ?status=<any status string>
+ *
+ * Returns safe defaults if anything is missing or unknown.
+ */
+function readInitialTabAndStatus(): { tab: TabKey; status: string } {
+  if (typeof window === "undefined") return { tab: "wip", status: "" };
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get("tab");
+  const status = params.get("status") ?? "";
+  const valid: TabKey[] = ["wip", "quotes", "defects", "invoices"];
+  return {
+    tab: valid.includes(tab as TabKey) ? (tab as TabKey) : "wip",
+    status,
+  };
+}
+
 export default function Operations() {
-  const [activeTab, setActiveTab] = useState<TabKey>("wip");
+  const initial = readInitialTabAndStatus();
+  const [activeTab, setActiveTab] = useState<TabKey>(initial.tab);
   const [data, setData] = useState<Record<TabKey, any[]>>({ wip: [], quotes: [], defects: [], invoices: [] });
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(initial.status);
   const [importOpen, setImportOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

@@ -19,73 +19,9 @@ import { Router } from "express";
 import { randomUUID } from "crypto";
 import { pool } from "@workspace/db";
 import { broadcastEvent } from "../lib/events";
+import { toNumber as n, computeLineFields, recomputeEstimateTotals } from "../lib/estimate-totals";
 
 const router = Router();
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-function n(v: any, fallback = 0): number {
-  const x = typeof v === "number" ? v : parseFloat(String(v ?? ""));
-  return Number.isFinite(x) ? x : fallback;
-}
-
-/**
- * Recompute every derived number on a line based on cost_price, markup_pct
- * and quantity. Returns the values that should be written to the row.
- */
-function computeLineFields(
-  costPrice: number,
-  markupPct: number,
-  quantity: number,
-): {
-  sellPrice: number;
-  lineCost: number;
-  lineSell: number;
-  lineMargin: number;
-} {
-  const sellPrice = Math.round(costPrice * (1 + markupPct / 100) * 100) / 100;
-  const lineCost = Math.round(costPrice * quantity * 100) / 100;
-  const lineSell = Math.round(sellPrice * quantity * 100) / 100;
-  const lineMargin = Math.round((lineSell - lineCost) * 100) / 100;
-  return { sellPrice, lineCost, lineSell, lineMargin };
-}
-
-async function recomputeEstimateTotals(
-  client: any,
-  estimateId: string,
-): Promise<void> {
-  const header = await client.query(
-    "SELECT gst_rate FROM estimates WHERE id = $1",
-    [estimateId],
-  );
-  if (header.rows.length === 0) return;
-  const gstRate = n(header.rows[0].gst_rate, 10);
-
-  const sums = await client.query(
-    `SELECT
-       COALESCE(SUM(line_cost), 0)   AS subtotal_cost,
-       COALESCE(SUM(line_sell), 0)   AS subtotal_sell,
-       COALESCE(SUM(line_margin), 0) AS margin_total
-     FROM estimate_lines
-     WHERE estimate_id = $1 AND deleted_at IS NULL`,
-    [estimateId],
-  );
-  const subtotalCost = n(sums.rows[0].subtotal_cost);
-  const subtotalSell = n(sums.rows[0].subtotal_sell);
-  const marginTotal = n(sums.rows[0].margin_total);
-  const gstTotal = Math.round(subtotalSell * (gstRate / 100) * 100) / 100;
-  const grandTotal = Math.round((subtotalSell + gstTotal) * 100) / 100;
-
-  await client.query(
-    `UPDATE estimates
-     SET subtotal_cost = $1, subtotal_sell = $2, margin_total = $3,
-         gst_total = $4, grand_total = $5, updated_at = now()
-     WHERE id = $6`,
-    [subtotalCost, subtotalSell, marginTotal, gstTotal, grandTotal, estimateId],
-  );
-}
 
 async function nextEstimateNumber(client: any): Promise<string> {
   const row = await client.query(

@@ -850,5 +850,57 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$$",
     addressable: false,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 16. SOUNDER / STROBE NOTIFICATION APPLIANCE
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "sounder-strobe",
+    name: "Sounder / Strobe Notification Appliance",
+    category: "smoke",
+    summary:
+      "Audible and visual alarm devices — horn, bell, voice sounder, or combined sounder/strobe — that alert occupants to evacuate. Not a detector technically, but a mandatory part of every FIP system under AS 1670.4.",
+    operatingPrinciple:
+      "A piezoelectric or electromagnetic transducer produces the audible alarm; a xenon flash or high-brightness LED produces the visual alarm. On addressable loops, each sounder has its own address and the panel can command individual devices or zones. Voice sounders (pre-recorded and live) support tiered evacuation messaging. Modern sounders report their own output level and fault status back to the panel via the loop protocol.",
+    sensingTechnology:
+      "Not a sensor — an actuator. Key specs: sound output at 1 m (typically 100–115 dBA), tone pattern (temporal-3 per ISO 8201 is the Australian default), strobe flash rate (1 Hz), and strobe intensity (15 cd or 75 cd candela). Combined devices (addressable loop-powered) draw between 5 mA and 50 mA per device — loop current budget is a critical design input.",
+    typicalApplications: [
+      "Every fire compartment throughout a building (AS 1670.4 Clause 3.10 — sound pressure levels)",
+      "Corridors, lobbies, stairwells, sleeping areas",
+      "Toilets and plant rooms — single-occupant spaces without sight line to a strobe need a sounder",
+      "Hearing-impaired accommodation — strobe visual alarms are mandatory in sleeping rooms of hotels / aged care under AS 1670.4 and DDA",
+    ],
+    unsuitableApplications: [
+      "Not applicable — every fire-rated building requires notification; the question is ONLY what type and how many",
+    ],
+    installationRequirements:
+      "AS 1670.4 governs placement and output: 65 dBA minimum at every point in the protected space, 75 dBA in sleeping spaces at the pillow position (measured with the sounder in alarm, doors closed). Mount sounders 2.3 m above floor or 150 mm below ceiling, whichever is lower. Strobes in every room > 10 m² and every corridor. Strobe intensity selected per the largest horizontal coverage dimension — AS 1670.4 Table 3.12 maps candela to room dimension. Loop current budget must include every sounder at its worst-case current at the worst-case lowest loop voltage (typically 20 V at end of loop with maximum cable resistance). Use sounder isolators to protect against short-circuit faults taking out the whole loop.",
+    failureModes: [
+      { mode: "Loop current overload", symptom: "Panel reports loop overcurrent fault when alarm sounds", cause: "Sum of sounder draws exceeds loop supply capacity", action: "Redistribute sounders across loops or use a dedicated sounder circuit with its own supply." },
+      { mode: "Silicone capsule fatigue", symptom: "Reduced sound output over years", cause: "Piezoelectric element aging", action: "Replace device on manufacturer service life (10 years)." },
+      { mode: "Cable resistance voltage drop", symptom: "Sounders at the end of the loop fail to reach rated output", cause: "Undersized cable over long loop runs", action: "Re-measure cable resistance at commissioning; upsize cable; add a booster PSU mid-loop if needed." },
+      { mode: "Xenon flash tube failure", symptom: "Strobe not flashing during test", cause: "Tube end-of-life", action: "Replace device — flash tubes are not field-serviceable on modern sealed units." },
+    ],
+    testProcedure:
+      "AS 1851 Section 6.4 — alarm every sounder and measure the sound pressure level with a Class 1 sound meter at the worst-case listening point (typically the farthest pillow from the loudest sounder). Must meet 65 dBA / 75 dBA in sleeping areas. Verify every strobe flashes at 1 Hz. Annual end-to-end evacuation tone test with timing.",
+    maintenance:
+      "6-monthly function test on every sounder and strobe. Annual full SPL survey if the building layout has changed or occupancy has increased. Replace per 10-year service life.",
+    standardsRefs: [
+      { code: "AS 1670.4", clause: "3.10", note: "Sound pressure requirements at every point in the protected space" },
+      { code: "AS 1670.4", clause: "3.12", note: "Strobe intensity vs room dimension" },
+      { code: "AS 7240.3", note: "Audible alarm devices — product performance standard" },
+      { code: "AS 7240.23", note: "Visual alarm devices — product performance standard" },
+      { code: "ISO 8201", note: "Temporal-3 alarm tone pattern — international convention for fire" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Loop-Powered Sounder", partNumber: "55000-005APO", notes: "Addressable sounder, loop-powered, 100 dBA" },
+      { manufacturer: "Hochiki", model: "YBO-BSB2 Base Sounder", partNumber: "YBO-BSB2", notes: "Detector-base sounder, 95 dBA" },
+      { manufacturer: "System Sensor", model: "SpectrAlert Advance", partNumber: "SRL", notes: "Speaker/strobe combination" },
+      { manufacturer: "Wheelock", model: "NS-24MCW", notes: "High-intensity notification appliance, strobe candela selectable" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$",
+    addressable: true,
+  },
 ];
 

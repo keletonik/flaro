@@ -1,7 +1,9 @@
+import { randomUUID } from "crypto";
 import { pool } from "@workspace/db";
 import { logger } from "./lib/logger";
 import { FIP_DDL_STATEMENTS } from "./seed-fip-ddl";
 import fipData from "./seed-fip-data.json";
+import { DETECTOR_TYPE_SEED } from "./lib/fip/detector-types-seed";
 
 /**
  * FIP / VESDA technical knowledge bootstrap.
@@ -60,6 +62,7 @@ export async function seedFipKnowledgeBase(): Promise<void> {
     await seedDocumentVersions(client, documentIdMap, locationIdMap);
     await seedStandards(client);
     await seedAuditRuns(client);
+    await seedDetectorTypes(client);
 
     logger.info("FIP knowledge base seed complete");
   } catch (err) {
@@ -349,4 +352,71 @@ async function seedAuditRuns(client: any): Promise<void> {
     inserted++;
   }
   logger.info({ table: "fip_audit_runs", inserted }, "fip seed");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Detector type reference library — dedup by slug.
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedDetectorTypes(client: any): Promise<void> {
+  let inserted = 0;
+  let updated = 0;
+  for (const d of DETECTOR_TYPE_SEED) {
+    const existing = await client.query(
+      "SELECT id FROM fip_detector_types WHERE slug = $1 LIMIT 1",
+      [d.slug],
+    );
+    if (existing.rows.length > 0) {
+      // Re-write technical content on every boot so edits to the TS seed
+      // land without a destructive migration. Never touches created_at.
+      await client.query(
+        `UPDATE fip_detector_types SET
+           name = $1, category = $2, summary = $3,
+           operating_principle = $4, sensing_technology = $5,
+           typical_applications = $6, unsuitable_applications = $7,
+           installation_requirements = $8, failure_modes = $9,
+           test_procedure = $10, maintenance = $11,
+           standards_refs = $12, example_models = $13,
+           life_span_years = $14, cost_band = $15, addressable = $16,
+           updated_at = now()
+         WHERE slug = $17`,
+        [
+          d.name, d.category, d.summary,
+          d.operatingPrinciple, d.sensingTechnology,
+          JSON.stringify(d.typicalApplications),
+          JSON.stringify(d.unsuitableApplications),
+          d.installationRequirements,
+          JSON.stringify(d.failureModes),
+          d.testProcedure, d.maintenance,
+          JSON.stringify(d.standardsRefs),
+          JSON.stringify(d.exampleModels),
+          d.lifeSpanYears, d.costBand, d.addressable,
+          d.slug,
+        ],
+      );
+      updated++;
+      continue;
+    }
+    await client.query(
+      `INSERT INTO fip_detector_types
+       (id, slug, name, category, summary, operating_principle, sensing_technology,
+        typical_applications, unsuitable_applications, installation_requirements,
+        failure_modes, test_procedure, maintenance, standards_refs, example_models,
+        life_span_years, cost_band, addressable)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+      [
+        randomUUID(), d.slug, d.name, d.category, d.summary,
+        d.operatingPrinciple, d.sensingTechnology,
+        JSON.stringify(d.typicalApplications),
+        JSON.stringify(d.unsuitableApplications),
+        d.installationRequirements,
+        JSON.stringify(d.failureModes),
+        d.testProcedure, d.maintenance,
+        JSON.stringify(d.standardsRefs),
+        JSON.stringify(d.exampleModels),
+        d.lifeSpanYears, d.costBand, d.addressable,
+      ],
+    );
+    inserted++;
+  }
+  logger.info({ table: "fip_detector_types", inserted, updated }, "fip seed");
 }

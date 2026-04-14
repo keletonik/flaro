@@ -23,6 +23,83 @@ router.get("/diag/perf", (_req, res) => {
   res.json({ ok: true, now: new Date().toISOString(), ...getPerfStats() });
 });
 
+/**
+ * GET /api/diag/pa — PA surface observability.
+ *
+ * Reminder state distribution, recent PA-tool activity, and the last
+ * 10 assistant tool calls tagged as PA-driven. Whitelisted alongside
+ * the other diag probes so it's reachable without auth.
+ */
+router.get("/diag/pa", async (_req, res, next) => {
+  try {
+    const { db } = await import("@workspace/db");
+    const { paReminders } = await import("@workspace/db");
+    const { and, count, eq, isNull, lte, gte, sql } = await import("drizzle-orm");
+    const now = new Date();
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const [statusRows, dueCount, completed24h, recent] = await Promise.all([
+      db
+        .select({ status: paReminders.status, n: count() })
+        .from(paReminders)
+        .where(isNull(paReminders.deletedAt))
+        .groupBy(paReminders.status),
+      db
+        .select({ n: count() })
+        .from(paReminders)
+        .where(
+          and(
+            isNull(paReminders.deletedAt),
+            eq(paReminders.status, "pending" as any),
+            lte(paReminders.remindAt, now),
+          ),
+        ),
+      db
+        .select({ n: count() })
+        .from(paReminders)
+        .where(
+          and(
+            isNull(paReminders.deletedAt),
+            eq(paReminders.status, "completed" as any),
+            gte(paReminders.completedAt, oneDayAgo),
+          ),
+        ),
+      db
+        .select()
+        .from(paReminders)
+        .where(isNull(paReminders.deletedAt))
+        .orderBy(sql`updated_at desc`)
+        .limit(10),
+    ]);
+
+    // Recent PA tool calls (reminder_*) from the observability table.
+    const toolCalls = await getRecentToolCalls(20);
+    const paToolCalls = toolCalls.filter((t: any) =>
+      /^reminder_/.test(String(t.tool_name ?? t.toolName ?? "")),
+    );
+
+    res.json({
+      ok: true,
+      now: now.toISOString(),
+      reminders: {
+        byStatus: Object.fromEntries(statusRows.map((r) => [r.status, Number(r.n)])),
+        dueNow: Number(dueCount[0]?.n ?? 0),
+        completedLast24h: Number(completed24h[0]?.n ?? 0),
+        recent: recent.map((r) => ({
+          id: r.id,
+          title: r.title,
+          status: r.status,
+          remindAt: r.remindAt.toISOString(),
+          updatedAt: r.updatedAt.toISOString(),
+        })),
+      },
+      recentToolCalls: paToolCalls.slice(0, 10),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/diag/agent", async (_req, res, next) => {
   try {
     const [recent, stats] = await Promise.all([

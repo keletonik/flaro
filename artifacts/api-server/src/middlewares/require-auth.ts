@@ -22,6 +22,7 @@ const ALWAYS_PUBLIC = new Set<string>([
   "/diag",
   "/diag/agent",
   "/diag/perf",
+  "/diag/pa",
   // Status probes — read-only, rendered on page load, never carry a
   // session cookie on mobile cold-start. Whitelisted so a missing
   // Bearer token can't flip a feature page into "disabled" state.

@@ -234,5 +234,77 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
       "ES Series panels are LEGACY in Australia — new installs are rare. Service mainly involves replacing MAPNET II sensors with IDNet equivalents. Walk-test mode is menu-driven; carry the ES Panel Programmer USB stick for any non-trivial service.",
     typicalPriceBand: "$$$",
   },
+
+  // ─── Bosch ─────────────────────────────────────────────────────────
+  {
+    slug: "bosch-fpa-1200",
+    maxLoops: 4,
+    devicesPerLoop: 254,
+    loopProtocol: "Bosch LSN (Local SecurityNet)",
+    networkCapable: true,
+    maxNetworkedPanels: 32,
+    batteryStandbyAh: 24,
+    batteryAlarmAh: 24,
+    recommendedBatterySize: "2 × 12V 24Ah SLA",
+    configOptions: [
+      { label: "Programming tool", value: "FSP-5000-RPS (RPS software)" },
+      { label: "Loops", value: "Up to 4 × LSN modules, 254 devices each" },
+      { label: "Zones", value: "Up to 500 software zones" },
+      { label: "Sounder circuits", value: "LSN sounder modules preferred over NACs" },
+      { label: "Network", value: "Ethernet panel network up to 32 nodes" },
+    ],
+    approvals: ["EN 54 + ActivFire listed"],
+    commissioningNotes:
+      "Bosch FPA-1200 auto-learns LSN devices but the topology matters — LSN loops support both Class A ring and Class B stubs. The panel differentiates LSN improved (longer cable) vs LSN classic; don't mix them on the same loop.",
+    typicalPriceBand: "$$",
+  },
+
+  // ─── Hochiki ───────────────────────────────────────────────────────
+  {
+    slug: "hochiki-latitude-l32",
+    maxLoops: 2,
+    devicesPerLoop: 240,
+    loopProtocol: "Hochiki ESP (Enhanced Systems Protocol)",
+    networkCapable: true,
+    maxNetworkedPanels: 32,
+    batteryStandbyAh: 17,
+    batteryAlarmAh: 17,
+    recommendedBatterySize: "2 × 12V 17Ah SLA",
+    configOptions: [
+      { label: "Programming tool", value: "Latitude PC Tool (USB)" },
+      { label: "Loops", value: "Up to 2 × ESP loops" },
+      { label: "Zones", value: "Up to 64 software zones" },
+      { label: "Sounder circuits", value: "2 supervised NACs + ESP sounder bases" },
+      { label: "Network", value: "Latitude Net up to 32 panels" },
+    ],
+    approvals: ["ActivFire scheme", "EN 54 listed"],
+    commissioningNotes:
+      "ESP protocol devices self-identify on the loop, so auto-learn is reliable. Mixing ESP with older Hochiki ARC devices requires a protocol converter — the panel will fault out if it sees ARC responses on an ESP loop.",
+    typicalPriceBand: "$$",
+  },
+
+  // ─── Honeywell ─────────────────────────────────────────────────────
+  {
+    slug: "honeywell-morley-dxc",
+    maxLoops: 4,
+    devicesPerLoop: 250,
+    loopProtocol: "Apollo XP95 / Discovery / CoreProtocol",
+    networkCapable: true,
+    maxNetworkedPanels: 32,
+    batteryStandbyAh: 38,
+    batteryAlarmAh: 38,
+    recommendedBatterySize: "2 × 12V 38Ah SLA",
+    configOptions: [
+      { label: "Programming tool", value: "Morley Loop Explorer / DXConfig" },
+      { label: "Loops", value: "Up to 4 loop drivers, supports Apollo + Core" },
+      { label: "Zones", value: "Up to 300 software zones" },
+      { label: "Sounder circuits", value: "4 NACs, expandable to 16 via modules" },
+      { label: "Network", value: "Morley Net RS485 peer network" },
+    ],
+    approvals: ["ActivFire scheme", "EN 54 listed"],
+    commissioningNotes:
+      "DX Connexion supports mixed-protocol loops (Apollo + Morley CoreProtocol) but each loop must be set to ONE protocol. Device-level LED indicators require the Enhanced Feature licence file — load it before device auto-learn.",
+    typicalPriceBand: "$$$",
+  },
 ];
 

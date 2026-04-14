@@ -798,5 +798,57 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 15. SPARK / EMBER DETECTOR (IR)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "spark-ember-detector",
+    name: "Spark / Ember Detector",
+    category: "flame",
+    summary:
+      "High-speed infrared detector installed in pneumatic conveying ducts and dust-handling systems. Detects glowing embers within milliseconds and triggers water or inert-gas suppression before the ember reaches a silo or filter.",
+    operatingPrinciple:
+      "A single-wavelength or multi-wavelength IR sensor watches a short section of duct, looking for the characteristic radiation signature of a glowing ember (a small hot body radiating at peak black-body temperature around 600–900 °C). Response time is extremely fast (typically < 300 milliseconds) because an ember moving at 20 m/s in a conveying duct gives you < 1 second to react before it enters a filter bag-house or a wood silo, where it would ignite the stored dust.",
+    sensingTechnology:
+      "Broadband or selective IR photodiode with flicker discrimination. Unlike a flame detector, the spark detector is optimised for SMALL heat signatures at HIGH speed — typical sensitivity is a 1 mm particle at 800 °C at 0.5 m. Two-channel systems (visible red + near-IR) reject daylight and reflected heat from hot but non-burning surfaces. The detector controls a suppression zone typically via a fast water mist nozzle or a CO₂ dump upstream of the silo.",
+    typicalApplications: [
+      "Woodworking dust collection systems — sanders, routers, planers",
+      "Grain silos and bulk conveying systems",
+      "Biomass fuel plants and pellet manufacturing",
+      "Recycling plants — paper, cardboard, PET",
+      "Textile lint collection in commercial laundries",
+      "Metal powder handling — the ignition energy for fine metals is extremely low",
+    ],
+    unsuitableApplications: [
+      "Any non-pneumatic static space — needs moving air to transport the ember past the detector window",
+      "Ducts with large viewing windows — sensitivity is inverse to the square of distance, so big ducts need multiple detectors",
+      "Processes with legitimate hot-surface glow (e.g. near a kiln) without multi-channel discrimination",
+    ],
+    installationRequirements:
+      "Mount the detector through the duct wall so the sensor head looks directly into the airstream, with the viewing window flush and protected by a purge air curtain to prevent dust fouling. The suppression nozzle must be a specified distance downstream — far enough that the detection + valve + spray time gives a total reaction of < 300 ms, and not so far that the ember reaches a silo first. Every installation needs a detailed fire engineering assessment — this is a specialist system, not a catalogue install. Compliance is typically to VDS 2106 (German) or FM 6310 (US) rather than an Australian domestic standard.",
+    failureModes: [
+      { mode: "Purge air failure", symptom: "Viewing window fouls rapidly; detection self-test fault", cause: "Purge air compressor fault or line blockage", action: "Restore purge air immediately — the process should shut down until fixed." },
+      { mode: "Suppression nozzle blockage", symptom: "Detector reports an event but downstream temperature spikes", cause: "Nozzle clogged with sediment or calcium", action: "Flush nozzles at every service; maintain water quality." },
+      { mode: "False positive on grinding", symptom: "Suppression activates during normal metal grinding operations", cause: "Grinding sparks are legitimate non-fire", action: "Use multi-wavelength detection with ember-specific algorithm; configure a process interlock to mask during authorised grinding." },
+    ],
+    testProcedure:
+      "Site-specific commissioning test with a certified calibrated heat source — typically an incandescent lamp of known temperature passed through the duct at conveying speed. Confirm detection, suppression activation, and total reaction time. Annual retest with the same source.",
+    maintenance:
+      "Monthly purge air and window check, quarterly detection + suppression function test, annual full calibration. Spark detection systems require specialist service technicians certified by the vendor.",
+    standardsRefs: [
+      { code: "VDS 2106", note: "German spark detection standard commonly referenced in Australian projects" },
+      { code: "FM 6310", note: "Factory Mutual approval standard for spark detection systems" },
+      { code: "AS/NZS 4745", note: "Dust explosion protection — where spark detection forms part of the protection strategy" },
+    ],
+    exampleModels: [
+      { manufacturer: "Fagus GreCon", model: "ROMO", notes: "Market-leading woodworking dust spark detection, German-engineered" },
+      { manufacturer: "Firefly", model: "Fast Spark Detector", notes: "Multi-wavelength with dust discrimination" },
+      { manufacturer: "Sorex", model: "ember detection", notes: "European biomass plant spark detection" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$$",
+    addressable: false,
+  },
 ];
 

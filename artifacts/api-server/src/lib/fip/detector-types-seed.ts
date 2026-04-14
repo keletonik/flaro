@@ -267,5 +267,55 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 5. FIXED-TEMPERATURE HEAT DETECTOR (high-temperature variants)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "fixed-temperature-heat",
+    name: "Fixed-Temperature Heat Detector",
+    category: "heat",
+    summary:
+      "Single-threshold heat detector — alarms only when ambient exceeds a set temperature (Class A2 58 °C through Class G 150 °C). Use where rate-of-rise false-alarms on legitimate temperature swings.",
+    operatingPrinciple:
+      "A bimetallic element or thermistor is calibrated to close a contact (conventional) or cross an analogue threshold (addressable) at a fixed temperature. There is no rate-of-rise channel. The detector alarms when the air temperature at the head reaches the rating regardless of how fast it got there.",
+    sensingTechnology:
+      "Conventional (two-wire) fixed-temperature detectors use a fusible alloy or bimetallic disc that physically deforms at the rating point, closing a pair of contacts. Addressable fixed heads use a thermistor reporting an analogue value, with the panel applying the fixed threshold in firmware. Common AS 7240.5 classifications: A2 (58 °C), B (75 °C), C (90 °C), D (105 °C), E (120 °C), F (135 °C), G (150 °C).",
+    typicalApplications: [
+      "Boiler rooms with high ambient temperature — use Class C or D so normal operating temperature does not trip the head",
+      "Kitchens over deep-fryers and chargrills (Class B/C)",
+      "Attics and roof voids in hot climates",
+      "Industrial drying rooms and ovens",
+      "Commercial laundry press areas",
+    ],
+    unsuitableApplications: [
+      "Any space where rapid heat-rate detection is needed — rate-of-rise is faster",
+      "Sleeping areas — smoke detection is mandatory",
+      "Low-ceiling offices — a standard A1R is more appropriate",
+    ],
+    installationRequirements:
+      "Same AS 1670.1 Clause 3.23 spacing as rate-of-rise heat. Pick the rating class per AS 7240.5 Table 1 so that the maximum static ambient temperature of the space is at least 20 °C below the detector's rating — otherwise you'll get nuisance alarms on hot days.",
+    failureModes: [
+      { mode: "Fusible element fatigue", symptom: "Contact fails closed (false alarm) after many heat-cycle events", cause: "Repeated thermal cycling weakens the bimetallic element", action: "Replace head — the element is not resettable once alarmed." },
+      { mode: "Under-rated for the space", symptom: "Chronic nuisance alarms during hot weather", cause: "Wrong classification picked at design time", action: "Upgrade to the next class (A2 → B, or B → C)." },
+    ],
+    testProcedure:
+      "Certified heat gun at the rated temperature per AS 1851 Section 6.4. Conventional fixed-temperature heads CANNOT be reset after a real alarm — a successful field test at the rated temperature is destructive. Test only addressable or resettable types this way.",
+    maintenance:
+      "6-monthly visual, 12-monthly loop communication test. Functional heat test only on addressable / resettable types. Track installation date and replace at manufacturer's service life.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.23", note: "Spacing and permitted use" },
+      { code: "AS 7240.5", note: "Classification A1 through G and associated maximum ambient temperatures" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service — test only resettable types" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "Series 65 Heat 90 °C", partNumber: "55000-125APO", notes: "Conventional Class C fixed" },
+      { manufacturer: "System Sensor", model: "5602", partNumber: "5602", notes: "Conventional 135 °F (57 °C) Class A2" },
+      { manufacturer: "Hochiki", model: "CDX-DIN-HT90", notes: "Conventional 90 °C Class C" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: false,
+  },
 ];
 

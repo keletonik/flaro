@@ -33,6 +33,7 @@ import {
 import AidePA from "@/components/AidePA";
 import AIDEAssistant from "@/components/AIDEAssistant";
 import CommandPalette from "@/components/CommandPalette";
+import { KeyboardCheatSheet } from "@/components/KeyboardCheatSheet";
 import { AideFavicon, AideWordmark } from "@/components/AideLogo";
 
 const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>> }>({ collapsed: false, setCollapsed: () => {} });
@@ -291,6 +292,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       {location !== "/chat" && <AIDEAssistant />}
       {/* Global Cmd-K command palette. Navigate, create, or ask AIDE. */}
       <CommandPalette />
+      <KeyboardCheatSheet />
     </div>
   );
 }

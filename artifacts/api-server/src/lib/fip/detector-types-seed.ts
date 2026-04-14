@@ -370,5 +370,57 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 7. UV/IR COMBINATION FLAME DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "uv-ir-flame",
+    name: "UV / IR Combination Flame Detector",
+    category: "flame",
+    summary:
+      "Dual-sensor flame detector combining a solar-blind UV channel with a 4.3 µm IR channel — near-instant alarm with strong false-alarm rejection via cross-confirmation.",
+    operatingPrinciple:
+      "The UV channel uses a Geiger-Müller tube or silicon carbide sensor sensitive to 185–260 nm, a band that is absorbed by the upper atmosphere and essentially solar-blind at ground level. A flame emits strongly in this band within milliseconds of ignition. The IR channel tracks the same 4.3 µm CO₂ emission and flicker signature as a single-IR detector. The detector's logic alarms only when BOTH channels confirm within a short time window (typically 1–3 seconds). Either channel alone produces a supervisory signal but not a full alarm.",
+    sensingTechnology:
+      "UV: solar-blind Geiger-Müller tube with lead shielding, discharging when a UV photon strikes the cathode. Sensitivity decreases with tube age. IR: pyroelectric sensor with flicker discrimination as per single-IR entry. Both channels feed a cross-confirmation ASIC. Response time on a standard n-heptane fire is typically 3–5 seconds at 15 m — faster than pure IR because the UV channel picks up the flame onset before the IR band builds intensity.",
+    typicalApplications: [
+      "Offshore platforms, gas compressor stations, LPG bottling plants — the combination of UV speed and IR false-alarm rejection is the industry default for hydrocarbon risk",
+      "Hangars — fast fuel fire response with welding-flash rejection (UV rejects hot metal, IR rejects arc flash)",
+      "Switchgear rooms and transformer bays",
+      "Paint spray booths and solvent storage",
+    ],
+    unsuitableApplications: [
+      "Welding and grinding areas without specific UV-rejection modes — arc flash triggers the UV channel; use triple-IR instead",
+      "Dusty environments — the UV tube window fogs faster than an IR-only window",
+      "Indoor spaces with mercury-vapour or metal-halide lighting — these lamps emit UV that can saturate the detector",
+      "High-humidity tropical outdoor without a heated window — condensation blocks both channels",
+    ],
+    installationRequirements:
+      "Same line-of-sight rules as IR flame (AS 1670.1 Clause 3.24). Mount outside the field of view of any welding, grinding, or HV arc work. UV channel has a narrower cone than IR (typically 90° vs 100°) — verify both coverage patterns against the protected area. Hazardous-area installations must use an Ex-rated housing. Never paint the viewing window.",
+    failureModes: [
+      { mode: "UV tube aging", symptom: "Slow decline in UV channel sensitivity; eventual tube failure flagged by self-test", cause: "Normal gas-discharge tube wear", action: "Replace detector or UV tube cartridge on manufacturer service life (typically 10 years)." },
+      { mode: "Welding flash false alarm", symptom: "Recurrent alarms during hot work on adjacent plant", cause: "UV channel activated by arc", action: "Fit a UV filter or switch to triple-IR technology in welding-dense areas." },
+      { mode: "Optical window fouling", symptom: "Both channel sensitivities degraded; fault flagged", cause: "Oil film, dust, or salt build-up", action: "Clean per datasheet; use neutral detergent and lint-free cloth." },
+    ],
+    testProcedure:
+      "Certified UV/IR test lamp (e.g. Det-Tronics Q90) that emits on both channels. Verify alarm at the rated distance within the manufacturer's response time. Log per-channel response; a UV-only or IR-only response indicates one channel has failed self-test.",
+    maintenance:
+      "Quarterly window inspection, 6-monthly walk-down sight-line check, 12-monthly dual-channel function test. Clean the window with IPA per the datasheet — never abrasive cleaners.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.24", note: "Flame detection siting" },
+      { code: "AS 7240.10", note: "Flame detector product standard — includes UV/IR types" },
+      { code: "IEC 60079", note: "Hazardous area certification" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service" },
+    ],
+    exampleModels: [
+      { manufacturer: "Det-Tronics", model: "U7600B UV/IR", notes: "Solar-blind UV + 4.3 µm IR, Ex-rated" },
+      { manufacturer: "Honeywell", model: "FS20X UV/IR", partNumber: "FS20X", notes: "Dual-channel with cross-confirmation" },
+      { manufacturer: "MSA General Monitors", model: "FL3110", notes: "UV/IR with continuous self-test" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$$",
+    addressable: false,
+  },
 ];
 

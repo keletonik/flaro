@@ -317,5 +317,58 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$",
     addressable: false,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 6. INFRARED (IR) FLAME DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "ir-flame",
+    name: "Infrared (IR) Flame Detector",
+    category: "flame",
+    summary:
+      "Line-of-sight optical detector responding to the 4.3 µm CO₂ emission band from hydrocarbon flames — fast, long range, but vulnerable to hot surface false alarms without discrimination.",
+    operatingPrinciple:
+      "A pyroelectric or photodiode sensor tuned to the 4.3 µm infrared band captures the flicker signature of an open flame. Flames produce a characteristic 1–12 Hz flicker from the rising hot combustion gases — the detector's signal-processing electronics look for this flicker frequency in addition to the raw IR intensity, so a static hot object (e.g. a heater) does not trigger alarm. Triple-IR (IR³) detectors add two reference bands (2.7 µm water, 3.7 µm reference) to discriminate real flames from reflected sunlight, welding flash, and hot machinery.",
+    sensingTechnology:
+      "Single-IR: one 4.3 µm pyroelectric sensor with flicker-frequency processing. Range 15–30 m to a 0.1 m² n-heptane pan fire (EN 54-10 reference). Dual-IR adds a second band to reject blackbody sources. Triple-IR (IR³) — the industry gold standard for hydrocarbon fuel storage — processes three wavelengths with a ratio algorithm that achieves 60+ metre range on the same reference fire. UV/IR detectors combine an IR channel with a UV solar-blind sensor for near-instant response on flames containing both radiation types.",
+    typicalApplications: [
+      "Fuel depots, refineries, LPG/LNG handling (AS 1670.1 Clause 3.24 — flame detection for hydrocarbon-risk spaces)",
+      "Hangars and aircraft maintenance facilities",
+      "Turbine halls and gas compressor stations",
+      "Warehouses storing combustible liquids",
+      "Transformer bays and electrical switchgear rooms",
+    ],
+    unsuitableApplications: [
+      "Spaces with frequent welding, cutting, or grinding — weld flash produces strong IR bursts that defeat single-IR discrimination",
+      "Areas with direct sunlight on reflective surfaces — use solar-blind UV/IR or triple-IR",
+      "Hidden or obstructed fire zones — line-of-sight only, no response behind columns or equipment",
+      "Cooking areas — cooking flames will trigger alarm on every shift",
+    ],
+    installationRequirements:
+      "Mount so the detector's conical field of view (typically 90–100°) covers the protected area without obstruction. Keep the viewing angle away from direct sunlight and welding bays. Confirm the maximum detection distance against the datasheet's reference fire size — most specs state range for a 0.1 m² heptane pan. Power and signal cabling MUST be fire-rated per AS 1670.1 Clause 3.25, and the detector's junction box must match the hazardous area classification (Ex rated in Zone 1/2 fuel areas).",
+    failureModes: [
+      { mode: "Dirty viewing window", symptom: "Reduced sensitivity or self-test fault", cause: "Dust, oil film, or bird droppings on the optical window", action: "Clean with isopropyl alcohol per the datasheet. Some detectors have a built-in self-cleaning test LED." },
+      { mode: "Solar false alarm", symptom: "Unexplained alarms on bright sunny days", cause: "Direct or reflected sunlight entering the field of view", action: "Reposition the detector; consider triple-IR or UV/IR upgrade." },
+      { mode: "Line-of-sight blocked", symptom: "Known fire test failed to trigger", cause: "New equipment or stock blocking the viewing cone", action: "Walk the sight line during commissioning and after any plant change." },
+    ],
+    testProcedure:
+      "Use a certified flame test lamp (e.g. Det-Tronics, Sperryn) that emits the correct IR flicker signature — do NOT use an actual lighter or gas flame indoors. The detector must alarm within the manufacturer-rated response time (typically 3–15 seconds) at the specified test distance. Log range, response time, and any self-test codes.",
+    maintenance:
+      "Quarterly viewing-window cleaning in dusty environments, 6-monthly elsewhere. 12-monthly full function test with certified lamp. Track detector service life and window replacement.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.24", note: "Flame detection siting and where it is required" },
+      { code: "AS 7240.10", note: "Flame detectors — product performance standard (aligns with EN 54-10)" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service with certified test lamp" },
+      { code: "IEC 60079", note: "Explosive-atmosphere rating for hazardous-zone installations" },
+    ],
+    exampleModels: [
+      { manufacturer: "Honeywell", model: "FS24X Triple-IR", partNumber: "FS24X", notes: "60 m range, solar-blind, hazardous area approved" },
+      { manufacturer: "Det-Tronics", model: "X3301 Multispectrum IR", notes: "Multi-spectrum flame detection" },
+      { manufacturer: "Apollo", model: "Discovery Flame", partNumber: "58000-550APO", notes: "Addressable IR flame" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$$",
+    addressable: true,
+  },
 ];
 

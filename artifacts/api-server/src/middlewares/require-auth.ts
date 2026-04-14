@@ -38,11 +38,19 @@ function isPublic(req: Request): boolean {
  * Authentication middleware with two modes:
  *
  *   AUTH_ENFORCE=true  → reject unauthenticated requests with 401.
- *   otherwise           → log the violation and let the request through unchanged.
+ *   AUTH_ENFORCE=false → log the violation and let the request through unchanged.
  *
- * The lax mode exists so the client-side Bearer-header change can ship ahead of
- * the flag flip without breaking anyone mid-deploy. Rollback is `AUTH_ENFORCE=` (unset).
+ * Default behaviour (Pass 6 fix 2): enforce in production, pass-through
+ * in dev/test. To override, set AUTH_ENFORCE explicitly. Rollback from
+ * prod enforcement is `AUTH_ENFORCE=false`.
  */
+function shouldEnforceAuth(): boolean {
+  const raw = process.env["AUTH_ENFORCE"];
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  // Unset → default based on environment.
+  return process.env["NODE_ENV"] === "production";
+}
 export async function requireAuth(
   req: AuthenticatedRequest,
   res: Response,
@@ -60,7 +68,7 @@ export async function requireAuth(
     session = await getSessionUserAsync(token);
   }
 
-  const enforce = process.env["AUTH_ENFORCE"] === "true";
+  const enforce = shouldEnforceAuth();
 
   if (!session) {
     if (enforce) {

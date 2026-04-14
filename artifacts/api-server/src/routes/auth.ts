@@ -103,11 +103,16 @@ function startSessionCleanup() {
   tick();
 }
 
-// Canonical bootstrap admin. Hardcoded so a fresh or partially-migrated
-// deploy still has a working login, even if the users table is missing
-// seed data or contains a stale row from an older legacy seed.
+// Canonical bootstrap admin.
+//
+// Username is hardcoded so a fresh or partially-migrated deploy still
+// has a working login. The PASSWORD is read from CASPER_PASSWORD env
+// so it can be rotated without a code change (Pass 6 fix 1). The
+// literal fallback is kept ONLY to preserve the operator's current
+// deploy-day unbrick path — if/when the env is set on every known
+// deploy target, the fallback should be removed.
 const CASPER_USERNAME = "casper";
-const CASPER_PASSWORD = "Ramekin881!";
+const CASPER_PASSWORD = process.env["CASPER_PASSWORD"] ?? "Ramekin881!";
 const CASPER_DISPLAY_NAME = "Casper Tavitian";
 const CASPER_EMAIL = "casper@flamesafe.com.au";
 

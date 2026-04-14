@@ -22,7 +22,8 @@ import { streamAgent, type AgentToolEvent } from "@/lib/api";
 import { PAInput } from "@/components/pa/PAInput";
 import { PAMessage, type PAMessageData, type PAToolCall } from "@/components/pa/PAMessage";
 import { PASidebar } from "@/components/pa/PASidebar";
-import { AlertCircle, Menu, X, Sparkles } from "lucide-react";
+import { PATrainingPanel } from "@/components/pa/PATrainingPanel";
+import { AlertCircle, Menu, X, Sparkles, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DATA_CHANGED_EVENT = "aide-data-changed";
@@ -59,6 +60,7 @@ export default function PAPage() {
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [trainingOpen, setTrainingOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const autoBriefDoneRef = useRef(false);
@@ -246,6 +248,15 @@ export default function PAPage() {
               <Sparkles className="w-3 h-3" />
               Brief me
             </button>
+            <button
+              type="button"
+              onClick={() => setTrainingOpen(true)}
+              className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted px-2 py-1 rounded"
+              title="PA training rules"
+            >
+              <BookOpen className="w-3 h-3" />
+              Training
+            </button>
             {messages.length > 0 && (
             <button
               type="button"
@@ -312,6 +323,8 @@ export default function PAPage() {
           </div>
         </div>
       </main>
+
+      <PATrainingPanel open={trainingOpen} onClose={() => setTrainingOpen(false)} />
     </div>
   );
 }

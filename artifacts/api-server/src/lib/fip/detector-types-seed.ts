@@ -533,5 +533,57 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 10. DUCT SMOKE DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "duct-smoke",
+    name: "Duct Smoke Detector",
+    category: "duct",
+    summary:
+      "Photoelectric smoke detector mounted inside an air-handling duct via sample tubes — detects smoke in the supply or return air stream and shuts down the HVAC per AS 1668.1 and AS 1670.1 Clause 3.27.",
+    operatingPrinciple:
+      "Two stainless-steel sampling tubes are fitted into the duct at right angles to the airflow. The upstream tube has small holes facing into the flow and captures a sample; the downstream tube has its holes facing away from the flow and creates a venturi suction. The pressure differential draws air through a chamber housing a standard photoelectric smoke head. When the head alarms, the detector trips a relay that shuts down the fan, closes motorised dampers, and reports to the FIP.",
+    sensingTechnology:
+      "The sensing element is a standard addressable or conventional photoelectric head (e.g. System Sensor 2151, Notifier FSP-851). What makes it a duct detector is the housing with the upstream/downstream pressure-differential sample tubes and the integral relay output for HVAC shutdown. Sample tubes come in standard lengths matched to the duct width. A remote test/reset station lets the operator test the detector and reset after an alarm without opening the ceiling.",
+    typicalApplications: [
+      "HVAC supply air ducts — mandatory for systems > 2000 L/s per AS 1668.1",
+      "HVAC return air ducts — detects smoke recirculating from a fire anywhere in the building",
+      "Pressurisation systems — detection in the makeup air to prevent smoke being pumped into stairwells",
+      "Smoke-control fan discharge — so a fault in the smoke-exhaust system is detected",
+    ],
+    unsuitableApplications: [
+      "Residential ducted heating/cooling under a typical scale — AS 1670.1 requires duct detection only on systems above the threshold airflow",
+      "Low-velocity displacement ventilation — airflow may be insufficient to drive the sampling tube venturi",
+      "Dust-laden return air (e.g. woodworking) — constant contamination of the optical chamber",
+    ],
+    installationRequirements:
+      "Install downstream of filters, upstream of air-handling unit branches. Mount on a straight duct run at least 6 duct-widths downstream of any bend so airflow is uniform across the sample tubes. Sample tube length MUST match duct width exactly — too short and the sample is unrepresentative, too long and the tube vibrates. Fit a remote test/reset station at an accessible location (typically 1.5 m above floor) per AS 1668.1. Verify the detector's relay wiring trips the HVAC contactor and closes the fire/smoke dampers.",
+    failureModes: [
+      { mode: "Sample tube blockage", symptom: "Detector passes function test but airflow sensor trouble", cause: "Dust accumulation in the sample tubes", action: "Remove and clean tubes; fit a differential pressure indicator to monitor continuous airflow." },
+      { mode: "Duct condensation", symptom: "Wet chamber and false alarms after HVAC shutdown", cause: "Moist air condensing on cold chamber walls", action: "Insulate duct upstream; consider a heated housing." },
+      { mode: "HVAC bypass scenario", symptom: "Smoke incident bypasses the detector because damper failed to close", cause: "Damper actuator failure or missing interlock", action: "Test damper closure at each AS 1851 service; verify interlock wiring." },
+    ],
+    testProcedure:
+      "Function test per AS 1851 Section 6.4 using the remote test station or by introducing aerosol at the upstream sample tube pickup. The detector must alarm within 30 seconds AND the fan must shut down AND the dampers must close — test the full HVAC interlock, not just the detector. Air-velocity measurement at the sample tube is required at commissioning to confirm the detector is within its rated airflow range.",
+    maintenance:
+      "6-monthly visual + interlock test, 12-monthly aerosol function test + sample tube clean + air-velocity check. The sample tube assembly accumulates dust faster than a ceiling detector and is typically the first thing to fail.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.27", note: "Duct-mounted smoke detection placement and wiring" },
+      { code: "AS 1668.1", note: "Fire and smoke control requirements for mechanical ventilation — where duct detection is mandatory" },
+      { code: "AS 7240.27", note: "Duct smoke detector product standard" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service including interlock and air-velocity verification" },
+    ],
+    exampleModels: [
+      { manufacturer: "System Sensor", model: "DNRW", partNumber: "DNRW", notes: "Watertight housing, addressable photoelectric core" },
+      { manufacturer: "Notifier", model: "NFXI-PT-D", notes: "Intelligent duct detector, FlashScan protocol" },
+      { manufacturer: "Apollo", model: "Duct Housing with XP95 Optical", partNumber: "55000-885APO", notes: "Apollo duct housing accepting XP95 detector heads" },
+      { manufacturer: "Hochiki", model: "SLR-EDH", notes: "ESP analogue addressable duct" },
+    ],
+    lifeSpanYears: 10,
+    costBand: "$$",
+    addressable: true,
+  },
 ];
 

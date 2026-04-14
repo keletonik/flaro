@@ -30,6 +30,7 @@ const SHORTCUTS: Group[] = [
       { keys: "⌘ K", label: "Open command palette" },
       { keys: "?", label: "Show this cheat sheet" },
       { keys: "g d", label: "Go to Dashboard" },
+      { keys: "g c", label: "Go to PA (voice + reminders + actions)" },
       { keys: "g o", label: "Go to Operations" },
       { keys: "g a", label: "Go to Analytics" },
       { keys: "g m", label: "Go to Metrics" },
@@ -50,11 +51,13 @@ const SHORTCUTS: Group[] = [
     ],
   },
   {
-    scope: "Chat (embedded AI)",
+    scope: "PA (voice, slash, actions)",
     shortcuts: [
       { keys: "Enter", label: "Send message" },
       { keys: "⇧ Enter", label: "New line" },
-      { keys: "Esc", label: "Close drawer (when open)" },
+      { keys: "/", label: "Open slash command menu" },
+      { keys: "hold mic", label: "Push-to-talk voice input" },
+      { keys: "Esc", label: "Close drawer / cancel voice" },
     ],
   },
 ];

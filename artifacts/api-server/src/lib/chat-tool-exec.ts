@@ -705,6 +705,141 @@ async function executeAgentToolInner(
       const { listMetrics } = await import("./metrics/registry");
       return { result: { metrics: listMetrics() } };
     }
+
+    // ─── PA reminder tools (PA rebuild phase 3) ─────────────────────────
+    case "reminder_create": {
+      const { paReminders } = await import("@workspace/db");
+      const { db } = await import("@workspace/db");
+      const when = new Date(String(input?.remindAt ?? ""));
+      if (!input?.title || Number.isNaN(when.getTime())) {
+        throw new Error("reminder_create requires title + valid ISO remindAt");
+      }
+      const [row] = await db.insert(paReminders).values({
+        id: randomUUID(),
+        title: String(input.title).slice(0, 500),
+        body: input.body ? String(input.body).slice(0, 5000) : null,
+        remindAt: when,
+        status: "pending",
+      }).returning();
+      return {
+        result: { ok: true, id: row.id, title: row.title, remindAt: row.remindAt.toISOString() },
+        uiAction: { type: "refresh" },
+      };
+    }
+    case "reminder_list": {
+      const { paReminders } = await import("@workspace/db");
+      const { db } = await import("@workspace/db");
+      const { and, eq, isNull, lte, desc } = await import("drizzle-orm");
+      const conds: any[] = [isNull(paReminders.deletedAt)];
+      const statusArg = input?.status;
+      if (statusArg === "due") {
+        conds.push(eq(paReminders.status, "pending" as any));
+        conds.push(lte(paReminders.remindAt, new Date()));
+      } else if (statusArg) {
+        conds.push(eq(paReminders.status, statusArg as any));
+      } else {
+        conds.push(eq(paReminders.status, "pending" as any));
+      }
+      const cap = Math.min(Number(input?.limit) || 20, 100);
+      const rows = await db.select().from(paReminders).where(and(...conds))
+        .orderBy(desc(paReminders.remindAt)).limit(cap);
+      return {
+        result: {
+          reminders: rows.map((r) => ({
+            id: r.id,
+            title: r.title,
+            body: r.body,
+            remindAt: r.remindAt.toISOString(),
+            status: r.status,
+          })),
+          count: rows.length,
+        },
+      };
+    }
+    case "reminder_complete": {
+      const { paReminders } = await import("@workspace/db");
+      const { db } = await import("@workspace/db");
+      const { and, eq, ilike, isNull, desc } = await import("drizzle-orm");
+      let targetId = input?.id as string | undefined;
+      if (!targetId && input?.titleMatch) {
+        const [match] = await db.select().from(paReminders)
+          .where(and(
+            isNull(paReminders.deletedAt),
+            eq(paReminders.status, "pending" as any),
+            ilike(paReminders.title, `%${String(input.titleMatch)}%`),
+          ))
+          .orderBy(desc(paReminders.remindAt))
+          .limit(1);
+        targetId = match?.id;
+      }
+      if (!targetId) throw new Error("reminder_complete needs id or titleMatch that resolves");
+      const now = new Date();
+      const [row] = await db.update(paReminders)
+        .set({ status: "completed", completedAt: now, updatedAt: now })
+        .where(and(eq(paReminders.id, targetId), isNull(paReminders.deletedAt)))
+        .returning();
+      if (!row) throw new Error(`reminder_complete: no reminder with id ${targetId}`);
+      return {
+        result: { ok: true, id: row.id, title: row.title },
+        uiAction: { type: "refresh" },
+      };
+    }
+    case "reminder_snooze": {
+      const { paReminders } = await import("@workspace/db");
+      const { db } = await import("@workspace/db");
+      const { and, eq, ilike, isNull, desc } = await import("drizzle-orm");
+      const until = new Date(String(input?.untilIso ?? ""));
+      if (Number.isNaN(until.getTime())) throw new Error("reminder_snooze requires valid untilIso");
+      let targetId = input?.id as string | undefined;
+      if (!targetId && input?.titleMatch) {
+        const [match] = await db.select().from(paReminders)
+          .where(and(
+            isNull(paReminders.deletedAt),
+            eq(paReminders.status, "pending" as any),
+            ilike(paReminders.title, `%${String(input.titleMatch)}%`),
+          ))
+          .orderBy(desc(paReminders.remindAt))
+          .limit(1);
+        targetId = match?.id;
+      }
+      if (!targetId) throw new Error("reminder_snooze needs id or titleMatch that resolves");
+      const [row] = await db.update(paReminders)
+        .set({ status: "snoozed", snoozedUntil: until, remindAt: until, updatedAt: new Date() })
+        .where(and(eq(paReminders.id, targetId), isNull(paReminders.deletedAt)))
+        .returning();
+      if (!row) throw new Error(`reminder_snooze: no reminder with id ${targetId}`);
+      return {
+        result: { ok: true, id: row.id, title: row.title, remindAt: row.remindAt.toISOString() },
+        uiAction: { type: "refresh" },
+      };
+    }
+    case "reminder_delete": {
+      const { paReminders } = await import("@workspace/db");
+      const { db } = await import("@workspace/db");
+      const { and, eq, ilike, isNull, desc } = await import("drizzle-orm");
+      let targetId = input?.id as string | undefined;
+      if (!targetId && input?.titleMatch) {
+        const [match] = await db.select().from(paReminders)
+          .where(and(
+            isNull(paReminders.deletedAt),
+            ilike(paReminders.title, `%${String(input.titleMatch)}%`),
+          ))
+          .orderBy(desc(paReminders.remindAt))
+          .limit(1);
+        targetId = match?.id;
+      }
+      if (!targetId) throw new Error("reminder_delete needs id or titleMatch that resolves");
+      const [row] = await db.update(paReminders)
+        .set({ deletedAt: new Date(), status: "cancelled" })
+        .where(and(eq(paReminders.id, targetId), isNull(paReminders.deletedAt)))
+        .returning();
+      if (!row) throw new Error(`reminder_delete: no reminder with id ${targetId}`);
+      return {
+        result: { ok: true, id: row.id, title: row.title },
+        uiAction: { type: "refresh" },
+      };
+    }
+
     case "ui_navigate":
       return { result: { ok: true, path: input?.path }, uiAction: { type: "navigate", path: input?.path } };
     case "ui_refresh":

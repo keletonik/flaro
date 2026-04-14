@@ -77,6 +77,7 @@ export default function FIPKnowledgeBase() {
   const [activeTab, setActiveTab] = useState<Tab>("detectors");
   const [selectedDetector, setSelectedDetector] = useState<DetectorType | null>(null);
   const [status, setStatus] = useState<FipStatus | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [models, setModels] = useState<FipModel[]>([]);
   const [families, setFamilies] = useState<ProductFamily[]>([]);
@@ -88,9 +89,18 @@ export default function FIPKnowledgeBase() {
 
   async function loadData() {
     setLoading(true);
+    setStatusError(null);
     try {
-      const [st, mfrs, mods, fams, stds, docs] = await Promise.all([
-        apiFetch<FipStatus>("/fip/status").catch(() => ({ enabled: false } as FipStatus)),
+      // Status is required — if it fails, surface the real error instead
+      // of silently treating it as "disabled". The four other lookups
+      // fall back to empty arrays because they're non-critical.
+      let st: FipStatus | null = null;
+      try {
+        st = await apiFetch<FipStatus>("/fip/status");
+      } catch (e: any) {
+        setStatusError(e?.message ?? "Failed to reach /fip/status");
+      }
+      const [mfrs, mods, fams, stds, docs] = await Promise.all([
         apiFetch<Manufacturer[]>("/fip/manufacturers").catch(() => []),
         apiFetch<FipModel[]>("/fip/models").catch(() => []),
         apiFetch<ProductFamily[]>("/fip/product-families").catch(() => []),
@@ -116,14 +126,26 @@ export default function FIPKnowledgeBase() {
     );
   }
 
-  if (!status?.enabled) {
+  if (statusError || !status?.enabled) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-8">
         <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 flex items-center justify-center mb-4">
           <AlertTriangle className="w-8 h-8 text-yellow-500" />
         </div>
-        <h2 className="text-lg font-semibold text-foreground mb-2">FIP Knowledge Base Disabled</h2>
-        <p className="text-muted-foreground text-sm">Set FIP_ENABLED=1 in environment to activate.</p>
+        <h2 className="text-lg font-semibold text-foreground mb-2">
+          {statusError ? "FIP status check failed" : "FIP Knowledge Base Disabled"}
+        </h2>
+        <p className="text-muted-foreground text-sm max-w-md">
+          {statusError
+            ? `Couldn't reach /api/fip/status — ${statusError}. Check the api-server logs and hit /api/diag/fip for the table counts.`
+            : "FIP_ENABLED is explicitly set to 0. Remove it from Replit Secrets (or set to anything other than '0') to activate."}
+        </p>
+        <button
+          onClick={() => loadData()}
+          className="mt-4 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90"
+        >
+          Retry
+        </button>
       </div>
     );
   }

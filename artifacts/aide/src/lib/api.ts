@@ -114,6 +114,7 @@ export function streamAgent(
   message: string,
   history: { role: string; content: string }[],
   handlers: AgentStreamHandlers,
+  attachmentIds?: string[],
 ): AbortController {
   const controller = new AbortController();
   // Pass 5 §3.4: retry initial connection up to 2 times with 1s + 3s
@@ -128,7 +129,7 @@ export function streamAgent(
       const res = await fetch(`${BASE}/chat/agent`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader() },
-        body: JSON.stringify({ section, message, history }),
+        body: JSON.stringify({ section, message, history, attachmentIds }),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -211,12 +212,13 @@ export function streamFipAssistant(
   history: { role: string; content: string }[],
   imageId: string | undefined,
   handlers: AgentStreamHandlers,
+  attachmentIds?: string[],
 ): AbortController {
   const controller = new AbortController();
   fetch(`${BASE}/fip/assistant/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({ message, history, imageId }),
+    body: JSON.stringify({ message, history, imageId, attachmentIds }),
     signal: controller.signal,
   })
     .then(async (res) => {
@@ -326,4 +328,48 @@ export function formatCurrency(n: number): string {
   if (n >= 1000000) return `$${(n / 1000000).toFixed(2)}M`;
   if (n >= 1000) return `$${(n / 1000).toFixed(1)}k`;
   return `$${n.toLocaleString()}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Attachment upload — used by every AI chat surface that accepts files.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface AttachmentMeta {
+  id: string;
+  kind: "image" | "document" | "text" | "other";
+  filename: string | null;
+  contentType: string;
+  size: number;
+  createdAt: string;
+}
+
+/** Read a File/Blob as a plain base64 string (no data URL prefix). */
+export function fileToBase64(file: File | Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(new Error("File read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Upload a file via POST /api/attachments and return its metadata. */
+export async function uploadAttachment(
+  file: File,
+  source?: string,
+): Promise<AttachmentMeta> {
+  const data = await fileToBase64(file);
+  return apiFetch<AttachmentMeta>("/attachments", {
+    method: "POST",
+    body: JSON.stringify({
+      filename: file.name,
+      contentType: file.type || "application/octet-stream",
+      data,
+      source,
+    }),
+  });
 }

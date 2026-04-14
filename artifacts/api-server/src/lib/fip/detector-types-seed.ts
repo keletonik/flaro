@@ -1055,5 +1055,59 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 20. INPUT / OUTPUT INTERFACE MODULE
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "io-module",
+    name: "Input / Output Interface Module",
+    category: "multi",
+    summary:
+      "Addressable loop device that interfaces the FIP with non-addressable field equipment — waterflow switches, tamper switches, relay outputs to HVAC, gas solenoids, and smoke dampers.",
+    operatingPrinciple:
+      "An input module monitors a contact-closure field device (NO/NC) and reports its state to the panel as a loop address. An output module accepts a panel command and drives a relay, enabling the FIP to control external equipment such as a fan shutdown contactor or a door hold-open magnet. Combined I/O modules provide both functions in one address — typical 1-in/1-out or 2-in/2-out module densities. Every input is supervised (end-of-line monitored) so cable open and short faults annunciate on the panel as trouble.",
+    sensingTechnology:
+      "Solid-state input sensing with an end-of-line resistor for line monitoring. Mechanical relay or solid-state output with contact ratings typically 30 VDC / 1 A, or 240 VAC / 5 A for heavy-duty variants. Input debounce is configurable per address to reject transient contact bounce from waterflow switches or tamper contacts. The output is supervised on addressable loops with a monitored circuit (verification that the wiring to the load is intact).",
+    typicalApplications: [
+      "Waterflow and tamper switch monitoring on sprinkler systems",
+      "HVAC fan and damper control on a fire alarm trip",
+      "Gas valve shutoff interface — FIP activates on alarm, module trips the solenoid",
+      "Lift recall (firemen's lift) — panel commands the elevator controller via dry contact",
+      "Door hold-open release — magnets holding fire doors open release on alarm",
+      "Interface to third-party extinguishing systems (FM-200, inert gas, CO₂)",
+      "Conventional zone interface — bridge a conventional detection zone onto an addressable loop",
+    ],
+    unsuitableApplications: [
+      "Directly switching inductive loads > rated contact rating without a contactor — will weld the relay",
+      "High-speed protocol interfaces (BACnet, Modbus) — use a dedicated gateway instead",
+    ],
+    installationRequirements:
+      "Mount in an accessible IP-rated enclosure near the interfaced equipment. Run the interface cable from the module to the monitored device on a separate cable from the addressable loop — do NOT daisy-chain the field wiring through the loop. End-of-line resistor must be fitted at the FAR end of the monitored circuit, not at the module. Output contacts driving high-current loads must switch through a contactor, not the module's own relay. Address programming is typically via a DIP switch or address-programmer tool; commissioning must walk-test every input and output.",
+    failureModes: [
+      { mode: "EOL resistor missing or wrong value", symptom: "Input shows permanent trouble or permanent alarm", cause: "Commissioning error — the resistor was not fitted at the far end of the monitored circuit", action: "Measure resistance across the input terminals with the field device connected; it should match the EOL value on the panel config." },
+      { mode: "Output relay welded", symptom: "Output fails to open after alarm clear; external equipment stays activated", cause: "Arc welding from switching high current without a suppression diode", action: "Replace module; add contact protection." },
+      { mode: "Address clash", symptom: "Two modules responding to the same address, one missing", cause: "DIP switch set incorrectly during installation", action: "Re-address per drawings; walk-test after re-addressing." },
+    ],
+    testProcedure:
+      "Walk-test every input (simulate activation at the field device) and every output (panel command the output, verify external equipment responds). AS 1851 Section 6.4 covers this as part of routine service. Log every address, every input, and every output in the commissioning book.",
+    maintenance:
+      "6-monthly walk-test of critical interfaces (sprinkler waterflow, HVAC shutdown, gas valve). Annual full I/O test. Contact-life tracking on high-cycle outputs (lift recall).",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.35", note: "Interface to external equipment — supervised inputs and outputs" },
+      { code: "AS 7240.18", note: "Input / output devices — product performance standard" },
+      { code: "AS 1851", clause: "6.4", note: "Routine walk-test of interfaces" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Single I/O Unit", partNumber: "55000-823APO", notes: "1 input, 1 relay output" },
+      { manufacturer: "Apollo", model: "XP95 Switch Monitor Plus", partNumber: "55000-827APO", notes: "Dual input for waterflow/tamper monitoring" },
+      { manufacturer: "Hochiki", model: "CHQ-DIM2 Dual Input Module", notes: "ESP protocol" },
+      { manufacturer: "Notifier", model: "FCM-1 Control Module", notes: "Supervised output for HVAC or lift recall" },
+      { manufacturer: "System Sensor", model: "M500S Supervised Relay Module", notes: "Supervised output with EOL monitoring" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: true,
+  },
 ];
 

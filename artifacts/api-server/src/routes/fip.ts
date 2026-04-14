@@ -19,6 +19,7 @@ import {
   fipProductFamilies,
   fipModels,
   fipComponents,
+  fipDetectorTypes,
   fipDocuments,
   fipDocumentVersions,
   fipDocumentSections,
@@ -184,6 +185,42 @@ router.post("/fip/components", async (req, res, next) => {
       partNumber: partNumber ?? null, description: description ?? null, specs: specs ?? null,
     }).returning();
     res.status(201).json(serializeDates(row));
+  } catch (err) { next(err); }
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// Detector type reference library (Pass FIP-R1)
+// ───────────────────────────────────────────────────────────────────────────
+
+router.get("/fip/detector-types", async (req, res, next) => {
+  if (!gate(res)) return;
+  try {
+    const { category, search } = req.query as Record<string, string | undefined>;
+    const conds: any[] = [isNull(fipDetectorTypes.deletedAt)];
+    if (category) conds.push(eq(fipDetectorTypes.category, category));
+    const rows = await db.select().from(fipDetectorTypes).where(and(...conds)).orderBy(fipDetectorTypes.name);
+    const filtered = search
+      ? rows.filter((r) => {
+          const q = search.toLowerCase();
+          return (
+            r.name.toLowerCase().includes(q) ||
+            r.summary.toLowerCase().includes(q) ||
+            r.sensingTechnology.toLowerCase().includes(q) ||
+            r.category.toLowerCase().includes(q)
+          );
+        })
+      : rows;
+    res.json(filtered.map(serializeDates));
+  } catch (err) { next(err); }
+});
+
+router.get("/fip/detector-types/:slug", async (req, res, next) => {
+  if (!gate(res)) return;
+  try {
+    const [row] = await db.select().from(fipDetectorTypes)
+      .where(and(isNull(fipDetectorTypes.deletedAt), eq(fipDetectorTypes.slug, req.params.slug)));
+    if (!row) { res.status(404).json({ error: "Detector type not found" }); return; }
+    res.json(serializeDates(row));
   } catch (err) { next(err); }
 });
 

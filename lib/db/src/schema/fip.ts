@@ -99,6 +99,59 @@ export const fipComponents = pgTable("fip_components", {
 ]);
 
 // ───────────────────────────────────────────────────────────────────────────
+// 1b. Detector type reference library (Pass FIP-R1)
+// ───────────────────────────────────────────────────────────────────────────
+// Master-level technical content per detector technology. Exists
+// independently of the manufacturer hierarchy so an installer can look up
+// "what's a photoelectric smoke detector, where can I use it, what AS
+// standards apply" without first knowing the brand.
+
+export const fipDetectorTypes = pgTable("fip_detector_types", {
+  id: text("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  /** smoke | heat | flame | gas | aspirating | beam | duct | multi | manual_call_point | linear */
+  category: text("category").notNull(),
+  /** short 1-line summary for list views */
+  summary: text("summary").notNull(),
+  /** how the detector physically senses the alarm condition */
+  operatingPrinciple: text("operating_principle").notNull(),
+  /** markdown block describing sensing technology in depth */
+  sensingTechnology: text("sensing_technology").notNull(),
+  /** markdown-ish list of typical applications / occupancies */
+  typicalApplications: jsonb("typical_applications").$type<string[]>().notNull(),
+  /** markdown-ish list of unsuitable applications and why */
+  unsuitableApplications: jsonb("unsuitable_applications").$type<string[]>().notNull(),
+  /** installation requirements — spacing, height, environment */
+  installationRequirements: text("installation_requirements").notNull(),
+  /** common failure modes with symptoms + likely causes */
+  failureModes: jsonb("failure_modes").$type<Array<{ mode: string; symptom: string; cause: string; action: string }>>().notNull(),
+  /** routine test procedure steps */
+  testProcedure: text("test_procedure").notNull(),
+  /** cleaning / maintenance interval and procedure */
+  maintenance: text("maintenance").notNull(),
+  /** Australian standards references with clause numbers */
+  standardsRefs: jsonb("standards_refs").$type<Array<{ code: string; clause?: string; note: string }>>().notNull(),
+  /** example models from supported manufacturers with part numbers */
+  exampleModels: jsonb("example_models").$type<Array<{ manufacturer: string; model: string; partNumber?: string; notes?: string }>>().notNull(),
+  /** expected life span in years */
+  lifeSpanYears: integer("life_span_years"),
+  /** cost band — "$" | "$$" | "$$$" — rough order for planning */
+  costBand: text("cost_band"),
+  /** whether it requires any special addressable protocol support */
+  addressable: boolean("addressable"),
+  /** image URL for the detector icon / hero (optional) */
+  heroImage: text("hero_image"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (t) => [
+  index("fip_detector_types_slug_idx").on(t.slug),
+  index("fip_detector_types_category_idx").on(t.category),
+  index("fip_detector_types_deleted_idx").on(t.deletedAt),
+]);
+
+// ───────────────────────────────────────────────────────────────────────────
 // 2. Documents and knowledge base
 // ───────────────────────────────────────────────────────────────────────────
 

@@ -108,5 +108,69 @@ export const STANDARD_CLAUSE_SEED: StandardClauseSeed[] = [
       "Manual call points must be installed at a height of 1400 ± 200 mm above finished floor, within 2 m of every required exit door, and so that no person in the protected space is more than 30 m from a call point. Each MCP must have clear, unobstructed signage. Wiring must be supervised — short-circuit and open-circuit faults must annunciate as troubles on the FIP.",
     keywords: ["manual call point", "MCP", "break glass", "exit", "1400mm", "30m"],
   },
+  {
+    standardCode: "AS 1670.1",
+    clauseNumber: "3.32",
+    title: "Waterflow alarm signalling",
+    summary:
+      "Sprinkler waterflow switches and supervisory pressure switches must report to the FIP. Waterflow switches must trigger an alarm signal within the retard time after a single-sprinkler equivalent flow rate is sustained. Tamper switches on isolation valves must report as supervisory troubles, distinct from alarm signals.",
+    keywords: ["waterflow", "sprinkler", "tamper", "supervisory", "retard"],
+  },
+  {
+    standardCode: "AS 1670.1",
+    clauseNumber: "3.34",
+    title: "Loop isolator positioning for fault containment",
+    summary:
+      "On any addressable loop serving more than 32 detection devices or spanning more than one fire compartment, short-circuit isolators must be installed such that a single short-circuit fault causes the loss of at most one fire compartment OR 32 devices, whichever is smaller. Class A (Style 6/7) loop wiring is strongly preferred so the panel can reach every device from at least one direction even when an isolator has activated.",
+    keywords: ["isolator", "loop", "Class A", "fault containment", "32 devices"],
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // AS 1670.4 — Occupant warning & emergency intercommunication
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    standardCode: "AS 1670.4",
+    clauseNumber: "3.10",
+    title: "Sound pressure level requirements",
+    summary:
+      "The sound pressure level produced by occupant warning sounders must be a minimum of 65 dBA at every point in the protected space, and a minimum of 75 dBA at every pillow position in sleeping areas (measured with the doors closed). The 75 dBA pillow level must be achieved with the loudest sounder in alarm and is the design driver for sounder placement in hotels and aged care.",
+    keywords: ["sounder", "SPL", "65 dBA", "75 dBA", "sleeping", "pillow"],
+  },
+  {
+    standardCode: "AS 1670.4",
+    clauseNumber: "3.12",
+    title: "Visual alarm device intensity",
+    summary:
+      "Strobe candela rating must be selected against the maximum horizontal room dimension per Table 3.12. A 15 cd strobe covers up to 6.1 m, 30 cd covers up to 9.1 m, 75 cd covers up to 12.2 m. Visual alarm devices must be installed in every room above 10 m², in every corridor, in every sleeping room of accommodation classified for the hearing impaired, and at every pillow position in DDA-compliant accommodation.",
+    keywords: ["strobe", "candela", "visual", "VAD", "DDA", "hearing impaired"],
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // AS 1851 — Routine service of fire protection systems
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    standardCode: "AS 1851",
+    clauseNumber: "6.4",
+    title: "Routine service of point-type detectors",
+    summary:
+      "Detectors are visually inspected and loop-communications-tested every 6 months. A functional aerosol smoke test (or certified heat test for heat detectors) is performed annually. The detector must alarm within 30 seconds of the test stimulus and the panel must annunciate the correct address. Cigarettes, naked flames, and uncertified smoke sources must NOT be used — they contaminate the chamber and void calibration. Every test result is logged in the AS 1851 logbook against the detector address.",
+    keywords: ["AS 1851", "routine service", "6 monthly", "annual", "aerosol", "logbook"],
+  },
+  {
+    standardCode: "AS 1851",
+    clauseNumber: "6.5",
+    title: "Routine service of aspirating and very-early-warning detection",
+    summary:
+      "Aspirating systems require an annual end-to-end smoke test where smoke is introduced at the farthest sample hole and the time to detector alarm is measured against the commissioning baseline. The transport time must not have drifted beyond the AS 1670.1 §3.26.4 maximum of 120 seconds. Filter condition, airflow, and chamber baseline obscuration are recorded at every 6-month service. Sample holes are smoke-pencil tested individually at every annual service.",
+    keywords: ["AS 1851", "aspirating", "VESDA", "transport time", "filter", "annual"],
+  },
+  {
+    standardCode: "AS 1851",
+    clauseNumber: "5.2",
+    title: "Routine service of sprinkler systems",
+    summary:
+      "Sprinkler systems are tested at quarterly, 6-monthly, and annual intervals. Every waterflow switch is drained at the test drain and the switch trip + FIP annunciation is verified. The annual 15-minute drain test confirms sustained flow and supervisory hold. Pressure switches are calibrated against a master gauge and the setpoint is verified within ± 5%. All control valves are checked at every service.",
+    keywords: ["sprinkler", "waterflow", "drain test", "pressure switch", "AS 1851", "AS 2118"],
+  },
 ];
 

@@ -101,8 +101,9 @@ export default function PAPage() {
     setSidebarOpen(false);
   }, []);
 
-  const send = useCallback((text: string) => {
-    if (!text.trim() || streaming) return;
+  const send = useCallback((text: string, attachmentIds?: string[]) => {
+    const hasAttachments = !!(attachmentIds && attachmentIds.length > 0);
+    if ((!text.trim() && !hasAttachments) || streaming) return;
     setError(null);
 
     const userMsg: PAMessageData = {
@@ -193,6 +194,7 @@ export default function PAPage() {
             setStreaming(false);
           },
         },
+        attachmentIds,
       );
       return next;
     });

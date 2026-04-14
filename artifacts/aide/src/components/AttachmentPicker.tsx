@@ -116,6 +116,10 @@ export function AttachmentPicker({ pending, onChange, source, disabled, maxFiles
   );
 }
 
+export function AttachmentPreviewChip({ meta, onRemove }: { meta: AttachmentMeta; onRemove: () => void }) {
+  return <AttachmentChip meta={meta} onRemove={onRemove} />;
+}
+
 function AttachmentChip({ meta, onRemove }: { meta: AttachmentMeta; onRemove: () => void }) {
   const Icon = meta.kind === "image" ? ImageIcon : meta.kind === "document" ? FileText : FileIcon;
   const label = meta.filename || `${meta.kind}-${meta.id.slice(0, 6)}`;

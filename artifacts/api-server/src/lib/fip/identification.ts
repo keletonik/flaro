@@ -117,6 +117,48 @@ export class StubIdentifier implements Identifier {
   }
 }
 
-let _identifier: Identifier = new StubIdentifier();
-export function getIdentifier(): Identifier { return _identifier; }
+/**
+ * Identifier selection. On first access:
+ *   - If AI_INTEGRATIONS_ANTHROPIC_API_KEY is set AND FIP_VISION_ENABLED
+ *     is not "0", use the Claude vision identifier (real model).
+ *   - Otherwise fall back to the stub so dev + test still work.
+ *
+ * The selection is lazy via dynamic import because claude-vision-identifier
+ * imports the Anthropic SDK, which itself requires the env vars to be set
+ * at module load time — we must not trigger that unless we're actually
+ * going to use it.
+ */
+let _identifier: Identifier | null = null;
+
+async function resolveIdentifier(): Promise<Identifier> {
+  if (_identifier) return _identifier;
+  const wantVision =
+    !!process.env["AI_INTEGRATIONS_ANTHROPIC_API_KEY"] &&
+    process.env["FIP_VISION_ENABLED"] !== "0";
+  if (wantVision) {
+    try {
+      const mod = await import("./claude-vision-identifier");
+      _identifier = new mod.ClaudeVisionIdentifier();
+      return _identifier;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[FIP identifier] Claude vision init failed, falling back to stub:", (err as Error)?.message);
+    }
+  }
+  _identifier = new StubIdentifier();
+  return _identifier;
+}
+
+// Synchronous accessor retained for backwards compat — returns whatever
+// is currently in _identifier (stub on first call, real identifier after
+// getIdentifierAsync has been called once).
+export function getIdentifier(): Identifier {
+  if (!_identifier) _identifier = new StubIdentifier();
+  return _identifier;
+}
+
+export async function getIdentifierAsync(): Promise<Identifier> {
+  return resolveIdentifier();
+}
+
 export function setIdentifier(id: Identifier): void { _identifier = id; }

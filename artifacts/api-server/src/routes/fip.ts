@@ -37,7 +37,7 @@ import {
   fipAuditRuns,
 } from "@workspace/db";
 import { composeAnswer, type FaultLike, type GenerationMode } from "../lib/fip/retrieval";
-import { getIdentifier } from "../lib/fip/identification";
+import { getIdentifier, getIdentifierAsync } from "../lib/fip/identification";
 import { buildEstimate, buildEscalationPack } from "../lib/fip/estimation";
 import { parseBinaryInput, sha256 } from "../lib/fip/storage";
 import { runAllAudits, type AuditContext } from "../lib/fip/audits";
@@ -471,7 +471,7 @@ router.post("/fip/sessions/:sessionId/images/:imageId/identify", async (req, res
     const [image] = await db.select().from(fipSessionImages)
       .where(eq(fipSessionImages.id, req.params.imageId));
     if (!image) { res.status(404).json({ error: "image not found" }); return; }
-    const identifier = getIdentifier();
+    const identifier = await getIdentifierAsync();
     const result = await identifier.identify({
       imageId: image.id,
       sessionId: image.sessionId,

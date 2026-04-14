@@ -19,6 +19,7 @@ const Projects = lazy(() => import("@/pages/projects"));
 const Operations = lazy(() => import("@/pages/operations"));
 const Suppliers = lazy(() => import("@/pages/suppliers"));
 const Analytics = lazy(() => import("@/pages/analytics"));
+const Metrics = lazy(() => import("@/pages/metrics"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const PM = lazy(() => import("@/pages/pm"));
 const FIP = lazy(() => import("@/pages/fip"));
@@ -332,6 +333,7 @@ function Router() {
           <Route path="/chat"><Chat /></Route>
           <Route path="/operations"><Operations /></Route>
           <Route path="/analytics"><Analytics /></Route>
+          <Route path="/metrics"><Metrics /></Route>
           <Route path="/schedule"><Schedule /></Route>
           <Route path="/jobs"><Jobs /></Route>
           <Route path="/jobs/:id"><JobDetail /></Route>

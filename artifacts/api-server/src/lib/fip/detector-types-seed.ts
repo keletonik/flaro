@@ -585,5 +585,60 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 11. LINEAR HEAT DETECTION CABLE
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "linear-heat-cable",
+    name: "Linear Heat Detection Cable",
+    category: "linear",
+    summary:
+      "Continuous heat-sensing cable — two insulated conductors twisted together under a heat-sensitive polymer that melts at a rated temperature, short-circuiting the cable and triggering alarm. Excellent for cable trays, tunnels, and conveyor belts.",
+    operatingPrinciple:
+      "Two steel or copper conductors are twisted together with a small air gap maintained by a heat-sensitive plastic insulation. When ambient air at any point along the cable exceeds the rated temperature (typically 68 °C, 88 °C, 105 °C, or 138 °C), the insulation melts at that specific point, the conductors short together, and the cable's end-of-line monitor detects a resistance drop. The interface module then reports an alarm — and on addressable linear cable systems (e.g. Protectowire, Kidde) it also reports the approximate distance along the cable to the hot spot.",
+    sensingTechnology:
+      "Mechanical digital type (Protectowire EPC): once alarmed at any point, the cable must be cut and spliced or replaced at the hot spot — this is NOT a resettable detector. Analogue distance-addressable type: uses a resistance-measurement principle where each point along the cable has a known resistance, and the interface calculates the alarm location by resistance ratio. Fibre-optic distributed temperature sensing (DTS) is an alternative using laser-measured Raman backscatter along a fibre — continuous temperature profile, fully resettable, but significantly more expensive.",
+    typicalApplications: [
+      "Cable trays and vertical cable risers (tall buildings, power stations)",
+      "Road and rail tunnels — AS 4825 + AS 1670.1 Clause 3.28 for tunnel detection",
+      "Conveyor belts in mining and bulk handling — the cable runs along the belt return path",
+      "Large warehouses as rack-level detection where point detectors are too sparse",
+      "Cold stores — the cable is immune to condensation that affects point detectors",
+      "Floating roof fuel tanks — in the seal gap where point detectors cannot survive",
+    ],
+    unsuitableApplications: [
+      "Open-ceiling office spaces — point detectors are cheaper and provide equivalent coverage",
+      "Very short runs (< 30 m) — minimum panel module cost is not justified",
+      "Corrosive environments unless using the correct cable jacket (CSP / XLPE / PTFE — check spec)",
+    ],
+    installationRequirements:
+      "Fix the cable with non-metallic clips at 1-metre intervals so the cable cannot slump under its own weight. Keep cable away from direct contact with hot surfaces — it must sense the air temperature around the hot source, not the surface conduction. Maximum run length per interface module is typically 1500 m for addressable systems, shorter for digital-only. Each end requires an end-of-line resistor per the manufacturer spec. On addressable systems, commissioning must calibrate the zero-distance baseline so alarm location is accurate to within 1–3 m.",
+    failureModes: [
+      { mode: "Mechanical damage", symptom: "Short-circuit alarm at a specific distance without real heat event", cause: "Cable crushed, pinched, or cut during construction or maintenance", action: "Locate the fault distance from the panel, inspect, cut out and splice the damaged section per manufacturer kit." },
+      { mode: "Non-resettable after alarm", symptom: "Alarm remains after the fire is extinguished", cause: "Digital-type cable is destructively alarmed at the melt point", action: "Replace the alarmed section (typically a 1-metre splice)." },
+      { mode: "Distance accuracy drift", symptom: "Commissioning fire test alarms at the wrong reported distance", cause: "Cable length changed without re-calibration, or a splice introduced without updating the EOL", action: "Re-calibrate zero distance; document every splice." },
+      { mode: "UV/chemical degradation", symptom: "Jacket crumbling on outdoor runs", cause: "Wrong jacket for the environment", action: "Replace with PTFE or CSP-jacketed variant rated for the exposure." },
+    ],
+    testProcedure:
+      "Point heat test at the farthest point from the interface per AS 1851 Section 6.5 — use a controlled heat source (hot air gun at the rated temperature) held within the cable's rated response time. Alarm location reported by the panel must match the test point within the specified accuracy. Document the test point, alarm location, and time in the service log.",
+    maintenance:
+      "6-monthly visual inspection of the full cable run, 12-monthly point function test at the far end. Inspect splices every service. Replace cable on manufacturer life (typically 15 years) or immediately after any alarm event.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.28", note: "Line-type heat detection — where permitted and acceptance criteria" },
+      { code: "AS 7240.22", note: "Line-type heat detectors — product standard (aligns with EN 54-22)" },
+      { code: "AS 4825", note: "Tunnel fire safety — including linear heat detection requirements" },
+      { code: "AS 1851", clause: "6.5", note: "Routine service of line-type heat detection" },
+    ],
+    exampleModels: [
+      { manufacturer: "Protectowire", model: "EPC 68 °C", partNumber: "EPC-220-XCR", notes: "Digital mechanical cable, 68 °C rating" },
+      { manufacturer: "Protectowire", model: "CTI PHSC", notes: "Confirmed addressable linear heat detection with distance reporting" },
+      { manufacturer: "Kidde", model: "Fenwal LHS cable", notes: "Digital cable with dedicated interface module" },
+      { manufacturer: "AP Sensing", model: "N4386B DTS", notes: "Distributed fibre-optic temperature sensing — fully resettable" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$$",
+    addressable: true,
+  },
 ];
 

@@ -352,6 +352,86 @@ export const AGENT_TOOLS = [
     input_schema: { type: "object" as const, properties: {} },
   },
 
+  // ─── PA reminder tools (PA rebuild phase 3) ────────────────────────────
+  {
+    name: "reminder_create",
+    description:
+      "Create a reminder for the operator. Use whenever the user says 'remind me', 'ping me', " +
+      "'follow up on X on Y', or sets any timed nudge. Accepts a title, a remindAt ISO timestamp, " +
+      "and an optional body. For natural-language times (e.g. 'tomorrow 9am'), resolve to an ISO " +
+      "string yourself before calling — do NOT ask the user for an ISO.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        title: { type: "string", description: "Short title, e.g. 'Chase Pertronic quote'" },
+        remindAt: { type: "string", description: "ISO 8601 timestamp in the operator's local timezone (Australia/Sydney)" },
+        body: { type: "string", description: "Optional longer description, notes, links" },
+      },
+      required: ["title", "remindAt"],
+    },
+  },
+  {
+    name: "reminder_list",
+    description:
+      "List the operator's reminders. By default returns every pending reminder. Pass status='due' " +
+      "to get only reminders whose remindAt is now or in the past. Use when the user says 'what " +
+      "are my reminders', 'what's coming up', or asks about overdue follow-ups.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        status: {
+          type: "string",
+          enum: ["pending", "due", "fired", "completed", "snoozed", "cancelled"],
+          description: "Optional filter. 'due' means pending + remindAt <= now.",
+        },
+        limit: { type: "number", description: "Max rows to return. Default 20, cap 100." },
+      },
+    },
+  },
+  {
+    name: "reminder_complete",
+    description:
+      "Mark a reminder as completed. Use when the user says 'done', 'finished that', or references " +
+      "a specific reminder and says it's handled. Accepts either the reminder id OR a title substring " +
+      "match — if a title substring is passed, the most recent matching pending reminder is completed.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        id: { type: "string", description: "Exact reminder id. Preferred when known." },
+        titleMatch: { type: "string", description: "Case-insensitive title substring to match against pending reminders." },
+      },
+    },
+  },
+  {
+    name: "reminder_snooze",
+    description:
+      "Push a reminder to a new remindAt. Use when the user says 'not now', 'remind me later', " +
+      "or specifies a new time. Accepts id or titleMatch plus a new ISO untilIso.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        id: { type: "string" },
+        titleMatch: { type: "string" },
+        untilIso: { type: "string", description: "ISO 8601 timestamp for the new fire time" },
+      },
+      required: ["untilIso"],
+    },
+  },
+  {
+    name: "reminder_delete",
+    description:
+      "Soft-delete a reminder (status becomes cancelled). Use sparingly — most of the time the user " +
+      "wants reminder_complete, not delete. Only use delete when the user says 'cancel', 'forget it', " +
+      "or 'remove that reminder'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        id: { type: "string" },
+        titleMatch: { type: "string" },
+      },
+    },
+  },
+
   {
     name: "ui_navigate",
     description:

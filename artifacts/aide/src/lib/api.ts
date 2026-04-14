@@ -116,14 +116,26 @@ export function streamAgent(
   handlers: AgentStreamHandlers,
 ): AbortController {
   const controller = new AbortController();
-  fetch(`${BASE}/chat/agent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({ section, message, history }),
-    signal: controller.signal,
-  })
-    .then(async (res) => {
+  // Pass 5 §3.4: retry initial connection up to 2 times with 1s + 3s
+  // backoff. Only retries the open — once we've started reading the
+  // response body, any mid-stream disconnect bails (retrying mid-tool
+  // call would risk double-executing a db_create / db_update).
+  let attempt = 0;
+  const MAX_ATTEMPTS = 3;
+  const attemptOpen = async (): Promise<void> => {
+    attempt += 1;
+    try {
+      const res = await fetch(`${BASE}/chat/agent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({ section, message, history }),
+        signal: controller.signal,
+      });
       if (!res.ok) {
+        if ((res.status >= 500 || res.status === 0) && attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, attempt * 1000));
+          return attemptOpen();
+        }
         handlers.onError(`Request failed: ${res.status}`);
         return;
       }
@@ -174,10 +186,17 @@ export function streamAgent(
         }
       }
       if (!finished) handlers.onDone();
-    })
-    .catch((err) => {
-      if (err?.name !== "AbortError") handlers.onError(err?.message ?? "connection failed");
-    });
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+      // Network-level failure before we got a reader — safe to retry.
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, attempt * 1000));
+        return attemptOpen();
+      }
+      handlers.onError(err?.message ?? "connection failed");
+    }
+  };
+  void attemptOpen();
   return controller;
 }
 

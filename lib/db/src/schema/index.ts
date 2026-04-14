@@ -21,3 +21,6 @@ export * from "./uptick";
 export * from "./fip";
 export * from "./estimates";
 export * from "./pa-reminders";
+export * from "./pa-instructions";
+export * from "./attachments";
+export * from "./task-cycle-times";

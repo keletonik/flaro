@@ -15,10 +15,12 @@
  * The LLM resolves the actual tool call.
  */
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type DragEvent } from "react";
 import { Send, Mic, Square, X, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoiceInput, hasDestructiveWord } from "@/lib/speech";
+import { AttachmentPicker, AttachmentPreviewChip, useAttachmentUpload } from "@/components/AttachmentPicker";
+import type { AttachmentMeta } from "@/lib/api";
 
 interface SlashCommand {
   slug: string;
@@ -38,13 +40,16 @@ const SLASH_COMMANDS: SlashCommand[] = [
 ];
 
 interface Props {
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string, attachmentIds?: string[]) => void;
   disabled?: boolean;
   placeholder?: string;
 }
 
 export function PAInput({ onSubmit, disabled, placeholder }: Props) {
   const [value, setValue] = useState("");
+  const [pending, setPending] = useState<AttachmentMeta[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const drop = useAttachmentUpload(pending, setPending, "pa");
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashIndex, setSlashIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -112,9 +117,24 @@ export function PAInput({ onSubmit, disabled, placeholder }: Props) {
 
   function handleSubmit() {
     const text = value.trim();
-    if (!text || disabled) return;
-    onSubmit(text);
+    if ((!text && pending.length === 0) || disabled) return;
+    onSubmit(text, pending.length > 0 ? pending.map((p) => p.id) : undefined);
     setValue("");
+    setPending([]);
+  }
+
+  function handleDragOver(e: DragEvent<any>) {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes("Files")) setIsDragging(true);
+  }
+  function handleDragLeave(e: DragEvent<any>) {
+    e.preventDefault();
+    setIsDragging(false);
+  }
+  function handleDrop(e: DragEvent<any>) {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files?.length) void drop.handleFiles(e.dataTransfer.files);
   }
 
   // Voice confirm step — user pressed mic, spoke, released.
@@ -219,10 +239,41 @@ export function PAInput({ onSubmit, disabled, placeholder }: Props) {
         <p className="mb-1 text-[10px] text-red-500 px-1">Voice: {voice.error}</p>
       )}
 
+      {/* Pending attachment chips row (rendered above the form so they
+          don't interfere with the input bar layout) */}
+      {pending.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2 px-1">
+          {pending.map((p) => (
+            <AttachmentPreviewChip key={p.id} meta={p} onRemove={() => setPending((prev) => prev.filter((x) => x.id !== p.id))} />
+          ))}
+        </div>
+      )}
+      {drop.error && (
+        <p className="mb-1 text-[10px] text-red-500 px-1">Upload: {drop.error}</p>
+      )}
+
       <form
-        className="flex items-end gap-2 p-2 rounded-xl bg-card border border-border focus-within:border-primary/40 transition-colors"
+        className={cn(
+          "flex items-end gap-2 p-2 rounded-xl bg-card border border-border focus-within:border-primary/40 transition-colors relative",
+          isDragging && "border-primary/60 bg-primary/5",
+        )}
         onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
+        {isDragging && (
+          <div className="absolute inset-0 pointer-events-none grid place-items-center rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 z-10">
+            <p className="text-xs font-semibold text-primary">Drop to attach</p>
+          </div>
+        )}
+        <AttachmentPicker
+          pending={[]}
+          onChange={(added) => setPending([...pending, ...added])}
+          source="pa"
+          disabled={disabled}
+          className="shrink-0"
+        />
         {voice.available && (
           <button
             type="button"

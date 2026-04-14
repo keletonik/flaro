@@ -14,7 +14,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader2, Wrench, Check, AlertCircle, Trash2, Bot } from "lucide-react";
 import { useLocation } from "wouter";
-import { streamAgent, type AgentToolEvent } from "@/lib/api";
+import { streamAgent, type AgentToolEvent, type AttachmentMeta } from "@/lib/api";
+import { AttachmentPicker, AttachmentPreviewChip } from "@/components/AttachmentPicker";
 import { cn } from "@/lib/utils";
 
 interface ToolRun {
@@ -64,6 +65,7 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [pending, setPending] = useState<AttachmentMeta[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
@@ -91,9 +93,11 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
 
   const send = (text?: string) => {
     const msg = (text || input).trim();
-    if (!msg || streaming) return;
+    const attachmentIds = pending.length > 0 ? pending.map((p) => p.id) : undefined;
+    if ((!msg && !attachmentIds) || streaming) return;
     setInput("");
-    setMessages(prev => [...prev, { role: "user", content: msg }]);
+    setPending([]);
+    setMessages(prev => [...prev, { role: "user", content: msg || (attachmentIds ? `(${attachmentIds.length} file attached)` : "") }]);
     setStreaming(true);
     let assistantContent = "";
     const tools: ToolRun[] = [];
@@ -154,6 +158,7 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
         onDone: () => setStreaming(false),
         onError: (err) => { patch({ content: assistantContent || `Error: ${err}` }); setStreaming(false); },
       },
+      attachmentIds,
     );
   };
 
@@ -267,7 +272,21 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
 
       {/* Input */}
       <div className="shrink-0 border-t border-border px-3 py-2">
+        {pending.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
+            {pending.map((p) => (
+              <AttachmentPreviewChip key={p.id} meta={p} onRemove={() => setPending((prev) => prev.filter((x) => x.id !== p.id))} />
+            ))}
+          </div>
+        )}
         <div className="flex items-end gap-2 bg-muted/30 rounded-xl px-3 py-2 border border-border focus-within:border-primary/30 transition-all">
+          <AttachmentPicker
+            pending={[]}
+            onChange={(added) => setPending((prev) => [...prev, ...added])}
+            source="embedded"
+            disabled={streaming}
+            className="shrink-0"
+          />
           <textarea
             ref={inputRef}
             value={input}

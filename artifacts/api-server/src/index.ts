@@ -9,6 +9,7 @@ import { seedAdditionalData } from "./seed-additional";
 import { seedFipKnowledgeBase } from "./seed-fip";
 import { seedEstimationWorkbench } from "./seed-estimation";
 import { seedPaSurface } from "./seed-pa";
+import { seedApr15Batch } from "./seed-apr15-batch";
 
 const rawPort = process.env["PORT"];
 
@@ -93,6 +94,8 @@ async function runStartupSeed() {
     await seedEstimationWorkbench();
     logger.info("[boot] running seedPaSurface");
     await seedPaSurface();
+    logger.info("[boot] running seedApr15Batch");
+    await seedApr15Batch();
     await reportDataState();
     logger.info("[boot] seed pipeline complete — site is ready");
   } catch (err) {

@@ -32,6 +32,8 @@
  *   - margin_by_client_top10
  *   - repeat_site_frequency
  *   - critical_defect_backlog_trend
+ *   - task_cycle_time_distribution    (added Apr 2026 — uses task_cycle_times)
+ *   - invoice_lag_distribution        (added Apr 2026 — uses task_cycle_times)
  */
 
 import type { MetricDefinition, MetricResult, MetricParams, PgLikePool } from "./types";
@@ -45,6 +47,8 @@ import { avgTimeToInvoice } from "./avg-time-to-invoice";
 import { marginByClientTop10 } from "./margin-by-client-top10";
 import { repeatSiteFrequency } from "./repeat-site-frequency";
 import { criticalDefectBacklogTrend } from "./critical-defect-backlog-trend";
+import { taskCycleTimeDistribution } from "./task-cycle-time-distribution";
+import { invoiceLagDistribution } from "./invoice-lag-distribution";
 
 const DEFINITIONS: MetricDefinition[] = [
   revenueVsTargetMtd,
@@ -57,6 +61,8 @@ const DEFINITIONS: MetricDefinition[] = [
   marginByClientTop10,
   repeatSiteFrequency,
   criticalDefectBacklogTrend,
+  taskCycleTimeDistribution,
+  invoiceLagDistribution,
 ];
 
 const BY_ID = new Map(DEFINITIONS.map((d) => [d.id, d]));

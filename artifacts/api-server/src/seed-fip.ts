@@ -2,9 +2,12 @@ import { randomUUID } from "crypto";
 import { pool } from "@workspace/db";
 import { logger } from "./lib/logger";
 import { FIP_DDL_STATEMENTS } from "./seed-fip-ddl";
+import { FIP_V2_DDL_STATEMENTS } from "./seed-fip-v2-ddl";
 import fipData from "./seed-fip-data.json";
 import { DETECTOR_TYPE_SEED } from "./lib/fip/detector-types-seed";
 import { STANDARD_CLAUSE_SEED } from "./lib/fip/standard-clauses-seed";
+import { PANEL_DEEP_SPEC_SEED } from "./lib/fip/panels-deep-spec-seed";
+import { COMMON_PRODUCT_SEED } from "./lib/fip/common-products-seed";
 
 /**
  * FIP / VESDA technical knowledge bootstrap.
@@ -52,7 +55,12 @@ export async function seedFipKnowledgeBase(): Promise<void> {
     for (const stmt of FIP_DDL_STATEMENTS) {
       await client.query(stmt);
     }
-    logger.info({ tables: "fip_*" }, "FIP schema ensured");
+    // FIP v2.0 command-centre additions: deep spec columns on
+    // fip_models + new fip_common_products table.
+    for (const stmt of FIP_V2_DDL_STATEMENTS) {
+      await client.query(stmt);
+    }
+    logger.info({ tables: "fip_*" }, "FIP schema ensured (v2.0)");
 
     // 2. Per-table seed with natural-key dedup.
     await seedManufacturers(client);
@@ -65,6 +73,8 @@ export async function seedFipKnowledgeBase(): Promise<void> {
     await seedAuditRuns(client);
     await seedDetectorTypes(client);
     await seedStandardClauses(client);
+    await seedPanelDeepSpecs(client);
+    await seedCommonProducts(client);
 
     logger.info("FIP knowledge base seed complete");
   } catch (err) {
@@ -461,4 +471,114 @@ async function seedStandardClauses(client: any): Promise<void> {
     inserted++;
   }
   logger.info({ table: "fip_standard_clauses", inserted, updated, skipped }, "fip seed");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Panel deep specs — patch existing fip_models rows with technical detail.
+// Natural key: slug. Runs after the base seed pack so the rows exist.
+// Idempotent: re-runs re-write the deep-spec columns without touching the
+// row's identity columns (id / created_at / status).
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedPanelDeepSpecs(client: any): Promise<void> {
+  let updated = 0;
+  let skipped = 0;
+  for (const spec of PANEL_DEEP_SPEC_SEED) {
+    const existing = await client.query(
+      "SELECT id FROM fip_models WHERE slug = $1 LIMIT 1",
+      [spec.slug],
+    );
+    if (existing.rows.length === 0) {
+      skipped++;
+      continue;
+    }
+    await client.query(
+      `UPDATE fip_models SET
+         max_loops = $1,
+         devices_per_loop = $2,
+         loop_protocol = $3,
+         network_capable = $4,
+         max_networked_panels = $5,
+         battery_standby_ah = $6,
+         battery_alarm_ah = $7,
+         recommended_battery_size = $8,
+         config_options = $9,
+         approvals = $10,
+         commissioning_notes = $11,
+         typical_price_band = $12,
+         updated_at = now()
+       WHERE id = $13`,
+      [
+        spec.maxLoops,
+        spec.devicesPerLoop,
+        spec.loopProtocol,
+        spec.networkCapable,
+        spec.maxNetworkedPanels,
+        spec.batteryStandbyAh,
+        spec.batteryAlarmAh,
+        spec.recommendedBatterySize,
+        JSON.stringify(spec.configOptions),
+        JSON.stringify(spec.approvals),
+        spec.commissioningNotes,
+        spec.typicalPriceBand,
+        existing.rows[0].id,
+      ],
+    );
+    updated++;
+  }
+  logger.info({ table: "fip_models", updated, skipped, feature: "deep_spec" }, "fip seed");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Common fire-protection products — curated everyday items catalogue.
+// Dedup by (part_code, manufacturer). Falls back to (name, manufacturer)
+// when part_code is null.
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedCommonProducts(client: any): Promise<void> {
+  let inserted = 0;
+  let updated = 0;
+  for (const p of COMMON_PRODUCT_SEED) {
+    const byCode = p.partCode
+      ? await client.query(
+          "SELECT id FROM fip_common_products WHERE part_code = $1 AND manufacturer = $2 AND deleted_at IS NULL LIMIT 1",
+          [p.partCode, p.manufacturer],
+        )
+      : await client.query(
+          "SELECT id FROM fip_common_products WHERE name = $1 AND manufacturer = $2 AND deleted_at IS NULL LIMIT 1",
+          [p.name, p.manufacturer],
+        );
+    if (byCode.rows.length > 0) {
+      await client.query(
+        `UPDATE fip_common_products SET
+           name = $1, description = $2, unit = $3, price_band = $4,
+           indicative_price_aud = $5, notes = $6, updated_at = now()
+         WHERE id = $7`,
+        [
+          p.name, p.description, p.unit, p.priceBand,
+          p.indicativePriceAud, p.notes, byCode.rows[0].id,
+        ],
+      );
+      updated++;
+      continue;
+    }
+    await client.query(
+      `INSERT INTO fip_common_products
+       (id, category, name, manufacturer, part_code, description, unit,
+        price_band, indicative_price_aud, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [
+        randomUUID(),
+        p.category,
+        p.name,
+        p.manufacturer,
+        p.partCode,
+        p.description,
+        p.unit,
+        p.priceBand,
+        p.indicativePriceAud,
+        p.notes,
+      ],
+    );
+    inserted++;
+  }
+  logger.info({ table: "fip_common_products", inserted, updated }, "fip seed");
 }

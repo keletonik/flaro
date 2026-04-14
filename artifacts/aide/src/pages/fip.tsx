@@ -1,31 +1,27 @@
 /**
- * FIP Knowledge Base — master-level rebuild.
+ * FIP Command Centre — master-level rebuild (fip-v2.0).
  *
- * Layout (Pass FIP-R1):
- *   ┌──────────────┬─────────────────────────────────────────┐
- *   │              │                                         │
- *   │              │  Tabs: Detectors / Manufacturers /      │
- *   │  Embedded    │        Models / Standards / Documents   │
- *   │  FIP         │                                         │
- *   │  Assistant   │  Active tab content area:               │
- *   │  Chat        │   - Detector library (browse + detail)  │
- *   │              │   - Manufacturers grid                  │
- *   │  drag/drop   │   - Models table                        │
- *   │  image       │   - Standards register                  │
- *   │  upload      │   - Documents library                   │
- *   │              │                                         │
- *   └──────────────┴─────────────────────────────────────────┘
+ * Layout:
+ *   ┌─ top menu ──────────────────────────────────────────────────┐
+ *   │  Command Centre · Detector Library · Manufacturers          │
+ *   │                 · AS Standards · Documents                  │
+ *   └─────────────────────────────────────────────────────────────┘
+ *   ┌──────────┬──────────────────────────────────────────────────┐
+ *   │          │ ┌─────────────────┐ ┌─────────────────┐          │
+ *   │ FIP chat │ │ Panel selector  │ │ Common products │          │
+ *   │ (360px)  │ └─────────────────┘ └─────────────────┘          │
+ *   │ fip-v2.0 │ ┌─────────────────┐ ┌─────────────────┐          │
+ *   │ prompt   │ │ Defect image    │ │ Battery calc    │          │
+ *   │          │ │ analysis        │ │ AS 1670.1/4428  │          │
+ *   │          │ └─────────────────┘ └─────────────────┘          │
+ *   └──────────┴──────────────────────────────────────────────────┘
  *
- * The left rail is the FipAssistantChat — always-visible, master-level
- * Australian fire-protection assistant with tool-use access to detector
- * types, standards, fault signatures, and Claude vision image analysis.
+ * Default view is the command centre (4-module grid). The legacy
+ * library views (detectors / manufacturers / standards / documents)
+ * are still accessible via the top menu — they're just no longer
+ * the default.
  *
- * The right side is the browseable knowledge base. Selecting a detector
- * card opens a deep-dive panel with operating principle, sensing
- * technology, AS standard references, failure modes, test procedures,
- * and example models from each major Australian-supported manufacturer.
- *
- * Drag-and-drop an image anywhere in the chat panel to upload + analyse.
+ * Mobile <768px: chat collapses into a drawer, cards stack full-width.
  */
 
 import { useState, useEffect } from "react";
@@ -33,7 +29,7 @@ import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
   Shield, FileText, BookOpen, Building2, Cpu, Loader2, AlertTriangle,
-  Search, ExternalLink,
+  Search, ExternalLink, LayoutDashboard,
 } from "lucide-react";
 import { FipAssistantChat } from "@/components/FipAssistantChat";
 import {
@@ -41,6 +37,10 @@ import {
   FipDetectorTypeDetail,
   type DetectorType,
 } from "@/components/FipDetectorTypeCard";
+import { PanelTechnicalCard } from "@/components/fip/PanelTechnicalCard";
+import { CommonProductsCard } from "@/components/fip/CommonProductsCard";
+import { BatteryCalculatorCard } from "@/components/fip/BatteryCalculatorCard";
+import { DefectImageAnalysisCard } from "@/components/fip/DefectImageAnalysisCard";
 
 interface Manufacturer {
   id: string; name: string; slug: string; country?: string;
@@ -71,10 +71,10 @@ interface FipStatus {
   };
 }
 
-type Tab = "detectors" | "manufacturers" | "models" | "standards" | "documents";
+type View = "command" | "detectors" | "manufacturers" | "models" | "standards" | "documents";
 
 export default function FIPKnowledgeBase() {
-  const [activeTab, setActiveTab] = useState<Tab>("detectors");
+  const [view, setView] = useState<View>("command");
   const [selectedDetector, setSelectedDetector] = useState<DetectorType | null>(null);
   const [status, setStatus] = useState<FipStatus | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -91,9 +91,6 @@ export default function FIPKnowledgeBase() {
     setLoading(true);
     setStatusError(null);
     try {
-      // Status is required — if it fails, surface the real error instead
-      // of silently treating it as "disabled". The four other lookups
-      // fall back to empty arrays because they're non-critical.
       let st: FipStatus | null = null;
       try {
         st = await apiFetch<FipStatus>("/fip/status");
@@ -137,8 +134,8 @@ export default function FIPKnowledgeBase() {
         </h2>
         <p className="text-muted-foreground text-sm max-w-md">
           {statusError
-            ? `Couldn't reach /api/fip/status — ${statusError}. Check the api-server logs and hit /api/diag/fip for the table counts.`
-            : "FIP_ENABLED is explicitly set to 0. Remove it from Replit Secrets (or set to anything other than '0') to activate."}
+            ? `Couldn't reach /api/fip/status — ${statusError}.`
+            : "FIP_ENABLED is explicitly set to 0. Remove it to activate."}
         </p>
         <button
           onClick={() => loadData()}
@@ -150,7 +147,11 @@ export default function FIPKnowledgeBase() {
     );
   }
 
-  const tabs: { key: Tab; label: string; icon: typeof Shield; count?: number }[] = [
+  const mfrMap = Object.fromEntries(manufacturers.map((m) => [m.id, m.name]));
+  const famMap = Object.fromEntries(families.map((f) => [f.id, f.name]));
+
+  const menu: { key: View; label: string; icon: typeof Shield; count?: number }[] = [
+    { key: "command", label: "Command Centre", icon: LayoutDashboard },
     { key: "detectors", label: "Detector Library", icon: Shield },
     { key: "manufacturers", label: "Manufacturers", icon: Building2, count: manufacturers.length },
     { key: "models", label: "Panel Models", icon: Cpu, count: models.length },
@@ -158,78 +159,88 @@ export default function FIPKnowledgeBase() {
     { key: "documents", label: "Documents", icon: FileText, count: documents.length },
   ];
 
-  const mfrMap = Object.fromEntries(manufacturers.map((m) => [m.id, m.name]));
-  const famMap = Object.fromEntries(families.map((f) => [f.id, f.name]));
-
   return (
-    <div className="h-[calc(100vh-3rem)] flex flex-col lg:flex-row gap-4 p-4 md:p-6 max-w-[1800px] mx-auto">
-      {/* LEFT — embedded master assistant chat */}
-      <aside className="lg:w-[380px] xl:w-[420px] shrink-0 h-[60vh] lg:h-auto">
-        <FipAssistantChat contextDetectorSlug={selectedDetector?.slug} />
-      </aside>
-
-      {/* RIGHT — knowledge base content */}
-      <main className="flex-1 min-w-0 overflow-y-auto pr-1">
-        <header className="mb-4">
-          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary" />
-            FIP Knowledge Base
-          </h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Master-level Australian fire-protection reference. Detectors · Standards · Manufacturers · Documents.
-          </p>
-        </header>
-
-        <nav className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 border-b border-border">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
+    <div className="h-[calc(100vh-3rem)] flex flex-col bg-background">
+      {/* Top menu */}
+      <nav className="shrink-0 border-b border-border bg-card">
+        <div className="max-w-[1800px] mx-auto px-4 md:px-6 py-2 flex items-center gap-1 overflow-x-auto">
+          {menu.map((item) => {
+            const Icon = item.icon;
+            const active = view === item.key;
             return (
               <button
-                key={tab.key}
-                onClick={() => { setActiveTab(tab.key); setSelectedDetector(null); }}
+                key={item.key}
+                onClick={() => { setView(item.key); setSelectedDetector(null); }}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
-                  activeTab === tab.key
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-all",
+                  active
                     ? "bg-primary text-primary-foreground"
-                    : "bg-card text-muted-foreground hover:text-foreground hover:bg-accent",
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
                 )}
               >
                 <Icon className="w-3.5 h-3.5" />
-                {tab.label}
-                {tab.count !== undefined && (
+                {item.label}
+                {item.count !== undefined && (
                   <span className={cn(
-                    "ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold",
-                    activeTab === tab.key
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-muted text-muted-foreground",
+                    "ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold",
+                    active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground",
                   )}>
-                    {tab.count}
+                    {item.count}
                   </span>
                 )}
               </button>
             );
           })}
-        </nav>
+        </div>
+      </nav>
 
-        {activeTab === "detectors" && (
-          selectedDetector ? (
-            <FipDetectorTypeDetail detector={selectedDetector} onBack={() => setSelectedDetector(null)} />
-          ) : (
-            <FipDetectorTypeBrowser onSelect={setSelectedDetector} />
-          )
-        )}
+      {/* Body — chat left, content right */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 p-4 md:p-6 max-w-[1800px] mx-auto w-full">
+        <aside className="lg:w-[360px] xl:w-[400px] shrink-0 h-[60vh] lg:h-auto">
+          <FipAssistantChat contextDetectorSlug={selectedDetector?.slug} />
+        </aside>
 
-        {activeTab === "manufacturers" && (
-          <ManufacturersTab manufacturers={manufacturers} models={models} families={families} />
-        )}
+        <main className="flex-1 min-w-0 overflow-y-auto pr-1">
+          {view === "command" && (
+            <div className="space-y-4">
+              <header>
+                <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <LayoutDashboard className="w-4 h-4 text-primary" />
+                  FIP Command Centre
+                </h1>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Panel specs · common products · defect analysis · battery sizing — all in one view.
+                </p>
+              </header>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <PanelTechnicalCard />
+                <CommonProductsCard />
+                <DefectImageAnalysisCard />
+                <BatteryCalculatorCard />
+              </div>
+            </div>
+          )}
 
-        {activeTab === "models" && (
-          <ModelsTab models={models} mfrMap={mfrMap} famMap={famMap} />
-        )}
+          {view === "detectors" && (
+            selectedDetector ? (
+              <FipDetectorTypeDetail detector={selectedDetector} onBack={() => setSelectedDetector(null)} />
+            ) : (
+              <FipDetectorTypeBrowser onSelect={setSelectedDetector} />
+            )
+          )}
 
-        {activeTab === "standards" && <StandardsTab standards={standards} />}
-        {activeTab === "documents" && <DocumentsTab documents={documents} mfrMap={mfrMap} />}
-      </main>
+          {view === "manufacturers" && (
+            <ManufacturersTab manufacturers={manufacturers} models={models} families={families} />
+          )}
+
+          {view === "models" && (
+            <ModelsTab models={models} mfrMap={mfrMap} famMap={famMap} />
+          )}
+
+          {view === "standards" && <StandardsTab standards={standards} />}
+          {view === "documents" && <DocumentsTab documents={documents} mfrMap={mfrMap} />}
+        </main>
+      </div>
     </div>
   );
 }
@@ -410,3 +421,4 @@ function DocumentsTab({ documents, mfrMap }: { documents: any[]; mfrMap: Record<
     </div>
   );
 }
+

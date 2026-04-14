@@ -69,18 +69,23 @@ app.use(
 // Body parsers
 // ───────────────────────────────────────────────────────────────────────────
 // Default 1 MB cap on every endpoint, with a targeted 50 MB limit mounted only
-// on the anthropic message route (images + email HTML can be large).
-// Override with DEFAULT_BODY_LIMIT / CHAT_BODY_LIMIT. Rollback: set both to 50mb.
+// on the anthropic message route and on /api/attachments (the new
+// file-upload endpoint). Override with env. Rollback: set all to 50mb.
 const defaultBodyLimit = process.env["DEFAULT_BODY_LIMIT"] || "1mb";
 const chatBodyLimit = process.env["CHAT_BODY_LIMIT"] || "50mb";
+const attachmentBodyLimit = process.env["ATTACHMENT_BODY_LIMIT"] || "25mb";
 
 app.use(
-  /^(?!\/api\/anthropic\/conversations\/[^\/]+\/messages$).*/,
+  /^(?!\/api\/anthropic\/conversations\/[^\/]+\/messages$)(?!\/api\/attachments$).*/,
   express.json({ limit: defaultBodyLimit }),
 );
 app.use(
   "/api/anthropic/conversations/:id/messages",
   express.json({ limit: chatBodyLimit }),
+);
+app.use(
+  "/api/attachments",
+  express.json({ limit: attachmentBodyLimit }),
 );
 app.use(express.urlencoded({ extended: true, limit: defaultBodyLimit }));
 

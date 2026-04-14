@@ -15,6 +15,8 @@
  */
 
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { apiFetch, streamFipAssistant, type AgentToolEvent } from "@/lib/api";
 import { Send, ImageIcon, X, Loader2, Wrench, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -311,7 +313,17 @@ export function FipAssistantChat({ contextDetectorSlug }: Props) {
                   ))}
                 </div>
               )}
-              {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
+              {msg.content && (
+                msg.role === "assistant" ? (
+                  <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1.5 prose-li:my-0 prose-headings:mt-2 prose-headings:mb-1 prose-headings:font-semibold prose-code:text-[11px] prose-code:before:content-none prose-code:after:content-none prose-pre:bg-muted prose-pre:text-foreground prose-pre:text-[10px] prose-table:text-[11px] prose-hr:my-2">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                )
+              )}
               {msg.role === "assistant" && !msg.content && streaming && i === messages.length - 1 && (
                 <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
               )}

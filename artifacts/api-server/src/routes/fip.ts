@@ -20,6 +20,7 @@ import {
   fipModels,
   fipComponents,
   fipDetectorTypes,
+  fipCommonProducts,
   fipDocuments,
   fipDocumentVersions,
   fipDocumentSections,
@@ -185,6 +186,83 @@ router.post("/fip/components", async (req, res, next) => {
       partNumber: partNumber ?? null, description: description ?? null, specs: specs ?? null,
     }).returning();
     res.status(201).json(serializeDates(row));
+  } catch (err) { next(err); }
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// FIP v2.0 Command Centre endpoints
+// ───────────────────────────────────────────────────────────────────────────
+
+// GET /fip/panels — list every model with its deep spec (for the dropdown)
+router.get("/fip/panels", async (_req, res, next) => {
+  if (!gate(res)) return;
+  try {
+    const rows = await db
+      .select()
+      .from(fipModels)
+      .where(isNull(fipModels.deletedAt))
+      .orderBy(fipModels.name);
+    const result = rows.map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      modelNumber: r.modelNumber,
+      description: r.description,
+      manufacturerId: r.manufacturerId,
+      familyId: r.familyId,
+      status: r.status,
+      maxLoops: r.maxLoops,
+      devicesPerLoop: r.devicesPerLoop,
+      loopProtocol: r.loopProtocol,
+      networkCapable: r.networkCapable,
+      maxNetworkedPanels: r.maxNetworkedPanels,
+      batteryStandbyAh: r.batteryStandbyAh ? Number(r.batteryStandbyAh) : null,
+      batteryAlarmAh: r.batteryAlarmAh ? Number(r.batteryAlarmAh) : null,
+      recommendedBatterySize: r.recommendedBatterySize,
+      configOptions: r.configOptions,
+      approvals: r.approvals,
+      commissioningNotes: r.commissioningNotes,
+      typicalPriceBand: r.typicalPriceBand,
+    }));
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+// GET /fip/common-products — curated everyday items catalogue
+router.get("/fip/common-products", async (req, res, next) => {
+  if (!gate(res)) return;
+  try {
+    const { category, search } = req.query as Record<string, string | undefined>;
+    const conds: any[] = [isNull(fipCommonProducts.deletedAt)];
+    if (category) conds.push(eq(fipCommonProducts.category, category as any));
+    const rows = await db
+      .select()
+      .from(fipCommonProducts)
+      .where(and(...conds))
+      .orderBy(fipCommonProducts.category, fipCommonProducts.name);
+    const filtered = search
+      ? rows.filter((r) => {
+          const q = search.toLowerCase();
+          return (
+            r.name.toLowerCase().includes(q) ||
+            (r.manufacturer ?? "").toLowerCase().includes(q) ||
+            (r.partCode ?? "").toLowerCase().includes(q) ||
+            (r.description ?? "").toLowerCase().includes(q)
+          );
+        })
+      : rows;
+    res.json(filtered.map((r) => ({
+      id: r.id,
+      category: r.category,
+      name: r.name,
+      manufacturer: r.manufacturer,
+      partCode: r.partCode,
+      description: r.description,
+      unit: r.unit,
+      priceBand: r.priceBand,
+      indicativePriceAud: r.indicativePriceAud ? Number(r.indicativePriceAud) : null,
+      notes: r.notes,
+    })));
   } catch (err) { next(err); }
 });
 

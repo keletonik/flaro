@@ -24,10 +24,13 @@ import authRouter from "./auth";
 import uptickRouter from "./uptick";
 import fipRouter from "./fip";
 import fipAssistantRouter from "./fip-assistant";
+import fipDefectAnalysisRouter from "./fip-defect-analysis";
 import chatAgentRouter from "./chat-agent";
 import estimatesRouter from "./estimates";
 import metricsRouter from "./metrics";
 import remindersRouter from "./reminders";
+import paInstructionsRouter from "./pa-instructions";
+import attachmentsRouter from "./attachments";
 import diagRouter from "./diag";
 
 const router: IRouter = Router();
@@ -57,10 +60,13 @@ router.use(authRouter);
 router.use(uptickRouter);
 router.use(fipRouter);
 router.use(fipAssistantRouter);
+router.use(fipDefectAnalysisRouter);
 router.use(chatAgentRouter);
 router.use(estimatesRouter);
 router.use(metricsRouter);
 router.use(remindersRouter);
+router.use(paInstructionsRouter);
+router.use(attachmentsRouter);
 router.use(diagRouter);
 
 export default router;

@@ -4,6 +4,7 @@ import { logger } from "./lib/logger";
 import { FIP_DDL_STATEMENTS } from "./seed-fip-ddl";
 import fipData from "./seed-fip-data.json";
 import { DETECTOR_TYPE_SEED } from "./lib/fip/detector-types-seed";
+import { STANDARD_CLAUSE_SEED } from "./lib/fip/standard-clauses-seed";
 
 /**
  * FIP / VESDA technical knowledge bootstrap.
@@ -63,6 +64,7 @@ export async function seedFipKnowledgeBase(): Promise<void> {
     await seedStandards(client);
     await seedAuditRuns(client);
     await seedDetectorTypes(client);
+    await seedStandardClauses(client);
 
     logger.info("FIP knowledge base seed complete");
   } catch (err) {
@@ -419,4 +421,44 @@ async function seedDetectorTypes(client: any): Promise<void> {
     inserted++;
   }
   logger.info({ table: "fip_detector_types", inserted, updated }, "fip seed");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Standard clauses — dedup by (standardCode, clauseNumber).
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedStandardClauses(client: any): Promise<void> {
+  let inserted = 0;
+  let updated = 0;
+  let skipped = 0;
+  for (const c of STANDARD_CLAUSE_SEED) {
+    const stdRow = await client.query(
+      "SELECT id FROM fip_standards WHERE code = $1 LIMIT 1",
+      [c.standardCode],
+    );
+    if (stdRow.rows.length === 0) {
+      skipped++;
+      continue;
+    }
+    const standardId = stdRow.rows[0].id;
+    const existing = await client.query(
+      "SELECT id FROM fip_standard_clauses WHERE standard_id = $1 AND clause_number = $2 LIMIT 1",
+      [standardId, c.clauseNumber],
+    );
+    if (existing.rows.length > 0) {
+      await client.query(
+        "UPDATE fip_standard_clauses SET title = $1, content = $2, keywords = $3 WHERE id = $4",
+        [c.title, c.summary, c.keywords, existing.rows[0].id],
+      );
+      updated++;
+      continue;
+    }
+    await client.query(
+      `INSERT INTO fip_standard_clauses
+       (id, standard_id, clause_number, title, content, keywords)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [randomUUID(), standardId, c.clauseNumber, c.title, c.summary, c.keywords],
+    );
+    inserted++;
+  }
+  logger.info({ table: "fip_standard_clauses", inserted, updated, skipped }, "fip seed");
 }

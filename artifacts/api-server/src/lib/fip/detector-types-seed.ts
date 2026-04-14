@@ -640,5 +640,58 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 12. MANUAL CALL POINT (BREAK-GLASS / MCP)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "manual-call-point",
+    name: "Manual Call Point (Break-Glass / MCP)",
+    category: "manual_call_point",
+    summary:
+      "Human-operated fire alarm trigger — a break-glass or press-and-hold switch that initiates an alarm from the occupant regardless of automatic detection. Mandatory in every path of egress under AS 1670.1.",
+    operatingPrinciple:
+      "A mechanical or resettable plastic element is held in place covering a spring-loaded switch. When an occupant breaks the glass (single-use) or presses the element firmly (resettable), the switch changes state and reports alarm to the panel. On addressable systems the call point has its own loop address and reports directly to the panel; on conventional zone systems it short-circuits the zone line.",
+    sensingTechnology:
+      "No sensing — purely mechanical. The switch is monitored by the panel through an end-of-line resistor or addressable interface. Modern call points (Apollo XP95, Hochiki HCP, System Sensor M500) use a resettable plastic element held by a spring catch — press the element, the switch trips, then pull the element back out with a key to reset. A clear plastic hinged cover prevents accidental activation in low-height installations.",
+    typicalApplications: [
+      "Every exit door on every level (AS 1670.1 Clause 3.29 — mandatory positioning)",
+      "Corridors longer than 30 m — intermediate call points so occupants are never more than 30 m from one",
+      "Stairwells at each floor landing",
+      "Assembly areas, hotels, hospitals, schools — one per fire compartment at minimum",
+      "Industrial plant rooms with automatic suppression — human override for false-positive detection",
+    ],
+    unsuitableApplications: [
+      "Nowhere — call points are universally required. The only question is HOW MANY and WHERE.",
+      "Do not rely on them as the primary detection — automatic detection is still required per AS 1670.1",
+    ],
+    installationRequirements:
+      "AS 1670.1 Clause 3.29 — mount 1400 ± 200 mm above finished floor, within 2 m of an exit door, and not more than 30 m from any point in the protected space. Break-glass models must have the break element accessible from the front (no shrouds blocking direct hand access). Every call point requires clear signage — a red 'FIRE' label or equivalent per AS 2293 where emergency lighting applies. Wiring must be monitored — short-circuit and open-circuit faults must annunciate on the panel. Call points MUST be on a dedicated loop or zone sub-group on any system with automatic detection — so the user alarm can be distinguished from an automatic alarm in the panel event log.",
+    failureModes: [
+      { mode: "Accidental activation", symptom: "Alarm but no real fire", cause: "Knocked by a trolley, pranked, or pressed during cleaning", action: "Reset with the key. Investigate if repeated at the same location (fit a hinged cover if the area has regular foot traffic)." },
+      { mode: "Stuck switch after reset", symptom: "Panel still reports alarm even after resetting the element", cause: "Mechanical switch failed to return", action: "Replace the call point unit." },
+      { mode: "Broken glass not replaced", symptom: "Single-use call point left open after test or activation", cause: "Missed housekeeping item", action: "Stock spare glass elements on site; replace immediately after every test or activation." },
+      { mode: "Loop address drift", symptom: "Wrong zone annunciated on activation", cause: "Call point re-programmed or loop address hardware-set incorrectly", action: "Walk-test every call point at commissioning and after any loop re-address." },
+    ],
+    testProcedure:
+      "AS 1851 Section 6.4 — every call point is activated at each 6-monthly service. Use the test key to reset without breaking the glass (resettable models) or replace the glass element immediately after activation (single-use models). Verify the panel annunciates the correct address and zone, and that the alarm clears after reset.",
+    maintenance:
+      "6-monthly: test every call point, verify signage is visible and not obstructed, replace any broken glass elements that were not replaced at the previous activation. Annually check the break element is not hardened or cracked (some plastic break elements become brittle with UV exposure). Replace per manufacturer life (typically 15 years).",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.29", note: "Manual call point placement — height, distance from exit, max travel distance" },
+      { code: "AS 7240.11", note: "Manual call points — product performance standard (aligns with EN 54-11)" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service — every call point tested" },
+      { code: "AS 2293", note: "Emergency escape lighting where call point signage is illuminated" },
+    ],
+    exampleModels: [
+      { manufacturer: "Apollo", model: "XP95 Addressable MCP", partNumber: "55100-908APO", notes: "Resettable element, loop-powered, addressable" },
+      { manufacturer: "Hochiki", model: "HCP-EN", partNumber: "HCP-EN", notes: "ESP protocol, resettable" },
+      { manufacturer: "System Sensor", model: "M500KAC", partNumber: "M500KAC", notes: "Conventional break-glass" },
+      { manufacturer: "Notifier", model: "NBG-12LX", partNumber: "NBG-12LX", notes: "FlashScan addressable pull station" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: true,
+  },
 ];
 

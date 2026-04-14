@@ -585,7 +585,31 @@ export async function estimateList(): Promise<any> {
 // Dispatcher
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Pass 5 §3.10 — cap every agent tool call at 10 seconds. A runaway
+// db_search over a 10k-row table was previously free to run to
+// completion even though the LLM's next turn wouldn't use the result.
+const TOOL_TIMEOUT_MS = Number(process.env["AGENT_TOOL_TIMEOUT_MS"]) || 10_000;
+
+function withTimeout<T>(work: Promise<T>, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`tool '${label}' exceeded ${TOOL_TIMEOUT_MS}ms timeout`));
+    }, TOOL_TIMEOUT_MS);
+    work.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
 export async function executeAgentTool(
+  name: string,
+  input: any,
+): Promise<{ result: any; uiAction?: { type: string; [k: string]: any } }> {
+  return withTimeout(executeAgentToolInner(name, input), name);
+}
+
+async function executeAgentToolInner(
   name: string,
   input: any,
 ): Promise<{ result: any; uiAction?: { type: string; [k: string]: any } }> {

@@ -52,6 +52,7 @@ const navGroups = [
       { path: "/chat", icon: MessageCircle, label: "Chat" },
       { path: "/operations", icon: BarChart3, label: "Operations" },
       { path: "/analytics", icon: PieChart, label: "Analytics" },
+      { path: "/metrics", icon: BarChart3, label: "Metrics" },
     ],
   },
   {

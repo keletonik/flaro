@@ -114,5 +114,53 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
       "F220 is the Pertronic flagship. Set NAC coding per AS 1670.4 (Temporal-3 default). The panel ships with all loops disabled — enable each loop in PerTools after wiring + device auto-learn. Loop current budget: max 500 mA per loop.",
     typicalPriceBand: "$$$",
   },
+
+  // ─── Ampac ─────────────────────────────────────────────────────────
+  {
+    slug: "ampac-fireFinder-plus",
+    maxLoops: 8,
+    devicesPerLoop: 250,
+    loopProtocol: "Apollo XP95/Discovery or Ampac proprietary",
+    networkCapable: true,
+    maxNetworkedPanels: 32,
+    batteryStandbyAh: 38,
+    batteryAlarmAh: 38,
+    recommendedBatterySize: "2 × 12V 38Ah SLA in the standard cabinet",
+    configOptions: [
+      { label: "Programming tool", value: "LoopSense config software (USB/Ethernet)" },
+      { label: "Loop driver cards", value: "Up to 8 × LPS loop modules" },
+      { label: "Zones", value: "Up to 256 software zones" },
+      { label: "Sounder circuits", value: "8 supervised NAC outputs, expandable" },
+      { label: "Network", value: "AmpNet peer-to-peer, up to 32 panels" },
+      { label: "Brigade connection", value: "Integrated AS 1670.3 BASM interface" },
+    ],
+    approvals: ["ActivFire scheme", "AS 4428.1 / AS 7240.2 listed", "AS 1670.3 BASM compatible"],
+    commissioningNotes:
+      "FireFinder Plus ships with LoopSense: do a loop impedance test before auto-learn, then assign zones, then configure cause-and-effect via matrix view. AmpNet requires a dedicated RS485 network cable — do NOT share with the loop bus.",
+    typicalPriceBand: "$$$",
+  },
+  {
+    slug: "ampac-fp1200",
+    maxLoops: 4,
+    devicesPerLoop: 250,
+    loopProtocol: "Apollo XP95/Discovery",
+    networkCapable: true,
+    maxNetworkedPanels: 16,
+    batteryStandbyAh: 24,
+    batteryAlarmAh: 24,
+    recommendedBatterySize: "2 × 12V 24Ah SLA",
+    configOptions: [
+      { label: "Programming tool", value: "LoopSense (USB)" },
+      { label: "Loop driver cards", value: "Up to 4 × LPS modules" },
+      { label: "Zones", value: "Up to 128 software zones" },
+      { label: "Sounder circuits", value: "4 supervised NAC outputs" },
+      { label: "Network", value: "AmpNet up to 16 panels" },
+      { label: "Display", value: "Built-in 8-line LCD + LED mimic card option" },
+    ],
+    approvals: ["ActivFire scheme", "AS 4428.1 / AS 7240.2 listed"],
+    commissioningNotes:
+      "Mid-range Ampac panel. Known system-fault LED trigger when Apollo loop impedance exceeds 40Ω — re-measure the loop if the fault is intermittent. Battery charger is current-limited at 1.5A, so heavy discharge recovery can take overnight.",
+    typicalPriceBand: "$$",
+  },
 ];
 

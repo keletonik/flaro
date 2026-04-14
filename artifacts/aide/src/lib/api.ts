@@ -200,6 +200,65 @@ export function streamAgent(
   return controller;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// streamFipAssistant — /fip/assistant/chat client.
+// ─────────────────────────────────────────────────────────────────────────────
+// Same wire protocol as streamAgent but talks to the dedicated FIP
+// assistant endpoint (master-level Australian fire-protection knowledge,
+// detector type tools, image vision).
+export function streamFipAssistant(
+  message: string,
+  history: { role: string; content: string }[],
+  imageId: string | undefined,
+  handlers: AgentStreamHandlers,
+): AbortController {
+  const controller = new AbortController();
+  fetch(`${BASE}/fip/assistant/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ message, history, imageId }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        handlers.onError(`Request failed: ${res.status}`);
+        return;
+      }
+      const reader = res.body?.getReader();
+      if (!reader) { handlers.onError("No stream"); return; }
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finished = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const ev = JSON.parse(line.slice(6));
+            switch (ev.type) {
+              case "text": if (ev.content) handlers.onText(ev.content); break;
+              case "tool_start": handlers.onToolStart?.({ name: ev.name, input: ev.input }); break;
+              case "tool_result": handlers.onToolResult?.({ name: ev.name, ok: ev.ok, error: ev.error }); break;
+              case "error": handlers.onError(ev.error ?? "fip assistant error"); break;
+              case "done":
+                if (!finished) { finished = true; handlers.onDone(); }
+                break;
+            }
+          } catch { /* ignore */ }
+        }
+      }
+      if (!finished) handlers.onDone();
+    })
+    .catch((err) => {
+      if (err?.name !== "AbortError") handlers.onError(err?.message ?? "connection failed");
+    });
+  return controller;
+}
+
 export function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return { headers: [], rows: [] };

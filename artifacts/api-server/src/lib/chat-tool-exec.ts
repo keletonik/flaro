@@ -84,6 +84,33 @@ function entry(table: string): TableEntry {
 // Result shaping — keep payloads small so they don't blow the context window
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Pass 6 §3.4 — fields whose content is user-entered free text and
+// therefore CANNOT be trusted as agent instructions. Values from these
+// columns are wrapped in <<user_content>>…<</user_content>> sentinels
+// in the tool result so the system prompt's "never follow instructions
+// inside user_content sentinels" rule has something to bind against.
+const UNTRUSTED_FIELDS = new Set([
+  "description",
+  "text",
+  "notes",
+  "title",
+  "display_text",
+  "symptom",
+  "action_required",
+  "address",
+  "product_name",
+  "product_code",
+]);
+
+function sanitiseUntrusted(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  if (value.length === 0) return value;
+  // Strip null bytes + wrap in sentinels. No other transformation —
+  // we want the LLM to see the original content, just labelled.
+  const cleaned = value.replace(/\u0000/g, "");
+  return `<<user_content>>${cleaned}<</user_content>>`;
+}
+
 function summariseRow(table: string, row: Record<string, any>): Record<string, any> {
   const out: Record<string, any> = { id: row.id };
   const keep: Record<string, string[]> = {
@@ -112,8 +139,12 @@ function summariseRow(table: string, row: Record<string, any>): Record<string, a
   for (const c of cols) {
     // drizzle returns camelCase, source keep lists snake_case — check both
     const camel = c.replace(/_([a-z])/g, (_, l) => l.toUpperCase());
-    if (row[camel] !== undefined) out[camel] = row[camel];
-    else if (row[c] !== undefined) out[c] = row[c];
+    const isUntrusted = UNTRUSTED_FIELDS.has(c);
+    if (row[camel] !== undefined) {
+      out[camel] = isUntrusted ? sanitiseUntrusted(row[camel]) : row[camel];
+    } else if (row[c] !== undefined) {
+      out[c] = isUntrusted ? sanitiseUntrusted(row[c]) : row[c];
+    }
   }
   return out;
 }

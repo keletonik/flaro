@@ -63,7 +63,7 @@ interface Command {
 
 const navigateCommands: Command[] = [
   { id: "nav-dashboard", label: "Go to Dashboard", group: "navigate", icon: <LayoutDashboard size={14} />, keywords: "home kpi", shortcut: "g d", action: (c) => { c.setLocation("/"); c.close(); } },
-  { id: "nav-chat", label: "Go to Chat", group: "navigate", icon: <MessageCircle size={14} />, keywords: "pa assistant", shortcut: "g c", action: (c) => { c.setLocation("/chat"); c.close(); } },
+  { id: "nav-pa", label: "Go to PA", group: "navigate", icon: <MessageCircle size={14} />, keywords: "pa assistant chat voice reminders", shortcut: "g c", action: (c) => { c.setLocation("/pa"); c.close(); } },
   { id: "nav-operations", label: "Go to Operations (WIP / Quotes / Defects / Invoices)", group: "navigate", icon: <BarChart3 size={14} />, keywords: "ops", shortcut: "g o", action: (c) => { c.setLocation("/operations"); c.close(); } },
   { id: "nav-analytics", label: "Go to Analytics", group: "navigate", icon: <PieChart size={14} />, keywords: "charts metrics", shortcut: "g a", action: (c) => { c.setLocation("/analytics"); c.close(); } },
   { id: "nav-jobs", label: "Go to Jobs / WIPs", group: "navigate", icon: <Briefcase size={14} />, keywords: "action list", shortcut: "g j", action: (c) => { c.setLocation("/jobs"); c.close(); } },

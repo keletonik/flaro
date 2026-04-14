@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 // Lazy-loaded pages for code splitting
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Chat = lazy(() => import("@/pages/chat"));
+const PA = lazy(() => import("@/pages/pa"));
 const Jobs = lazy(() => import("@/pages/jobs"));
 const Notes = lazy(() => import("@/pages/notes"));
 const Toolbox = lazy(() => import("@/pages/toolbox"));
@@ -50,7 +51,7 @@ const navGroups = [
     label: "Command",
     items: [
       { path: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
-      { path: "/chat", icon: MessageCircle, label: "Chat" },
+      { path: "/pa", icon: MessageCircle, label: "PA" },
       { path: "/operations", icon: BarChart3, label: "Operations" },
       { path: "/analytics", icon: PieChart, label: "Analytics" },
       { path: "/metrics", icon: BarChart3, label: "Metrics" },
@@ -227,7 +228,7 @@ function SidebarNav() {
 function BottomNav() {
   const [location, setLocation] = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
-  const PRIMARY_PATHS = ["/", "/chat", "/operations", "/analytics"];
+  const PRIMARY_PATHS = ["/", "/pa", "/operations", "/analytics"];
   const primaryItems = allNavItems.filter(i => PRIMARY_PATHS.includes(i.path));
   const moreItems = allNavItems.filter(i => !PRIMARY_PATHS.includes(i.path));
 
@@ -289,7 +290,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           Uses /chat/agent under the hood so it can actually take action on
           every page, not just describe data. See docs/audit/PASS_2_ux.md
           target 1 and docs/FULL_AUDIT_REBUILD_PROMPT.md Phase 2. */}
-      {location !== "/chat" && <AIDEAssistant />}
+      {location !== "/chat" && location !== "/pa" && <AIDEAssistant />}
       {/* Global Cmd-K command palette. Navigate, create, or ask AIDE. */}
       <CommandPalette />
       <KeyboardCheatSheet />
@@ -333,6 +334,10 @@ function Router() {
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/"><Dashboard /></Route>
+          <Route path="/pa"><PA /></Route>
+          {/* /chat is kept as the legacy read-only viewer for the
+              historical anthropic_conversations rows. The new PA
+              surface lives at /pa. */}
           <Route path="/chat"><Chat /></Route>
           <Route path="/operations"><Operations /></Route>
           <Route path="/analytics"><Analytics /></Route>

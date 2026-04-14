@@ -479,5 +479,59 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$$",
     addressable: true,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 9. OPTICAL BEAM SMOKE DETECTOR
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "beam-smoke",
+    name: "Optical Beam Smoke Detector",
+    category: "beam",
+    summary:
+      "Projected-beam smoke detector — an infrared transmitter and receiver on opposite walls sense smoke-induced obscuration along a 5–100 m beam path. The go-to answer for high-ceiling open spaces under AS 1670.1 Clause 3.25.",
+    operatingPrinciple:
+      "An infrared transmitter projects a modulated beam across the protected space to a receiver (end-to-end systems) or a reflector that returns the beam to a combined transmit/receive unit (reflective systems). The receiver measures the received beam intensity continuously. Smoke in the beam path attenuates the signal; the detector alarms when obscuration exceeds a calibrated threshold sustained over a minimum dwell time. Thresholds are typically 25%, 35%, and 50% obscuration for alert/fire 1/fire 2.",
+    sensingTechnology:
+      "Infrared LED transmitter pulsed at a frequency that rejects background light. Receiver photodiode with a narrow bandpass filter tuned to the LED wavelength. Modern units (Fireray 5000, Hochiki FIRElink) include automatic alignment compensation via a motorised head to maintain beam centring across building thermal movement. Reflective units halve the wiring (transmitter and receiver in one housing, prism on the opposite wall) but are range-limited to ~50 m vs 100 m for end-to-end.",
+    typicalApplications: [
+      "Warehouses, distribution centres, manufacturing floors with ceilings ≥ 6 m",
+      "Atria, shopping centre malls, heritage church interiors",
+      "Aircraft hangars and airport terminals",
+      "Sports arenas and swimming pool enclosures",
+      "Cold stores (where local photoelectrics are restricted by condensation)",
+    ],
+    unsuitableApplications: [
+      "Dusty industrial spaces where background attenuation rises throughout the day — drift compensation can mask real smoke",
+      "Spaces with significant forced airflow that causes building movement beyond the detector's alignment range (± 0.5° on most units)",
+      "Rooms with obstructing stock or moving cranes — any temporary blockage of the beam triggers a fault",
+      "Very small rooms below 5 m span — the detector is specified for 5 m minimum range",
+    ],
+    installationRequirements:
+      "AS 1670.1 Clause 3.25 — maximum coverage is one beam per 15 m of width (7.5 m each side of the beam), and a maximum beam length of 100 m for end-to-end or 50 m for reflective. Mount the transmitter and receiver 300–800 mm below the ceiling so the beam sits in the smoke layer. Ensure the beam path is clear of any permanent obstructions and allow for building thermal movement of at least ± 100 mm on each end. Power both ends from the same loop or use a relay-fed backup to avoid a fault on every building sway. Align the beam using the integrated alignment aid (usually a laser spotter) during commissioning and re-confirm at every service.",
+    failureModes: [
+      { mode: "Beam misalignment", symptom: "Fault on beam-drift or loss-of-beam", cause: "Building thermal movement, mounting bracket loosening, or someone knocked the transmitter", action: "Re-align using the on-board aid; re-torque the bracket; consider a motorised alignment unit for tall/flexing buildings." },
+      { mode: "Dust build-up on lenses", symptom: "Gradual loss of signal strength; eventual drift alarm", cause: "Dust accumulation on the transmitter or receiver lens", action: "Clean lenses with IPA and lint-free cloth at each service interval." },
+      { mode: "Stray reflection alarm", symptom: "Brief alarm when a vehicle or crane passes the beam", cause: "Short obstruction exceeds the dwell threshold", action: "Raise the dwell time to 20+ seconds if site operations cause regular transient interruptions." },
+      { mode: "Sunlight saturation", symptom: "False alarm at sunrise/sunset through a window", cause: "Direct sun on the receiver overloads the photodiode", action: "Fit a sun shield or re-orient the unit." },
+    ],
+    testProcedure:
+      "Calibrated neutral-density filter placed in the beam per AS 1851 Section 6.4 — filter obscuration matches the detector's alarm threshold (e.g. 25% or 35% NDF). Beam must alarm within 30 seconds of filter insertion and clear on removal. Log per-threshold results. Annual alignment check with laser aid.",
+    maintenance:
+      "6-monthly visual inspection + alignment check + lens clean, 12-monthly filter alarm test. Track thermal drift trend over years.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.25", note: "Beam detector spacing, coverage, and maximum beam length" },
+      { code: "AS 7240.12", note: "Optical beam smoke detectors — product standard" },
+      { code: "AS 1851", clause: "6.4", note: "Routine service with NDF test filter" },
+    ],
+    exampleModels: [
+      { manufacturer: "FFE", model: "Fireray 5000", notes: "Motorised auto-aligning end-to-end beam, up to 100 m" },
+      { manufacturer: "FFE", model: "Fireray 3000", notes: "Manual-aligning reflective beam, up to 50 m" },
+      { manufacturer: "System Sensor", model: "OSI-RI Reflective", notes: "Addressable reflective with 8–70 m range" },
+      { manufacturer: "Hochiki", model: "FIRElink-HSSD", notes: "Beam + HSSD hybrid for mixed coverage" },
+    ],
+    lifeSpanYears: 12,
+    costBand: "$$",
+    addressable: true,
+  },
 ];
 

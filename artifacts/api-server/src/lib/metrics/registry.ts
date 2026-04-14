@@ -20,8 +20,13 @@
  *   - overdue_defects_by_severity
  *   - aged_receivables_heatmap
  *   - quote_conversion_30d
+ *   - tech_utilisation_7d
+ *   - avg_time_to_invoice
+ *   - margin_by_client_top10
+ *   - repeat_site_frequency
+ *   - critical_defect_backlog_trend
  *
- * Planned (Pass 4 fix set items 2f–2j):
+ * All 10 metrics from Pass 4 fix set item 2 are now live.
  *   - tech_utilisation_7d
  *   - avg_time_to_invoice
  *   - margin_by_client_top10
@@ -35,6 +40,11 @@ import { topWipsByValue } from "./top-wips-by-value";
 import { overdueDefectsBySeverity } from "./overdue-defects-by-severity";
 import { agedReceivablesHeatmap } from "./aged-receivables-heatmap";
 import { quoteConversion30d } from "./quote-conversion-30d";
+import { techUtilisation7d } from "./tech-utilisation-7d";
+import { avgTimeToInvoice } from "./avg-time-to-invoice";
+import { marginByClientTop10 } from "./margin-by-client-top10";
+import { repeatSiteFrequency } from "./repeat-site-frequency";
+import { criticalDefectBacklogTrend } from "./critical-defect-backlog-trend";
 
 const DEFINITIONS: MetricDefinition[] = [
   revenueVsTargetMtd,
@@ -42,7 +52,11 @@ const DEFINITIONS: MetricDefinition[] = [
   overdueDefectsBySeverity,
   agedReceivablesHeatmap,
   quoteConversion30d,
-  // More will land as Pass 4 fix items 2f onward ship.
+  techUtilisation7d,
+  avgTimeToInvoice,
+  marginByClientTop10,
+  repeatSiteFrequency,
+  criticalDefectBacklogTrend,
 ];
 
 const BY_ID = new Map(DEFINITIONS.map((d) => [d.id, d]));

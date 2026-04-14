@@ -32,4 +32,24 @@ export const PA_DDL_STATEMENTS: string[] = [
      ON pa_reminders (status)`,
   `CREATE INDEX IF NOT EXISTS pa_reminders_deleted_idx
      ON pa_reminders (deleted_at)`,
+
+  // ── pa_instructions (Smart Mode phase A) ───────────────────────────────
+  `CREATE TABLE IF NOT EXISTS pa_instructions (
+     id text PRIMARY KEY,
+     title text NOT NULL,
+     content text NOT NULL,
+     scope text NOT NULL DEFAULT 'global',
+     priority integer NOT NULL DEFAULT 3,
+     enabled boolean NOT NULL DEFAULT true,
+     source text DEFAULT 'user',
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
+     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+     deleted_at timestamp with time zone
+   )`,
+  `CREATE INDEX IF NOT EXISTS pa_instructions_scope_enabled_idx
+     ON pa_instructions (scope, enabled)`,
+  `CREATE INDEX IF NOT EXISTS pa_instructions_priority_idx
+     ON pa_instructions (priority)`,
+  `CREATE INDEX IF NOT EXISTS pa_instructions_deleted_idx
+     ON pa_instructions (deleted_at)`,
 ];

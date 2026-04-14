@@ -29,6 +29,7 @@ import estimatesRouter from "./estimates";
 import metricsRouter from "./metrics";
 import remindersRouter from "./reminders";
 import paInstructionsRouter from "./pa-instructions";
+import attachmentsRouter from "./attachments";
 import diagRouter from "./diag";
 
 const router: IRouter = Router();
@@ -63,6 +64,7 @@ router.use(estimatesRouter);
 router.use(metricsRouter);
 router.use(remindersRouter);
 router.use(paInstructionsRouter);
+router.use(attachmentsRouter);
 router.use(diagRouter);
 
 export default router;

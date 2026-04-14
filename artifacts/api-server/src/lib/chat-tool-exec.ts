@@ -189,11 +189,27 @@ export async function dbSearch(input: any): Promise<any> {
   if (conds.length) totalQ.where(and(...conds));
   const [{ c: total }] = await totalQ;
 
+  // AIDE master prompt PERMANENT EXCLUSION: strip Jade Ogony from
+  // any tech / assignee field before the rows reach the model. The
+  // row itself is preserved (never delete data) — only the tech
+  // field is blanked so the model can't dispatch to her. See
+  // docs/aide-master-prompt/MASTER.md §5.4.
+  const JADE_PATTERN = /\bjade\s+ogony\b/i;
+  const scrubbed = rows.map((r: any) => {
+    const clean: any = { ...r };
+    for (const field of ["assignedTech", "assigned_tech", "technician", "assignee"]) {
+      if (clean[field] && typeof clean[field] === "string" && JADE_PATTERN.test(clean[field])) {
+        clean[field] = null;
+      }
+    }
+    return clean;
+  });
+
   return {
     table: tableName,
     total: Number(total),
-    returned: rows.length,
-    rows: rows.map((r) => summariseRow(tableName, r)),
+    returned: scrubbed.length,
+    rows: scrubbed.map((r) => summariseRow(tableName, r)),
   };
 }
 
@@ -958,6 +974,20 @@ async function executeAgentToolInner(
         result: { ok: true, id: row.id, title: row.title },
         uiAction: { type: "refresh" },
       };
+    }
+
+    // ─── AIDE Master-Prompt Triple-Check tool ───────────────────────
+    // Runs the three-pass verification protocol from the AIDE master
+    // prompt. Pure read-only. No mutation. Returns a structured log
+    // the agent pastes verbatim in the response.
+    case "triple_check": {
+      const { runTripleCheck } = await import("./triple-check");
+      const result = await runTripleCheck({
+        claimedFigures: (input?.claimedFigures ?? {}) as Record<string, number>,
+        jobRefs: Array.isArray(input?.jobRefs) ? input.jobRefs : [],
+        responseText: typeof input?.responseText === "string" ? input.responseText : "",
+      });
+      return { result };
     }
 
     case "reminder_delete": {

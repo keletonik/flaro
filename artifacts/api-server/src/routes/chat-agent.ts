@@ -258,8 +258,19 @@ router.post("/chat/agent", async (req, res, next) => {
     // memory block as a second cached system segment. The memory
     // block invalidates the cache when todos/reminders/instructions
     // change; the core prompt stays cached across that boundary.
+    // Section routing (AIDE master-prompt integration, Apr 2026):
+    //   "pa"   → PA_SYSTEM_PROMPT (narrower, working-memory injected)
+    //   "aide" → AIDE_MASTER_PROMPT_V1_0 (operator-authored ops engine)
+    //   else   → AGENT_SYSTEM_PROMPT (legacy default, still supported)
+    // See docs/aide-master-prompt/MASTER.md §5 for the rationale.
     const isPaMode = section === "pa";
-    const corePrompt = isPaMode ? PA_SYSTEM_PROMPT : AGENT_SYSTEM_PROMPT;
+    const isAideMode = section === "aide";
+    let corePrompt = AGENT_SYSTEM_PROMPT;
+    if (isPaMode) corePrompt = PA_SYSTEM_PROMPT;
+    else if (isAideMode) {
+      const { AIDE_MASTER_PROMPT_V1_0 } = await import("../lib/prompts/aide-master-prompt");
+      corePrompt = AIDE_MASTER_PROMPT_V1_0;
+    }
     const systemBlocks: any[] = [
       {
         type: "text",

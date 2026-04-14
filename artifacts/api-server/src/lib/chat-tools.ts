@@ -525,6 +525,35 @@ export const AGENT_TOOLS = [
     },
   },
 
+  // ─── AIDE Master Prompt Triple-Check tool ───────────────────────────
+  {
+    name: "triple_check",
+    description:
+      "Run the AIDE master-prompt triple-check verification protocol on a candidate response. " +
+      "Use at the end of any data-heavy answer (job lists, KPI tables, financial figures, dispatch " +
+      "recommendations). Pass 1 is structural (no Jade Ogony, no duplicates, no banned phrases). " +
+      "Pass 2 is data accuracy (every row traces to source). Pass 3 is maths (re-derive KPIs from raw). " +
+      "Returns a structured pass/fail log the agent must paste verbatim in the response.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        claimedFigures: {
+          type: "object",
+          description: "Optional map of asserted KPI name -> numeric value to re-verify",
+        },
+        jobRefs: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional list of task_numbers or quote_numbers to cross-validate against source",
+        },
+        responseText: {
+          type: "string",
+          description: "The candidate response text to structurally audit for banned phrases and AI attribution",
+        },
+      },
+    },
+  },
+
   {
     name: "ui_navigate",
     description:

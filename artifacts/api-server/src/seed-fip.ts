@@ -7,6 +7,7 @@ import fipData from "./seed-fip-data.json";
 import { DETECTOR_TYPE_SEED } from "./lib/fip/detector-types-seed";
 import { STANDARD_CLAUSE_SEED } from "./lib/fip/standard-clauses-seed";
 import { PANEL_DEEP_SPEC_SEED } from "./lib/fip/panels-deep-spec-seed";
+import { COMMON_PRODUCT_SEED } from "./lib/fip/common-products-seed";
 
 /**
  * FIP / VESDA technical knowledge bootstrap.
@@ -73,6 +74,7 @@ export async function seedFipKnowledgeBase(): Promise<void> {
     await seedDetectorTypes(client);
     await seedStandardClauses(client);
     await seedPanelDeepSpecs(client);
+    await seedCommonProducts(client);
 
     logger.info("FIP knowledge base seed complete");
   } catch (err) {
@@ -524,4 +526,59 @@ async function seedPanelDeepSpecs(client: any): Promise<void> {
     updated++;
   }
   logger.info({ table: "fip_models", updated, skipped, feature: "deep_spec" }, "fip seed");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Common fire-protection products — curated everyday items catalogue.
+// Dedup by (part_code, manufacturer). Falls back to (name, manufacturer)
+// when part_code is null.
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedCommonProducts(client: any): Promise<void> {
+  let inserted = 0;
+  let updated = 0;
+  for (const p of COMMON_PRODUCT_SEED) {
+    const byCode = p.partCode
+      ? await client.query(
+          "SELECT id FROM fip_common_products WHERE part_code = $1 AND manufacturer = $2 AND deleted_at IS NULL LIMIT 1",
+          [p.partCode, p.manufacturer],
+        )
+      : await client.query(
+          "SELECT id FROM fip_common_products WHERE name = $1 AND manufacturer = $2 AND deleted_at IS NULL LIMIT 1",
+          [p.name, p.manufacturer],
+        );
+    if (byCode.rows.length > 0) {
+      await client.query(
+        `UPDATE fip_common_products SET
+           name = $1, description = $2, unit = $3, price_band = $4,
+           indicative_price_aud = $5, notes = $6, updated_at = now()
+         WHERE id = $7`,
+        [
+          p.name, p.description, p.unit, p.priceBand,
+          p.indicativePriceAud, p.notes, byCode.rows[0].id,
+        ],
+      );
+      updated++;
+      continue;
+    }
+    await client.query(
+      `INSERT INTO fip_common_products
+       (id, category, name, manufacturer, part_code, description, unit,
+        price_band, indicative_price_aud, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [
+        randomUUID(),
+        p.category,
+        p.name,
+        p.manufacturer,
+        p.partCode,
+        p.description,
+        p.unit,
+        p.priceBand,
+        p.indicativePriceAud,
+        p.notes,
+      ],
+    );
+    inserted++;
+  }
+  logger.info({ table: "fip_common_products", inserted, updated }, "fip seed");
 }

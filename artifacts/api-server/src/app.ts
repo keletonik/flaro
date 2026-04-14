@@ -8,6 +8,7 @@ import { addSSEClient, broadcastEvent } from "./lib/events";
 import { invalidateAnalyticsCache } from "./routes/analytics";
 import { requireAuth } from "./middlewares/require-auth";
 import { apiRateLimiter, loginRateLimiter } from "./middlewares/rate-limit";
+import { perfMiddleware } from "./lib/perf-ring";
 
 const app: Express = express();
 
@@ -46,6 +47,9 @@ function buildCorsOptions(): CorsOptions {
   };
 }
 app.use(cors(buildCorsOptions()));
+
+// Pass 5 §3.9 — rolling p50/p95/p99 tracker, exposed at /api/diag/perf.
+app.use(perfMiddleware());
 
 app.use(
   pinoHttp({

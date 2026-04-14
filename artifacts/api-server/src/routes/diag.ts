@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "@workspace/db";
 import { getRecentToolCalls, getToolCallStats } from "../lib/agent-observability";
+import { getPerfStats } from "../lib/perf-ring";
 
 const router = Router();
 
@@ -11,6 +12,17 @@ const router = Router();
  * success/error, avg/max duration). Added in Pass 3 fix #3. No auth —
  * whitelisted in require-auth.ts alongside /api/diag.
  */
+/**
+ * GET /api/diag/perf — request-duration percentiles + slowest 10.
+ *
+ * Backed by the in-memory ring in lib/perf-ring.ts (last 1000
+ * requests). Closes Pass 5 finding §3.9. No auth — whitelisted
+ * alongside /api/diag.
+ */
+router.get("/diag/perf", (_req, res) => {
+  res.json({ ok: true, now: new Date().toISOString(), ...getPerfStats() });
+});
+
 router.get("/diag/agent", async (_req, res, next) => {
   try {
     const [recent, stats] = await Promise.all([

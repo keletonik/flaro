@@ -216,9 +216,9 @@ function SidebarNav() {
             "flex items-center rounded-lg transition-all duration-200 text-sidebar-foreground/30 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
             collapsed ? "w-9 h-9 justify-center" : "gap-2.5 px-3 py-2 w-full text-xs"
           )}
-          title={collapsed ? "Expand" : "Collapse"}
+          title={collapsed ? "Expand (Cmd+\\)" : "Collapse (Cmd+\\)"}
         >
-          {collapsed ? <ChevronRight size={14} /> : <><ChevronLeft size={14} /><span className="text-[11px]">Collapse</span></>}
+          {collapsed ? <ChevronRight size={14} /> : <><ChevronLeft size={14} /><span className="text-[11px]">Collapse</span><span className="ml-auto text-[9px] opacity-60 font-mono">⌘\</span></>}
         </button>
       </div>
     </aside>
@@ -277,11 +277,24 @@ function BottomNav() {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const { collapsed } = useSidebar();
+  const { collapsed, setCollapsed } = useSidebar();
   const [location] = useLocation();
   return (
     <div className="min-h-screen bg-background">
       <SidebarNav />
+      {/* Floating expand affordance on the left edge when the sidebar
+          is collapsed. Desktop-only. Gives the operator a visible way
+          back to the nav without having to hunt for the tiny chevron. */}
+      {collapsed && (
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          className="hidden md:flex fixed left-[68px] top-4 z-20 items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform"
+          title="Expand sidebar (⌘\\)"
+        >
+          <ChevronRight size={14} />
+        </button>
+      )}
       <div className={cn("pb-16 md:pb-0 min-h-screen transition-all duration-300", collapsed ? "md:ml-[60px]" : "md:ml-[210px]")}>
         {children}
       </div>
@@ -360,8 +373,42 @@ function Router() {
   );
 }
 
+const SIDEBAR_COLLAPSED_KEY = "aide-sidebar-collapsed";
+
 function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+  // Persist collapsed state across refreshes (localStorage). Default to
+  // false on first load, but if the operator collapsed the sidebar last
+  // session we restore that state so their preference sticks.
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      if (typeof window === "undefined") return false;
+      return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  // Mirror state to localStorage whenever it changes.
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+      }
+    } catch { /* ignore quota / disabled storage */ }
+  }, [collapsed]);
+
+  // Global keyboard shortcut: Cmd/Ctrl + \ toggles the sidebar.
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
+        e.preventDefault();
+        setCollapsed((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return <SidebarContext.Provider value={{ collapsed, setCollapsed }}>{children}</SidebarContext.Provider>;
 }
 

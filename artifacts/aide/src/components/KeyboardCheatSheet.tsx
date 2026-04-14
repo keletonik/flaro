@@ -28,6 +28,7 @@ const SHORTCUTS: Group[] = [
     scope: "Global",
     shortcuts: [
       { keys: "⌘ K", label: "Open command palette" },
+      { keys: "⌘ \\", label: "Collapse / expand sidebar" },
       { keys: "?", label: "Show this cheat sheet" },
       { keys: "g d", label: "Go to Dashboard" },
       { keys: "g c", label: "Go to PA (voice + reminders + actions)" },

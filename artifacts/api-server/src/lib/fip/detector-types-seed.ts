@@ -952,5 +952,58 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$",
     addressable: false,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 18. PRESSURE SWITCH (SPRINKLER / HYDRANT / DRY SYSTEM)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "pressure-switch",
+    name: "Pressure Switch (Sprinkler / Hydrant / Dry System)",
+    category: "multi",
+    summary:
+      "Diaphragm or bellows pressure switch monitoring water or air pressure in a fire main, hydrant header, sprinkler riser, or dry-pipe system. Reports loss-of-pressure, high-pressure, or actuation.",
+    operatingPrinciple:
+      "A spring-loaded diaphragm or bellows senses line pressure against an adjustable setpoint. When pressure crosses the setpoint, a snap-action microswitch changes state and reports to the FIP. Some models carry two independent switches for alarm (activation) and fault (low pressure) signals. The setpoint is adjustable over a wide range (typically 100 kPa to 1700 kPa) using a screw on the switch body.",
+    sensingTechnology:
+      "Bourdon tube, diaphragm, or bellows coupled to a microswitch. Wetted parts are brass or stainless depending on pressure class. Accuracy is typically ± 5% of full scale, with hysteresis of 5–15% — the switch opens and closes at slightly different pressures to prevent chatter. Dual-switch models provide separate contacts for alarm and supervisory, allowing the FIP to distinguish a loss of pressure (maintenance issue) from an activation (fire event).",
+    typicalApplications: [
+      "Fire main incoming water pressure supervision (AS 1670.1 Clause 3.33)",
+      "Sprinkler jockey pump cycling — switch the pump on and off as small leaks bleed down pressure",
+      "Dry-pipe sprinkler system air pressure supervision",
+      "Pre-action sprinkler system actuation verification",
+      "Hydrant booster pump start pressure switch",
+      "Fire pump controller — low-pressure cut-in / high-pressure cut-out",
+    ],
+    unsuitableApplications: [
+      "Fluctuating pressure systems without adequate deadband — switch will chatter",
+      "Corrosive fluids unless using a chemical-resistant diaphragm material",
+    ],
+    installationRequirements:
+      "Mount in the vertical position so the diaphragm is not biased by its own weight, with the pressure tap accessible for service and a bleed valve upstream of the switch for calibration. Isolate the switch with a ball valve so it can be removed without depressurising the system. Wire as a supervised circuit (end-of-line monitored) so cable faults annunciate as trouble not alarm. For dual-function switches (activation + supervisory), verify both contacts during commissioning.",
+    failureModes: [
+      { mode: "Setpoint drift", symptom: "Pump cycles at wrong pressure or nuisance alarms", cause: "Spring relaxation or vibration-induced setpoint change", action: "Re-calibrate annually against a calibrated master gauge." },
+      { mode: "Diaphragm rupture", symptom: "Water leak from switch body, loss of function", cause: "Diaphragm fatigue from pressure cycling", action: "Replace switch; upsize to a higher-cycle-rated diaphragm if cycling is frequent." },
+      { mode: "Water hammer damage", symptom: "Erratic switching, eventual total failure", cause: "Pressure transients from fast-closing valves", action: "Fit a pressure snubber upstream of the switch." },
+      { mode: "Microswitch welding", symptom: "Switch stuck in one state regardless of pressure", cause: "Arc welding of contacts from switching an inductive load without a suppression diode", action: "Replace switch and fit a contact suppression diode across the load." },
+    ],
+    testProcedure:
+      "AS 1851 Section 5.2 — isolate the switch and apply pressure from a calibrated test pump, verify switch operation at the set point within ± 5% using a master gauge. Test the supervisory (low pressure) function by bleeding pressure below the setpoint. Log measured setpoint vs specified setpoint.",
+    maintenance:
+      "Quarterly visual, annual calibrated pressure test and setpoint verification. Replace after any water hammer event or if setpoint drift exceeds 10%.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.33", note: "Pressure switch alarm signalling to the FIP" },
+      { code: "AS 2118.1", note: "Sprinkler system supervisory requirements" },
+      { code: "AS 2419.1", note: "Hydrant system design and supervisory requirements" },
+      { code: "AS 1851", clause: "5.2", note: "Routine service, setpoint verification" },
+    ],
+    exampleModels: [
+      { manufacturer: "Potter Electric", model: "PS10", partNumber: "PS10-1", notes: "Adjustable 10–175 psi, dual SPDT contacts" },
+      { manufacturer: "System Sensor", model: "EPS40", notes: "Low-pressure supervisory switch for dry-pipe systems" },
+      { manufacturer: "Tyco", model: "PS10-2", notes: "Dual pressure switch for alarm + supervisory" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$",
+    addressable: false,
+  },
 ];
 

@@ -422,5 +422,62 @@ export const DETECTOR_TYPE_SEED: DetectorTypeSeed[] = [
     costBand: "$$$",
     addressable: false,
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 8. ASPIRATING SMOKE DETECTOR (VESDA / high-sensitivity)
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: "aspirating-smoke",
+    name: "Aspirating Smoke Detector (VESDA / HSSD)",
+    category: "aspirating",
+    summary:
+      "Very-early-warning smoke detection system that continuously draws air from the protected space through a pipe network to a centralised laser-chamber detector — 500 to 1000 times more sensitive than a point-type photoelectric.",
+    operatingPrinciple:
+      "An internal aspirator (fan) draws air through a network of sampling pipes with calibrated holes spaced along their length. The combined air sample is filtered and passed through a laser-scatter detection chamber. The chamber measures obscuration in %/m and reports an analogue value with multiple alarm thresholds: Alert, Action, Fire 1, Fire 2. Typical Alert thresholds are 0.005–0.015 %/m obscuration — low enough to detect a single piece of overheating electronics long before a flaming fire develops.",
+    sensingTechnology:
+      "Laser-based optical chamber (Xtralis VESDA uses a blue-laser Mie-scattering chamber) with photodiode array. Advanced systems (VESDA VEA) sample each room address individually through a micro-bore pipe, giving per-address resolution — the panel can tell you WHICH room has the smoke, not just 'one of 40'. Multi-channel systems monitor up to 4 independent pipe networks from one detector housing. Every parameter (airflow, chamber contamination, laser current, filter condition) is self-monitored and faults are flagged before performance degrades.",
+    typicalApplications: [
+      "Data centres — server rooms, MDF, telco exchanges (AS 1670.1 Clause 3.26 — very early warning smoke detection for high-value areas)",
+      "Clean rooms, semiconductor fabs, pharmaceutical manufacturing",
+      "Heritage buildings where visible detectors are not acceptable",
+      "Cold stores and freezers (down to −30 °C with heated sample pipe)",
+      "High-ceiling spaces > 25 m (atria, stadiums, aircraft hangars) where point-type smoke detection is not effective",
+      "Prison cells and secure mental health facilities where the detector must be tamper-resistant",
+      "Rail and metro tunnels with linear sample networks",
+    ],
+    unsuitableApplications: [
+      "Single small rooms — cost is disproportionate; a photoelectric is typically adequate",
+      "Dusty industrial spaces without effective pre-filtration",
+      "Spaces with continuous high airflow that dilutes smoke below the detection threshold before it reaches a sample hole",
+    ],
+    installationRequirements:
+      "Pipe network design is the primary engineering task — software tools (Xtralis ASPIRE2, Hochiki Pipe Designer) calculate the required hole size, spacing, and pipe geometry to achieve the specified sensitivity class and transport time (AS 1670.1 Clause 3.26 requires transport time ≤ 120 seconds from the farthest sample hole to the detector). Pipe runs must be correctly balanced — every sample hole must draw approximately equal airflow or the distant holes become ineffective. Use rigid PVC or ABS pipework sized per the design tool (commonly 25 mm OD). Identify every sample hole on the pipe with a permanent label for maintenance. The detector cabinet must be accessible for filter change and chamber service without shutting down the protected area.",
+    failureModes: [
+      { mode: "Airflow fault", symptom: "Detector reports 'airflow low' or 'airflow high' trouble", cause: "Blocked sample hole, damaged pipe, or failing aspirator motor", action: "Smoke-pencil test each sample hole to find the blockage; replace aspirator on life." },
+      { mode: "Filter contamination", symptom: "Filter condition alarm; rising baseline obscuration", cause: "Normal dust accumulation on the primary filter cartridge", action: "Replace filter per maintenance schedule (typically annually, more often in dusty sites)." },
+      { mode: "Laser degradation", symptom: "Chamber fault; degraded sensitivity self-test", cause: "Laser diode end-of-life (10+ years typical)", action: "Replace detector module — laser is not field-serviceable on Xtralis VESDA." },
+      { mode: "Transport time drift", symptom: "Commissioning smoke test takes longer than the acceptance 120 s", cause: "Partial pipe blockage, worn aspirator, or added pipe branch", action: "Re-run ASPIRE2 design against the installed geometry; clear blockages; reset transport time baseline." },
+    ],
+    testProcedure:
+      "Annual end-to-end smoke test per AS 1851 Section 6.5 — smoke must be introduced at the farthest sample hole and reach the detector within 120 seconds, with all alarm thresholds triggering in sequence. Transport time MUST be logged and compared to the commissioning baseline. Filter condition, airflow, and chamber baseline are read and logged at every 6-month service.",
+    maintenance:
+      "6-monthly: inspect filter, check airflow, review analogue trend. 12-monthly: full transport time test, filter change if dirty, per-hole smoke pencil test. Major service at 10 years: replace aspirator, chamber, and laser module.",
+    standardsRefs: [
+      { code: "AS 1670.1", clause: "3.26", note: "Very early warning smoke detection — aspirating system requirements" },
+      { code: "AS 1670.1", clause: "3.26.4", note: "Transport time ≤ 120 seconds from the farthest hole" },
+      { code: "AS 7240.20", note: "Aspirating smoke detectors — product performance" },
+      { code: "AS 1851", clause: "6.5", note: "Aspirating system routine service" },
+    ],
+    exampleModels: [
+      { manufacturer: "Xtralis", model: "VESDA VEU", partNumber: "VEU-A00", notes: "Four pipe network, absolute sensitivity 0.005 %/m obscuration" },
+      { manufacturer: "Xtralis", model: "VESDA VEA", notes: "Individual room addressing through micro-bore tubes — VEA-040 supports 40 addresses" },
+      { manufacturer: "Xtralis", model: "VESDA-E VEP", partNumber: "VEP-A00", notes: "Ethernet, per-pipe reporting, 3 sensitivity classes A/B/C" },
+      { manufacturer: "Hochiki", model: "FIRElink-25", notes: "Single-pipe aspirating, cost-effective alternative" },
+      { manufacturer: "Wagner", model: "TITANUS PRO-SENS", notes: "German-engineered HSSD with pattern-recognition alarm logic" },
+    ],
+    lifeSpanYears: 15,
+    costBand: "$$$",
+    addressable: true,
+  },
 ];
 

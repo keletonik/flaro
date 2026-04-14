@@ -6,6 +6,7 @@ import { FIP_V2_DDL_STATEMENTS } from "./seed-fip-v2-ddl";
 import fipData from "./seed-fip-data.json";
 import { DETECTOR_TYPE_SEED } from "./lib/fip/detector-types-seed";
 import { STANDARD_CLAUSE_SEED } from "./lib/fip/standard-clauses-seed";
+import { PANEL_DEEP_SPEC_SEED } from "./lib/fip/panels-deep-spec-seed";
 
 /**
  * FIP / VESDA technical knowledge bootstrap.
@@ -71,6 +72,7 @@ export async function seedFipKnowledgeBase(): Promise<void> {
     await seedAuditRuns(client);
     await seedDetectorTypes(client);
     await seedStandardClauses(client);
+    await seedPanelDeepSpecs(client);
 
     logger.info("FIP knowledge base seed complete");
   } catch (err) {
@@ -467,4 +469,59 @@ async function seedStandardClauses(client: any): Promise<void> {
     inserted++;
   }
   logger.info({ table: "fip_standard_clauses", inserted, updated, skipped }, "fip seed");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Panel deep specs — patch existing fip_models rows with technical detail.
+// Natural key: slug. Runs after the base seed pack so the rows exist.
+// Idempotent: re-runs re-write the deep-spec columns without touching the
+// row's identity columns (id / created_at / status).
+// ─────────────────────────────────────────────────────────────────────────────
+async function seedPanelDeepSpecs(client: any): Promise<void> {
+  let updated = 0;
+  let skipped = 0;
+  for (const spec of PANEL_DEEP_SPEC_SEED) {
+    const existing = await client.query(
+      "SELECT id FROM fip_models WHERE slug = $1 LIMIT 1",
+      [spec.slug],
+    );
+    if (existing.rows.length === 0) {
+      skipped++;
+      continue;
+    }
+    await client.query(
+      `UPDATE fip_models SET
+         max_loops = $1,
+         devices_per_loop = $2,
+         loop_protocol = $3,
+         network_capable = $4,
+         max_networked_panels = $5,
+         battery_standby_ah = $6,
+         battery_alarm_ah = $7,
+         recommended_battery_size = $8,
+         config_options = $9,
+         approvals = $10,
+         commissioning_notes = $11,
+         typical_price_band = $12,
+         updated_at = now()
+       WHERE id = $13`,
+      [
+        spec.maxLoops,
+        spec.devicesPerLoop,
+        spec.loopProtocol,
+        spec.networkCapable,
+        spec.maxNetworkedPanels,
+        spec.batteryStandbyAh,
+        spec.batteryAlarmAh,
+        spec.recommendedBatterySize,
+        JSON.stringify(spec.configOptions),
+        JSON.stringify(spec.approvals),
+        spec.commissioningNotes,
+        spec.typicalPriceBand,
+        existing.rows[0].id,
+      ],
+    );
+    updated++;
+  }
+  logger.info({ table: "fip_models", updated, skipped, feature: "deep_spec" }, "fip seed");
 }

@@ -306,5 +306,123 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
       "DX Connexion supports mixed-protocol loops (Apollo + Morley CoreProtocol) but each loop must be set to ONE protocol. Device-level LED indicators require the Enhanced Feature licence file — load it before device auto-learn.",
     typicalPriceBand: "$$$",
   },
+
+  // ─── Tyco / Kidde ──────────────────────────────────────────────────
+  {
+    slug: "tyco-mx-4000",
+    maxLoops: 2,
+    devicesPerLoop: 200,
+    loopProtocol: "MX Digital",
+    networkCapable: true,
+    maxNetworkedPanels: 200,
+    batteryStandbyAh: 24,
+    batteryAlarmAh: 24,
+    recommendedBatterySize: "2 × 12V 24Ah SLA",
+    configOptions: [
+      { label: "Programming tool", value: "Configurator (USB)" },
+      { label: "Loops", value: "Up to 2 MX loops, 200 devices each" },
+      { label: "Zones", value: "Up to 250 software zones" },
+      { label: "Sounder circuits", value: "4 supervised sounder circuits" },
+      { label: "Network", value: "MX Network via fibre or RS485, up to 200 nodes" },
+    ],
+    approvals: ["ActivFire scheme", "EN 54 listed"],
+    commissioningNotes:
+      "Tyco MX panels are common on large commercial sites. The MX protocol reports analogue sensor values continuously — use the graphical analogue trend view in Configurator to spot drift before it triggers a pre-alarm.",
+    typicalPriceBand: "$$$",
+  },
+
+  // ─── Xtralis VESDA (aspirating) ────────────────────────────────────
+  {
+    slug: "xtralis-vesda-vep",
+    maxLoops: null,
+    devicesPerLoop: null,
+    loopProtocol: "VESDAnet (proprietary)",
+    networkCapable: true,
+    maxNetworkedPanels: 100,
+    batteryStandbyAh: null,
+    batteryAlarmAh: null,
+    recommendedBatterySize: "Powered from host FIP standby supply — no independent battery",
+    configOptions: [
+      { label: "Programming tool", value: "Xtralis VSC (VESDA System Configurator)" },
+      { label: "Sensitivity classes", value: "A (0.005%/m) / B (0.015%/m) / C (0.05%/m)" },
+      { label: "Pipe network", value: "Up to 4 pipes per detector, max 200m total pipe length" },
+      { label: "Alarm thresholds", value: "Alert / Action / Fire 1 / Fire 2 independently configurable" },
+      { label: "Network", value: "VESDAnet up to 100 detectors + displays" },
+    ],
+    approvals: ["AS 7240.20 / EN 54-20", "ActivFire scheme"],
+    commissioningNotes:
+      "VESDA VEP is a very early warning aspirating detector — not a FIP in its own right but often treated as one. Transport time (sample hole to detector) must be < 120 seconds per AS 1670.1 §3.26.4. Commission via VSC: define pipe network, run ASPIRE2 design, match real measurement to simulation before signing off.",
+    typicalPriceBand: "$$$",
+  },
+  {
+    slug: "xtralis-vesda-vli",
+    maxLoops: null,
+    devicesPerLoop: null,
+    loopProtocol: "VESDAnet",
+    networkCapable: true,
+    maxNetworkedPanels: 100,
+    batteryStandbyAh: null,
+    batteryAlarmAh: null,
+    recommendedBatterySize: "Powered from host FIP standby supply",
+    configOptions: [
+      { label: "Programming tool", value: "Xtralis VSC" },
+      { label: "Sensitivity classes", value: "A / B / C with Ethernet reporting" },
+      { label: "Ethernet", value: "Built-in — supports remote monitoring + SNMP" },
+      { label: "Pipe network", value: "Up to 4 pipes, max 800m total with VLI" },
+    ],
+    approvals: ["AS 7240.20 / EN 54-20", "ActivFire scheme"],
+    commissioningNotes:
+      "VLI has wider pipe range than VEP thanks to higher aspirator flow. Ethernet reporting is opt-in — requires Xtralis Xchange cloud or a local SCADA integration.",
+    typicalPriceBand: "$$$",
+  },
+
+  // ─── Wormald ───────────────────────────────────────────────────────
+  {
+    slug: "wormald-vigilant-mx1",
+    maxLoops: 8,
+    devicesPerLoop: 200,
+    loopProtocol: "Tyco MX Digital",
+    networkCapable: true,
+    maxNetworkedPanels: 200,
+    batteryStandbyAh: 38,
+    batteryAlarmAh: 38,
+    recommendedBatterySize: "2 × 12V 38Ah SLA",
+    configOptions: [
+      { label: "Programming tool", value: "Vigilant Configurator" },
+      { label: "Loops", value: "Up to 8 MX loops" },
+      { label: "Zones", value: "Up to 500 zones" },
+      { label: "Brigade connection", value: "Integrated AS 1670.3 BASM interface" },
+      { label: "Network", value: "MX Net up to 200 nodes via fibre / RS485" },
+    ],
+    approvals: ["ActivFire scheme (current)", "AS 4428.1 / AS 7240.2 listed"],
+    commissioningNotes:
+      "Vigilant MX1 is the Australian-branded Tyco MX platform. BASM integration is the differentiator — configure the BASM output relays via the Configurator, confirm brigade signal type (ASE or direct) before going live.",
+    typicalPriceBand: "$$$",
+  },
+
+  // ─── Notifier large ────────────────────────────────────────────────
+  {
+    slug: "notifier-nfs-3030",
+    maxLoops: 10,
+    devicesPerLoop: 318,
+    loopProtocol: "Notifier FlashScan / CLIP",
+    networkCapable: true,
+    maxNetworkedPanels: 103,
+    batteryStandbyAh: 100,
+    batteryAlarmAh: 100,
+    recommendedBatterySize: "2 × 12V 100Ah SLA in dedicated battery cabinet",
+    configOptions: [
+      { label: "Programming tool", value: "VeriFire Tools (Ethernet)" },
+      { label: "Loops", value: "Up to 10 × SLC loops" },
+      { label: "Zones", value: "Up to 1,000 software zones" },
+      { label: "Sounder circuits", value: "8 NACs + LEM-320 expansion" },
+      { label: "Network", value: "NOTI-FIRE-NET up to 103 panels" },
+      { label: "Graphics", value: "ONYXWorks workstation optional" },
+    ],
+    approvals: ["ActivFire scheme", "UL 864 9th ed."],
+    commissioningNotes:
+      "NFS-3030 is the biggest Notifier in Australia — reserved for mega-sites (hospitals, airports, campuses). Battery cabinet is always external. Confirm AS 4428 battery ventilation requirements before siting the cabinet in a confined space.",
+    typicalPriceBand: "$$$",
+  },
 ];
 

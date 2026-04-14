@@ -32,11 +32,27 @@ function makeId() {
 }
 
 const STARTER_PROMPTS: { label: string; prompt: string }[] = [
-  { label: "What's on my plate today?", prompt: "What's on my plate today? Summarise open WIPs, overdue defects, and due reminders." },
+  { label: "Brief me", prompt: "Give me my daily focus brief — stale tasks, upcoming reminders, key numbers." },
+  { label: "What have I been neglecting?", prompt: "What have I been neglecting? Show me the top 5 stale tasks." },
   { label: "Remind me tomorrow 9am", prompt: "Remind me tomorrow 9am to run the morning standup" },
-  { label: "New critical defect todo", prompt: "Add a high-priority todo to review all open critical defects by end of day" },
-  { label: "Pipeline health", prompt: "How's the pipeline looking? Revenue this month vs target + outstanding invoices" },
+  { label: "Add a training rule", prompt: "From now on, never ask me about the insurance claim — save that as a training rule." },
 ];
+
+/**
+ * Strip the trailing `<follow-ups>...</follow-ups>` block that the PA
+ * system prompt asks the model to append, and return the cleaned text
+ * plus the extracted list of chips.
+ */
+function extractFollowUps(content: string): { cleaned: string; followUps: string[] } {
+  const match = content.match(/<follow-ups>([\s\S]*?)<\/follow-ups>\s*$/i);
+  if (!match) return { cleaned: content, followUps: [] };
+  const chips = match[1]
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && l.length <= 80);
+  const cleaned = content.slice(0, match.index).trimEnd();
+  return { cleaned, followUps: chips.slice(0, 5) };
+}
 
 export default function PAPage() {
   const [messages, setMessages] = useState<PAMessageData[]>([]);
@@ -45,10 +61,35 @@ export default function PAPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  const autoBriefDoneRef = useRef(false);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, streaming]);
+
+  // Auto-brief on first open — runs once per session when there's no
+  // conversation history. If the user disables this via a training
+  // rule the PA can skip it on subsequent opens.
+  useEffect(() => {
+    if (autoBriefDoneRef.current) return undefined;
+    if (messages.length > 0) return undefined;
+    if (typeof window === "undefined") return undefined;
+    let cancelled = false;
+    try {
+      const key = "aide-pa-autobriefed";
+      const last = sessionStorage.getItem(key);
+      if (last) return undefined;
+      autoBriefDoneRef.current = true;
+      sessionStorage.setItem(key, new Date().toISOString());
+      const t = setTimeout(() => {
+        if (!cancelled) send("Give me my daily focus brief.");
+      }, 400);
+      return () => { cancelled = true; clearTimeout(t); };
+    } catch {
+      return undefined;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const newChat = useCallback(() => {
     controllerRef.current?.abort();
@@ -127,7 +168,24 @@ export default function PAPage() {
               window.dispatchEvent(new CustomEvent(DATA_CHANGED_EVENT));
             }
           },
-          onDone: () => setStreaming(false),
+          onDone: () => {
+            // Strip the <follow-ups>...</follow-ups> trailing block from
+            // the last assistant message and surface the chips.
+            setMessages((cur) => {
+              const updated = [...cur];
+              const last = updated[updated.length - 1];
+              if (last && last.role === "assistant" && last.content) {
+                const { cleaned, followUps } = extractFollowUps(last.content);
+                updated[updated.length - 1] = {
+                  ...last,
+                  content: cleaned,
+                  followUps: followUps.length > 0 ? followUps : last.followUps,
+                };
+              }
+              return updated;
+            });
+            setStreaming(false);
+          },
           onError: (err) => {
             setError(err);
             setStreaming(false);
@@ -177,7 +235,18 @@ export default function PAPage() {
               Voice · slash commands · tool-use agent
             </span>
           </div>
-          {messages.length > 0 && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => send("Give me my daily focus brief.")}
+              disabled={streaming}
+              className="flex items-center gap-1 text-[11px] font-medium text-primary hover:bg-primary/10 px-2 py-1 rounded disabled:opacity-40"
+              title="Run daily focus brief"
+            >
+              <Sparkles className="w-3 h-3" />
+              Brief me
+            </button>
+            {messages.length > 0 && (
             <button
               type="button"
               onClick={newChat}
@@ -185,7 +254,8 @@ export default function PAPage() {
             >
               New chat
             </button>
-          )}
+            )}
+          </div>
         </header>
 
         <div
@@ -199,8 +269,9 @@ export default function PAPage() {
               </div>
               <h2 className="text-base font-semibold text-foreground">How can I help?</h2>
               <p className="text-xs text-muted-foreground mt-1">
-                Ask about WIPs, set reminders, run a standup, or kick off any action across the app.
-                Hold the mic to talk, or type "/" for commands.
+                I'm your Personal Assistant for tasks, reminders, and everything on your plate.
+                Hold the mic to talk, type "/" for commands, or hit <b>Brief me</b> to see what
+                needs attention.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-5">
                 {STARTER_PROMPTS.map((s) => (

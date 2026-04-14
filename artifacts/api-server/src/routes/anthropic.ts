@@ -286,8 +286,20 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   let fullResponse = "";
   let clientDisconnected = false;
 
+  // SSE heartbeat — see chat-agent.ts + Pass 5 §3.3 for rationale.
+  const heartbeat = setInterval(() => {
+    if (res.writableEnded) return;
+    try {
+      res.write(`: heartbeat ${Date.now()}\n\n`);
+    } catch { /* socket dead */ }
+  }, 15_000);
+
   // Abort the LLM stream if the client disconnects (saves tokens + avoids writes to closed socket)
-  req.on("close", () => { clientDisconnected = true; });
+  req.on("close", () => {
+    clientDisconnected = true;
+    clearInterval(heartbeat);
+  });
+  res.on("close", () => clearInterval(heartbeat));
 
   try {
     const stream = anthropic.messages.stream({

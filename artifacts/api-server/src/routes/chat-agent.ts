@@ -95,10 +95,25 @@ router.post("/chat/agent", async (req, res, next) => {
       res.write(`data: ${JSON.stringify({ type, ...payload })}\n\n`);
     };
 
+    // SSE heartbeat — write a comment line every 15s so proxies
+    // (Replit + Vercel + most CDNs) don't drop the stream as idle.
+    // Root cause of every "API Error: Stream idle timeout" the
+    // operator has reported during this audit. See Pass 5 §3.3.
+    const heartbeat = setInterval(() => {
+      if (res.writableEnded) return;
+      try {
+        res.write(`: heartbeat ${Date.now()}\n\n`);
+      } catch {
+        // Socket is dead; interval cleared on req.on('close').
+      }
+    }, 15_000);
+
     let clientGone = false;
     req.on("close", () => {
       clientGone = true;
+      clearInterval(heartbeat);
     });
+    res.on("close", () => clearInterval(heartbeat));
 
     const messages: any[] = [];
     if (history?.length) {

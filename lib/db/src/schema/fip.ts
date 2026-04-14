@@ -69,6 +69,20 @@ export const fipModels = pgTable("fip_models", {
   yearsActive: text("years_active"),
   status: text("status").$type<"current" | "legacy" | "superseded" | "discontinued">().default("current"),
   imageChecksum: text("image_checksum"),
+  // ── Deep technical spec (FIP Command Centre rebuild, fip-v2.0) ──
+  maxLoops: integer("max_loops"),
+  devicesPerLoop: integer("devices_per_loop"),
+  loopProtocol: text("loop_protocol"),
+  networkCapable: boolean("network_capable"),
+  maxNetworkedPanels: integer("max_networked_panels"),
+  batteryStandbyAh: numeric("battery_standby_ah", { precision: 6, scale: 2 }),
+  batteryAlarmAh: numeric("battery_alarm_ah", { precision: 6, scale: 2 }),
+  recommendedBatterySize: text("recommended_battery_size"),
+  configOptions: jsonb("config_options").$type<Array<{ label: string; value: string; notes?: string }>>(),
+  approvals: jsonb("approvals").$type<string[]>(),
+  commissioningNotes: text("commissioning_notes"),
+  typicalPriceBand: text("typical_price_band"),
+  heroImage: text("hero_image"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -77,6 +91,36 @@ export const fipModels = pgTable("fip_models", {
   index("fip_model_manufacturer_idx").on(t.manufacturerId),
   index("fip_model_slug_idx").on(t.slug),
   index("fip_model_deleted_idx").on(t.deletedAt),
+]);
+
+/**
+ * fip_common_products — commonly-purchased fire-protection items.
+ *
+ * Not a replacement for the supplier catalogue (that lives in
+ * supplier_products). This is a curated list of everyday items the
+ * technician references repeatedly — smoke heads, heat heads, MCPs,
+ * sounders, strobes, bases, isolators, batteries — with manufacturer,
+ * part code, unit, and an indicative price band. Unknown prices are
+ * left as N/A rather than invented.
+ */
+export const fipCommonProducts = pgTable("fip_common_products", {
+  id: text("id").primaryKey(),
+  category: text("category").notNull().$type<"smoke" | "heat" | "flame" | "mcp" | "sounder" | "strobe" | "base" | "isolator" | "module" | "battery" | "cable" | "other">(),
+  name: text("name").notNull(),
+  manufacturer: text("manufacturer"),
+  partCode: text("part_code"),
+  description: text("description"),
+  unit: text("unit").$type<"each" | "m" | "pack">().default("each"),
+  priceBand: text("price_band").$type<"$" | "$$" | "$$$" | "N/A">().default("N/A"),
+  indicativePriceAud: numeric("indicative_price_aud", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (t) => [
+  index("fip_common_products_category_idx").on(t.category),
+  index("fip_common_products_manufacturer_idx").on(t.manufacturer),
+  index("fip_common_products_deleted_idx").on(t.deletedAt),
 ]);
 
 export const fipComponents = pgTable("fip_components", {

@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { pool } from "@workspace/db";
 import { logger } from "./lib/logger";
 import { FIP_DDL_STATEMENTS } from "./seed-fip-ddl";
+import { FIP_V2_DDL_STATEMENTS } from "./seed-fip-v2-ddl";
 import fipData from "./seed-fip-data.json";
 import { DETECTOR_TYPE_SEED } from "./lib/fip/detector-types-seed";
 import { STANDARD_CLAUSE_SEED } from "./lib/fip/standard-clauses-seed";
@@ -52,7 +53,12 @@ export async function seedFipKnowledgeBase(): Promise<void> {
     for (const stmt of FIP_DDL_STATEMENTS) {
       await client.query(stmt);
     }
-    logger.info({ tables: "fip_*" }, "FIP schema ensured");
+    // FIP v2.0 command-centre additions: deep spec columns on
+    // fip_models + new fip_common_products table.
+    for (const stmt of FIP_V2_DDL_STATEMENTS) {
+      await client.query(stmt);
+    }
+    logger.info({ tables: "fip_*" }, "FIP schema ensured (v2.0)");
 
     // 2. Per-table seed with natural-key dedup.
     await seedManufacturers(client);

@@ -75,6 +75,9 @@ type View = "command" | "detectors" | "manufacturers" | "models" | "standards" |
 
 export default function FIPKnowledgeBase() {
   const [view, setView] = useState<View>("command");
+  // Shared selection across the PanelTechnicalCard and CommonProductsCard
+  // — picking a panel in one filters the other to compatible products.
+  const [commandPanelSlug, setCommandPanelSlug] = useState<string>("");
   const [selectedDetector, setSelectedDetector] = useState<DetectorType | null>(null);
   const [status, setStatus] = useState<FipStatus | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -213,8 +216,8 @@ export default function FIPKnowledgeBase() {
                 </p>
               </header>
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                <PanelTechnicalCard />
-                <CommonProductsCard />
+                <PanelTechnicalCard value={commandPanelSlug} onChange={setCommandPanelSlug} />
+                <CommonProductsCard selectedPanelSlug={commandPanelSlug || undefined} />
                 <DefectImageAnalysisCard />
                 <BatteryCalculatorCard />
               </div>

@@ -60,21 +60,40 @@ interface PanelSpec {
   sourceNotes?: string | null;
 }
 
-export function PanelTechnicalCard() {
+interface Props {
+  /** Optional controlled panel slug. When provided, the parent owns
+   * which panel is selected (so other cards like CommonProductsCard
+   * can filter to the same panel). When omitted, the card manages
+   * selection internally. */
+  value?: string;
+  onChange?: (slug: string) => void;
+}
+
+export function PanelTechnicalCard({ value, onChange }: Props = {}) {
   const [panels, setPanels] = useState<PanelSpec[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSlug, setSelectedSlug] = useState<string>("");
+  const [internalSlug, setInternalSlug] = useState<string>("");
+  const selectedSlug = value ?? internalSlug;
+  const setSelectedSlug = (slug: string) => {
+    if (onChange) onChange(slug);
+    else setInternalSlug(slug);
+  };
 
   useEffect(() => {
     apiFetch<PanelSpec[]>("/fip/panels")
       .then((rows) => {
         setPanels(rows);
-        // Prefer a panel with a real deep spec on first load.
-        const rich = rows.find((r) => r.maxLoops != null);
-        if (rich) setSelectedSlug(rich.slug);
+        // Default-select a panel with a real deep spec on first
+        // load, but only if nothing is already selected by the parent
+        // (controlled) or by us (uncontrolled).
+        if (!selectedSlug) {
+          const rich = rows.find((r) => r.maxLoops != null);
+          if (rich) setSelectedSlug(rich.slug);
+        }
       })
       .catch(() => setPanels([]))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const selected = useMemo(

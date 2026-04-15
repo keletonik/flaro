@@ -52,7 +52,7 @@ router.get("/dashboard/focus", async (req, res, next) => {
         max_tokens: 1000,
         messages: [{
           role: "user",
-          content: `You are a personal operations assistant for FlameSafe Fire Protection. Based on the following open jobs and notes, generate 3-5 concise bullet points for today's focus. Be direct and prioritise urgently. Australian English.
+          content: `You are AIDE, a personal operations assistant. Based on the following open jobs and notes, generate 3-5 concise bullet points for today's focus. Be direct and prioritise urgently. Australian English.
 
 OPEN JOBS:
 ${jobsSummary || "None"}

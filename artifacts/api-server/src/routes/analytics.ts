@@ -92,17 +92,27 @@ router.get("/analytics/wip", async (req, res, next) => {
       revenueByMonth.push({ month: monthName, revenue: monthRevenue, target: MONTHLY_TARGET });
     }
 
+    // Parse raw_data for financial analytics
+    function rd(w: any): any {
+      try { return typeof w.rawData === "string" ? JSON.parse(w.rawData) : (w.rawData || {}); } catch { return {}; }
+    }
+
     // WIP by status
     const wipByStatus: Record<string, number> = {};
     allWip.forEach(w => { wipByStatus[w.status] = (wipByStatus[w.status] || 0) + 1; });
 
-    // WIP by tech
-    const wipByTech: Record<string, { count: number; value: number }> = {};
+    // WIP by tech — enriched with financial data
+    const wipByTech: Record<string, { count: number; value: number; actualCost: number; actualProfit: number; hours: number; uninvoiced: number }> = {};
     allWip.forEach(w => {
       const tech = w.assignedTech || "Unassigned";
-      if (!wipByTech[tech]) wipByTech[tech] = { count: 0, value: 0 };
+      if (!wipByTech[tech]) wipByTech[tech] = { count: 0, value: 0, actualCost: 0, actualProfit: 0, hours: 0, uninvoiced: 0 };
       wipByTech[tech].count++;
       wipByTech[tech].value += w.quoteAmount ? Number(w.quoteAmount) : 0;
+      const r = rd(w);
+      wipByTech[tech].actualCost += r.actualCost || 0;
+      wipByTech[tech].actualProfit += r.actualProfit || 0;
+      wipByTech[tech].hours += r.actualHours || 0;
+      wipByTech[tech].uninvoiced += r.uninvoiced || 0;
     });
 
     // WIP by job type
@@ -112,6 +122,64 @@ router.get("/analytics/wip", async (req, res, next) => {
     // WIP value by status
     const wipValueByStatus: Record<string, number> = {};
     allWip.forEach(w => { wipValueByStatus[w.status] = (wipValueByStatus[w.status] || 0) + (w.quoteAmount ? Number(w.quoteAmount) : 0); });
+
+    // Financial totals from raw_data
+    let totalQuotedCost = 0, totalRevisedSell = 0, totalActualCost = 0, totalNetInvoiced = 0;
+    let totalActualProfit = 0, totalActualHours = 0, totalUninvoiced = 0, totalCashPosition = 0;
+    let totalCommittedCost = 0, totalBillable = 0;
+    const profitByCategory: Record<string, { revenue: number; cost: number; profit: number; count: number }> = {};
+    const marginDistribution: { range: string; count: number }[] = [];
+    const marginBuckets: Record<string, number> = { "Negative": 0, "0-10%": 0, "10-20%": 0, "20-30%": 0, "30-50%": 0, "50%+": 0 };
+    const cashPositionByTech: Record<string, number> = {};
+    const overBudgetJobs: { taskNumber: string; description: string; client: string; cashPosition: number; revisedSell: number; actualCost: number }[] = [];
+
+    allWip.forEach(w => {
+      const r = rd(w);
+      totalQuotedCost += r.quotedCost || 0;
+      totalRevisedSell += r.revisedSell || 0;
+      totalActualCost += r.actualCost || 0;
+      totalNetInvoiced += r.netInvoiced || 0;
+      totalActualProfit += r.actualProfit || 0;
+      totalActualHours += r.actualHours || 0;
+      totalUninvoiced += r.uninvoiced || 0;
+      totalCashPosition += r.cashPosition || 0;
+      totalCommittedCost += r.committedCost || 0;
+      totalBillable += r.billable || 0;
+
+      const cat = r.category || w.jobType || "Other";
+      if (!profitByCategory[cat]) profitByCategory[cat] = { revenue: 0, cost: 0, profit: 0, count: 0 };
+      profitByCategory[cat].revenue += r.revisedSell || 0;
+      profitByCategory[cat].cost += r.actualCost || 0;
+      profitByCategory[cat].profit += r.actualProfit || 0;
+      profitByCategory[cat].count++;
+
+      const marginStr = r.actualMargin || r.revisedMargin || r.quotedMargin || "";
+      const marginVal = parseFloat(marginStr.replace("%", ""));
+      if (!isNaN(marginVal)) {
+        if (marginVal < 0) marginBuckets["Negative"]++;
+        else if (marginVal < 10) marginBuckets["0-10%"]++;
+        else if (marginVal < 20) marginBuckets["10-20%"]++;
+        else if (marginVal < 30) marginBuckets["20-30%"]++;
+        else if (marginVal < 50) marginBuckets["30-50%"]++;
+        else marginBuckets["50%+"]++;
+      }
+
+      const tech = w.assignedTech || "Unassigned";
+      cashPositionByTech[tech] = (cashPositionByTech[tech] || 0) + (r.cashPosition || 0);
+
+      if ((r.cashPosition || 0) < -2000) {
+        overBudgetJobs.push({
+          taskNumber: w.taskNumber || "",
+          description: (w.description || "").slice(0, 80),
+          client: (w.client || "").slice(0, 50),
+          cashPosition: r.cashPosition || 0,
+          revisedSell: r.revisedSell || 0,
+          actualCost: r.actualCost || 0,
+        });
+      }
+    });
+
+    overBudgetJobs.sort((a, b) => a.cashPosition - b.cashPosition);
 
     // Tasks completed over time (last 30 days)
     const completedByDay: { date: string; completed: number }[] = [];
@@ -182,6 +250,25 @@ router.get("/analytics/wip", async (req, res, next) => {
         byTech: Object.entries(wipByTech).map(([tech, d]) => ({ tech, ...d })),
         byType: wipByType,
         valueByStatus: wipValueByStatus,
+      },
+      financials: {
+        totalQuotedCost,
+        totalRevisedSell,
+        totalActualCost,
+        totalNetInvoiced,
+        totalActualProfit,
+        totalActualHours,
+        totalUninvoiced,
+        totalCashPosition,
+        totalCommittedCost,
+        totalBillable,
+        avgMargin: totalRevisedSell > 0 ? Math.round((totalActualProfit / totalRevisedSell) * 10000) / 100 : 0,
+        profitByCategory: Object.entries(profitByCategory).map(([cat, d]) => ({
+          category: cat, ...d, margin: d.revenue > 0 ? Math.round((d.profit / d.revenue) * 10000) / 100 : 0,
+        })).sort((a, b) => b.revenue - a.revenue),
+        marginDistribution: Object.entries(marginBuckets).map(([range, count]) => ({ range, count })),
+        cashPositionByTech: Object.entries(cashPositionByTech).map(([tech, value]) => ({ tech, value })).sort((a, b) => a.value - b.value),
+        overBudgetJobs: overBudgetJobs.slice(0, 20),
       },
       tasks: {
         totalCompleted: completedJobs.length,

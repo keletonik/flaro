@@ -1,15 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { BarChart3, TrendingUp, Target, DollarSign, Clock, CheckCircle2, Settings2, Palette, ChevronDown, Upload, Sparkles } from "lucide-react";
+import { BarChart3, TrendingUp, Target, DollarSign, Clock, CheckCircle2, Settings2, Palette, ChevronDown, AlertTriangle, Users, Activity } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { apiFetch, formatCurrency } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
-import UptickImportPanel from "@/components/UptickImportPanel";
-import DeepAnalyticsPanel from "@/components/DeepAnalyticsPanel";
 import { cn } from "@/lib/utils";
 
 type ChartType = "bar" | "line" | "area" | "pie";
 type TimePeriod = "day" | "week" | "month";
-type AnalyticsTab = "overview" | "uptick" | "deep";
 
 const COLOR_THEMES: Record<string, string[]> = {
   "Default": ["#D97706", "#2563EB", "#10B981", "#EF4444", "#8B5CF6", "#EC4899"],
@@ -35,9 +32,19 @@ interface AnalyticsData {
   wip: {
     total: number; active: number; pipelineValue: number;
     byStatus: Record<string, number>;
-    byTech: { tech: string; count: number; value: number }[];
+    byTech: { tech: string; count: number; value: number; actualCost?: number; actualProfit?: number; hours?: number; uninvoiced?: number }[];
     byType: Record<string, number>;
     valueByStatus: Record<string, number>;
+  };
+  financials?: {
+    totalQuotedCost: number; totalRevisedSell: number; totalActualCost: number;
+    totalNetInvoiced: number; totalActualProfit: number; totalActualHours: number;
+    totalUninvoiced: number; totalCashPosition: number;
+    totalCommittedCost: number; totalBillable: number; avgMargin: number;
+    profitByCategory: { category: string; revenue: number; cost: number; profit: number; count: number; margin: number }[];
+    marginDistribution: { range: string; count: number }[];
+    cashPositionByTech: { tech: string; value: number }[];
+    overBudgetJobs: { taskNumber: string; description: string; client: string; cashPosition: number; revisedSell: number; actualCost: number }[];
   };
   tasks: {
     totalCompleted: number; activeJobs: number; avgCompletionDays: number;
@@ -249,7 +256,6 @@ function PatternInsights({ data }: { data: AnalyticsData }) {
 }
 
 export default function Analytics() {
-  const [tab, setTab] = useState<AnalyticsTab>("overview");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [colorTheme, setColorTheme] = useState("Default");
@@ -344,45 +350,7 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="px-4 sm:px-6 pt-4">
-        <div className="flex items-center gap-1 bg-muted/40 rounded-xl p-1 w-fit">
-          <button
-            onClick={() => setTab("overview")}
-            className={cn("flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
-              tab === "overview" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
-          >
-            <BarChart3 size={12} /> Overview
-          </button>
-          <button
-            onClick={() => setTab("uptick")}
-            className={cn("flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
-              tab === "uptick" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
-          >
-            <Upload size={12} /> Uptick Import
-          </button>
-          <button
-            onClick={() => setTab("deep")}
-            className={cn("flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
-              tab === "deep" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
-          >
-            <Sparkles size={12} /> Deep Analytics
-          </button>
-        </div>
-      </div>
-
-      {tab === "uptick" && (
-        <div className="px-4 sm:px-6 py-5 max-w-[1400px]">
-          <UptickImportPanel />
-        </div>
-      )}
-      {tab === "deep" && (
-        <div className="px-4 sm:px-6 py-5 max-w-[1400px]">
-          <DeepAnalyticsPanel />
-        </div>
-      )}
-
-      {tab === "overview" && <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
+      <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
         {/* Pattern Detection — always visible */}
         <PatternInsights data={data} />
 
@@ -418,6 +386,25 @@ export default function Analytics() {
 
         {/* Advanced mode — detailed breakdowns */}
         {advancedMode && <>
+
+        {/* Financial KPIs — only when financials data present */}
+        {data.financials && (
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <DollarSign size={15} className="text-emerald-500" />
+              <h2 className="text-sm font-bold text-foreground uppercase tracking-wide">Financial Summary — WIP Portfolio</h2>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              <MetricTile label="Revised Sell (Pipeline)" value={fmt(data.financials.totalRevisedSell)} icon={TrendingUp} color="bg-emerald-500/8" />
+              <MetricTile label="Actual Cost" value={fmt(data.financials.totalActualCost)} icon={DollarSign} color="bg-red-500/8" />
+              <MetricTile label="Actual Profit" value={fmt(data.financials.totalActualProfit)} sub={`${data.financials.avgMargin}% margin`} icon={TrendingUp} color="bg-blue-500/8" />
+              <MetricTile label="Net Invoiced" value={fmt(data.financials.totalNetInvoiced)} icon={CheckCircle2} color="bg-emerald-500/8" />
+              <MetricTile label="Uninvoiced WIP" value={fmt(data.financials.totalUninvoiced)} icon={AlertTriangle} color="bg-amber-500/8" />
+              <MetricTile label="Total Hours" value={`${data.financials.totalActualHours.toFixed(0)}h`} sub={`Cash: ${fmt(data.financials.totalCashPosition)}`} icon={Clock} color="bg-primary/8" />
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <ChartCard title="WIP by Status" chartType={wipChartType} onChartTypeChange={setWipChartType}>
             <RenderChart type={wipChartType} data={wipStatusData} dataKey="value" nameKey="name" colors={colors} />
@@ -427,6 +414,38 @@ export default function Analytics() {
             <RenderChart type={taskChartType} data={data.tasks.completedByDay.map(d => ({ name: d.date.slice(5), value: d.completed }))} dataKey="value" nameKey="name" colors={[colors[2]]} />
           </ChartCard>
         </div>
+
+        {/* Profit by Category + Margin Distribution */}
+        {data.financials && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <ChartCard title="Profit by Category">
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={data.financials.profitByCategory} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                  <XAxis dataKey="category" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={fmtShort} />
+                  <Tooltip formatter={(v: number) => fmt(v)} contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }} />
+                  <Bar dataKey="revenue" name="Revenue" fill={colors[0]} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="cost" name="Cost" fill={colors[3] || "#EF4444"} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="profit" name="Profit" fill={colors[2] || "#10B981"} radius={[4, 4, 0, 0]} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Margin Distribution">
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie data={data.financials.marginDistribution.filter(d => d.count > 0)} cx="50%" cy="50%" innerRadius={50} outerRadius={85} dataKey="count" nameKey="range" paddingAngle={2}>
+                    {data.financials.marginDistribution.filter(d => d.count > 0).map((_, i) => <Cell key={i} fill={["#EF4444", "#F97316", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6"][i]} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+        )}
 
         {/* Tech Workload + Quotes */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -438,6 +457,69 @@ export default function Analytics() {
             <RenderChart type={quoteChartType} data={quoteData} dataKey="value" nameKey="name" colors={colors} />
           </ChartCard>
         </div>
+
+        {/* Cash Position by Tech */}
+        {data.financials && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <ChartCard title="Cash Position by Tech">
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={data.financials.cashPositionByTech.filter(t => t.tech !== "Unassigned")} layout="vertical" margin={{ top: 5, right: 20, left: 50, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={fmtShort} />
+                  <YAxis dataKey="tech" type="category" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={80} tickFormatter={(v: string) => v.split(" ")[0]} />
+                  <Tooltip formatter={(v: number) => fmt(v)} contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }} />
+                  <ReferenceLine x={0} stroke="hsl(var(--border))" strokeWidth={2} />
+                  <Bar dataKey="value" name="Cash Position" radius={[0, 4, 4, 0]}>
+                    {data.financials.cashPositionByTech.filter(t => t.tech !== "Unassigned").map((entry, i) => (
+                      <Cell key={i} fill={entry.value >= 0 ? "#10B981" : "#EF4444"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Tech Hours & Profit">
+              <div className="space-y-2 max-h-[240px] overflow-y-auto">
+                <div className="grid grid-cols-5 gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wide px-2 pb-1 border-b border-border">
+                  <span>Tech</span><span className="text-right">Jobs</span><span className="text-right">Hours</span><span className="text-right">Revenue</span><span className="text-right">Profit</span>
+                </div>
+                {data.wip.byTech.filter(t => t.tech !== "Unassigned").sort((a, b) => (b.value || 0) - (a.value || 0)).map((t, i) => (
+                  <div key={i} className="grid grid-cols-5 gap-2 text-xs px-2 py-1.5 rounded-lg hover:bg-muted/30 transition-colors">
+                    <span className="font-medium text-foreground truncate">{t.tech.split(" ")[0]}</span>
+                    <span className="text-right text-muted-foreground">{t.count}</span>
+                    <span className="text-right text-muted-foreground">{(t.hours || 0).toFixed(0)}h</span>
+                    <span className="text-right font-medium text-foreground">{fmt(t.value)}</span>
+                    <span className={cn("text-right font-medium", (t.actualProfit || 0) >= 0 ? "text-emerald-500" : "text-red-500")}>{fmt(t.actualProfit || 0)}</span>
+                  </div>
+                ))}
+              </div>
+            </ChartCard>
+          </div>
+        )}
+
+        {/* Over Budget Jobs Alert */}
+        {data.financials && data.financials.overBudgetJobs.length > 0 && (
+          <div className="bg-card border border-red-500/20 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle size={14} className="text-red-500" />
+              <h3 className="text-xs font-bold text-red-500 uppercase tracking-wide">Over Budget Jobs ({data.financials.overBudgetJobs.length})</h3>
+            </div>
+            <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+              <div className="grid grid-cols-5 gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wide px-2 pb-1 border-b border-border">
+                <span>Task</span><span>Client</span><span className="text-right">Revised Sell</span><span className="text-right">Actual Cost</span><span className="text-right">Cash Position</span>
+              </div>
+              {data.financials.overBudgetJobs.map((j, i) => (
+                <div key={i} className="grid grid-cols-5 gap-2 text-xs px-2 py-1.5 rounded-lg hover:bg-red-500/5 transition-colors">
+                  <span className="font-mono text-foreground">{j.taskNumber}</span>
+                  <span className="text-muted-foreground truncate">{j.client}</span>
+                  <span className="text-right text-foreground">{fmt(j.revisedSell)}</span>
+                  <span className="text-right text-red-400">{fmt(j.actualCost)}</span>
+                  <span className="text-right font-bold text-red-500">{fmt(j.cashPosition)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* WIP Value + Pipeline */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -486,7 +568,7 @@ export default function Analytics() {
           </div>
         </div>
         </>}
-      </div>}
+      </div>
 
       <AnalyticsPanel section="dashboard" title="Analytics Analyst" />
     </div>

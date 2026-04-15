@@ -9,7 +9,8 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "agent-eval": "tsx ./src/agent-evals/run.ts"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",

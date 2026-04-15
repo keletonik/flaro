@@ -1,0 +1,1222 @@
+"ID","Ref","Created","Updated","Name","Description","Scope of works","Status","Priority","Property Ref","Property Client Ref","Property Name","Property Account Manager","Property Certification Date","Client Ref","Client","Primary Contact Name","Primary Contact Email","Contractor","Task Value","Category","Tags","Address","Site Suburb","Postal code","Assigned Technician","Supporting Technicians","Assigned Office","Technician","Salesperson","Round","Due","Due After","Scheduled Date","Performed Date","Completed Date","On-site Date","SLA","Due (on site)","Due (performed)","Time to Site (SLA)","Time to Performed (SLA)","Authorisation Ref","Authorisation Amount","Contractor Authorisation Limit","Workorder URL","Internal Note","Invoice Note","Technician Note","Latitude","Longitude","Access Procedure","Access Note","Access Code","Access Schedule","Access Window","Is Active","Deleted","Invoiced","Inactive Date","Billing Card Ref","Billing Card Name","Branch","Cost Centre","Service Group","Zone","Est. Duration","Author","Updated By","Parent Task","Minor Job"
+39833,"T-39833","2026-04-13 09:43:40","2026-04-13 10:38:58","SQ-0773 Works","FIP Program Retrieval","**Scope of Works**
+
+1. Fire Panel Technician to attend site and retrieve the FIP Program
+2. Convert to xlsx format","REVISIT",5,"","","","","","CO-1681","GPT RE Limited","Rodney Symons","Rodney.Symons@gpt.com.au","",0.0000,"Repair","","16 Templar Rd, Erskine Park NSW 2759, Australia","","","Gordon Jenkins","","Casper Tavitian","Gordon Jenkins","","","2026-04-13","","2026-04-13 13:00:00","","","2026-04-13 10:38:50","","","","","","","165.00","","","","","","","","","","","NR","",True,"",False,"","CO-1761","The GPT Group","","[] ","R DETECTION","","","Casper Tavitian","Gordon Jenkins"," ",""
+39238,"T-39238","2026-04-09 14:00:02","2026-04-10 14:34:35","QD-2676 Works","Critical Defect - PSU Failure (OWS)","**Scope of Works**
+
+1. Fire Panel Technician to attend and replace PSU for OWS System","PERFORMED",5,"39A116 AU106","","Goodman AU106 - M5 Industry Park - Building 1 -  1 Moorebank Avenue, Moorebank, NSW 2170","","2021-04-06","","Goodman Property Services (Aust) Pty Limited  SC01822","Lisa Harmer","Lisa.Harmer@goodman.com","",0.0000,"Repair","","1 Moorebank Avenue, MOOREBANK, NSW, 2170, Australia","Moorebank","2170","Gordon Jenkins","","","Gordon Jenkins","","","","","2026-04-10 12:00:00","2026-04-10 11:11:24","","2026-04-10 10:13:08","","","","","","","1818.50","","","Tech note:
+Picked up power supply from Ampac replaced power supply in Simon’s transport tested OWS now working photos and documents","As per accepted defect quote QD-2676 dated 08-04-2026.","Picked up power supply from Ampac replaced power supply in Simon’s transport tested OWS now working photos and documents",-33.9296217,150.9300115,"CA","Andy 0416559771 - Recall Library Key for Aircon Room Eugene 0419257081
+Testing of Bldg 2B fire services to be reinstated as from April 1, 2022
+Goodman: Lisa Harmer 0482 919 973","","OA","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","00:00:00","Casper Tavitian","Casper Tavitian"," ",""
+39012,"T-39012","2026-04-08 12:11:16","2026-04-10 13:17:19","Callout - Failed OWS ","Callout - Failed OWS ","","PERFORMED",5,"39A116 AU106","","Goodman AU106 - M5 Industry Park - Building 1 -  1 Moorebank Avenue, Moorebank, NSW 2170","","2021-04-06","","Goodman Property Services (Aust) Pty Limited  SC01822","Lisa Harmer","Lisa.Harmer@goodman.com","",460.0000,"Callout","","1 Moorebank Avenue, MOOREBANK, NSW, 2170, Australia","Moorebank","2170","Gordon Jenkins","","Casper Tavitian","Gordon Jenkins","","","","","2026-04-08 12:00:00","2026-04-08 13:28:49","","2026-04-08 13:26:57","","","","","","","","","","","","Checked fire system. OWS not operational due to failed power supply. Power supply replacement required before further diagnostics can proceed.",-33.9296217,150.9300115,"CA","Andy 0416559771 - Recall Library Key for Aircon Room Eugene 0419257081
+Testing of Bldg 2B fire services to be reinstated as from April 1, 2022
+Goodman: Lisa Harmer 0482 919 973","","OA","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","","Casper Tavitian","Casper Tavitian"," ",""
+38842,"T-38842","2026-04-08 07:24:50","2026-04-09 07:29:56","QD-2660 Works","Module replacement as per Callout conducted on the 6th of April 2026","Fire Panel Technician to attend and investigate module fault:
+Replace Module with new and rectify any wiring faults
+
+***Note***
+If any additional work is needed outside the original scope, and the faults turn out to be unrelated to what's covered above, we'll provide a separate quote before proceeding.","REVISIT",5,"39579","PO 559239  on all invoices","15-19 McPherson St, Banksmeadow, NSW 2019","","2025-04-04","CO-1621","Roth Industrial","Sally Roth","sally@rothindustrial.com.au","",1660.0000,"Repair","","15 McPherson St, Banksmeadow, NSW, 2019, Australia","Banksmeadow","2019","Gordon Jenkins","","","Gordon Jenkins","","","","","2026-04-09 07:00:00","","","2026-04-09 06:57:02","","","","","","Email recvd 7.4.24","1660.00","","","","As per accepted defect quote QD-2660 dated 07-04-2026.","Turned up to site found fan control card on panel has failed. Also we need boom to repair Fire wire. This needs to be done next week. Photos in documents.",-33.9595429,151.2171865,"","82
+**SITE VACANT** contact Sally Roth 0413159311 for access
+Gate code: 1570#","","NR","",True,"",False,"","*None","Roth Industries","","[] ","R DETECTION","","00:00:00","Casper Tavitian","Gordon Jenkins"," ",""
+38182,"T-38182","2026-04-02 09:04:30","2026-04-07 10:43:36","QD-2266 Works","Red Code - fault in the panel","I was notified by gatehouse today that around 09:10  we got a call from control room with Red Code - fault in the panel. 
+ 
+Could you please send someone to sort this out?
+
+Attendance today, 9/2/26","PERFORMED",5,"39694","","Kraft Heinz - 92-96 Station Road, Seven Hills, NSW 2147","","2023-07-27","245","Kraft-Heinz Co Australia Ltd","Kraft-Heinz Co Australia Ltd","sergey.antonov@kraftheinz.com","",0.0000,"Repair","","92-96 Station Road, SEVEN HILLS, NSW, 2147, Australia","Seven Hills","2147","Gordon Jenkins","","","Gordon Jenkins","","","","","2026-04-07 12:00:00","2026-04-07 10:43:36","","2026-04-07 10:35:21","","","","","","7710118736","460.00","","","","As per accepted defect quote QD-2266 dated 09-02-2026.","Charger fault on EWIS reset fault cleaner system now normal",-33.7756711,150.9418248,"","Sergey Antonov 0403 192 958
+'CC' **cerebos-gatehouse@kraftheinz.com** when booking works in
+Instructions - Techs to register themselves
+1. Register on our new platform here:
+<https://www.onlineinduction.com/kraftheinzoi/start.php>
+2. Complete Induction 
+<https://www.onlineinduction.com/kraftheinzoi>","","NR","",True,"",False,"","CO-1640","Cerebos ( Australia) Ltd","","[] ","R DETECTION","","00:00:00","Casper Tavitian","Gordon Jenkins"," ",""
+37159,"T-37159","2026-03-30 11:39:40","2026-04-13 08:39:23","QD-2520 Works","AFSS Inspection Report Feb 2026","Dear Customer,
+
+We hope you're doing well. Following our routine annual testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+
+Section 2 – Assessment results and observations
+1.  Automatic Fire Suppression System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  There are two big ass fans in the warehouse that do not trip on the fire alarm. The fans need to shut off when the fire alarm is activated as they will obstruct the flow of water from the sprinklers.
+-  The automation section requires a fire trip installed to shut down on the fire alarm. The details of the fire trip need to be updated on the zone block plan.
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A679","","Jacfin Ricoh - 4  Telopea Place, Eastern Creek, NSW 2766","","","","FlameSafe Warranty (Contracts)","Jack Santangelo","","",1325.0025,"Repair","","4 Telopea Pl, Eastern Creek NSW 2766, Australia","Eastern Creek","2766","Gordon Jenkins","","","Gordon Jenkins","","","","","2026-04-13 06:00:00","","","2026-04-13 05:51:00","","","","","","Damien Luksic - approved AFSS","1325.00","","","","As per accepted defect quote QD-2520 dated 13-03-2026.","",-33.8114484,150.8327009,"CA","Damien Luksic - 0436 016 268  (Knight Frank)
+Brian Castle - 0466 764 962 (Ricoh - tenant)","","OA","",True,"",False,"","","FlameSafe Warranty (Contracts)","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+36205,"T-36205","2026-03-25 07:27:21","2026-04-07 14:48:59","SQ-0702 Works","Superintendents & Residence Smoke Detection","Testing of the smoke detectors that are currently install in the building.
+
+Due to the installation require security to see if the detectors either are local or connected to the security system.
+
+May require to add additional detectors, we would be able to supply and install domestic detectors that are interconnected to each other.
+
+Waiting on quote for Evac plans to be installed
+
+once detectors have been tested if required to add extra domestic detectors costs per detector will be
+
+Per domestic smoke detector - $342.80
+
+Per domestic Thermal detector - $365.20","PERFORMED",5,"P1108","","Centennial Park - Grand Drive Sydney NSW 2021","","","","Greater Sydney Parklands C/ - JLL","Jason Simpson","jason.simpson@jll.com","",0.0000,"Repair","","Grand Dr, Centennial Park NSW 2021, Australia","Centennial Park","2021","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-03-25 11:30:00","2026-04-07 14:48:59","","2026-03-25 15:25:49","","","","","","W-03344-000003","590.00","","","","","",-33.8964626,151.2304826,"","","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","","Jamie Wright","Casper Tavitian"," ",""
+36204,"T-36204","2026-03-25 07:23:19","2026-04-07 14:49:08","SQ-0703 Works","Park Rangers & Residence Smoke Detection","Testing of the smoke detectors that are currently install in the building.
+
+Due to the installation require security to see if the detectors either are local or connected to the security system.
+
+May require to add additional detectors, we would be able to supply and install domestic detectors that are
+
+interconnected to each other.
+
+Waiting on quote for Evac plans to be installed
+
+once detectors have been tested if required to add extra domestic detectors costs per detector will be
+
+Per domestic smoke detector - $342.80
+
+Per domestic Thermal detector - $365.20","PERFORMED",5,"P1108","","Centennial Park - Grand Drive Sydney NSW 2021","","","","Greater Sydney Parklands C/ - JLL","Jason Simpson","jason.simpson@jll.com","",0.0000,"Repair","","Grand Dr, Centennial Park NSW 2021, Australia","Centennial Park","2021","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-03-25 07:30:00","2026-04-07 14:49:08","","2026-03-25 10:24:55","","","","","","W-03342-000002","520.00","","","","","",-33.8964626,151.2304826,"","","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","","Jamie Wright","Casper Tavitian"," ",""
+36078,"T-36078","2026-03-24 10:17:28","2026-04-02 13:05:59","QD-1994 Works","AFSS inspection report December","As per scope of Works
+
+Section 2 – Assessment results and observations
+
+8.  Unit 13
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+
+-  Additional detection is required in the top floor offices 
+
+-  There have been renovations allowing roof access via the top floor office space, the void area between the office ceiling and the roof of the building should have fire detection installed. Further investigation required to comply with AS1670.1. 
+
+-  There have been more modifications to the office area, an additional 4 detectors are required. The entire top floor and ceiling void need to be reviewed with compliant detection installed. The measure will only be endorsed on the completion of works.
+
+Further quote will be required after site inspection","REVISIT",5,"39A277","","Silverwater Industrial Park -  Corner Fariola St, Slough Ave & Rachael Cl Silverwater, NSW 2128","","2019-03-05","","Lendlease Real Estate Investments Ltd C/- JLL","Lester Rodrigues","lester.rodrigues@jll.com","",1040.0040,"Repair","","Corner Fariola St, Slough Ave & Rachael Close, SILVERWATER, NSW, 2128, Australia","Silverwater","2128","Gordon Jenkins","","","Gordon Jenkins","","","","","2026-04-02 11:34:00","","","2026-04-02 13:05:55","","","","","","W-00079-000148","1040.00","","","","As per accepted defect quote QD-1994 dated 18-12-2025.","Had I look up into the roof? Space will need to add concealed detectors in office. The distance is 21 m x 37 m. Also install more detectors and level one office area. All zones on fire panel are used. Will need an extra zone card for 1600 and run cable from Fire panel to office area through warehouse. Boom required. Call for more information.",-33.8329958,151.0501315,"","Lester Rodrigues","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+36038,"T-36038","2026-03-24 06:45:27","2026-04-01 11:31:48","QD-2126... Works","Monthly defect inspection","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","PERFORMED",5,"39A287","","3M - 1A Rivett Road, North Ryde, NSW 2113","","2019-05-28","","Quality Green Metro Pty Ltd as Trustee for Quality Green Metro Unity Trust","Noel Taylor","noel.t@qualitygreengroup.com.au","",0.0000,"Repair","","1A Rivett Road, NORTH RYDE, NSW, 2113, Australia","North Ryde","2113","Gordon Jenkins","","","Gordon Jenkins","","","","","2026-04-01 12:00:00","2026-04-01 11:31:48","","2026-04-01 11:01:34","","","","","","Chanuka Wijayasiri - Approved","657.49","","","","As per accepted defect quote QD-2126 - FIP dated 16-01-2026.","Replaced module in Fire services room fire panel now clear system all normal photos in documents",-33.7972736,151.1392603,"","Auto jacking pump hydrant system
+Lock Passcode at front door - 1988
+Noel Taylor 0402677345","","NR","",True,"",False,"","1234","Quality Green Metro Pty Ltd","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+34395,"T-34395","2026-03-10 14:25:46","2026-04-09 12:22:15","FIP monthly defect investigation (Quote QD-2498)","FIP monthly defect investigation","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","PERFORMED",5,"39736","","PPIF -  9 George Street, Parramatta, NSW 2150","","2019-09-18","","Talish Property Group C/- Knight Frank Australia Pty Ltd","Ramy Khalifa","Ramy.Khalifa@au.knightfrank.com","",0.0000,"Repair","","9 George Street, Parramatta, NSW, 2150, Australia","Parramatta","2150","Nu Unasa","Gordon Jenkins","","Gordon Jenkins","","","","","2026-03-25 08:00:00","2026-04-09 11:38:00","","2026-04-09 10:44:55","","","","","","Work Order Number	W15529721","780.00","","","","As per accepted defect quote QD-2498 dated 09-03-2026.","DeIsolated zone five free faults popped up repaired detectors on level three faults cleared system now normal",-33.813498,151.0015908,"","Key No. 93
+Keys to the building can be obtained from key box located in FHR cupboard on ground floor. Pin No is 1945-
+Spare Swipe to car park in office. 
+Comms room for OH&S site doc’s
+Facility Manager (knight Frank):Ramy Khalifa 0400 396 500  Shane Randall (6/12/23 to 20/12/23 0438 845 222","","NR","",True,"",False,"","CO-070","Knight Frank Australia Pty","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+34390,"T-34390","2026-03-10 14:05:29","2026-04-09 09:17:29","AFSS Inspection Report Feb 2026 (Quote QD-2417 - FIP)","AFSS Inspection Report Feb 2026","Dear Customer,
+
+We hope you're doing well. Following our routine annual testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+
+Section 2 – Assessment results and observations\
+1. Automatic Fire Suppression System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The batteries for both diesel and electric pumps are past the two-year expiry date and need to be replaced.
+-  The inlet and outlet tamper valves in the pump room are programmed back to front. The programming needs to be corrected.
+-  The warehouse has 5 big ass fans installed under ESFER sprinkler heads. The mech contractor has advised that the fans did not trip on the fire alarm. The fans need to be connected to a fire trip as they will obstruct the flow of water from the sprinkler heads.
+-  The fans in the pump room did not start automatically but could be started manually. There appears to be a fire trip that is not connected. The fire trip needs to be connected, and the function tested.
+
+2. Automatic Fire Detection System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The zone block plan is missing zone 9 for the BGA at the fire panel.
+
+**Missing smoke detection**
+2x detectors to be installed in the open area.
+1x detectors to be installed in the SW office.
+1x detectors to be installed in the east small open office.
+1x detectors to be installed in the rear admin office.
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A591 AU240","","Goodman AU240 - Park View Business Park - 3 Talavera Road, Macquarie Park, NSW 2113","","","","Goodman Property Services (Aust) Pty Limited SC01822","Christian Remolina","Christian.Remolina@goodman.com","",7392.3055,"Repair","","3 Talavera Road, Macquarie Park, NSW, 2113, Australia","Macquarie Park","2113","Nu Unasa","Gordon Jenkins","","Gordon Jenkins","","","","","2026-03-26 07:01:00","","","2026-03-26 06:41:09","","","","","","Work Order No: 336678  Purchase Order No: 587892","7392.30","","","","As per accepted defect quote QD-2417 - FIP dated 26-02-2026.","Tested diesel pump tampers rewired now the correct way around photos and document
+
+9/4/26 Gordon 
+Checked fan in pump room found incorrectly wired and programmed further action required. Checked the five big ass fans will need to get information on where to put a Fire trip or do we need five Fire trips
+Photos and documents",-33.7848525,151.1323525,"","Christian Remolina - 0410 587 945","VERIFIED & SINEPRO","NR","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+33860,"T-33860","2026-03-05 10:32:21","2026-04-10 12:49:00","Critical defect - monthly testing (Quote QD-2459)","Critical defect - monthly testing","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following Critical defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A188","","City of Parramatta Council - 9 Wentworth Street, Parramatta, NSW 2150","","2020-06-22","150","C/- Colliers Int’l Pty Ltd","Colliers","","",520.0020,"Repair","","9 Wentworth Street, PARRAMATTA, NSW, 2150, Australia","Parramatta","2150","Nu Unasa","Gordon Jenkins","","Gordon Jenkins","","","","","2026-03-05 09:00:00","","","2026-03-05 20:24:46","","","","","","CWO0678080","520.00","","","","As per accepted defect quote QD-2459 dated 05-03-2026.","Downloads program . Unable to test OWS .
+Few functions to look at in programming for OWS , triggers using LOGICS .will have to go through program
+
+Found that ancillary looks out OWS ,from setting off . This is ok - because there’s seperate isolation buttons for FIRE TRIPS on FIP .
+Still requires to be on ALARM DEVICES button.
+Will program and return to site to upload with tester and retest .",-33.819279,151.0050207,"","Colliers: Hamza - 0460 625 957
+Mangers Office key lock 2205","Keybox 2150","NR","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+33630,"T-33630","2026-03-04 08:06:46","2026-03-04 12:25:51","39A495 (Service Quote SQ-0387)","Replacement of End Of Life Fire Indicator Panel","As per scope of Works:
+
+Current Fire Indicator Panel IFS-008 has been classed as a Discontinued panel as from 28/11/2005, we recommend that this be replaced with the FS-1600.
+
+We have checked the system, this is currently due for a 5 yearly in 2027, replacing the Fire Indicator panel and OWS system will avoid having to complete this and reset the service requirements to 2031.
+
+This Quote covers the replacement of the EOL FIP, OWS system, all to be installed in one Fire Indicator Panel.
+
+With the installation of a Fire Zone Block Plan.
+
+We have allowed for the change out of the resistors for the new system to operate correctly, full testing will be conducted on completion of the installation.
+
+We have not allowed for any defects that have been found while replacing the Fire Indicator Panel, may require further works.","REVISIT",5,"39A495","","Baxter - 164 Newton Road, Wetherill Park, NSW 2164","","2021-12-11","243","Centuria Property Funds No. 2 Ltd ACF ACN 062 671 872 Pty Ltd  ATF BIPT Marple Ave Sub Trust Level 41, Chifley Tower 2 Chifley Square  SYDNEY NSW 2000","Keisha Casey","Keisha.Casey@centuria.com.au","",13702.2500,"Repair","","164 Newton Road, Wetherill Park, NSW, 2164, Australia","Wetherill Park","2164","Nu Unasa","Gordon Jenkins","Jamie Wright","Gordon Jenkins","","","","","2026-03-04 12:00:00","","","2026-03-04 12:25:09","","","","","","PO Number	A20043_2600024","13702.25","","","","","Checked system for panel replacement photos and documents",-33.8404738,150.8864658,"","**RAPID ACCESS INDUCTION**
+Keisha Casey (Centuria)0456371419","","NR","",True,"",False,"","CO-2122","Centuria Property Funds","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+33571,"T-33571","2026-03-03 15:39:48","2026-04-10 10:46:43","testing ","testing ","testing- testing ","REVISIT",5,"39000","","FlameSafe Rydalmere Office -  Unit 2, 8-10 Mary Parade, RYDALMERE, 2116","","2019-08-02","1003","FlameSafe Fire Protection (Testing Purposes)","Flamesafe Accounts","michael@flamesafe.com.au","",2217.0000,"Callout","","Unit 2, 8-10 Mary Parade, Rydalmere, NSW, 2116, Australia","Rydalmere","2116","Office Account","","Jade Ogony","Jade Ogony","","","","","2026-04-10 10:45:00","2026-03-03 15:43:34","","2026-04-07 10:36:39","","","","","","","","","","","","",-33.8109834,151.0299426,"","","","MA","",True,"",False,"","","FlameSafe","","[] ","R DETECTION","","","Jade Ogony","Office Account"," ",""
+33542,"T-33542","2026-03-03 10:05:21","2026-03-31 12:50:57","FIP Monthly Battery Defects (Quote QD-2413)","FIP Monthly Battery Defects","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A471","","Building B1, B2, B3 - 5 Williamson Rd, Ingleburn NSW 2565","","2026-06-04","","Ingleburn Industrial Property Co Pty Ltd","Damien Luksic","Damien.Luksic@au.knightfrank.com","",3183.0040,"Repair","","5 Williamson Rd, Ingleburn NSW 2565, Australia","Ingleburn","2565","Gordon Jenkins","Bailey Arthur, Darren Brailey, Jimmy Kak, Nu Unasa","","Gordon Jenkins","","","","","2026-03-06 10:00:00","","","2026-03-31 12:43:41","","","","","","Work Order Number	W15504329","3183.00","","","","As per accepted defect quote QD-2413 dated 25-02-2026.","Replaced batteries in bld A 
+
+There is no detection in bld A there for no block plan required. 
+
+No sprinkler block plan on site either. 
+(If sprinkler block plan is required then sprinkler techs need to attend site)
+See attached photo of the zone list.
+
+Bld A does not have an occupant warning system. The existing FIP doesn’t have hardware for ows. There is no sign of sounders in bld A Either. BLD A seem to have never had any ows on the past. Horn speakers are fitted inside the BLD A but they’re not connected to the existing fire system.
+
+Further investigation is required to see if ows in bld A is required.
+
+31/3/26 Gordon 
+Turned up to site to replace batteries found batteries have been replaced already",-33.9981023,150.848054,"CA","Damien Luksic (Knight Frank) 0436 016 268","","BH","",True,"",False,"","CO-070","Knight Frank Australia Pty","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+33494,"T-33494","2026-03-02 12:00:10","2026-03-09 15:08:33","FIP Critical defects (Quote QD-2437)","FIP Critical defects","Dear Customer,
+
+We hope you're doing well. Following our routine annual testing, we have identified the following Critical defect(s) that we wanted to bring to your attention, please see below:
+
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39235","","Space 207 - 207 Pacific Highway, St Leonards, NSW 2065","","2018-03-08","","Altis Bulky Retail ATF Altis Bulky Sub Trust 4 The Trust Company (Australia) LTD ACF Altis Bulky Sub Trust 4","Alex Bailey","alex.bailey@au.knightfrank.com","",1040.0000,"Repair","","207 Pacific Highway, St Leonards, NSW, 2065, Australia","St Leonards","2065","John Minai","","","John Minai","","","","","2026-03-09 06:00:00","","","2026-03-09 06:07:21","","","","","","Work Order Number	W15500704","1040.00","","","","As per accepted defect quote QD-2437 dated 02-03-2026.","9/3/2026
+John and Hugo
+Investigated OWS not operating on levels 4 to roof. Found fault to be at amplifier in FIP cabinet. T-Gen 50 slave Amplifier which serves levels 4 and above is faulty. After impedance testing circuit for the speakers, the capacity was at 70watts which is well above the 50watt capacity of the amplifier. The T-Gen 50 is obsolete and is superseded by the T-Gen2. Recommend replacing with a new 120w amplifier T-Gen2 with splitter card and PSU + batteries.",-33.8238486,151.1933848,"","I&T No.: PIN: KF 105767 
+External ramp lockbox 2018
+Pass accesses BM Office
+Use Key GMK 0 from managers office (Kevin). Peter 0433850558
+Alex Bailey (Knight Frank) 0407 916 561","","NR","",True,"",False,"","CO-070","Knight Frank Australia Pty","","[] ","R DETECTION","","00:00:00","Jamie Wright","John Minai"," ",""
+33490,"T-33490","2026-03-02 11:33:18","2026-03-13 11:43:48","End Of Life Fire Indicator Panel Replacement (Quote QD-2368 - FIP)","End Of Life Fire Indicator Panel Replacement","As per scope of Works
+
+Scope of Works
+Replacement of End of life 2800 with 3030, along with the replacement of the mimic Panels due to compatibility. Due to the fault on the FIP, parts are unavailable, require to replace the FIP.
+This quote covers the replacement for like for like
+-  Any extra faults from the replacement will require a separate quote for repairs.
+-  This quote does not cover any earth faults that may show up on the system, further quote will be required.
+We have only allowed for the replacement of the 2800 to a 3030, we have allowed for the replacement of the 18 detectors to change from smoke to thermal and only 20 MCP may require extra depending on the amount installed on site, and speakers for any major issues after replacement.
+
+Exclusion:
+•  Work performed outside normal working hours.
+•  Provision for upgrades or additional fire services not noted in this quote.
+•  Supply and installation of works outside the scope detailed above.
+•  Provision for additional fire and essential services not specifically included.
+•  Building works (e.g., core holes, wall chasing, removal/replacement of ceiling grids or tiles, patching, painting, and making good) unless otherwise specified.
+•  Alterations required for structural purposes (these will be charged at cost + 6%).
+•  Block plan updates.
+•  Site allowance.
+•  CDC documentation or similar requirements.
+•  Final connection of fire trips within mechanical/security boards or similar systems.
+•  Any items not specifically included above. Exclusion:
+•  Work performed outside normal working hours.
+•  Provision for upgrades or additional fire services not noted in this quote.
+•  Supply and installation of works outside the scope detailed above.
+•  Provision for additional fire and essential services not specifically included.
+•  Building works (e.g., core holes, wall chasing, removal/replacement of ceiling grids or tiles, patching, painting, and making good) unless otherwise specified.
+•  Alterations required for structural purposes (these will be charged at cost + 6%).
+•  Block plan updates.
+•  Site allowance.
+•  CDC documentation or similar requirements.
+•  Final connection of fire trips within mechanical/security boards or similar systems.
+•  Any items not specifically included above.","REVISIT",5,"39380","","Costas - 4 Beach Street, Eastern Creek, NSW 2766","","2022-08-01","","Lendlease Real Estate Investments Ltd C/- JLL","Marco Fiorentino","Marco.Fiorentino@jll.com","",29772.4184,"Repair","","4 Beach Street, Eastern Creek, NSW, 2766, Australia","Eastern Creek","2766","Nu Unasa","Allan Sparkl, Gordon Jenkins, John Minai","","Gordon Jenkins","","","","","2026-03-13 06:00:00","","","2026-03-13 08:51:12","","","","","","W-00105-000094","29772.42","","","","As per accepted defect quote QD-2368 - FIP dated 19-02-2026.","Traced cables to look for water or short on system found detection in the cool rooms full of water removed cables in the ceiling from the loop. Card sprinklers pressure switches pumps back online. The only thing disconnected now is the MCPs and detection in the cool room further action required. 
+Will need to quote to replace 
+16 detectors and BGA’s to addressable",-33.804749,150.8479479,"","Marco Fiorentino (JLL) 0414 999 618","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","18:01:00","Jamie Wright","Gordon Jenkins"," ",""
+33254,"T-33254","2026-02-27 16:03:48","2026-03-30 10:58:36","PM2026/03 R DETECTION (39A792) ","Mar 2026 routine servicing (7 items): System Interface Testing: Full Function Test (AS 1851-2012 Appendix D): Annual (7)","System Interface Testing: Full Function Test (AS 1851-2012 Appendix D): Annual (7)","PERFORMED",5,"39A792","","17-19 Distribution Dr. Orchard Hills","","2026-05-29","","Knight Frank","Salvatore Di Pietro","salvatore.dipietro@au.knightfrank.com","",0.0000,"I&T","","17 Distribution Dr., Orchard Hills NSW 2748, Australia","Orchard Hills","2748","Haider Al-Heyoury","","","Haider Al-Heyoury","","","2026-03-31","","2026-03-30 11:00:00","2026-03-30 10:58:36","","2026-03-30 09:12:21","","","","","","","","0.00","","","","",-33.825658,150.7775398,"CA","Salvatore Di Pietro KF 0459 519 795098 
+Knight Frank access requirements to be fulfilled QR code log-in , 1-2 days notice to BM Salvatore Di Pietro (Knight Frank) 0459 519 795 - REFER COVID 19 FORMS ON LINK","","OA","",True,"",False,"","CO-070","Knight Frank Australia Pty","","[] ","R DETECTION","","","Office Account","Haider Al-Heyoury"," ",""
+32774,"T-32774","2026-02-27 10:37:17","2026-03-25 07:29:01","Annual Testing investigation/repairs (Quote QD-2255)","Annual Testing investigation/repairs","Dear Customer,
+
+We hope you're doing well. Following our routine annual testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39392","","Toll - 11A Greenhills Avenue, Moorebank, NSW 2170","","2021-11-22","","Vassk Investments Pty Ltd ATF Greenhills Estate Unit Trust C/-CBRE","Christian Sacco","cristian.sacco@cbre.com","",2388.0080,"Repair","","11A Greenhills Avenue, Moorebank, NSW, 2170, Australia","Moorebank","2170","Gordon Jenkins","","","Nick Hollingsworth","","","","","2026-03-05 11:36:00","","","2026-03-05 11:28:00","","","","","","PO6906266_201010","2388.00","","","","As per accepted defect quote QD-2255 dated 06-02-2026.","After Checking the warning system recommend installing six speakers upstairs three downstairs",-33.9380507,150.9308702,"","A SITE INDUCTION IS NOW REQUIRED TO ENTER SITE. CONTACT 
+All techs will also need to sign in and out of our visitor book at reception everytime they visit","","NR","",True,"",False,"","CO-038","C.B Richard Ellis Pty Ltd","","[] ","R DETECTION","","00:00:00","Jamie Wright","Nick Hollingsworth"," ",""
+32615,"T-32615","2026-02-25 07:59:11","2026-03-12 14:25:12","AFSS Inspection report Jan 2026 (Quote QD-2211 - FIP)","AFSS Inspection report Jan 2026","Dear Customer,
+
+We hope you're doing well. Following our routine annual testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+
+4.  Automatic Fire Detection System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The spacing of detection under all mezzanines needs to be reviewed. Due to the large beams that are more than 300mm deep detection is required in each section between beams.
+
+Issue with the End of life fire panel due to connection require to upgrade fire system, we have allowed to attend site to obtain a copy of the program to supply a quote for the upgrade.
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39855","","PFM Corp (BLDG 2) - 147-151 Newton Road, Wetherill Park, NSW 2164","","2019-05-24","485","Kenneth R Moras Property Holdings Pty Ltd","Kenneth R Moras Property Holdings Pty Ltd","","",1040.0040,"Repair","","2/147 Newton Rd, Wetherill Park NSW 2164, Australia","Wetherill Park","2164","John Minai","","","John Minai","","","","","2026-03-12 06:00:00","","","2026-03-12 12:15:38","","","","","","Wei Mo - AFSS","1040.00","","","","As per accepted defect quote QD-2211 - FIP dated 30-01-2026.","12/3/2026
+XP95 smokes
+
+WH1 Per bay starting from Newton Rd side Entry driveway corner
+2x new
+2x relocated
+3x new
+2x relocates
+2x new
+2x relocates 
+3x new
+2x relocates (fire exit door 20)
+2x new
+2x relocates
+2x relocates and 1x new
+2x new (fire exit door 6)
+2x relocates
+3x new
+1x relocate (last bay end of WH1)
+
+WH1 exit driveway side
+3x relocates and 1x new
+3x relocates and 1x new
+3x new
+3x relocates and 2x new (fire exit door 40 mezz stairs)
+1x new
+1x new
+3x relocates and 1x new
+3x relocates and 1x new
+4x new (last bay end of WH1 exit driveway side)
+
+Revisit for inspection of WH2",-33.8405723,150.8968963,"","Shorn Houzy 0425328278","","NR","",True,"",False,"","CO-2119","Kenneth R Moras Property Holdings Pty Ltd","","[] ","R DETECTION","","00:00:00","Jamie Wright","John Minai"," ",""
+32351,"T-32351","2026-02-23 14:03:58","2026-04-09 11:41:43","Defect raised during our recent 6 monthly sprinkler alarm valve testing. SPRK 2026. (Quote QD-2379)","Defect raised during our recent 6 monthly sprinkler alarm valve testing. SPRK 2026.","Dear Customer,
+ 
+We hope you're doing well. Following our routine 6-Monthly testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+ 
+ 
+If you have any questions or need further clarification, feel free to reach out.
+Thank you for your understanding and continued support.","REVISIT",5,"39A415 A AU002","","Goodman AU002 - Slough Business Park - Block A Units 1-10 - 2 Slough Road, Silverwater, NSW 2128","","","","Goodman Property Services (Aust) Pty Limited SC01822","Angelo Munozco","Angelo.Munozco@goodman.com","",650.0000,"Repair","","2 Slough Avenue Block A Units 1-10, Silverwater, NSW, 2128, Australia","Silverwater","2128","Gordon Jenkins","Nu Unasa","","John Minai","","","","","2026-02-24 11:00:00","2026-02-24 12:52:09","","2026-02-24 11:43:02","","","","","","Work Order No: 334640  Purchase Order No: 584328","650.00","","","","As per accepted defect quote QD-2379 dated 23-02-2026.","Repair tamper found tamper valves faulty need to replace photos in documents
+
+John & Gordon 10/3/2026
+Investigated OWS issues United 1-10. Found cable that serves units 7-10 and ran cable feed between units 6 and 7. Impedance on one circuit for units 5-10 is 89watts and the impedance for units 1-4 is 35watts. Existing amplifier is only a 50w card. A second amplifier of 120w is required for units 5-10 and a battery cabinet to relocate batteries below cabinet required to make room for 120w amplifier. Quote required AMPAC.",-33.8320651,151.0500501,"CA","Angelo Munozco (Goodman) 0427 637 792","","OA","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","00:00:00","Dean Shaw","Nick Hollingsworth"," ",""
+32310,"T-32310","2026-02-23 06:49:17","2026-03-02 10:43:13","39A164 (Service Quote SQ-0592)","Replacement of damaged fire equipment","had contractors do a renovation on 2 toilets in Unit 1, 2 Eden Park Drive. In doing the reno the demo guys damaged the speakers and the smoke detectors. Could we please have a cost for replacement and in the mean time program someone to come and do the work
+
+2 x addressable thermal smoke
+2 x low profile speakers","INPROGRESS",5,"39A164","","NKS - 2 Eden Park Drive, Macquarie Park, NSW 2113","","2024-11-27","","Nks (NSW) Pty Ltd C/- Dunnet Properties Pty Ltd Pty Ltd","Craig Simpson","craig@dunnet.com.au","",680.6300,"Repair","","2 Eden Park Drive, MACQUARIE PARK, NSW, 2113, Australia","Macquarie Park","2113","Hugo","","Jamie Wright","Hugo","","","","","2026-02-23 12:00:00","","","2026-03-02 07:18:56","","","","","","PO - 2060223.","1161.26","","","- Sign in and isolate 
+- Measure cut out and install devices
+- Existing addresses are miss matching with the description. Talked to building manager and re-programmed to its suitable description","","",-33.7856274,151.1305531,"CA","Enes 0478 486 303. Swipe and key lock box on door of FIP room 003
+Craig Simpson (Dunnet Properties P/L) 0490 544 892","","BH","",True,"",False,"","CO-2532","NKS (NSW) Pty Ltd","","[] ","R DETECTION","","","Jamie Wright","Hugo"," ",""
+31974,"T-31974","2026-02-18 12:55:28","2026-03-18 14:30:38","AFSS inspection report December 2025 (Quote QD-2077 - FIP)","AFSS inspection report December 2025","Dear Customer,
+We hope you're doing well. Following our routine annual testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+
+Section 2 – Assessment results and observations
+
+1.  Automatic Fire Detection & Alarm System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The visual warning devices above the stage did not operate on the fire alarm. The strobes must operate due to the sound levels in the area.
+-  There is a heat detector installed under a light fitting that cant be tested, the detector needs to be relocated.
+-  There is no detection installed outside the goods lift on ground floor, detection is required in this area.
+-  The fire detection block pan does not show the location of the WIP’s on site. The block plan needs to be updated to show this detail.
+-  The fire safety certificate that was created for the new fit out lists AS1670.1-2005, this standard does not exist. AS1670.1-2004 Amendment 1 was released in 2005. The block plan lists AS1670.1-2004, further investigation is required.
+-  There is a detector installed directly under a ceiling fan in the smoking area that is falling off the roof. Detection can’t be installed closer than 400mm from the blade of the ceiling fan. The detector needs to be relocated.
+
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39666","","Club Ashfield - 1-11 Charlotte Street, Ashfield, NSW 2131","","2019-03-12","48","Ashfield Catholic & Community Club Ltd","Vincent Di Maio","vincentd@clubashfield.com.au","",2425.8222,"Repair","","1-11 Charlotte Street, ASHFIELD, NSW, 2131, Australia","Ashfield","2131","Gordon Jenkins","John Minai, Nu Unasa","","John Minai","","","","","2026-03-18 06:00:00","","","2026-02-19 12:41:35","","","","","","","2425.82","","","","As per accepted defect quote QD-2077 - FIP dated 08-01-2026.","17/3/2026 picked up parts Ampac
+18/3/2026 installed detectors in BOH goods lift areas. Installed detector in server room. Relocated detector above light. Relocated detector above ceiling fan. Connected up strobe on level 1 stage and programmed and tested. May need fire label for strobe above stage. Majority of works in ground floor public spaces. Will need to arrange early morning access in April with Vincent when we can start earlier. System normal.",-33.8870936,151.1259093,"","Vincent 9798 6344","","NR","",True,"",False,"","CO-1610","Ashfield Catholic & Community Club Ltd","","[] ","R DETECTION","","00:00:00","Jamie Wright","John Minai"," ",""
+31757,"T-31757","2026-02-16 10:48:21","2026-02-25 14:56:44","AFSS Defect report Jan 2026 (Quote QD-2289 - FIP)","AFSS Defect report Jan 2026","Dear Customer,
+
+We hope you're doing well. Following our routine annual testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+
+Section 2 – Assessment results and observations
+1.  Automatic Fire Detection System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  L2, the smoke detector located outside both sets of stairs have been removed. 2 x smoke detectors required.
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39955","","D.J.Wear - 117 York Street, Sydney, NSW 2000","","2024-03-17","166","117 York Street Pty Limited","William Grunberger","wgrunberger@dwear.com.au","",4568.8130,"Repair","","117 York Street, SYDNEY, NSW, 2000, Australia","Sydney","2000","Nu Unasa","","","Nu Unasa","","","","","2026-02-25 08:30:00","","","2026-02-25 12:53:06","","","","","","William Grunberger","4568.80","","","","As per accepted defect quote QD-2289 - FIP dated 11-02-2026.","",-33.8713313,151.2060724,"","**Sign in at 350 Kent St. Level 6 D.J. Wear (Pick up key & Swipe)
+Parking in basement Market Row, off Mullins St
+William Grunberger 9262 2256 or 0449 005","","NR","",True,"",False,"","CO-686","D.J.Wear & Associates","","[] ","R DETECTION","","00:00:00","Jamie Wright","Nu Unasa"," ",""
+31520,"T-31520","2026-02-12 08:30:01","2026-02-12 20:41:48","FAS Fault investigation","FAS Fault investigation","Emma requested attendance today for the investigation of the FAS and alarm fault.
+
+Site Details 
+Site name: METROLINK 
+Address: 197-201 Coward St , MASCOT 
+ASE No: 251758 
+
+Event Details 
+Event Description: FAS Fault 
+ASE input: 1 
+Location Description: Fire Control Room Front Of Building 
+Date and Time: Feb 12 2026 4:18AM 
+Incident No: 1836317061 
+","REVISIT",5,"39A434","","Metrolink Corporate Park - 197-201 Coward Street  Mascot, NSW 2020","","2023-10-27","","The Trust Company (Australia) Ltd ATF Ascendas Business Park Trust No.1 C/- Colliers","Colliers","jason.natoli@colliers.com","",1320.0000,"Callout","","197-201 Coward Street, Mascot, NSW, 2020, Australia","Mascot","2020","Nu Unasa","","Jamie Wright","Nu Unasa","","","","","2026-02-12 09:00:00","","","2026-02-12 20:40:18","","","","","","","","","","","","Detector fault , bathroom building B, smoke in fault .
+
+Required replacing . Hochiki addressable-smokes.isolated point till replacement 
+
+Put order in for replacement",-33.9249112,151.1882823,"","Emma Cole **CALL HER THE DAY BEFORE**
+Access to Keys need to via the link below. 
+<https://www.keymaas.com.au/userRegistration.html?site=a814b300-b267-4d66-ae08-1eea38ade79c>","","NR","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","","Jamie Wright","Nu Unasa"," ",""
+31417,"T-31417","2026-02-11 07:06:01","2026-02-23 09:18:57","AFSS Inspection report December 2025 (Quote QD-2003)","AFSS Inspection report December 2025","As per scope of Works;
+
+Section 2 – Assessment results and observations
+
+5.  Building Occupant Warning System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+
+-  The fire alarm bells were not activated during the fire alarm in the office areas, further investigation is required to replace bells and determine if the DB levels meet the minimum requirements. (the bells can’t be heard in the office area, or the rear warehouse 3 x bells need to be installed. This is a critical defect; this measure will not be endorsed without evidence of completion)
+
+7.  Automatic Fire Detection System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+
+-  There is a room in the mezzanine area behind the office that was not accessible last year. The room is not fitted with smoke detection or sprinkler coverage. All enclosed areas required sprinkler and detection coverage. 
+-  Wormald has suggested the detection system be listed as AS1670 – 1974, the detection block plan will need to be updated to reflect the correct Standard and put back on the wall beside the FIP. 
+-  The sign saying fire is missing from the strobe at the front entry. A new sign is required.
+
+Technician required to install log book when testing.
+
+Further estimate maybe required after initial investigation.","REVISIT",5,"39638","","Cotton King - 95 Bonds Road,  Punchbowl, NSW 2196","","2019-03-14","423","Uturn Reuse Pty Limited","Rita Jita","rita@kingcotton.com.au","",3133.2258,"Repair","","95 Bonds Road, PUNCHBOWL, NSW, 2196, Australia","Punchbowl","2210","Nu Unasa","Gordon Jenkins","","Gordon Jenkins","","","","","2026-02-23 06:00:00","","","2026-02-23 06:51:02","","","","","","Approved Tony Rallis AFSS","3133.22","","","","As per accepted defect quote QD-2003 dated 19-12-2025.","",-33.9373783,151.060873,"","Site Contact Joe Valenti 0416 252 041 or 9560 6333 detectors can be access by pole","","NR","",True,"",False,"","CO-2644","Uturn Reuse Pty Ltd","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+31153,"T-31153","2026-02-09 10:41:21","2026-02-18 09:12:53","AFSS inspection report December 2025 (Quote QD-1985)","AFSS inspection report December 2025","As per scope of Works
+
+Section 2 – Assessment results and observations
+
+2.  Automatic Fire Suppression System & Smoke detection system
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  When the sprinkler alarm activated not all the shutters operated correctly. Roller shutters 1, 2 & 7 did not close, all other shutters in the dangerous goods section did not close.
+
+5.  Fail Safe Devices
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The pedestrian gate next to the exit gate at the loading dock did not unlock in fire mode, further investigation is required.
+
+
+Further quotes maybe required after initial investigation","REVISIT",5,"39A152","","Linfox - 3 Harris Avenue, Marsden Park, NSW 2765","","2019-03-15","","Linfox Australia","Stuart Kennedy","stewart_kennedy@linfox.com","",2050.0050,"Repair","","3 Harris Avenue (Hollinsworth Road), MARSDEN PARK, NSW, 2765, Australia","Marsden Park","2765","John Minai","","","John Minai","","","","","2026-02-17 06:00:00","","","2026-02-18 08:00:42","","","","","","Purchase Order No: 4300109671","2050.00","","","","As per accepted defect quote QD-1985 dated 17-12-2025.","Investigated pedestrian gate. Gate needs servicing as it is physically jammed and misaligned. Wedged the door it to open it. Door expert required.",-33.7194219,150.8359713,"","","","NR","",True,"",False,"","CO-1557","Linfox Australia","","[] ","R DETECTION","","00:00:00","Jamie Wright","John Minai"," ",""
+31091,"T-31091","2026-02-09 09:03:47","2026-02-27 07:37:55","FIP Annual Defects repairs/investigation (Quote QD-2044)","FIP Annual Defects repairs/investigation","Dear Customer,
+We hope you're doing well. Following our routine annual testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A152","","Linfox - 3 Harris Avenue, Marsden Park, NSW 2765","","2019-03-15","","Linfox Australia","Stuart Kennedy","stewart_kennedy@linfox.com","",2340.0000,"Repair","","3 Harris Avenue (Hollinsworth Road), MARSDEN PARK, NSW, 2765, Australia","Marsden Park","2765","Nu Unasa","Gordon Jenkins","","Gordon Jenkins","","","","","2026-02-27 06:00:00","","","2026-02-27 06:10:26","","","","","","Purchase Order No: 4300109669","2340.00","","","","As per accepted defect quote QD-2044 dated 05-01-2026.","Is there a FER or any info onto what roller shutters require to drop in fire mode ? 
+
+If so can we have a drawing into which shutters - so we can test and do repairs . 
+
+Revisit - notify client to use scissor lift onsite , book in for Saturday .",-33.7194219,150.8359713,"","","","NR","",True,"",False,"","CO-1557","Linfox Australia","","[] ","R DETECTION","","00:00:00","Jamie Wright","Nu Unasa"," ",""
+31022,"T-31022","2026-02-06 11:53:38","2026-03-03 11:51:35","AFSS defect inspection report Nov 2025 (Quote QD-1868 - FIP)","AFSS defect inspection report Nov 2025","Dear Customer,
+
+We hope you're doing well. Following our routine annual testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+
+Section 2 – Assessment results and observations
+
+1.  **Failsafe Devices (these maybe required to be completed by the security company after initial inspection)**
+-  Although the schedule is missing references to BCA D2.19, the front automatic doors should be linked to the fire alarm system and open on a fire alarm. This gives fire brigade access to the fire panel without the need to smash the front doors.
+-  L10, L7, L3, L6, L2 only have access to one set of fire stairs due to card readers or doors that lock from the side of egress, if fire obstructs the accessible fire stairs from the lift, access to a second exit is required. The doors need to be modified with either emergency break glass door releases, a fire trips that release the doors on a fire alarm or change the lockset to allow access from the side of egress without the use of a key.
+
+4.  EWIS
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  Level 2 has no occupant warning speakers installed, no tones or PA could be heard. A complete review of this floor is required (technicians to confirm DB levels, there are no speakers in the rear of the tenancy or any rooms).
+
+6.  Automatic Fire Detection System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  L10, the office named go away is missing the smoke detector.
+-  L9, there is an office with no smoke detector installed, 1 x detector required.
+-  L8, there are caps on all detectors on the floor that need to be removed, and one detector is missing from outside the lift.
+-  L5, there is no detection in both toilets, 2 x detectors required.
+-  L5, there is no detector in the office of suit 2, 1 x detector required.
+-  L5, there is no detection installed in five offices of suit 3. Access was not provided to this area last year.
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A286","","YORKAY - 131 York Street, Sydney, NSW 2000","","2025-02-01","202","C/- MMJ Sydney Pty Ltd","Maryanne Corven","maryanne.corven@mmj.com.au","",4947.5221,"Repair","","131 York Street, SYDNEY, NSW, 2000, Australia","Sydney","2000","Nu Unasa","Gordon Jenkins","","Nu Unasa","","","","","2026-03-03 06:00:00","","","2026-03-03 08:06:35","","","","","","Approved Maryanne Corven - 06022026","4947.53","","","","As per accepted defect quote QD-1868 - FIP dated 02-12-2025.","",-33.8721349,151.2061973,"","EWIS Testing will remain with New Sound for the time being / Emergency/Exit Lighting testing by others
+Rick 0411 228 165 - Phone Rick when at site. No Access before 7am
+Maryanne Corven (MMJ) 0414 035 063","","NR","",True,"",False,"","CO-2032","MMJ Real Estate","","[] ","R DETECTION","","01:00:00","Jamie Wright","Nu Unasa"," ",""
+30824,"T-30824","2026-02-04 12:11:06","2026-03-27 06:59:26","Fault investigation (Quote QD-2234 - FIP)","Fault investigation","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+Found panel beeping -
+Silenced , investigated found open cct on OWS line
+2 x man ,40 foot boom lift further investigate
+Organise access units 41-43 .
+
+Further quotes maybe required after initial investigation of findings.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A415 AU002","","Goodman AU002 - Slough Business Park - 2 Slough Avenue, Silverwater, NSW, 2128","","2021-04-25","","Goodman Property Services (Aust) Pty Limited SC01822","Angelo Munozco","Angelo.Munozco@goodman.com","",3435.0090,"Repair","","2  Slough Avenue, Silverwater, NSW, 2128, Australia","Silverwater","2128","Nu Unasa","Gordon Jenkins, John Minai","","John Minai","","","","","2026-02-24 10:45:00","","","2026-02-24 11:29:45","","","","","","Work Order No: 332067  Purchase Order No: 579464","3435.01","","","","As per accepted defect quote QD-2234 - FIP dated 03-02-2026.","Investigated OWS not working in some of the units 1-10. Got units 1-6 to work. 1x horn in unit 5 not working needs replacing. Return two men repair break between unit 6 to 7-10",-33.8320651,151.0500501,"CA","Angelo Munozco (Goodman) 0427 637 792","Box code #C478","OA","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","00:01:00","Jamie Wright","Jamie Wright"," ",""
+29685,"T-29685","2026-01-28 11:34:22","2026-02-03 13:20:05","AFSS defect report December 2025 (Quote QD-1998)","AFSS defect report December 2025","As per scope of Works;
+
+Section 2 – Assessment results and observations
+
+3.  Automatic Fire Detection System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+
+-  Bld 12, the zone block plan is missing from the fire panel, the block plan needs to be replaced.
+-  The strobe on the hydrant booster and the strobe at the entry to bld 12 failed to operate and need to be replaced.","REVISIT",5,"39A306","","N&A & ACR - 10-12 Distribution Drive, Orchard Hills, NSW 2060","","2026-02-28","","TCAL ATF Altis Bulky Sub Trust 3 Erskine Park C/- Knight Frank Australia Pty Ltd","Salvatore Di Pietro","salvatore.dipietro@au.knightfrank.com","",1315.8271,"Repair","","10-12 Distribution Drive, ORCHARD HILLS, NSW, 2748, Australia","Orchard Hills","2748","Gordon Jenkins","","","Gordon Jenkins","","","","","2026-02-03 13:21:00","","","2026-02-03 13:17:37","","","","","","Work Order Number	W15334312","1315.83","","","","As per accepted defect quote QD-1998 dated 19-12-2025.","Found addressable strobe on gate not working or in program will need new strobe and reprogram photos in documents",-33.8239948,150.7723485,"","Under Warranty - 5 Year warranty applies to pumps, 10 year warranty applies to tank (refer to support docs attached)","","NR","",True,"",False,"","CO-070","Knight Frank Australia Pty","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+29386,"T-29386","2026-01-23 14:26:28","2026-04-07 08:49:21","FIP faults - Annual testing (Quote QD-1781)","FIP faults - Annual testing","Dear Customer,
+
+We hope you're doing well. Following our routine Annual testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A571","","30 Loftus Road, Yennora , NSW 2161","","2025-01-26","","West Infill Sub TC PTY LTD ATF West Infill Sub II Trust C/- CBRE Pty Ltd","Omar Eleter","omar.eleter@cbre.com","",2069.9270,"Repair","","30 Loftus Road, Yennora, NSW, 2161, Australia","Yennora","2161","Gordon Jenkins","Nu Unasa","","Gordon Jenkins","","","","","2026-02-05 09:28:00","","","2026-02-05 10:02:02","","","","","","PO6870841_201010","2069.93","","","","As per accepted defect quote QD-1781 dated 20-11-2025.","Boom two men and a module",-33.86109,150.9673056,"","Omar Eleter (CBRE) 0481 825 275","","NR","",True,"",False,"","CO-038","C.B Richard Ellis Pty Ltd","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+29184,"T-29184","2026-01-21 12:35:00","2026-02-06 14:40:10","AFSS Inspection report Nov 2025 (Quote QD-1974)","AFSS Inspection report Nov 2025","As per scope of Works:
+
+Section 2 – Assessment results and observations
+
+1.  Automatic Fire Detection and Occupant Warning System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The block plan for the fire detection advises that here is no smoke detection in the rear warehouse (WH3). However, when reviewing the photos to complete this report I noticed there was smoke detection in the rear warehouse. Further investigation is required to determine if the smoke detection is connected to the fire panel or linked to a private security company. If the detection is connected to the main FIP the block plan will need to be updated, and the smoke detection tested.","REVISIT",5,"39930","","Sebel - 48 Airds Road, Minto, NSW 2566","","2019-02-13","492","KNAPP & Associates","KNAPP & Associates","christian@knappre.com.au","",4630.0080,"Repair","","48 Airds Road, MINTO, NSW, 2566, Australia","Minto","2566","Gordon Jenkins","Nu Unasa","","Gordon Jenkins","","","","","2026-01-27 09:56:00","","","2026-01-27 09:56:20","","","","","","approved Christian","4630.01","","","","As per accepted defect quote QD-1974 dated 16-12-2025.","Warehouse three is zone 21 drawn on block plan will need to update photos in documents
+Detectors in warehouse one and two have verification",-34.0321688,150.8388426,"","","","NR","",True,"",False,"","CO-1901","Knapp & Associates (Previously W+V Manisier)","","[] ","R DETECTION","","00:00:00","Jamie Wright","Jamie Wright"," ",""
+28547,"T-28547","2026-01-14 14:33:50","2026-02-02 13:57:53","FIP monthly defect repairs (Quote QD-2006)","FIP monthly defect repairs","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A504","","ACU - Building 520 - 3 Berry Street, North Sydney, NSW 2055","","2022-03-30","1072","Australian Catholic Universities (ACU)","Dean Smith","Dean.Smith@acu.edu.au","",1560.0060,"Repair","","33 Berry Street, North Sydney, NSW, 2055, Australia","North Sydney","2060","Nu Unasa","Gordon Jenkins","","Nu Unasa","","","","","2026-02-02 10:00:00","","","2026-02-02 12:56:05","","","","","","WOT0029028 - Purchase Order Number: PU074370","1560.01","","","","As per accepted defect quote QD-2006 dated 22-12-2025.","",-33.8370569,151.205623,"","Jamie Denton (ACU) 0450 856 300","","NR","",True,"",False,"","CO-2387","Australian Catholic University (ACU)","","[] ","R DETECTION","","00:00:00","Jamie Wright","Nu Unasa"," ",""
+28546,"T-28546","2026-01-14 14:24:47","2026-02-02 07:29:22","Duct probe repairs/replacement (Quote QD-1919)","Duct probe repairs/replacement","As per scope of Works,
+
+False alarms from old duct probes that require replacement.","REVISIT",5,"39A505","","ACU - Building 502 - 40 Edward Street, North Sydney - NSW 2055","","2022-03-30","1072","Australian Catholic Universities (ACU)","Dean Smith","Dean.Smith@acu.edu.au","",2431.2052,"Repair","","40 Edward Street, North Sydney, NSW, 2055, Australia","North Sydney","2060","Nu Unasa","Gordon Jenkins","","Gordon Jenkins","","","","","2026-02-02 06:00:00","","","2026-02-02 05:56:34","","","","","","WOT0029031","2431.20","","","","As per accepted defect quote QD-1919 dated 10-12-2025.","",-33.8374909,151.2030322,"","Jamie Denton (ACU) 0450 856 300","","NR","",True,"",False,"","CO-2387","Australian Catholic University (ACU)","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+27443,"T-27443","2026-01-05 13:53:52","2026-03-19 12:52:34","AFSS Inspection Report October 2025 (Quote QD-1638)","AFSS Inspection Report October 2025","As per scope of Works:
+
+Section 2 – Assessment results and observations
+
+3.  Automatic Fire Detection System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+
+The smoke detection and BGA at the fire panel did not activate the ASE, current Fire Indicator Panel is a local system, ASE connected to the Sprinkler Pressure switch, require to investigate options to connect ASE to FIP and have Sprinkler to activate FIP.","REVISIT",5,"39A438","","ARBOUR - 63-65 Burrows Road, Alexandria, NSW 2015","","2024-01-03","1098","Arbor Property","Arbor Property","ferdinand@arbor-ps.com.au","",292.0000,"Repair","","63-65 Burrows Road, Alexandria, NSW, 2015, Australia","Alexandria","2015","Nu Unasa","","","Nu Unasa","","","","","2026-01-19 14:00:00","","","2026-01-19 14:09:38","","","","","","","292.00","","","","As per accepted defect quote QD-1638 dated 23-10-2025.","",-33.9136535,151.1874416,"","**RAPID GLOBAL Sign in**
+Ferdinand Lengyel (Arbor) 0411 951 615
+Key permanently with Sydney Kak
+Code 3219
+Site Contact: Paul Weir is on 0413 994 198 ","","NR","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","02:00:00","Jamie Wright","Nu Unasa"," ",""
+26708,"T-26708","2025-12-29 07:52:55","2026-04-10 13:38:58","AFSS Inspection report Nov 2025 FIP (Quote QD-1896)","AFSS Inspection report Nov 2025 FIP","As per scope of Works
+
+Section 2 – Assessment results and observations
+
+2.  Occupant Warning System
+
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The main strobe on the front of the building failed to operate, the strobe will need to be replaced.
+
+1.  Automatic Fire Suppression System
+
+-  There is smoke detection installed in the main switch room, coms room and smoke clearance fans. A zone block plan needs to be installed at the FIP to assist with testing.","REVISIT",5,"39656 AU546","","Goodman AU546 - Interlink Industrial Estate - 28 Sarah Andrew Close, Erskine Park, NSW 2759","","2020-12-15","","Goodman Property Services (Aust) Pty Limited SC01822","Michael Berger","Michael.Berger@goodman.com","",3555.9162,"Repair","","28 Sarah Andrew Close, ERSKINE PARK, NSW, 2759, Australia","Erskine Park","2759","Gordon Jenkins","","","Gordon Jenkins","","","","","2026-01-21 10:00:00","","","2025-12-31 10:51:26","","","","","","Work Order No: 327647  Purchase Order No: 572103","3555.91","","","","As per accepted defect quote QD-1896 dated 05-12-2025.","Marked up all photos are in documents for block plan
+Unable to access strobe due to height photo in documents",-33.8234787,150.782492,"","","","NR","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","00:01:00","Jamie Wright","Gordon Jenkins"," ",""
+26206,"T-26206","2025-12-17 11:58:26","2026-03-09 09:07:43","Inspect zone block plan and programming (Quote QD-1971)","Inspect zone block plan and programming","As per scope of Works:
+
+Requested to inspect zone block plan and detector layout in the FIP.
+
+Inspect detectors if conventional system or Addressable detectors.
+
+Further quotes maybe required after initial inspection and testing.","REVISIT",5,"39A114 AU877","","Goodman AU877 - Silverwater D/C - Light & Wonder - 4 Newington Road, Silverwater, NSW 1044","","","","Goodman Property Services (Aust) Pty Limited SC01822","Angelo Munozco","Angelo.Munozco@goodman.com","",1040.0040,"Repair","","4 Newington Road, SILVERWATER, NSW,  2128, Australia","Silverwater","2128","Gordon Jenkins","John Minai","","Gordon Jenkins","","","","","2026-01-30 08:10:00","","","2026-01-06 08:16:01","","","","","","WO 327269  PO 571271","1040.00","","","","As per accepted defect quote QD-1971 dated 16-12-2025.","",-33.8287456,151.0532076,"","","4444#","NR","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","00:00:00","Mariette Henderson","Jamie Wright"," ",""
+26046,"T-26046","2025-12-16 09:51:47","2026-02-02 09:05:26","AFSS Inspection Report September 2025 (Quote QD-1639)","AFSS Inspection Report September 2025","As per scope of Works:
+
+Section 2 – Assessment results and observations
+
+1.  Occupant Warning System
+At the time of assessment, the PA & tones in building B store and office were not working. Further investigation required (not done from last year).
+
+4.  Automatic fire detection & alarm System (limited)
+At the time of assessment, the following non-compliances were observed that require to be rectified:
+-  The word fire is missing from strobe at the pump room. A new sign is required.
+-  There is a no zone block plan for the detection installed at the FIP. A block plan is required.
+-  There is no manual call point installed on the new fire panel; a red manual call point (BGA) is required.
+-  The fire panel batteries are out of date and need to be replaced. 6 x Batteries.
+-  Bld A ground floor, the fire panel batteries have still not been replaced. The fire panel controls detection installed in the switch rooms. The batteries need to be replaced, current faults investigated and cleared. Then the smoke detection tested to confirm compliance. If the panel can’t be fixed, confirmation and a solution is required for the equipment still connected to the 4 zones on the panel.
+-  The sliding fire shutter fire panel batteries have not date of installation. 4 x Batteries. (not done from 2023)
+-  Bld A top floor, the fire alarm panel does not have a zone block plan installed to confirm the functions of the fire panel. The monthly testing has not been done since February.
+-  The faults on the fire panel do not register on the ASE, further investigation is required.
+
+7.  Fire Doors
+At the time of assessment, the following non-compliances were observed that require to be rectified:
+-  The magnet on the sliding fire door (cage) is not strong enough to hold the door open. The door is currently tied shut; a stronger magnet is required (not done from the past two years, the pole that holds the magnet is not lining up with the magnet).
+
+Further estimate maybe require after initial investigation","REVISIT",5,"39A349","","28 Percival Road, Smithfield, NSW 2164","","2024-11-01","","Lendlease Real Estate Investments Ltd C/- JLL","Marco Fiorentino","Marco.Fiorentino@jll.com","",10056.4930,"Repair","","28 Percival Road , SMITHFIELD, NSW, 2164, Australia","Smithfield","2164","Gordon Jenkins","John Minai, Nu Unasa","","Nu Unasa","","","","","2026-01-05 08:00:00","","","2025-12-31 07:43:00","","","","","","W-00098-000339","10056.49","","","","As per accepted defect quote QD-1639 dated 23-10-2025.","31/12/25 Gordon 
+Repaired fault monitoring to ASE on both panels made up block plan for building A4 photos in documents
+Too old Fire doors are non-operational due to the panels of failed years ago. Pictures in documents. Also the panel has failed. 10 years ago. All this is documented.
+
+5/1/26 Gordon 
+Replaced Batteries in Main FIP 6x26 AH
+Replaced  batteries in sub panel
+
+28/1/26
+Nuu & Gordon
+Installed sign on strobe
+Tested and adjusted pa in warehouse B
+Repaired door mag
+
+2/2/26
+Gordon 
+Replaced batteries in both door panels",-33.843344,150.9484528,"","Marco Fiorentino 0414999618","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+26002,"T-26002","2025-12-15 15:07:38","2026-03-18 11:50:35","Fire Panel Defects from Testing (Quote QD-1833)","Fire Panel Defects from Testing","Dear Customer,
+
+We hope you're doing well. Following our routine testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Further estimates to follow after initial investigation of the wireless fire system.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A513","","ACU - Building 600-650 - 25a Baker Road, Strathfield, NSW 2055","","2021-12-16","","Australian Catholic Universities (ACU)","Paul McGrath","paul.mcgrath@acu.edu.au","",5834.7131,"Repair","","25a Baker Road, Strathfield, NSW, 2135, Australia","Strathfield","2135","Nu Unasa","Gordon Jenkins","","Nu Unasa","","","","","2026-01-29 06:00:00","2026-03-10 09:44:05","","2026-01-29 06:54:13","","","","","","PU073610 / WOT0028803","5834.72","","","","As per accepted defect quote QD-1833 dated 25-11-2025.","Replaced batteries in main fip
+
+1/2 reprogramming FIP , strobe outputs . 
+
+Block plan set up on all buildings -zone list",-33.8759874,151.0755504,"CA","Scott Thompson (ACU) 0408 292 818","","OA","",True,"",True,"","CO-2387","Australian Catholic University (ACU)","","[] ","R DETECTION","","00:00:00","Mariette Henderson","Mariette Henderson"," ",""
+25885,"T-25885","2025-12-15 07:20:44","2026-04-02 11:00:34","ECK Chiller #2 fire trip (Quote QD-1599)","ECK Chiller #2 fire trip","Installation of a fire trip for ECK Chiller #2, as per request","PERFORMED",5,"39A626","","20 Eastern Creek Drive, Eastern Creek, NSW 2766","","2024-09-18","","Healthcare Logistics","Harold Costen","Harold.costen@hcl.com.au","",0.0000,"Repair","","20 Eastern Creek Drive 36 Honeycomb, Eastern Creek, NSW, 2766, Australia","Eastern Creek","2766","Gordon Jenkins","Nu Unasa","","Gordon Jenkins","","","","","2026-01-15 06:00:00","2026-04-02 09:58:16","","2026-01-15 07:01:22","","","","","","","4311.44","","","","As per accepted defect quote QD-1599 dated 16-10-2025.","2/4/26
+Attended site, Wired Fire trip into mechanical board as per mechanical contractors instructions. Carried out a test on the System - fire trips now working.",-33.8079667,150.8387924,"","Carlos Abela (Charter Hall) 0477 275 535","","NR","",True,"",False,"","","","","[] ","R DETECTION","","00:00:00","Jamie Wright","Jade Ogony"," ",""
+25482,"T-25482","2025-12-10 14:55:49","2026-02-03 11:05:54","FIP Annual defect repairs (Quote QD-1901)","FIP Annual defect repairs","Dear Customer,
+
+We hope you're doing well. Following our routine Annual testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A389","","Jaycar Electronics Group - 46 Eastern Creek Drive, Eastern CreekNSW 2766","","","CO-2403","Electus Distribution Pty Ltd","Brennan","BFudger@jaycar.com.au","",5383.0095,"Repair","","46 Eastern Creek Dr, Eastern Creek NSW 2766, Australia","Eastern Creek","2766","Nu Unasa","Gordon Jenkins, John Minai","","John Minai","","","","","2026-02-03 06:00:00","","","2026-02-03 06:43:35","","","","","","Approved Brennan Fudger AFSS","5383.01","","","","As per accepted defect quote QD-1901 dated 08-12-2025.","Repaired low hanging Vesda #6 pipe in warehouse.
+Investigated and tested manual release and inhibit button on gas FIP. System operates as intended. System normal
+Marked up a corrected block plan for coms room. Photos attached",-33.8077774,150.8366241,"CA","Enter second driveway on the right hand side. There is a boom gate and intercom but they can dial into our control room and obtain access, then drive all the way up to the rear pump room etc. 
+Jeff is best as our operations manager. David Diep 0490 442 263 or Ilker 0416 061 279","","BH","",True,"",False,"","CO-2403","Electus Distribution Pty Ltd","","[] ","R DETECTION","","00:01:00","Jamie Wright","John Minai"," ",""
+25283,"T-25283","2025-12-08 07:22:08","2026-03-25 04:31:08","5 Yearly Detection and Warning System (Quote QD-1535)","5 Yearly Detection and Warning System","**Comprehensive Fire Alarm System Testing & Maintenance**
+Ensure your building is fully compliant and safe with our expert 5-yearly sensitivity testing of the fire detection system, in line with the Fire Alarm standards AS 1851.6-2012. Our team will perform a thorough inspection of both the detection system and the Fire Indicator Panel, ensuring that everything operates smoothly and efficiently.
+
+**Enhanced Sound System Testing for Emergencies**
+Safety is our priority. We’ll test the sound pressure levels and intelligibility of your emergency sound system in all buildings to ensure your building meets the Australian standards. 
+
+**What’s Not Included**:
+Please note that the following are outside the scope of this service:
+•	Security and parking arrangements (if required).
+•	Use of lifts for heavy equipment transportation (if applicable).
+•	Work outside of the designated areas or beyond normal working hours.
+•	High-reach equipment for specialized tasks.
+
+**Let’s Make Sure Your Building Stays Safe and Compliant**
+Contact us today to schedule your testing and stay ahead of potential issues. We're here to help ensure your building’s fire safety systems are ready for whatever comes your way!","REVISIT",5,"39878","","Resolution X - 21B Richmond Road, Homebush West, NSW 2140","","2018-11-01","283","Cranden Investments Pty Ltd","Jenny Crane","jennycrane@bigpond.com","",2640.0000,"Repair","","21B Richmond Road, HOMEBUSH WEST, NSW, 2140, Australia","Homebush West","2140","John Minai","Gordon Jenkins","","Nu Unasa","","","","","2026-03-20 09:00:00","","","2026-03-20 09:00:38","","","","","","Approved Jenny Crane","2640.00","","","","As per accepted defect quote QD-1535 dated 03-10-2025.","",-33.8651277,151.0630565,"","Site Contact: Adam, Dave or Paul","","NR","",True,"",False,"","CO-1861","Cranden Investments Pty Ltd","","[] ","R DETECTION","","04:11:00","Jamie Wright","Nu Unasa"," ",""
+25090,"T-25090","2025-12-04 14:42:34","2026-03-30 08:38:46","Monthly Fire Indicator faults (Quote QD-1862)","Monthly Fire Indicator faults","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39622","","Mercedes Benz - 43-47 O’Riordan Street, Alexandria, NSW 2015","","2019-02-12","1006","LSH Auto (Sydney) Pty Ltd","Marie Spano","marie.spano@mbsydney.com.au","",734.0010,"Repair","","43-47 O’Riordan Street, ALEXANDRIA, NSW, 2015, Australia","Alexandria","2015","Nu Unasa","Darren Brailey","","Nu Unasa","","","","","2025-12-16 09:00:00","","","2025-12-16 09:33:22","","","","","","PO # 22A128458","734.00","","","","As per accepted defect quote QD-1862 dated 02-12-2025.","",-33.9124254,151.1954919,"","Mercedes Benz contact is Marie Spano 9697 7777 (Keys from reception required for MSR & Comms Room)","","NR","",True,"",False,"","CO-1988","LSH Auto (Sydney) Pty Ltd ( Mercedes)","","[] ","R DETECTION","","01:00:00","Jamie Wright","Jamie Wright"," ",""
+25088,"T-25088","2025-12-04 14:21:50","2026-03-16 08:48:25","Sounder fault found during testing (Quote QD-1796)","Sounder fault found during testing","Dear Customer,
+
+We hope you're doing well. Following our routine testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39A590 C AU210","","Goodman AU210 - Gateway Industrial Estate - Building C - 209-211 Walters Road, Arndell Park, NSW 2148","","2024-12-03","","Goodman Property Services (Aust) Pty Limited SC01822","Victor Gaete","Victor.Gaete@goodman.com","",1040.0010,"Repair","","Building C 209-211 Walters Road, Arndell Park, NSW, 2148, Australia","Arndell Park","2148","Gordon Jenkins","Nu Unasa","","Nu Unasa","","","","","2026-01-30 06:00:00","","","2026-01-30 10:23:52","","","","","","Work Order No: 324954  Purchase Order No: 566914","1040.00","","","","As per accepted defect quote QD-1796 dated 21-11-2025.","Replaced three strobes sounders unable to test further action required may Need to replace more.",-33.7912331,150.8922249,"CA","SinePro and Verified. 
+","","OA","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","00:00:00","Jamie Wright","Jade Ogony"," ",""
+24611,"T-24611","2025-12-01 13:25:03","2026-03-30 08:40:05","Monthly Defect February 2025 - FIP Bat (Quote QD-0419)","Monthly Defect February 2025 - FIP Bat","Following on from monthly testing, the following defect(s) were been found:
+- Batteries are due for replacement 2x 12ah .","REVISIT",5,"39770","","De Luxe - 7 Blackfriars Street, Chippendale, NSW 2008","","2019-11-22","","DS Holdings and de Luxe Nominees C/O","James de Vries","deluxe.devries@gmail.com","",342.0024,"Repair","","7 Blackfriars Street, Chippendale, NSW, 2008, Australia","Chippendale","2008","Darren Brailey","","","John Minai","","","","","2025-12-09 09:00:00","","","2025-12-09 10:29:21","","","","","","","342.00","","","","As per accepted defect quote QD-0419 dated 28-02-2025.","No access. Site contact numbers are disconnected and Syd does not have keys to site. Please arrange access with client.",-33.8857865,151.1979947,"CA","20 - Key with Syd Kak.
+Contact David -0417 287 786 - **1 Week Notice**
+For all other access please arrange via the site contact Justin Medcalf 1800 288 ","**1 Week notice**","NR","",True,"",False,"","","","","[] ","R DETECTION","","00:00:00","Jamie Wright","Jamie Wright"," ",""
+23677,"T-23677","2025-11-26 15:15:25","2026-03-20 06:19:11","FIP Defects from testing (Quote QD-1838)","FIP Defects from testing","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","REVISIT",5,"39704","","Frutex - 20 St Albans Road, Kingsgrove, NSW 2208","","2020-05-20","1007","Sterilisation Technologies Australia Pty Ltd","Natural Food Technologies Pty Ltd","finance@frutex.com.au","",4038.2280,"Repair","","18 St Albans Road, KINGSGROVE, NSW, 2208, Australia","Kingsgrove","2208","John Minai","Gordon Jenkins","","Gordon Jenkins","","","","","2026-01-07 06:00:00","","","2026-01-07 07:20:55","","","","","","","4038.23","","","","As per accepted defect quote QD-1838 dated 26-11-2025.","Unit 9:
+Replaced strobe with new.
+Replaced faulty detector 32 with new.
+Make up block plans - see documents.
+Connected 3x conventional detectors in caretakers stairwell to fire system and replaced with addressable detectors and programmed to FIP.
+
+Investigated works in main Frutex building.
+
+Scissor lift required for strobe replacement main FIP
+
+6/3/2026
+Replaced FIP strobe at main MX panel and strobe at SFIP Fusion panel
+
+Cleared heat probe alarm in freezers back of warehouse zone 3.",-33.9346547,151.0948527,"","Juan Piriz - 02-95026596 (Compliance Officer)
+Gate code: 4321
+Bottom Warehouse only","","NR","",True,"",False,"","CO-2179","Sterilisation Technologies Australia Pty Ltd","","[] ","R DETECTION","","00:00:00","Jamie Wright","John Minai"," ",""
+23333,"T-23333","2025-11-21 10:40:14","2026-02-05 08:27:37","5 Yearly Detection and Warning System (Quote QD-0489)","5 Yearly Detection and Warning System","**Comprehensive Fire Alarm System Testing & Maintenance**
+Ensure your building is fully compliant and safe with our expert 5-yearly sensitivity testing of the fire detection system, in line with the Fire Alarm standards AS 1851.6-2012. Our team will perform a thorough inspection of both the detection system and the Fire Indicator Panel, ensuring that everything operates smoothly and efficiently.
+
+**Enhanced Sound System Testing for Emergencies**
+Safety is our priority. We’ll test the sound pressure levels and intelligibility of your emergency sound system in all buildings to ensure your building meets the Australian standards. 
+
+**What’s Not Included**:
+Please note that the following are outside the scope of this service:
+•	Security and parking arrangements (if required).
+•	Use of lifts for heavy equipment transportation (if applicable).
+•	Work outside of the designated areas or beyond normal working hours.
+•	High-reach equipment for specialized tasks.
+
+**Let’s Make Sure Your Building Stays Safe and Compliant**
+Contact us today to schedule your testing and stay ahead of potential issues. We're here to help ensure your building’s fire safety systems are ready for whatever comes your way!","REVISIT",5,"39754","","Foothills Distribution Centre - 30 Lidco Street, Arndell Park, NSW 2148","","2022-11-01","","The Trustee For Gemstone Arndell Park Asset","Sajan Gill","Sajan.Gill@jll.com","",7430.0000,"Repair","","30 LIdco Street, Arndell Park, NSW, 2148, Australia","Arndell Park","2148","Nu Unasa","Gordon Jenkins","","Nu Unasa","","","","","2026-02-05 07:10:00","","","2026-02-05 08:00:41","","","","","","W-02186-000036","7430.00","","","","As per accepted defect quote QD-0489 dated 24-03-2025.","",-33.7921663,150.8833214,"","Sagan Gill (JLL) 0470 477 911","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","00:00:00","Jamie Wright","Nu Unasa"," ",""
+23206,"T-23206","2025-11-20 12:36:04","2026-03-23 13:07:34","AFSS Inspection Report November 2025 - FIP/EWIS (Quote QD-1754)","AFSS Inspection Report November 2025 - FIP/EWIS","As per scope of Works:
+
+Section 2 – Assessment results and observations
+
+2.  Automatic Fire Detection System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The batteries in the fire alarm panel are out of date and need to be replaced.
+-  The demountable office in the warehouse has no fire detection or occupant warning installed. Detection is required in the demountable office.
+
+7.  Occupant Warning
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The PA was stuck on when the system is in automatic, further investigation is required fix this issue.
+
+Further estimate maybe required after initial investigation due to End of Life FIP/EWIS","REVISIT",5,"39A776","","28 Britton Street, Smithfield","","","","CBIIP 28B Pty Ltd","Keisha Casey","Keisha.Casey@centuria.com.au","",2098.7851,"Repair","","28 Britton St, Smithfield NSW 2164, Australia","Smithfield","2164","Gordon Jenkins","","","Gordon Jenkins","","","","","2025-11-21 11:06:00","","","2025-11-21 12:48:55","","","","","","Job Code	A20060_2500039","2098.78","","","","As per accepted defect quote QD-1754 dated 17-11-2025.","Checked OWS found unable to deisolate PA when in manual will need replace warning  system photos in documents
+Due to the age of the warning system recommend replacing, unable to get parts",-33.8437532,150.9431809,"","Romeo Correia - 0475 222 629","","NR","",True,"",False,"","CO-2122","Centuria Property Funds","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+23039,"T-23039","2025-11-19 06:49:12","2025-11-26 09:46:13","AFSS Inspection Report September 2025 (Quote QD-1614)","AFSS Inspection Report September 2025","Section 2 – Assessment results and observations
+
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+
+- The main fire panel batteries are out of date and need to be replaced.
+- There are 3 faults on the fire panel that will require further investigation.
+
+Further estimate maybe required after initial investigation","REVISIT",5,"39589","","77 Scott Avenue, Leura, NSW 2780","","2024-11-28","984","Yao Kai Pty Ltd","Liang Feng (email invoices)","fengliang77@yahoo.com.au","",1195.2820,"Repair","","77 Scott Avenue, Leura, NSW, 2780, Australia","Leura","2780","Gordon Jenkins","","","Gordon Jenkins","","","","","2025-11-26 11:00:00","","","2025-11-26 08:55:23","","","","","","","1195.28","","","","As per accepted defect quote QD-1614 dated 21-10-2025.","Replaced batteries as per report 
+Checked detectors found wireless system will need to replace a few detectors and sounders photos in documents to man when we return
+Will need lithium batteries for detectors",-33.710106,150.350037,"","","","NR","",True,"",False,"","CO-1978","Yao Kai Pty Ltd","","[] ","R DETECTION","","01:00:00","Jamie Wright","Gordon Jenkins"," ",""
+22478,"T-22478","2025-11-13 07:31:50","2025-11-28 12:24:54","Detection testing July 25 (Quote QD-1173)","Detection testing July 25","Following on from annual testing, the following defect(s) were been found:
+
+L5 garbage room west - Smoke, L12D3 - Detector is in lift lobby
+
+Investigate sensitivity through the FIP Program for any further issues, further estimates maybe required from failures","REVISIT",5,"39A378 C","","SP 74790 - The Panorama - 717 Anzac Parade  Maroubra, NSW 2035","","2020-07-25","1020","Excel Building Management","","","",843.5000,"Repair","","717 Anzac Parade, Maroubra, NSW, 2035, Australia","Maroubra","2035","Nu Unasa","Gordon Jenkins","","Nu Unasa","","","","","2025-11-28 13:00:00","","","2025-11-28 09:16:22","","","","","","Part of WO87","843.50","","","","As per accepted defect quote QD-1173 dated 05-08-2025.","",-33.940293,151.2385936,"","Kerry Wilson (Excel BM) 9349 5962 or 9349 5463 or 9167 6966","","NR","",True,"",False,"","CO-2246","Excel Building Management","","[] ","R DETECTION","","00:00:00","Jamie Wright","Nu Unasa"," ",""
+22477,"T-22477","2025-11-13 07:29:56","2025-11-28 10:33:27","Detection testing July 25 (Quote QD-1172)","Detection testing July 25","Following on from annual testing, the following defect(s) were been found:
+
+L4 Corridor north - Smoke, L9D54 - Alarm failed to operate
+
+Investigate sensitivity through the FIP Program for any further issues, further estimates maybe required from failures","SCHEDULED",5,"39A378 B","","SP 74405 - The Northerly - 717 Anzac Parade  Maroubra, NSW 2035","","2020-07-25","1020","Excel Building Management","","","",843.5000,"Repair","","717 Anzac Parade, Maroubra, NSW, 2035, Australia","Maroubra","2035","Nu Unasa","Gordon Jenkins","","Gordon Jenkins","","","","","2025-11-28 12:00:00","","","2025-11-28 08:17:37","","","","","","Part of WO87","843.50","","","","As per accepted defect quote QD-1172 dated 05-08-2025.","",-33.940293,151.2385936,"","Kerry Wilson (Excel BM) 9349 5962 or 9349 5463 or 9167 6966","","NR","",True,"",False,"","CO-2246","Excel Building Management","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+22476,"T-22476","2025-11-13 07:22:03","2025-12-11 07:05:58","5 Yearly EWS testing (Quote QD-1170)","5 Yearly EWS testing","FlameSafe received notification from offsite monitoring with the below details. Further investigation will be required from  our Technician's to detail the problem & resolution further:
+Basements & Retail
+o/s Coles - Not Loud enough
+Further quotes maybe required","REVISIT",5,"39A378","","Pacific Square - 717 Anzac Parade, Maroubra, NSW 2035","","2021-07-25","","Excel Building Management","","pacific@excelbm.com.au","",1630.6300,"Repair","","717 Anzac Parade, Maroubra, NSW, 2035, Australia","Maroubra","2035","Nu Unasa","Gordon Jenkins","","Nu Unasa","","","","","2025-11-28 10:00:00","","","2025-11-27 06:33:21","","","","","","Part of WO87","1630.63","","","","As per accepted defect quote QD-1170 dated 05-08-2025.","Speakers not working in certain areas , speaker fault on Cole’s cct .
+
+Scissor lift required ,
+Further investigate . Follow up organise access and scissor lift with BM and Cole’s",-33.940293,151.2385936,"","**SinePro**
+Ryan O'Connor- 0451 125 790","","NR","",True,"",False,"","CO-2246","Excel Building Management","","[] ","R DETECTION","","00:00:00","Jamie Wright","Nu Unasa"," ",""
+22186,"T-22186","2025-11-10 13:32:17","2026-03-23 08:02:05","5 Yearly Detection and Warning System (Quote QD-0248)","5 Yearly Detection and Warning System","Fire Alarm System 5 Yearly Sensitivity Test for Detection System (AS 1851.6-2012)
+Undertake sensitivity testing within the building to ensure meets standard requirements. Carry Out 5 Yearly testing on
+control indication equipment (Fire Indicator Panel).
+Fire Alarm System 5 Yearly Sound System for Emergency Purposes (AS 1851.6-2012)
+Undertake sound pressure level tests within Buildings A & B to ensure sound pressure levels and intelligibility meets
+standard requirements
+Inspect building for structural changes which may affect evacuation zones
+Inspect building for occupancy changes which may affect performance of the sound system
+EXCLUSIONS
+- Costs associated with security arrangements and parking.(If required)
+- Access to lift service for transport of heavy equipment to roof/plant levels (where relevant)
+- Works to areas other than that nominated above.
+- Works outside normal working hours.
+- Multiple site establishments to carry out the above works.
+- Provision of high reach equipment","REVISIT",5,"39A479","","Union NSW - 4-10 Goulburn Street, Sydney, NSW 2000","","2026-04-29","150","C/- Colliers Int’l Pty Ltd","Colliers","","",3270.0000,"Repair","","4-10 Goulburn Street, Sydney, NSW, 2000, Australia","Sydney","2000","Nu Unasa","Gordon Jenkins, John Minai","","Gordon Jenkins","","","","","2025-12-18 11:00:00","","","2026-03-16 08:55:33","","","","","","CWO0649374","3270.00","","","","As per accepted defect quote QD-0248 dated 17-12-2024.","",-33.877292,151.2041965,"","Kirill Katelenets (Colliers) 0499 523 765","","OA","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","00:00:00","Jamie Wright","Jamie Wright"," ",""
+21783,"T-21783","2025-11-04 08:34:27","2026-03-02 08:16:51","5 Yearly Detection and Warning System (Quote QD-1540)","5 Yearly Detection and Warning System","**Comprehensive Fire Alarm System Testing & Maintenance**
+Ensure your building is fully compliant and safe with our expert 5-yearly sensitivity testing of the fire detection system, in line with the Fire Alarm standards AS 1851.6-2012. Our team will perform a thorough inspection of both the detection system and the Fire Indicator Panel, ensuring that everything operates smoothly and efficiently.
+
+**Enhanced Sound System Testing for Emergencies**
+Safety is our priority. We’ll test the sound pressure levels and intelligibility of your emergency sound system in all buildings to ensure your building meets the Australian standards. 
+
+**What’s Not Included**:
+Please note that the following are outside the scope of this service:
+•	Security and parking arrangements (if required).
+•	Use of lifts for heavy equipment transportation (if applicable).
+•	Work outside of the designated areas or beyond normal working hours.
+•	High-reach equipment for specialized tasks.
+
+**Let’s Make Sure Your Building Stays Safe and Compliant**
+Contact us today to schedule your testing and stay ahead of potential issues. We're here to help ensure your building’s fire safety systems are ready for whatever comes your way!","SCHEDULED",5,"39A517","","TRS - 170 Newton Road, Wetherill Park, NSW 2164","","2021-11-24","215","Newton Road Holdings Pty Ltd","Maria","susinfo@sussmanco.com","",7796.0000,"Repair","","168 Newton Road 10 Coates Place, Wetherill Park, NSW, 2164, Australia","Wetherill Park","2164","Gordon Jenkins","Nu Unasa","","Gordon Jenkins","","","","","2026-09-25 06:00:00","","","2025-11-05 10:37:36","","","","","","","7796.00","","","","As per accepted defect quote QD-1540 dated 03-10-2025.","",-33.8390146,150.8861661,"","Cameron Baldercchino (TRS) 0407 919 573","","NR","",True,"",False,"","CO-100","Sussman Management Pty Ltd","","[] ","R DETECTION","","1 07:22:00","Jamie Wright","Jamie Wright"," ",""
+21019,"T-21019","2025-10-31 10:26:28","2026-03-23 13:04:07","Faulty detector replacement (Quote QD-1662)","Faulty detector replacement","Attended site after callout, require to replace faulty detectors with a boom lift","REVISIT",5,"39559","","Goodman Fielder - 16 Templar Rd, Erskine Park, NSW 2759","","2019-04-24","391","Goodman Fielder Consumer Foods Pty Ltd","","","",1893.0030,"Repair","","16 Templar Road, Erskine Park, NSW, 2759, Australia","Erskine Park","2759","Gordon Jenkins","","","Gordon Jenkins","","","","","","","","2026-03-23 13:02:19","","","","","","P/O Number: 4506743025","1893.00","","","","As per accepted defect quote QD-1662 dated 28-10-2025.","Return two men three smoke detectors use customers scissor lift to replace detectors",-33.818435,150.7973456,"","Amar Banga 0403 957 208
+Must call Amar prior to testing","","NR","",True,"",False,"","CO-154","Goodman Fielder Consumer Foods Pty Ltd","","[] ","R DETECTION","","00:01:00","Jamie Wright","Gordon Jenkins"," ",""
+20266,"T-20266","2025-10-21 09:03:12","2025-12-17 09:27:54","PM2025/11 SYSTEM INTERFACE TESTING (39A671)","Nov 2025 routine servicing (17 items): System Interface Testing: Full Function Test (AS 1851-2012 Appendix D): Annual (17)","System Interface Testing: Full Function Test (AS 1851-2012 Appendix D): Annual (17)
+
+Mitchell – Tuesday 18th November 2025 
+4am – 8am approximately 
+FlameSafe techs attending:
+APFS – Shannon Rawlings
+Dry Tech - Nuu Unasa
+Wet Tech - Syd Kak
+
+Macquarie – Wednesday 19th November 2025
+4am – 8am approximately
+FlameSafe techs attending:
+APFS – Shannon Rawlings
+Dry Tech - Nuu Unasa","PERFORMED",5,"39A671","","State Library of NSW - 1 Shakespeare Place, Sydney, NSW 2000","","2027-02-26","1124","State Library of NSW","Stephen Farrelly","Stephen.Farrelly@sl.nsw.gov.au","",0.0000,"I&T","","1 Shakespeare Place, Sydney, NSW, 2000, Australia","Sydney","2000","Nu Unasa","Gordon Jenkins, John Minai, Nick Hollingsworth, Sydney Kak","","Nick Hollingsworth","","","2025-11-13","","2025-12-16 05:00:00","2025-12-16 09:00:44","","2025-12-08 14:01:59","","","","","","","","0.00","","","16/12 - full function trip testing .","16/12/25 Nick H & Nuu
+Completed trip testing as required.
+
+17/12 fire testing . With engineer",-33.8663058,151.2132437,"","Stephen Farrelly 0481 478 256","","NR","",True,"",False,"","CO-2703","Library Council of NSW","","[] ","R DETECTION","","","Jade Ogony","Nu Unasa"," ",""
+20080,"T-20080","2025-10-16 11:43:35","2025-12-22 16:14:44","AFSS Inspection Report September 2025 (Quote QD-1479)","AFSS Inspection Report September 2025","Following on from AFSS Inspection, the following defect(s) were been found:
+
+**Section 2 – Assessment results and observations**
+
+**2. EWIS**
+- L10, L8, L3, the hose reel cupboard has a sign advising there is a WIP phone inside. There is no WIP phone, the sign needs to be removed and replaced with a hydrant, extinguisher & hose reel sign
+-  L4, the BGA was found with the glass broken in half and the back to front. New glass is required for the BGA.
+- Conduct a test on the system due to the alert tones to inspect the amp, may require further estimate after inspection.
+
+**5. Automatic Fire Detection System**
+At the time of assessment, the following non-compliances were observed that require to be rectified:
+-  The strobe has been removed from the front of the building when the new cladding was installed. The strobe needs to be replaced. - require to ensure cabling still located in the are, this may cause an further quote to be submitted for any extra works required.
+-  The BGA failed to operate on level 14 (refer to testing records).
+-  L15, the detector in the fire stairs was found covered in tape. Photo evidence is required to show the tape has been removed.
+-  L8, the smoke detector installed outside the main switch on level 8 needs to be re located as the door from the main switch hits the detector.
+-  L6, the common area next to the lifts is missing two detectors outside the main switch and exit door. 2 x smoke detectors required.
+-  L5, there is no detector installed outside the main switch room, all other levels have a detector in the location. A detector is required in this area.
+-  L1, there is no detector installed outside the stairs at the toilets. A smoke detector is required.
+- Require the replacement of the 33ah batteries x 2
+
+**Fail Safe Devices*
+- Require to install 5 x Green MCP on the require doors as per the fault notes, may require security to connect depending on type of door.","REVISIT",5,"39933","","Elizabeth Towers -  418A Elizabeth Street, Surry Hills, NSW 2010","","2022-11-15","164","X Commercial","Nelson Ferreira","nelson@xcommercial.com.au","",7065.5080,"Repair","","418A Elizabeth Street, SURRY HILLS, NSW, 2010, Australia","Surry Hills","2010","Nu Unasa","Gordon Jenkins","","Nu Unasa","","","","","2025-11-06 07:00:00","","","2025-11-17 12:58:48","","","","","","","7065.52","","","","As per accepted defect quote QD-1479 dated 18-09-2025.","",-33.8862852,151.2085706,"","Site Contact: Chris 0410  452 452
+Building manager office located on Lower Ground floor opposite the lifts","","NR","",True,"",False,"","CO-1731","DB Property Services Pty Ltd","","[] ","R DETECTION","","00:00:00","Jamie Wright","Nu Unasa"," ",""
+20036,"T-20036","2025-10-15 07:57:50","2025-11-13 13:22:46","AFSS Inspection Report August 2025 (Quote QD-1463)","AFSS Inspection Report August 2025","As per scope of Works
+
+**3. Paths of Travel**
+
+The second palleted cool room does not have an exit door. The only exit is via a push button to raise the rapid roller shutter. A break glass emergency door release button is required to ensure the shutter can be accessed if there is a power failure.
+
+West Warehouse Corridor POT to Pack Room
+ - BGA Failed to unlock electric striker. BG Glass damaged,
+Requires replacement. Recommend install non glass door
+release (Food Manufacturing)
+
+DETECTION - TEST RECORD LOGBOOK
+High Bay Warehouse N-S Conventional, Linked to Main FIP
+Zone 2 
+55 x Conventional smoke detectors are over 10 years old require replacement
+
+Further estimate maybe required","REVISIT",5,"39754","","Foothills Distribution Centre - 30 Lidco Street, Arndell Park, NSW 2148","","2022-11-01","","The Trustee For Gemstone Arndell Park Asset","Sajan Gill","Sajan.Gill@jll.com","",13244.1535,"Repair","","30 LIdco Street, Arndell Park, NSW, 2148, Australia","Arndell Park","2148","Gordon Jenkins","Nu Unasa","","Gordon Jenkins","","","","","2025-11-05 07:00:00","","","2025-10-31 08:09:42","","","","","","","13244.15","","","","As per accepted defect quote QD-1463 dated 16-09-2025.","Checked system BGAs and doors by others photos in documents for the detection in the warehouse",-33.7921663,150.8833214,"","Sagan Gill (JLL) 0470 477 911","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","00:02:00","Jamie Wright","Gordon Jenkins"," ",""
+19273,"T-19273","2025-10-08 06:37:56","2026-03-26 16:28:23","AFSS Inspection Report September 2025 (Quote QD-1502)","AFSS Inspection Report September 2025","As per scope of Works
+
+**3. Automatic fire detection & alarm system**
+
+At the time of assessment
+-  Smoke detector in Bld A GF electrical room was found to be too close to the a/c unit
+
+FAIL SAFE DEVICES -
+Multiple doors Failed to open in fire mode. Further investigation required
+
+DETECTION - TEST RECORD
+Reprogramming of devices to suit","REVISIT",5,"39A434","","Metrolink Corporate Park - 197-201 Coward Street  Mascot, NSW 2020","","2023-10-27","","The Trust Company (Australia) Ltd ATF Ascendas Business Park Trust No.1 C/- Colliers","Colliers","jason.natoli@colliers.com","",2895.0080,"Repair","","197-201 Coward Street, Mascot, NSW, 2020, Australia","Mascot","2020","Nu Unasa","Gordon Jenkins","","Nu Unasa","","","","","2025-10-16 07:00:00","","","2025-10-16 13:27:35","","","","","","WO00009685","2895.01","","","","As per accepted defect quote QD-1502 dated 29-09-2025.","",-33.9249112,151.1882823,"","Emma Cole **CALL HER THE DAY BEFORE**
+Access to Keys need to via the link below. 
+https://www.keymaas.com.au/userRegistration.html?site=a814b300-b267-4d66-ae08-1eea38ade79c","0197 Lock box code","NR","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","00:00:00","Jamie Wright","Mariette Henderson"," ",""
+19016,"T-19016","2025-10-01 12:03:57","2026-03-17 11:41:59","EWIS fault investigation (Quote QD-1475)","EWIS fault investigation","After completing the required testing the following defects have been identified and require initial investigation, further estimates maybe required
+
+Warehouse West - Zone 2 PSW in fault
+Warehouse East - Electrical testing does not generate brigade
+alarm at chep MFIP only the pressure switch generates an alarm on the ASE
+
+Sub panel, Smoke detector & BGA did not generate alarms at FIP Chep
+
+Inspection of the programming and cable","REVISIT",5,"39605","","Westlands Industrial Estate - 33-45 James Erskine Drive, Erskine Park, NSW 2759","","2018-11-06","","Knight Frank","Victor Bao","Victor.Bao@au.knightfrank.com","",1560.0060,"Repair","","33-45 James Erskine Drive, Erskine Park, NSW, 2759, Australia","Erskine Park","2759","Gordon Jenkins","John Minai","","Gordon Jenkins","","","","","2025-10-02 12:39:00","","","2025-10-02 13:21:18","","","","","","Work Order Number	W14859971","1560.01","","","","As per accepted defect quote QD-1475 dated 18-09-2025.","Return to check cable under ground for break 2 men
+
+Cable broken under ground this job is an urgent repair due to OWS not working when in alarm due to a broken cable underground have spoken to Jamie about this job he’s going to get subcontractor out to have a look",-33.8207022,150.7808166,"","CODE:  2759
+Jordan Fuller (Knight Frank) 0416 554 098","","NR","",True,"",False,"","CO-070","Knight Frank Australia Pty","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+19012,"T-19012","2025-10-01 11:28:32","2026-01-27 21:36:10","QD-1134 (Quote QD-1522)","QD-1134","**Jade hasnt ordered the boom as it is November 2025 when scheduling for Late January, Please order Boom - Materials have been ordered**
+
+1. Automatic Fire Suppression System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+2. The batteries in the fire panel are past the two-year expiry date and need to be replaced. 2 x 26AH batteries.
+3. Occupant Warning System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+4. There are two speakers in the southwest part of the warehouse that did not work
+5. Further quote maybe required.
+6. Paths of Travel
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+7. The failsafe device on the front automatic doors failed to open the doors, further investigation is required.
+8. Further quote maybe required.","REVISIT",5,"39414","","Ontex - 5 Wonderland Drive, Eastern Creek, NSW 2766","","2023-09-14","611","One Funds Management Limited ATF Ben Lee Property Trust No 5","Ben Dalley","admin@benlee.com","",4728.6700,"Repair","","5 Wonderland Drive, Eastern Creek, NSW, 2766, Australia","Eastern Creek","2766","Gordon Jenkins","John Minai, Nu Unasa","","Nu Unasa","","","","","2025-10-08 07:00:00","2025-10-08 12:15:57","","2025-10-08 11:35:23","","","","","","Caren Slot 30/9/25","4728.66","","","","As per accepted defect quote QD-1522 dated 01-10-2025.","Checked trip to front door will need a input output module hundred metres of cable to run from mechanical board in warehouse to office
+
+Two horns in warehouse not working will need boom lift two horns will need to move location unable to access horns 
+
+2 men 8 hour
+100 m of cable
+2 horns
+
+Replaced batteries as per report",-33.8071144,150.8493736,"","49","","NR","",True,"",False,"","CO-1820","Ben Lee Property Trust","","[] ","R DETECTION","","00:01:00","Jamie Wright","Nu Unasa"," ",""
+19009,"T-19009","2025-10-01 10:52:01","2026-01-14 04:51:56","Inspection/Defect Report 2025 (Quote QD-1503)","Inspection/Defect Report 2025","As per scope of Works
+
+DEFECTS
+1 DETECTION IN WAREHOUSE OFFICE (TRUCKING OFFICE) MULTIPLE DETECTORS NOT WORKING FOUND NOT IN PROGRAM REQUIRES FURTHER INVESTIGATION
+2 DETECTION IN TUNNEL NOT WORKING (FAILED IN FAULT TEST AS WELL)NOT IN PROGRAM RECOMMEND REPROGRAMMIMG .FURTHER INVESTIAGTION
+3 EWIS REQUIRES REPROGRAMMIMG - OUTPUT ALARM FROM FIP DOESN’T SHOW ON EWIS WHICH ZONE ACTIVATES
+4 SOME DETECTORS REQUIRE REPROGRAMMING.DESCRIPTION CHANGES
+5 PA,ALERT,EVAC COULD NOT BE HEARD IN HIGH RACKING N BAY AREA (WHERE VESDAS ARE LOCATE RECOMMEND INSTALLING 5 HORNS .
+6 VESDA IN COMMS ROOSETS OFF PRE ACTION SYSTEM
+7 RECOMMEND REFIXING VESDA PIPES ON MULTIPLE VESDAS LVL 1 AND INSTALLING TEST END CAPS
+
+1. Level 1 Security Office Entry Auto Door - Mushroom
+PTE
+6. Level 1 Exit to Balcony from Small Canteen Auto
+Door - Mushroom PTE
+
+2. Automatic Fire Detection System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+- The change rooms have no detection installed and the main kitchen across from the change rooms also has
+no detection installed apart from in a storeroom. This entire area need to be reviewed for compliance.
+
+Further estimate maybe required after the investigation on the failed detectors.","REVISIT",5,"39A685","","MONDC - 13 Bushmaster Avenue, Moorebank, NSW 2170","","","","Primary Connect","Greg Cockayne","gcockayne@primaryconnect.com.au","",14387.3845,"Repair","","13 Bushmaster Ave, Moorebank NSW 2170, Australia","Moorebank","2170","Nu Unasa","Gordon Jenkins","","Gordon Jenkins","","","","","2025-10-28 07:35:00","","","2025-11-08 07:58:27","","","","","","WP168039 PO PP160894","14387.38","","","","As per accepted defect quote QD-1503 dated 29-09-2025.","8/11 picked up gear for works .- , programming of detectors as reported . Ready for works 
+
+9/11 - investigated detection in tunnel and drivers amenities - voltage on detection .
+
+Programmed detectors into FIP , next shut down. 
+
+Put End caps on vesda units in warehouse 
+Saddled vesda pipes 
+
+Faults on FIP on arrival - 
+
+While onsite doing works - intermittent ground fault on FIP was popping in/out . 
+
+3 detectors - in maintenance fault
+1 vesda fault 
+Tamper faults 
+
+Note- Greg (BM onsite) asked to replace detectors and check vesda fault . 
+
+- Replaced 3 addressable acclimate detectors in CARPARK .
+- Vesda fault , replaced filter on vesda L4M22 . Comms room 3 . 
+- investigated ground fault , found on loop 2- further investigation required . 
+
+Charge extra for - detectors replaced and vesda filter .",-33.95470820000001,150.9145791,"CA","Greg Cockayne (Primary Connect) 0473 145 176
+George Parousis (Primary Connect) 0459 766 885
+REFER EMAIL FROM ROSE 4/4/25 IN REGARDS TO INDUCTION AND HOW TO LOG IN ON SITE - ALL TECHS MUST BE PROVIDED THE CLIENTS WO NUMBER TO ATTEND SITE","","OA","",True,"",False,"","CO-2529","Primary Connect","","[] ","R DETECTION","","00:02:00","Jamie Wright","Gordon Jenkins"," ",""
+17558,"T-17558","2025-09-12 06:40:53","2026-03-02 13:12:11","Request to install detection/speakers (Quote QD-1436)","Request to install detection/speakers","Ziad - Requested quote for the installation of 
+
+**Scope of Works**
+Supply and Install:
+- 2 x Addressable Smoke detectors and bases
+- 4 x Addressable C/S Smoke detectors and Bases
+- 1 x Bows Speaker
+- 1 x Addressable input/output Module either in MSSB or in FIP to trip Mech air
+
+Relocate
+- 1 x Addressable Smoke detector and base
+1 x BOWS speaker
+- Program FIP to suit
+- Test and commission
+- Provide Installation Certificate","REVISIT",5,"39803","","Pengton - 80 George Street, Parramatta, NSW 2150","","2025-08-19","","Pengton No. 1 Pty Ltd ATF Pengton No. 1 Unit Trust","Ziad Shareef","ziad.shareef@cbre.com","",7507.5684,"Repair","","80 George Street, PARRAMATTA, NSW, 2150, Australia","Parramatta","2150","Nu Unasa","Gordon Jenkins, John Minai","","Gordon Jenkins","","","","","2025-09-16 09:00:00","2025-10-07 09:59:32","","2025-09-16 12:50:16","","","","","","PO6751410_201010","7507.57","","","","As per accepted defect quote QD-1436 dated 11-09-2025.
+
+Scope of Works Completed
+Supply and Installation:
+•	2 x Addressable Smoke Detectors with Bases
+•	4 x Addressable Combination Smoke Detectors (C/S) with Bases
+•	1 x BOWS (Building Occupant Warning System) Speaker
+•	1 x Addressable Input/Output Module, installed in either the Mechanical Services Switchboard (MSSB) or Fire Indicator Panel (FIP), configured to trip mechanical air systems
+Relocations:
+•	1 x Addressable Smoke Detector with Base
+•	1 x BOWS Speaker
+Testing and Commissioning
+•	All newly installed and relocated devices were tested and confirmed to be operational.
+•	Functional testing was completed in line with project requirements and relevant standards.
+•	No faults were observed, and the fire detection and warning system was left fully operational.","16/9 attended site - picked up gear for works 
+Scope of Works Completed
+Supply and Installation:
+•	2 x Addressable Smoke Detectors with Bases
+•	4 x Addressable Combination Smoke Detectors (C/S) with Bases
+•	1 x BOWS (Building Occupant Warning System) Speaker
+•	1 x Addressable Input/Output Module, installed in either the Mechanical Services Switchboard (MSSB) or Fire Indicator Panel (FIP), configured to trip mechanical air systems
+Relocations:
+•	1 x Addressable Smoke Detector with Base
+•	1 x BOWS Speaker
+Testing and Commissioning
+•	All newly installed and relocated devices were tested and confirmed to be operational.
+•	Functional testing was completed in line with project requirements and relevant standards.
+•	No faults were observed, and the fire detection and warning system was left fully operational.
+
+
+9/10 added extra detector in store room . 
+Picked up detector from brooks (Panasonic) supplier 
+
+Programming still required.(1 x det to be programmed ) 
+
+Jamie to sort brooks (training course day) for programming .",-33.8138248,151.0057294,"","Log-in to CBRE Pulse System - Key 126
+Facility Manager (CBRE):Jose Rodrigues - 0407 819 617 
+Lvl4 Westpac (Sign in Lvl 2) at 75 George st","2659 for keybox","NR","",True,"",False,"","CO-038","C.B Richard Ellis Pty Ltd","","[] ","R DETECTION","","07:01:00","Jamie Wright","Jamie Wright"," ",""
+17260,"T-17260","2025-09-08 08:44:52","2026-01-21 15:27:57","APFS Report 2025 - Occupancy Warning System (Quote QD-1076)","APFS Report 2025 - Occupancy Warning System","Following on from annual testing, the following defect(s) were been found:
+- The batteries in the control panel for the sliding door in Deicorp is past the two year expiry date- technician to attend site to supply and install 2x 12v 12 AH batteries. 
+- At the time of assessment, the door to the room with the FIP had no signage to indicate the fire panel is inside - Supply and install Fire Panel Signage. 
+- There is no block plan installed at the FIP - Supply and Install block plan.
+- There is a charger fault on the power supply located in the main switch room. Further investigation required.","REVISIT",5,"39718","","Fred Health & Bleach - 24 Rothschild, Rosebery, NSW 2018","","2023-08-08","216","C/- TGC","Serge Makrooussov","sergem@tgc.com.au","",2528.0025,"Repair","","24 Rothschild & 14 Mentmore Avenue, ROSEBERY, NSW, 2018, Australia","Rosebery","2018","Nu Unasa","Ryan Robinson","","Ryan Robinson","","","","","2025-09-19 11:00:00","","","2025-09-19 11:36:35","","","","","","261_2500051","2528.00","","","","As per accepted defect quote QD-1076 dated 14-07-2025.","15/12/25:
+Batteries are 2x 1.3ah 12v for sliding fire door.
+Access to FIP is Tuesday to Friday only. 
+
+Pick batteries from supplier and sign from incite fire",-33.9142241,151.20434,"","TGC - Nick Karapalevski 0430 227 955","","NR","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","02:00:00","Jade Ogony","Jade Ogony"," ",""
+16225,"T-16225","2025-08-27 16:04:15","2026-02-26 08:50:45","5 Yearly Detection and Warning System (Quote QD-0247)","5 Yearly Detection and Warning System","Fire Alarm System 5 Yearly Sensitivity Test for Detection System  (AS 1851.6-2012)
+Undertake sensitivity testing  within the building to ensure meets standard requirements. Carry Out 5 Yearly testing on control indication equipment (Fire Indicator Panel).
+
+ 
+Fire Alarm System 5 Yearly Sound System for Emergency Purposes (AS 1851.6-2012)
+Undertake sound pressure level tests within Buildings A & B to ensure sound pressure levels and intelligibility meets standard requirements
+Inspect building for structural changes which may affect evacuation zones
+Inspect building for occupancy changes which may affect performance of the sound system
+ 
+ 
+EXCLUSIONS
+- Costs associated with security arrangements and parking.(If required)
+- Access to lift service for transport of heavy equipment to roof/plant levels (where relevant)
+- Works to areas other than that nominated above.
+- Works outside normal working hours.
+- Multiple site establishments to carry out the above works.
+- Provision of high reach equipment","REVISIT",5,"39A478","","Labour Council of NSW - 377-383 Sussex Street, Sydney, NSW 2000","","2023-04-04","","Unions NSW Property and Services Limited","Kirill Katelenets","Kirill.Katelenets@colliers.com","",5090.0000,"Repair","","377-383 Sussex Street, Sydney, NSW, 2000, Australia","Sydney","2000","Nu Unasa","Gordon Jenkins, John Minai","","John Minai","","","","","2025-12-18 10:00:00","","","2025-12-11 11:19:24","","","","","","CWO0649375","5090.00","","","","As per accepted defect quote QD-0247 dated 17-12-2024.","18/12 programming license for MX1 requires renewing . Waiting for license",-33.877252,151.2044145,"","Kirill Katelenets (Colliers) 0499 523 765","","OA","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","00:00:00","Jamie Wright","Jamie Wright"," ",""
+16132,"T-16132","2025-08-25 12:55:51","2026-02-02 06:10:02","APFS Report 2025 - Detection (Quote QD-1074)","APFS Report 2025 - Detection","Following on from annual testing, the following defect(s) were been found:
+- The fire panel is showing multiple faults - technician to attend site and investigate/repair. 
+- The detection in the show room floor has not been tested due to access issues and the nature of business in the showroom. Arrangements need to be made to have the detection tested before the measure can be endorsed.","REVISIT",5,"39138","","Australasia Chambers - 2 Martin Place, Sydney, NSW 2000","","2019-08-13","633","Paspaley Pearls Properties Pty Ltd","Peter Piperitis","Peterp@TGC.com.au","",2080.0000,"Repair","","2 Martin Place (354-360 George Street), Sydney, NSW, 2000, Australia","Sydney","2000","Nu Unasa","Gordon Jenkins","","Nu Unasa","","","","","2025-09-09 09:00:00","","","2026-02-02 05:56:23","","","","","","","2080.00","","","","As per accepted defect quote QD-1074 dated 14-07-2025.","",-33.8672209,151.2073756,"","53
+Keys Located at Reception or Paspaley Pearls","","NR","",True,"",False,"","CO-308","Paspaley Pearls Properties Pty Ltd","","[] ","R DETECTION","","00:00:00","Jamie Wright","Nu Unasa"," ",""
+15015,"T-15015","2025-08-01 11:41:33","2025-11-28 11:18:01","Annual testing defects - Smoke Alarm (Quote QD-0998)","Annual testing defects - Smoke Alarm","Following on from annual testing, the following defect(s) were been found:
+- Technician to attend site and replace the following:
+   - Front reception area Smoke Alarm.
+   - Side of toilet and Lunch room Smoke Alarm. 
+
+- Technician to attend site and install the following:
+   - 2x 240V smoke alarm upstairs including sundries
+   - 3x 240V smoke alarm for reception including sundries. 
+   - 1x 240V smoke heat alarm for kitchen including sundries.","READY",5,"39A668","","11 Hexham Place, Wetherill Park, NSW 2164","","","","CSOF Sub Trust No. 2 ABN 52 847 795 285","Keisha Casey","Keisha.Casey@centuria.com.au","",2360.0000,"Repair","","11 Hexham Pl, Wetherill Park NSW 2164, Australia","Wetherill Park","2164","John Minai","","","Gordon Jenkins","","","","","","","","2025-08-01 13:30:45","","","","","","A20055_2500027","2360.00","","","","As per accepted defect quote QD-0998 dated 27-06-2025.","Turned up to site to check smoke alarms found no smoke alarms on site only one battery operated ground floor office",-33.8394257,150.8882878,"CA","Emma Warren (Centuria) 0456 371 419
+Rapid global log-in required - QR code located at Fire pump room door - Office entry door","","BH","",True,"",False,"","CO-2122","Centuria Property Funds","","[] ","R DETECTION","","00:00:00","Jamie Wright","John Minai"," ",""
+14463,"T-14463","2025-07-31 13:28:38","2026-02-09 18:57:40","APFS Report 2025 - Detection and OWS (Quote QD-0949)","APFS Report 2025 - Detection and OWS","Following on from annual testing, the following defect(s) were been found:
+-There were two faulty speakers found in the manufacturing plant. One speaker is not working, and the other speaker’s volume was very low located on the mezzanine and room off the mezzanine. Both speakers will need to be replaced.
+
+-There were areas found in the production warehouse and storage warehouse that have low DB levels. Due to the noise of the production warehouse additional speakers and strobes are required. 2 x strobes on the mezzanine and small production room on the mezzanine. (Strobe marked in red & speakers yellow). 6 x horn speakers and 2 x Strobes.
+
+-The smoke detector above the sliding door in the warehouse is falling off the wall and needs to be re installed.
+-The VESDA in the gas suppression room is in fault but the fault does not show up on the fire panel. Further investigation is required.
+-The stop button on the front of the gas panel failed to operate, further investigation is required.
+-There are three strobes in the warehouse that are missing the sign saying FIRE, supply and install sign. 
+-The new gas system installed in the main switch room is not finished, there is no power to the main panel and the signs have not yet been installed in the room.- no charge.","REVISIT",5,"39694","","Kraft Heinz - 92-96 Station Road, Seven Hills, NSW 2147","","2023-07-27","245","Kraft-Heinz Co Australia Ltd","Kraft-Heinz Co Australia Ltd","sergey.antonov@kraftheinz.com","",10484.0000,"Repair","","92-96 Station Road, SEVEN HILLS, NSW, 2147, Australia","Seven Hills","2147","John Minai","Gordon Jenkins","","Gordon Jenkins","","","","","2025-08-01 09:00:00","","","2026-01-06 13:49:31","","","","","","PURCHASE ORDER NO: 7710111897","10484.00","","","","As per accepted defect quote QD-0949 dated 16-06-2025.","Fixed the fault indication on comms room GFIP.
+Cleared the VESDA fault in comms room.
+Turned on the new GFIP for the main switch room. Tested controls, system normal and now running.
+Couldn’t locate the 3x strobes with missing signs, location description too vague.
+The hanging detector above the sliding fire door in warehouse requires 2 men and tall ladder to remount. 
+Installation of additional strobes and speakers requires further inspection/revisit and possible EWP.",-33.7756711,150.9418248,"","Sergey Antonov 0403 192 958","","NR","",True,"",False,"","CO-1640","Cerebos ( Australia) Ltd","","[] ","R DETECTION","","00:01:00","Jamie Wright","Gordon Jenkins"," ",""
+14358,"T-14358","2025-07-29 13:36:35","2026-01-14 15:56:22","5 Yearly Detection/Warning System","5 Yearly Detection/Warning System","**Comprehensive Fire Alarm System Testing & Maintenance**
+Ensure your building is fully compliant and safe with our expert 5-yearly sensitivity testing of the fire detection system, in line with the Fire Alarm standards AS 1851.6-2012. Our team will perform a thorough inspection of both the detection system and the Fire Indicator Panel, ensuring that everything operates smoothly and efficiently.
+
+**Enhanced Sound System Testing for Emergencies**
+Safety is our priority. We’ll test the sound pressure levels and intelligibility of your emergency sound system in all buildings to ensure your building meets the Australian standards. 
+
+**What’s Not Included**:
+Please note that the following are outside the scope of this service:
+•	Security and parking arrangements (if required).
+•	Use of lifts for heavy equipment transportation (if applicable).
+•	Work outside of the designated areas or beyond normal working hours.
+•	High-reach equipment for specialized tasks.
+
+**Let’s Make Sure Your Building Stays Safe and Compliant**
+Contact us today to schedule your testing and stay ahead of potential issues. We're here to help ensure your building’s fire safety systems are ready for whatever comes your way!","REVISIT",5,"39A460","","Visy Recycling - 112 Euston Road, Alexandria, NSW 2015","","2022-11-03","","Jones Lang LaSalle (NSW) Pty Ltd","Marco Fiorentino","marco.fiorentino@jll.com","",4500.0000,"Repair","","112 Euston Road, Alexandria, NSW, 2015, Australia","Alexandria","2015","","","Jamie Wright","Nu Unasa","","","","","","","","2026-01-13 13:34:19","","","","","","W-00077-000179","4500.00","","","","","",-33.9105355,151.1889569,"","Jason Simpson (JLL) 0481 349 291","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","","Jamie Wright","Jamie Wright"," ",""
+14097,"T-14097","2025-07-24 10:17:21","2026-02-24 06:43:43","APFS Report 2025 - OWS (Quote QD-0954)","APFS Report 2025 - OWS","Following on from annual testing, the following defect(s) were been found:
+- The occupant warning system and smoke detection in the main switch room were reported as not working, further investigation is required. The sprinkler system must activate the occupant warning.
+- One of the sliding fire doors that separates the workshop from the warehouse is still active and assessable. Both smoke detectors are broken and one of the strobes is missing. The detectors and the strobe need to be replaced, and the door tested to confirm compliance.","SCHEDULED",5,"39A307","","AUSTCOR - 159-163 Newton Road  Wetherell Park, NSW 2164","","2024-07-22","987","Aliro Trusco 1 Pty Ltd ATF the 159-163 Newton Road Trust C/- Colliers","","","",1630.0000,"Repair","","159-163 Newton Road, WETHERILL PARK, NSW, 2164, Australia","Wetherill Park","2164","Gordon Jenkins","","","Gordon Jenkins","","","","","2025-11-24 09:00:00","","","2025-07-24 12:40:20","","","","","","PO6704502_201010","1630.00","","","","As per accepted defect quote QD-0954 dated 17-06-2025.","",-33.8378938,150.8934993,"","Rapid Induct and tenant’s induction applicable prior to attending site see attached Austcor documentation","","NR","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","00:00:00","Jade Ogony","Jamie Wright"," ",""
+13935,"T-13935","2025-07-17 11:17:39","2026-01-29 09:40:37","Fire Trip","Fire Trip","Attend site and supply and install fire trip to basement Jewlers","REVISIT",5,"39138","","Australasia Chambers - 2 Martin Place, Sydney, NSW 2000","","2019-08-13","633","Paspaley Pearls Properties Pty Ltd","Peter Piperitis","Peterp@TGC.com.au","",1200.0000,"Repair","","2 Martin Place (354-360 George Street), Sydney, NSW, 2000, Australia","Sydney","2000","Nu Unasa","John Minai","Jade Ogony","John Minai","","","","","2025-07-21 07:00:00","","","2025-07-21 07:48:32","","","","","","2MARTIN_2500095","","","","","","Picked up parts Firex
+
+29/1/2026 No access - Lo from Paspaley requires notice. She can do Thursday 5/2 9:30-11:30am if booked in.",-33.8672209,151.2073756,"","53
+Keys Located at Reception or Paspaley Pearls","","NR","",True,"",False,"","CO-308","Paspaley Pearls Properties Pty Ltd","","[] ","R DETECTION","","","Jade Ogony","John Minai"," ",""
+13630,"T-13630","2025-07-07 15:47:49","2026-02-26 08:23:21","APFS Report 2025 - (Quote QD-0948)","APFS Report 2025 -","Following on from annual testing, the following defect(s) were been found:
+- There is a fault on the fire alarm panel and a line faut appeared after a detector was activated. Further investigation required.
+- The batteries in the sliding fire door panel are out of date and need to be replaced.
+- Warehouse number three had no occupant warning; the tones could be heard from next door but not in unit 3- Technician to attend site to investigate/adjust sound requirement. **John Please Confirm**
+- The PA and voice messages from the occupant warning system could not be heard over the ambient noise in the BMW service warehouse. The volume needs to be increase or additional speakers installed - **John Please Confirm**","REVISIT",5,"39678","","49 Hotham Parade, Artarmon, NSW 2064","","2019-07-30","","Jones Lang LaSalle (NSW) Pty Ltd","Marco Fiorentino","marco.fiorentino@jll.com","",2110.0006,"Repair","","49 Hotham Parade, ARTARMON, NSW, 2064, Australia","Artarmon","2064","John Minai","Gordon Jenkins","","John Minai","","","","","2025-08-08 13:10:00","2025-11-20 15:15:10","","2025-08-08 13:18:41","","","","","","W-00115-000126","2110.00","","","","As per accepted defect quote QD-0948 dated 16-06-2025.","John M. 8-8-2025
+Pick up batteries and replaced 2x 1.3aH in door panel. System normal
+
+Note: Detector L2D43 zone 10 unit 6 BMW warehouse in fault - required replacement. Need extension pole head remover or EWP.
+OWS in open circuit fault - further investigation required.
+
+Please book in 2 technicians to complete this job.",-33.8153927,151.1795626,"","Jason Simpson (JLL) 0481 349 291","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","03:00:00","Jade Ogony","Jamie Wright"," ",""
+13540,"T-13540","2025-07-02 12:01:10","2025-12-09 11:33:33","APFS Report 2025 - Detection (Quote QD-0471)","APFS Report 2025 - Detection","Following on from annual testing, the following defect(s) were been found:
+
+-The zone block plan is missing the base line data that shows what each zone belongs too. The zone block plan will need to be updated and include the required information relating to each zone to comply with the new regulations for AS1851.
+
+-The batteries inside the fire control panel are past the two-year expiry date and will need to be replaced.
+
+-Level 2, there was two offices outside the fire hydrant that was found to have a cap on the detectors. The caps need to be removed (Techvoyage and Argus offices).
+
+-L2 service cupboard, I could not locate a smoke detector in this cupboard. A detector is required.
+
+-There are three pods on levels 3, 2, and 1 that have no sprinklers or occupant warning speakers installed. If the booths are soundproof a visual indicator or occupant warning speakers should be installed. Technical any room you can walk into requires a sprinkler installed. - further investigation to confirm whether room is soundproof","REVISIT",5,"39A449","","223-225 Liverpool Street, Darlinghurst, NSW 2010","","2026-07-08","","Forza Capital Pty Ltd ATF Forza 223 Liverpool Fund","Jordan Ghali","jordan.ghali@cbre.com","",2628.0020,"Repair","","223-225 Liverpool Street, Darlinghurst, NSW, 2010, Australia","Darlinghurst","2010","Nu Unasa","Gordon Jenkins","","Gordon Jenkins","","","","","2025-11-27 07:30:00","2025-07-07 20:23:29","","2025-07-07 20:23:29","","","","","","223LIV_2500044","2628.00","","","","As per accepted defect quote QD-0471 dated 18-03-2025.","Book in with client . 
+
+Due to multiple tenancies onsite
+
+Darren replaced batteries
+
+9/12 - checked booths - lvls 1,2,3 as reported .
+
+Recommend installing strobes outside booths . 
+Check with Shannon 
+
+Concrete drilling - in office (work to be done early in morning before office works",-33.8775295,151.2140507,"","Aidan Lamberth (ALFM) 0436 390 830
+myBuildings Checkin App - Contractor ID: 2472 and PIN: 209.
+Please ensure to have the app on your device and check in on arrival to site as a contractor obligation. 7am Starts preferred and 1 weeks notice","1293 key box","NR","",True,"",False,"","CO-2740","Forza Capital Pty Ltd ATF Forza Liverpool Street F","","[] ","R DETECTION","","00:00:00","Jade Ogony","Nu Unasa"," ",""
+13526,"T-13526","2025-07-01 15:35:17","2025-11-21 16:12:11","Annual testing defects - Smoke Alarm (Quote QD-0946)","Annual testing defects - Smoke Alarm","Following on from annual testing, the following defect(s) were been found:
+the following units require batteries to be replaced
+- Unit 1 - bedroom 1 - Investigate disconnection of 240V power, reconnect and supply and install 1x 9v battery
+
+- Unit 10 - bedroom 1, 2 and hallway -investigate disconnection of 240V power, reconnect and supply and install 1x 9v battery","REVISIT",5,"39267","","SP 722 - 167 Victoria Road, Bellevue Hill, NSW 2023","","2023-07-19","865","Strata Plan 722","","","",800.0030,"Repair","","167 Victoria Road, Bellevue Hill, NSW, 2023, Australia","Bellevue Hill","2023","Nu Unasa","","","Nu Unasa","","","","","2025-07-16 07:15:00","","","2025-07-16 13:32:45","","","","","","WO469744","800.00","","","","As per accepted defect quote QD-0946 dated 16-06-2025.","Organise access with BM , to organise access with units reported .",-33.8883492,151.2586066,"","28","","NR","",True,"",False,"","CO-228","Barass Macarthur Management","","[] ","R DETECTION","","00:00:00","Jade Ogony","Jade Ogony"," ",""
+12842,"T-12842","2025-06-19 13:28:15","2025-11-20 15:01:01","Fault on Panel","Fault on Panel","MAP 3 Address 9 in fault - further investigation, Multiple fire alarm faults.","SCHEDULED",5,"39A524","","Royal Life Saving Academy - 47 Lovell Road, Denistone East, NSW 2112","","2023-05-04","1080","Royal Life Saving NSW","Emma Le Mottee","emmalemottee@royalnsw.com.au","",920.0000,"Callout","","47 Lovell Road, Denistone East, NSW, 2112, Australia","Denistone East","2112","John Minai","Nu Unasa","Jade Ogony","John Minai","","","","","2025-07-10 11:00:00","","","2025-06-25 11:54:13","","","","","","","","","","","","John M. 25-06-2025
+Module for beam detector above swimming pool has intermittent fault. Spoke to Wade (distributor) about it. May need to replace LPZAI module above pool. He will email me a quote for new module. 
+****Extension ladder and two man required, erect ladder next to pool edge.
+Staff said to coordinate a 2 hour window for access with Emma.**** see photos
+
+Wade required to attend to program module",-33.7932355,151.097491,"","Stephen Neal 0402 586 602","","NR","",True,"",False,"","CO-2415","Royal Life Saving NSW","","[] ","R DETECTION","","","Jade Ogony","Jade Ogony"," ",""
+12719,"T-12719","2025-06-16 10:29:57","2025-12-16 11:03:31","APFS Report 2025 - Detection (Quote QD-0939)","APFS Report 2025 - Detection","Following on from annual testing, the following defect(s) were been found:
+-The void space above the fire stairs requires a detector to be installed.
+-L2 corridor, there is a smoke detector that is covered in plastic preventing the detector from activating. The plastic needs to be removed.
+-L1, there was an office found with no detection, a smoke detector needs to be installed.
+-Ground, there was an office found with no detection, a smoke detector needs to be installed.
+-L1, the detector in the electrical cupboard has a cap over the detector preventing the detector from activating. The cap needs to be removed.","REVISIT",5,"39960","","20-22 Mons Road, Westmead, NSW 2145","","2019-07-09","","Barwon Investment Partners Pty Ltd ACN 116 012 009 as trustee of the Barwon Institutional Healthcare Property Fund ABN 20 296 879 068","","","",1067.0060,"Repair","","20-22 Mons Road, WESTMEAD, NSW, 2145, Australia","Westmead","2145","John Minai","Gordon Jenkins","","Gordon Jenkins","","","","","2025-09-23 07:00:00","","","2025-10-07 14:06:14","","","","","","BAR215_2500086","1067.01","","","","As per accepted defect quote QD-0939 dated 11-06-2025.","John M. 7-10-2025
+L2 corridor - Plastic around detector already removed by others.
+L1 electrical cupboard - removed dust cover from detector. 
+Revisit to continue works.
+
+John & Gordon 2-12-2025
+Attended and tenant was not aware of attendance on ground floor castlereagh imaging. Needs to be booked in, may try to attend tomorrow when no doctor is working in office. 
+Roof detector needs conduit work, return early.
+
+Please organise access with Ground floor tenant. Need approximately 1 hour in the doctor’s office.",-33.8017409,150.9828765,"","Keys available in site box side driveway code is 2022 - with Tania King on Level 1
+**Rapid Global** Sign in Procedure.
+Contact Tania Level 1 Box 2022 Ambulance Bay Contact Martin 0433436459 (Property Manager)
+Building Manager - Adrian Stanton 0403 698 207
+Must sign in via the QR poster on the ground floor adjacent to the FIP","","NR","",True,"",False,"","CO-1725","Venncap Real Estate Pty Ltd","","[] ","R DETECTION","","00:00:00","Jade Ogony","John Minai"," ",""
+12700,"T-12700","2025-06-13 15:28:31","2026-03-16 09:15:13","Owners Agent defect 2025- Smoke Exhaust Panel (Quote QD-0769)","Owners Agent defect 2025- Smoke Exhaust Panel","Following on from Owner Agent Defect, please see below quote:
+- The smoke exhaust control panel (SSF1 – SSF6 & pump room) adjacent to the fire indicator panel does not operate and is to be removed. The fans operate from local
+switches. - A technician will attend site to safely disconnect all cabling related to the smoke exhaust panels and remove the panel from the premises.
+
+Labour: 8hours @$130 plus gst. 
+Total: $1040 plus gst.","REVISIT",5,"39A577 AU099","","Goodman AU099 - 31 Heathcote Road, Moorebank, NSW, 2170","","2023-06-21","","Goodman Property Services (Aust) Pty Limited  SC01822","Lisa Harmer","Lisa.Harmer@goodman.com","",1040.0040,"Repair","","31 Heathcote Road, Moorebank, NSW, 2170, Australia","Moorebank","2170","Gordon Jenkins","Nu Unasa","","Gordon Jenkins","","","","","2026-02-05 12:00:00","2025-07-15 12:01:32","","2025-07-01 13:59:47","","","","","","Work Order No: 303018  Purchase Order No: 527304","1040.00","","","","As per accepted defect quote QD-0769 dated 07-05-2025.","Two men to trace cables to find out where fans are wired to remove fan control panel below Fire system",-33.9370256,150.9349157,"","Goodman: Lisa Harmer 0482 919 973","","NR","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","00:00:00","Jade Ogony","Jamie Wright"," ",""
+12584,"T-12584","2025-06-10 20:17:38","2026-03-02 07:36:44","APFS Report and Annual testing 2025 - (Quote QD-0845)","APFS Report and Annual testing 2025 -","Following on from annual testing, the following defect(s) were been found:
+- There is a smoke alarm hanging from the ceiling in the rear of the car park. The smoke alarm needs to be installed on the ceiling.
+- Several units have smoke alarms installed that have reached the 10-year replacement. 12X Smoke Alarm to be replaced. 
+- Unit 1, the smoke alarm is hanging from the roof. The smoke alarm is due for the 10 year replacement, the new smoke alarm will need to be installed.
+- Mimic Panel in B2 - The BGA glass is chipped and not sucured- technician to replace glass.","RESCHEDULE",5,"39516","","SP 76299 -  228-234 Pacific Highway, Greenwich, NSW 2065","","1999-12-30","","Net Strata","Joe Scaramozzino","Joe.Scaramozzino@netstrata.com.au","",3302.0040,"Repair","","228-234 Pacific Highway, Greenwich, NSW, 2065, Australia","Greenwich","2065","Nu Unasa","John Minai","","John Minai","","","","","2025-09-26 10:00:00","","","2026-03-02 07:22:00","","","","","","Part of WO44946","3302.00","","","","As per accepted defect quote QD-0845 dated 16-05-2025.","No access, booking with tenants required. Annual defects report required with photos of defects and unit numbers.",-33.8207366,151.1847772,"","29 
+Key In Flamesafe Office
+Nab key to the Carpark access 
+Don't call lisa
+Warning system doesn't isolate the tones
+Lisa Blackshaw on 0418 411 024 ljb2001@bigpond.com or Jordan Wilcockson (Net Strata) 8567 6472","","BH","",True,"",False,"","*None","Strata Plan 76299","","[] ","R DETECTION","","12:00:00","Jade Ogony","John Minai"," ",""
+12518,"T-12518","2025-06-04 13:04:40","2026-02-18 08:46:06","Monthly Defect Repairs (Quote QD-0598)","Monthly Defect Repairs","Dear Customer,
+
+We hope you're doing well. Following our routine monthly testing, we have identified the following defect(s) that we wanted to bring to your attention:
+
+Please see below.
+
+If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","SCHEDULED",5,"39A599","","2A / 2B Culverston Road, Minto, NSW, 2566","","2024-05-17","","The Trust Company Limited in its capacity as agent for CHPine ATF Minto Trust Bieson P/ L ATF the CHPIP Minto Trust","Swami Muthukrishnan","Swami.Muthukrishnan@charterhallaccess.com.au","",590.0000,"Repair","","2 Culverston Rd, Minto NSW 2566, Australia","Minto","2566","Nu Unasa","","","Nu Unasa","","","","","2025-09-15 09:00:00","","","2025-09-15 11:20:10","","","","","","PO6654893_201010","590.00","","","","As per accepted defect quote QD-0598 dated 07-04-2025.","Replaced batteries as per quote",-34.0431738,150.8346223,"CH","Sinepro check in and tenant specific
+Jeff Sutton or Ranish Singh at Building 2B 
+Colin Stewart or Richard Stoker or Matthew Grosvenor at Building 2A 
+Charterhall Representative - Swami - 0428 460 977 ","","NR","",True,"",False,"","CO-038","C.B Richard Ellis Pty Ltd","","[] ","R DETECTION","","00:00:00","Jade Ogony","Jamie Wright"," ",""
+12458,"T-12458","2025-06-02 09:34:41","2025-12-17 09:58:31","PM2025/06 R DETECTION (39A513) ","Jun 2025 routine servicing (1 items): Kitchen Suppression System: Pre-engineered fire protection systems for cooking equipment (AS 3772-2020): Monthly (1)","Kitchen Suppression System: Pre-engineered fire protection systems for cooking equipment (AS 3772-2020): Monthly (1)","REVISIT",5,"39A513","","ACU - Building 600-650 - 25a Baker Road, Strathfield, NSW 2055","","2021-12-16","","Australian Catholic Universities (ACU)","Paul McGrath","paul.mcgrath@acu.edu.au","Testing - SouthStruct",0.0000,"I&T","","25a Baker Road, Strathfield, NSW, 2135, Australia","Strathfield","2135","Haider Al-Heyoury","","","Haider Al-Heyoury","","","2025-06-30","","2025-10-30 07:00:00","","","2025-10-30 10:21:26","","","","","","","","0.00","","","","",-33.8759874,151.0755504,"CA","Scott Thompson (ACU) 0408 292 818","","OA","",True,"",False,"","CO-2387","Australian Catholic University (ACU)","","[] ","R DETECTION","","","Office Account","Office Account"," ",""
+12370,"T-12370","2025-05-30 15:14:11","2026-03-20 12:19:34","APFS Report 2025 - Fire Detection (Quote QD-0791)","APFS Report 2025 - Fire Detection","Following on from annual testing, the following defect(s) were been found:
+- BLD 16 unit 9, the smoke alarm outside the caretakers did not work and needs to be replaced. - Covered under warranty from last years approved quote. 
+- BLD 18, top floor office storeroom, kitchen off office, is missing the smoke detector. The glass frutex office top floor has a 10-meter space from the detector to the wall. - Technician to attend site and supply and install 4 x smoke detectors required.
+- BLD 18, there is no block plan installed at the fire panel. A block plan is required. - Technician to attend site, supply and install block plan. 
+- BLD 18 warehouse, there are several areas that are missing smoke detection. Smoke detection is required in any room that has a floor area of 3.5m2 or more. Locations that require detection are, from the dispatch office to the corridor in the warehouse, 7-meter space from the wall to the nearest detector, Men’s toilet at entry, Female toilets detectors, - Technician to attend site and supply and install 11x detectors with EWP due to height of ceiling . 
+- BLD 18, The airlock and room next to the airlock in the production area are missing the smoke detectors. Technician to attend site and supply and install 2x detectors.
+- BLD 20 - Alarm cannot be heard from outside the warehouse, recommend install horn speakers. technician will attend site with EWP to confirm how many speakers are required as per standards.","REVISIT",5,"39704","","Frutex - 20 St Albans Road, Kingsgrove, NSW 2208","","2020-05-20","1007","Sterilisation Technologies Australia Pty Ltd","Natural Food Technologies Pty Ltd","finance@frutex.com.au","",10090.0530,"Repair","","18 St Albans Road, KINGSGROVE, NSW, 2208, Australia","Kingsgrove","2208","John Minai","Gordon Jenkins","","Gordon Jenkins","","","","","2026-01-07 08:17:00","","","2026-01-07 06:14:38","","","","","","spiro approved 30/5","10090.05","","","","As per accepted defect quote QD-0791 dated 12-05-2025.","Investigated MX1 FIP alarm.
+Zone 3 Refrigeration in alarm. This went into alarm at 6pm on 21/1/2026 and is not programmed to trip, trigger OWS, or call brigade. Investigated location of zone in warehouse, checked refrigeration cool rooms. All cool rooms have heat probes so there is no LED or indication of which probe was in alarm. Could not reset alarm, and left it disabled for now. Will need to return with 2x technicians and an EWP to locate conventional module and check which probe is stuck in alarm to replace. Office can you please check with Shannon if this non-annunciation zone is meant to be programmed this way on FER? Photos attached.
+
+5/3/2026 pick up parts
+
+19/3/2026
+Installed and programmed new detectors in areas defected. The only areas remaining in the airlock for the cool rooms in front production area (MES installed MX1 detector instead of sealed heat conv) and the storeroom at the back of the warehouse freezers - boomlift may be required to tap off the conventional detector circuit and drop into w/h storeroom. Zones from config sent to Jade for block plan mark up.",-33.9346547,151.0948527,"","Gate code: 4321
+Bottom Warehouse only","","NR","",True,"",False,"","CO-2179","Sterilisation Technologies Australia Pty Ltd","","[] ","R DETECTION","","00:01:00","Jade Ogony","John Minai"," ",""
+9968,"T-09968","2025-04-08 09:09:49","2025-11-24 10:27:33","APFS Report 2025 - Detection (Quote QD-0577)","APFS Report 2025 - Detection","Following the annual testing of your system, we have identified the following issues that require attention:
+
+**Additional Detectors for Interex Tenancy**
+
+- Currently, 4 smoke detectors are installed. However, due to the size of the warehouse, an additional 2 detectors are needed to ensure full coverage.
+
+- Our technician will attend the site and provide the necessary equipment. This will include the supply and installation of 2 smoke detectors, along with the required cabling and lifting equipment.
+
+**Update to Zone Block Plan**
+
+- The existing Zone Block Plan does not reflect the full installation of all detectors, including concealed units and detectors located under the mezzanine.
+
+- We recommend updating the plan to accurately show the locations of all detectors to ensure compliance and effective system management.","SCHEDULED",5,"39966","","1A The Crescent,  Kingsgrove, NSW 2208","","2020-04-15","","Vanessa Aus Sub TC Pty Ltd ATF Vanessa Aus Sub Trust C/- CBRE Pty Ltd NSW Rents Trust","Omar Eleter","omar.eleter@cbre.com","",4195.0040,"Repair","","1A The Crescent, Kingsgrove, NSW, 2208, Australia","Kingsgrove","2208","Nu Unasa","Gordon Jenkins, John Minai","","Nu Unasa","","","","","2025-09-19 09:00:00","2025-07-07 20:23:53","","2025-07-07 20:23:53","","","","","","PO6596090_201010","4195.00","","","","As per accepted defect quote QD-0577 dated 02-04-2025.","Book in with client .
+
+7/10 scissor lift required for works",-33.9439534,151.09049,"","Darren Sanderson (One five one) 0427 766 399
+Unit 1 - Mick Marcic mick.marcic@infinetgroup.com.au
+Unit 2 - Gareth Paton Gareth@interex.com.au – Building/Carpentry","","NR","",True,"",False,"","CO-038","C.B Richard Ellis Pty Ltd","","[] ","R DETECTION","","00:01:00","Jade Ogony","Jade Ogony"," ",""
+9869,"T-09869","2025-03-31 12:14:41","2026-03-27 15:41:20","Following on from annual testing, the following defect(s) were been found:
+-The new… (Quote QD-0378)","","Following on from annual testing, the following defect(s) were been found:
+-The new office fit out for the stand alone two Storey building has no occupant warning speakers installed. The PA announcements and tones can’t be heard from this building. The building will need to be assessed to install occupant warning speakers.
+-The sprinkler system did not activate the occupant warning system, further investigation required.
+-An occupant warning speaker needs to be installed in the rear warehouse. - technician to attend site and supply and install. 
+-The new office fit out for the stand alone two storey building has two offices upstairs, the board room, storeroom downstairs through the female toilet door and the showers that are missing detection. 5 x detectors required.
+-The small office in the main manufacturing room is missing smoke detection. 1 x smoke detector required.
+-There is a mimic panel installed in the stand alone building, investigation required to see if the panel is still connected to the fire systems or needs to be removed and decommissioned.
+-The date of installation could not be confirmed for the battery in the panel that controls the sliding fire door.
+-The new toilet block in the warehouse has no fire detection or occupant warning speakers installed. Detection and occupant warning is required in the toilets and storeroom below the toilets.
+-Both new demountable buildings have no smoke detection or occupant warning speakers installed. Further investigation is required.
+-There is no smoke detection in the back corridor that has been created by the separation of tenancies.
+-The back room of the spray booth in the front warehouse requires a detector and occupant warning speaker.
+-The spacing of detection in both corners of the manufacturing areas need to be assessed for spacing requirements. 2 x smoke detectors.","REVISIT",5,"39650","","Impact International - Cnr Victoria and O’Connell Street, Smithfield,  NSW 2164","","2019-05-22","441","Impact International","Goran Bakic","gbakic@impactintl.com.au","",12263.7360,"Repair","","Cnr Victoria and O’Connell Street, SMITHFIELD, NSW, 2164, Australia","Smithfield","2164","Nu Unasa","Gordon Jenkins, John Minai","","Bailey Arthur","","","","","2025-04-29 11:55:00","2025-04-29 11:20:43","","2025-04-29 11:20:04","","","","","","PO00029370","12263.74","","","","As per accepted defect quote QD-0378 dated 17-02-2025.","",-33.8527106,150.9350807,"","","","NR","",True,"",False,"","CO-1525","Impact International ","","[] ","R DETECTION","","00:00:00","Jade Ogony","Jamie Wright"," ",""
+9650,"T-09650","2025-03-28 14:53:12","2025-10-09 21:18:20","PM2025/04 Servicing - Detection (39966) ","Apr 2025 routine servicing (3 items): Fire Detection: Fire Indicator Panel - FIP (AS 1851:2012 Section 6): Monthly (2), Sound & Intercom For Emergency Purposes (AS 1851:2012 Section 6): Monthly (1)","Fire Detection: Fire Indicator Panel - FIP (AS 1851:2012 Section 6): Monthly (2)
+Sound & Intercom For Emergency Purposes (AS 1851:2012 Section 6): Monthly (1)","NOTREADY",5,"39966","","1A The Crescent,  Kingsgrove, NSW 2208","","2020-04-15","","Vanessa Aus Sub TC Pty Ltd ATF Vanessa Aus Sub Trust C/- CBRE Pty Ltd NSW Rents Trust","Omar Eleter","omar.eleter@cbre.com","",0.0000,"I&T","","1A The Crescent, Kingsgrove, NSW, 2208, Australia","Kingsgrove","2208","Darren Brailey","","","Darren Brailey","","","2025-04-12","","2025-04-10 07:00:00","2025-04-10 07:23:47","","2025-04-10 06:58:17","","","","","","","","0.00","","","","",-33.9439534,151.09049,"","Darren Sanderson (One five one) 0427 766 399
+Unit 1 - Mick Marcic mick.marcic@infinetgroup.com.au
+Unit 2 - Gareth Paton Gareth@interex.com.au – Building/Carpentry","","NR","",True,"",False,"","CO-038","C.B Richard Ellis Pty Ltd","","[] ","R DETECTION","","","Office Account","Darren Brailey"," ",""
+7534,"T-07534","2025-02-04 09:14:13","2026-01-13 14:46:38","5 Yearly Detection and Warning - Addressable. ","5 Yearly Detection and Warning - Addressable. ","Fire Alarm System 5 Yearly Sensitivity Test for Detection System  (AS 1851.6-2012)
+Undertake sensitivity testing  within the building to ensure meets standard requirements. Carry Out 5 Yearly testing on control indication equipment (Fire Indicator Panel).
+ 
+Price include the cost of man lifting equipment. Worked to be carried out during normal business hours.
+ 
+Fire Alarm System 5 Yearly Sound System for Emergency Purposes (AS 1851.6-2012)
+Undertake sound pressure level tests within Buildings A & B to ensure sound pressure levels and intelligibility meets standard requirements
+Inspect building for structural changes which may affect evacuation zones
+Inspect building for occupancy changes which may affect performance of the sound system
+ 
+Costs:
+ 
+EXCLUSIONS
+- Costs associated with security arrangements and parking.(If required)
+- Access to lift service for transport of heavy equipment to roof/plant levels (where relevant)
+- Works to areas other than that nominated above.
+- Works outside normal working hours.
+- Multiple site establishments to carry out the above works.
+- Provision of high reach equipment","REVISIT",5,"39A272","","Rural Fire Brigade - 42 Lamb Street, Glendenning, NSW 2761","","2019-06-13","","Jones Lang LaSalle (NSW) Pty Ltd","Marco Fiorentino","marco.fiorentino@jll.com","",1600.0000,"Callout","","42 Lamb Street, GLENDENNING, NSW, 2761, Australia","Glendenning","2761","Haider Al-Heyoury","","Jade Ogony","Haider Al-Heyoury","","","","","2026-01-08 10:00:00","","","2026-01-08 13:45:54","","","","","","W-00108-000091  / PN00049952","1600.00","","","","","Haider 8/01/2026
+
+Attended site to conduct a 5-yearly test.
+
+The AS1851 test docket showing what was and wasn’t done is on task documents.
+
+Revisit required for speaker circuit impedance test and speech intelligibility. (Specific tool required for that).
+
+1 detector on site. Sensitivity is 2.98%/ft.",-33.7461689,150.8481733,"","SinePro near Reception
+Jason Simpson (JLL) 0481 349 291","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","","Jade Ogony","Mariette Henderson"," ",""
+5579,"T-05579","2025-01-08 13:42:51","2025-10-10 10:15:54","39A188 (Quote QD-0273)","APFS 2024 - Detection and Warning System","Thank you for the opportunity to quote on the below:
+-L6, an additional detector is required in the rear right side of the office.
+-Ground floor, there is a bag over the detector that needs to be removed.
+-Ground floor, there is a small room near the exit door that is missing the smoke detector. 1 x detector required.
+-Ground floor, there is a section where there is 6 meters from the wall to the nearest smoke detector. 1 x smoke detector required.
+-L2, demountable office has not been removed and has no detection installed, 2 x detectors are required.
+- The horn speaker on the rooftop outside the plant room is not working and needs to be replaced. - technician to attend site and replace.","REVISIT",5,"39A588","","1 Wentworth Street, Parramatta, NSW 2150","","2023-03-10","","N G P Investments (no 2) Pty Ltd  C/o Mercer Property Pty Ltd","Martyn Smith","martyns@mercerproperty.com.au","",2351.0100,"Repair","","1 Wentworth St, Parramatta NSW 2150, Australia","Parramatta","2150","Gordon Jenkins","Nu Unasa","","Darren Brailey","","","","","2025-01-10 12:32:00","2025-01-31 13:40:30","2025-08-05 11:15:23","2025-01-09 06:03:36","","","","","","002293","2351.01","","","","As per accepted defect quote QD-0273 dated 06-01-2025.","No access into ground floor office
+
+6/08/25
+Replaced horn on roof tested all working photos and documents
+Still need access to demountable on level two carpark and level six office 
+2 x men this will need to be arranged with building manager",-33.8196237,151.0051449,"","Covid-19 Questionnaire/Self Declaration form to be completed when arriving on site and return to the Facility Manager
+Colliers: Marvin De dios 0402 020 787
+Mangers Office key lock 2205","","NR","",True,"",False,"2025-08-05 11:15:23","CO-2535","NGP Investments No 2 Pty Ltd","","[] ","R DETECTION","","00:00:00","Jade Ogony","Gordon Jenkins"," ",""
+1288,"T-01288","2024-10-18 10:29:51","2025-10-12 23:11:17","Isolation on 20th October","Isolation on 20th October","Attend site, carry out isoaltion due to fumigation:
+- 6am isolatation
+re-attendance at 12pm. 
+","CANCELLED",5,"39559","","Goodman Fielder - 16 Templar Rd, Erskine Park, NSW 2759","","2019-04-24","391","Goodman Fielder Consumer Foods Pty Ltd","","","",460.0000,"Callout","","16 Templar Road, Erskine Park, NSW, 2759, Australia","Erskine Park","2759","","","Jade Ogony","","","","","","","2025-04-22 12:49:46","","2024-10-22 11:06:14","","","","","","","","","","","","",-33.818435,150.7973456,"","Amar Banga 0403 957 208
+Must call Amar prior to testing","","NR","",True,"",False,"","","","","[] ","R DETECTION","","","Jade Ogony","Jade Ogony"," ",""
+911,"T-00911","2024-10-03 06:39:14","2026-03-02 08:17:16","Fire Trips to mech board.","Fire Trips to mech board.","During the course of carrying out the most recent inspection and testing of Fire Safety Measures at the aforementioned premises, the following equipment was found to be defective and requires replacing and or rectifying.   Please note these works have not yet been undertaken. Our quotation price to complete the necessary repairs is as below:
+
+Scope of Work:
+- FlameSafe to attend site and install fire trip to ground floor to level 7.
+- FlameSafe to supply and install modules and cabling to to mechanical board located in the plant room.  including programming the fire panel. 
+- Mechanical contractor to supply air fans and x2 SPF, run the radox loop cabling back to the Fire Panel, Flame Safe will provide modules and duct probes to the fire panel, including programming the fire panel. 
+- Batteries on the FIire Panel are due for replacement, supply and install 2 x 12v 40 ah.
+- A timber feature was designed on level 7 however doesnt have any smoke detectors installed, technician to attend site and supply and install 2x smoke detectors.","SCHEDULED",5,"39A467","","203-209 Northumberland Street, Liverpool - NSW 2060","","2021-09-20","","Inner West Council C/- Knight Frank Australia Pty Ltd","Damien Luksic","damien.luksic@au.knightfrank.com","",15682.0000,"Callout","","","Liverpool","2170","Nu Unasa","Gordon Jenkins, John Minai","Jade Ogony","Nu Unasa","","","","","2025-01-24 12:00:00","","","2025-01-24 11:38:48","","","","","","209NORTH2400155","","","","15681.998","","24/1 - walk around with mech contractor 
+,works to be done . Running loop","","","","","","NR","",True,"",False,"","CO-070","Knight Frank Australia Pty","","[] ","R DETECTION","","","","Jamie Wright"," ","BS5607"

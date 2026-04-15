@@ -16,7 +16,7 @@ import type { Todo } from "@workspace/api-client-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const CONVERSATION_ID = "1";
+const CONVERSATION_ID = 1;
 
 const SUGGESTIONS = [
   "PA Check — what's on today?",
@@ -962,7 +962,11 @@ export default function Chat() {
     const msgIndex = allMessages.length;
 
     try {
-      const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+      // Prefer the explicit API origin when the frontend is hosted cross-origin
+      // (e.g. Vercel → Replit). Falls back to the Vite BASE_URL for same-origin
+      // Replit all-in-one deploys.
+      const apiBase = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/+$/, "");
+      const base = apiBase ?? (import.meta.env.BASE_URL?.replace(/\/$/, "") || "");
       // Always supply non-empty content — backend will merge with email HTML
       const body: Record<string, unknown> = { content: msg || "Please triage and analyse the attached content." };
       if (emailAtt?.emailHtml) {

@@ -139,6 +139,7 @@ export default function AnalyticsPanel({ section, title = "Analyst" }: Analytics
       const timer = setTimeout(saveChat, 1000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [messages, streaming]);
 
   const loadChat = (chat: SavedChat) => {

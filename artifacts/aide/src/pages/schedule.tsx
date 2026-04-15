@@ -16,7 +16,7 @@ interface LocalEvent {
   date: string;
   startHour: number;
   endHour: number;
-  type: "event" | "job";
+  type: "event" | "job" | "local";
   color: string;
   location?: string;
   assignedTo?: string;

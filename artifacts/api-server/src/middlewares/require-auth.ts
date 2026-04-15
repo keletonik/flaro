@@ -19,6 +19,15 @@ const ALWAYS_PUBLIC = new Set<string>([
   "/auth/me",
   "/healthz",
   "/events",
+  "/diag",
+  "/diag/agent",
+  "/diag/perf",
+  "/diag/pa",
+  "/diag/apr15",
+  // Status probes — read-only, rendered on page load, never carry a
+  // session cookie on mobile cold-start. Whitelisted so a missing
+  // Bearer token can't flip a feature page into "disabled" state.
+  "/fip/status",
 ]);
 
 function isPublic(req: Request): boolean {
@@ -35,11 +44,25 @@ function isPublic(req: Request): boolean {
  * Authentication middleware with two modes:
  *
  *   AUTH_ENFORCE=true  → reject unauthenticated requests with 401.
- *   otherwise           → log the violation and let the request through unchanged.
+ *   otherwise           → log the violation and let the request through.
  *
- * The lax mode exists so the client-side Bearer-header change can ship ahead of
- * the flag flip without breaking anyone mid-deploy. Rollback is `AUTH_ENFORCE=` (unset).
+ * IMPORTANT — REGRESSION NOTE (April 2026):
+ * Pass 6 fix 2 previously flipped the default to "enforce when
+ * NODE_ENV=production". That silently broke the operator's Replit
+ * deployment, which runs with the defaultUser bypass (no login page,
+ * no frontend Bearer token). On mobile every /api/* call started
+ * returning 401 and pages like /fip showed "Disabled" because the
+ * frontend .catch handlers treated 401 as "feature off".
+ *
+ * Correct posture for THIS deployment: AUTH_ENFORCE stays opt-in.
+ * The production-mode default is set by the explicit env var, not
+ * inferred from NODE_ENV. When the operator decides to re-enable
+ * login (proper Bearer flow), they can set AUTH_ENFORCE=true and
+ * the middleware still works.
  */
+function shouldEnforceAuth(): boolean {
+  return process.env["AUTH_ENFORCE"] === "true";
+}
 export async function requireAuth(
   req: AuthenticatedRequest,
   res: Response,
@@ -57,7 +80,7 @@ export async function requireAuth(
     session = await getSessionUserAsync(token);
   }
 
-  const enforce = process.env["AUTH_ENFORCE"] === "true";
+  const enforce = shouldEnforceAuth();
 
   if (!session) {
     if (enforce) {

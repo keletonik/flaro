@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { apiFetch, formatCurrency } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
+import { InboxPanel } from "@/components/InboxPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/App";
@@ -222,31 +223,39 @@ export default function Dashboard() {
       </div>
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
-        {/* Bento Grid — featured metrics prominent, secondary compact */}
+        {/* Pass 7 fix 1 — inbox block. Three columns: critical defects,
+            overdue invoices, top open WIPs. Every row is clickable and
+            drops the user on the filtered operations tab. */}
+        <InboxPanel />
+
+        {/* Bento Grid — featured metrics prominent, secondary compact.
+            Every card now drill-throughs to a filtered destination per
+            Pass 2 target 4. Destinations use query params so the target
+            pages can (eventually) parse and pre-apply filters. */}
         <div className="bento-grid">
           <div className="bento-featured card-stagger" style={{ '--stagger-index': 0 } as React.CSSProperties}>
-            <MetricCard label="Revenue This Week" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={DollarSign} color="bg-emerald-500/8" featured />
+            <MetricCard label="Revenue This Week" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={DollarSign} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=7d")} featured />
           </div>
           <div className="bento-featured card-stagger" style={{ '--stagger-index': 1 } as React.CSSProperties}>
-            <MetricCard label="Active Jobs" value={summary?.active ?? "-"} icon={Briefcase} color="bg-primary/8" onClick={() => setLocation("/jobs")} featured />
+            <MetricCard label="Active Jobs" value={summary?.active ?? "-"} icon={Briefcase} color="bg-primary/8" onClick={() => setLocation("/jobs?status=Open")} featured />
           </div>
           <div className="bento-featured card-stagger" style={{ '--stagger-index': 2 } as React.CSSProperties}>
-            <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={TrendingUp} color="bg-amber-500/8" onClick={() => setLocation("/operations")} featured />
+            <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={TrendingUp} color="bg-amber-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Sent")} featured />
           </div>
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 3 } as React.CSSProperties}>
-            <MetricCard label="Completed Today" value={summary?.doneToday ?? "-"} icon={CheckCircle2} color="bg-emerald-500/8" trend={summary && summary.doneToday > 0 ? "up" : "neutral"} trendLabel={`${summary?.doneToday ?? 0}`} />
+            <MetricCard label="Completed Today" value={summary?.doneToday ?? "-"} icon={CheckCircle2} color="bg-emerald-500/8" onClick={() => setLocation("/jobs?status=Done")} trend={summary && summary.doneToday > 0 ? "up" : "neutral"} trendLabel={`${summary?.doneToday ?? 0}`} />
           </div>
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 4 } as React.CSSProperties}>
-            <MetricCard label="Open WIP" value={kpi?.wip.active ?? "-"} icon={Activity} color="bg-blue-500/8" onClick={() => setLocation("/operations")} />
+            <MetricCard label="Open WIP" value={kpi?.wip.active ?? "-"} icon={Activity} color="bg-blue-500/8" onClick={() => setLocation("/operations?tab=wip&status=Open")} />
           </div>
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 5 } as React.CSSProperties}>
-            <MetricCard label="Pending Quotes" value={kpi?.quotes.pending ?? "-"} icon={FileText} color="bg-primary/8" onClick={() => setLocation("/operations")} />
+            <MetricCard label="Pending Quotes" value={kpi?.quotes.pending ?? "-"} icon={FileText} color="bg-primary/8" onClick={() => setLocation("/operations?tab=quotes&status=Sent")} />
           </div>
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 6 } as React.CSSProperties}>
-            <MetricCard label="Revenue (Month)" value={kpi ? fmt(kpi.invoices.revenueThisMonth) : "-"} icon={DollarSign} color="bg-emerald-500/8" />
+            <MetricCard label="Revenue (Month)" value={kpi ? fmt(kpi.invoices.revenueThisMonth) : "-"} icon={DollarSign} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=mtd")} />
           </div>
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 7 } as React.CSSProperties}>
-            <MetricCard label="Overdue Invoices" value={kpi?.invoices.overdue ?? "-"} icon={Clock} color="bg-red-500/8" />
+            <MetricCard label="Overdue Invoices" value={kpi?.invoices.overdue ?? "-"} icon={Clock} color="bg-red-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Overdue")} />
           </div>
         </div>
 

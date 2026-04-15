@@ -1,4 +1,10 @@
-const BASE = "/api";
+// Base URL for the api server. Defaults to the same origin (the Replit
+// all-in-one deployment routes /api/* to the api-server artifact). When the
+// frontend is hosted on a different origin (e.g. a Vercel static deploy
+// pointing at a Replit-hosted api), set VITE_API_BASE to the full origin
+// (e.g. `https://my-repl.replit.dev`) — /api is appended automatically.
+const API_ORIGIN = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/+$/, "") ?? "";
+const BASE = `${API_ORIGIN}/api`;
 const TOKEN_STORAGE_KEY = "ops-auth-token";
 
 function authHeader(): Record<string, string> {
@@ -74,6 +80,187 @@ export function streamChat(
   return controller;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// streamAgent — /chat/agent wire protocol client (tool-use enabled).
+// ─────────────────────────────────────────────────────────────────────────────
+// Parallel to streamChat. Used by components that need the agent's real
+// tools (search / create / update / delete / navigate / refresh). Leave
+// streamChat for read-only components that just want Claude to analyse data.
+
+export interface AgentToolEvent {
+  name: string;
+  input?: Record<string, unknown>;
+  ok?: boolean;
+  error?: string;
+}
+
+export interface AgentUiAction {
+  type: "navigate" | "refresh" | string;
+  path?: string;
+  [key: string]: unknown;
+}
+
+export interface AgentStreamHandlers {
+  onText: (chunk: string) => void;
+  onToolStart?: (ev: AgentToolEvent) => void;
+  onToolResult?: (ev: AgentToolEvent) => void;
+  onUiAction?: (action: AgentUiAction) => void;
+  onDone: () => void;
+  onError: (err: string) => void;
+}
+
+export function streamAgent(
+  section: string,
+  message: string,
+  history: { role: string; content: string }[],
+  handlers: AgentStreamHandlers,
+  attachmentIds?: string[],
+): AbortController {
+  const controller = new AbortController();
+  // Pass 5 §3.4: retry initial connection up to 2 times with 1s + 3s
+  // backoff. Only retries the open — once we've started reading the
+  // response body, any mid-stream disconnect bails (retrying mid-tool
+  // call would risk double-executing a db_create / db_update).
+  let attempt = 0;
+  const MAX_ATTEMPTS = 3;
+  const attemptOpen = async (): Promise<void> => {
+    attempt += 1;
+    try {
+      const res = await fetch(`${BASE}/chat/agent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({ section, message, history, attachmentIds }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        if ((res.status >= 500 || res.status === 0) && attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, attempt * 1000));
+          return attemptOpen();
+        }
+        handlers.onError(`Request failed: ${res.status}`);
+        return;
+      }
+      const reader = res.body?.getReader();
+      if (!reader) {
+        handlers.onError("No stream");
+        return;
+      }
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finished = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const ev = JSON.parse(line.slice(6));
+            switch (ev.type) {
+              case "text":
+                if (ev.content) handlers.onText(ev.content);
+                break;
+              case "tool_start":
+                handlers.onToolStart?.({ name: ev.name, input: ev.input });
+                break;
+              case "tool_result":
+                handlers.onToolResult?.({ name: ev.name, ok: ev.ok, error: ev.error });
+                break;
+              case "ui_action":
+                handlers.onUiAction?.(ev.action);
+                break;
+              case "error":
+                handlers.onError(ev.error ?? "agent error");
+                break;
+              case "done":
+                if (!finished) {
+                  finished = true;
+                  handlers.onDone();
+                }
+                break;
+            }
+          } catch {
+            // ignore malformed event line
+          }
+        }
+      }
+      if (!finished) handlers.onDone();
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+      // Network-level failure before we got a reader — safe to retry.
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, attempt * 1000));
+        return attemptOpen();
+      }
+      handlers.onError(err?.message ?? "connection failed");
+    }
+  };
+  void attemptOpen();
+  return controller;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// streamFipAssistant — /fip/assistant/chat client.
+// ─────────────────────────────────────────────────────────────────────────────
+// Same wire protocol as streamAgent but talks to the dedicated FIP
+// assistant endpoint (master-level Australian fire-protection knowledge,
+// detector type tools, image vision).
+export function streamFipAssistant(
+  message: string,
+  history: { role: string; content: string }[],
+  imageId: string | undefined,
+  handlers: AgentStreamHandlers,
+  attachmentIds?: string[],
+): AbortController {
+  const controller = new AbortController();
+  fetch(`${BASE}/fip/assistant/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ message, history, imageId, attachmentIds }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        handlers.onError(`Request failed: ${res.status}`);
+        return;
+      }
+      const reader = res.body?.getReader();
+      if (!reader) { handlers.onError("No stream"); return; }
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finished = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const ev = JSON.parse(line.slice(6));
+            switch (ev.type) {
+              case "text": if (ev.content) handlers.onText(ev.content); break;
+              case "tool_start": handlers.onToolStart?.({ name: ev.name, input: ev.input }); break;
+              case "tool_result": handlers.onToolResult?.({ name: ev.name, ok: ev.ok, error: ev.error }); break;
+              case "error": handlers.onError(ev.error ?? "fip assistant error"); break;
+              case "done":
+                if (!finished) { finished = true; handlers.onDone(); }
+                break;
+            }
+          } catch { /* ignore */ }
+        }
+      }
+      if (!finished) handlers.onDone();
+    })
+    .catch((err) => {
+      if (err?.name !== "AbortError") handlers.onError(err?.message ?? "connection failed");
+    });
+  return controller;
+}
+
 export function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return { headers: [], rows: [] };
@@ -141,4 +328,48 @@ export function formatCurrency(n: number): string {
   if (n >= 1000000) return `$${(n / 1000000).toFixed(2)}M`;
   if (n >= 1000) return `$${(n / 1000).toFixed(1)}k`;
   return `$${n.toLocaleString()}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Attachment upload — used by every AI chat surface that accepts files.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface AttachmentMeta {
+  id: string;
+  kind: "image" | "document" | "text" | "other";
+  filename: string | null;
+  contentType: string;
+  size: number;
+  createdAt: string;
+}
+
+/** Read a File/Blob as a plain base64 string (no data URL prefix). */
+export function fileToBase64(file: File | Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(new Error("File read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Upload a file via POST /api/attachments and return its metadata. */
+export async function uploadAttachment(
+  file: File,
+  source?: string,
+): Promise<AttachmentMeta> {
+  const data = await fileToBase64(file);
+  return apiFetch<AttachmentMeta>("/attachments", {
+    method: "POST",
+    body: JSON.stringify({
+      filename: file.name,
+      contentType: file.type || "application/octet-stream",
+      data,
+      source,
+    }),
+  });
 }

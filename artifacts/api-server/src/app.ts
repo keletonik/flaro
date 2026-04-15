@@ -8,6 +8,7 @@ import { addSSEClient, broadcastEvent } from "./lib/events";
 import { invalidateAnalyticsCache } from "./routes/analytics";
 import { requireAuth } from "./middlewares/require-auth";
 import { apiRateLimiter, loginRateLimiter } from "./middlewares/rate-limit";
+import { perfMiddleware } from "./lib/perf-ring";
 
 const app: Express = express();
 
@@ -47,6 +48,9 @@ function buildCorsOptions(): CorsOptions {
 }
 app.use(cors(buildCorsOptions()));
 
+// Pass 5 §3.9 — rolling p50/p95/p99 tracker, exposed at /api/diag/perf.
+app.use(perfMiddleware());
+
 app.use(
   pinoHttp({
     logger,
@@ -65,18 +69,23 @@ app.use(
 // Body parsers
 // ───────────────────────────────────────────────────────────────────────────
 // Default 1 MB cap on every endpoint, with a targeted 50 MB limit mounted only
-// on the anthropic message route (images + email HTML can be large).
-// Override with DEFAULT_BODY_LIMIT / CHAT_BODY_LIMIT. Rollback: set both to 50mb.
+// on the anthropic message route and on /api/attachments (the new
+// file-upload endpoint). Override with env. Rollback: set all to 50mb.
 const defaultBodyLimit = process.env["DEFAULT_BODY_LIMIT"] || "1mb";
 const chatBodyLimit = process.env["CHAT_BODY_LIMIT"] || "50mb";
+const attachmentBodyLimit = process.env["ATTACHMENT_BODY_LIMIT"] || "25mb";
 
 app.use(
-  /^(?!\/api\/anthropic\/conversations\/[^\/]+\/messages$).*/,
+  /^(?!\/api\/anthropic\/conversations\/[^\/]+\/messages$)(?!\/api\/attachments$).*/,
   express.json({ limit: defaultBodyLimit }),
 );
 app.use(
   "/api/anthropic/conversations/:id/messages",
   express.json({ limit: chatBodyLimit }),
+);
+app.use(
+  "/api/attachments",
+  express.json({ limit: attachmentBodyLimit }),
 );
 app.use(express.urlencoded({ extended: true, limit: defaultBodyLimit }));
 

@@ -6,10 +6,10 @@ import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { CreateAnthropicConversationBody, SendAnthropicMessageBody, GetAnthropicConversationParams, DeleteAnthropicConversationParams, ListAnthropicMessagesParams, SendAnthropicMessageParams } from "@workspace/api-zod";
 
 function buildSystemPrompt(userName: string = "the user") {
-  return `You are the personal operations assistant for ${userName} at FlameSafe Fire Protection, Rydalmere NSW.
+  return `You are AIDE, the personal operations assistant for ${userName}, based in Rydalmere NSW.
 
 BUSINESS CONTEXT:
-- FlameSafe is a fire protection company in NSW, Australia
+- Fire protection operations in NSW, Australia
 - The user manages the Electrical Services / Dry Fire division
 - Primary system: Uptick (field service management)
 - Standards: AS 1851-2012, AS 1670.1-2018, AS 1670.4-2018
@@ -286,8 +286,20 @@ router.post("/anthropic/conversations/:id/messages", async (req, res) => {
   let fullResponse = "";
   let clientDisconnected = false;
 
+  // SSE heartbeat — see chat-agent.ts + Pass 5 §3.3 for rationale.
+  const heartbeat = setInterval(() => {
+    if (res.writableEnded) return;
+    try {
+      res.write(`: heartbeat ${Date.now()}\n\n`);
+    } catch { /* socket dead */ }
+  }, 15_000);
+
   // Abort the LLM stream if the client disconnects (saves tokens + avoids writes to closed socket)
-  req.on("close", () => { clientDisconnected = true; });
+  req.on("close", () => {
+    clientDisconnected = true;
+    clearInterval(heartbeat);
+  });
+  res.on("close", () => clearInterval(heartbeat));
 
   try {
     const stream = anthropic.messages.stream({

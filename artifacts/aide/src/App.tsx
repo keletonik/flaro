@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 // Lazy-loaded pages for code splitting
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Chat = lazy(() => import("@/pages/chat"));
+const PA = lazy(() => import("@/pages/pa"));
 const Jobs = lazy(() => import("@/pages/jobs"));
 const Notes = lazy(() => import("@/pages/notes"));
 const Toolbox = lazy(() => import("@/pages/toolbox"));
@@ -19,18 +20,24 @@ const Projects = lazy(() => import("@/pages/projects"));
 const Operations = lazy(() => import("@/pages/operations"));
 const Suppliers = lazy(() => import("@/pages/suppliers"));
 const Analytics = lazy(() => import("@/pages/analytics"));
+const Metrics = lazy(() => import("@/pages/metrics"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const PM = lazy(() => import("@/pages/pm"));
+const FIP = lazy(() => import("@/pages/fip"));
 const NotFound = lazy(() => import("@/pages/not-found"));
-const LoginPage = lazy(() => import("@/pages/login"));
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
-  Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal, Settings2
+  Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal, Settings2,
+  Shield
 } from "lucide-react";
+import AidePA from "@/components/AidePA";
+import AIDEAssistant from "@/components/AIDEAssistant";
+import CommandPalette from "@/components/CommandPalette";
+import { KeyboardCheatSheet } from "@/components/KeyboardCheatSheet";
 import { AideFavicon, AideWordmark } from "@/components/AideLogo";
 
-const SidebarContext = createContext({ collapsed: false, setCollapsed: (_: boolean) => {} });
+const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>> }>({ collapsed: false, setCollapsed: () => {} });
 function useSidebar() { return useContext(SidebarContext); }
 
 const queryClient = new QueryClient({
@@ -44,15 +51,16 @@ const navGroups = [
     label: "Command",
     items: [
       { path: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
-      { path: "/chat", icon: MessageCircle, label: "Chat" },
+      { path: "/pa", icon: MessageCircle, label: "PA" },
       { path: "/operations", icon: BarChart3, label: "Operations" },
       { path: "/analytics", icon: PieChart, label: "Analytics" },
+      { path: "/metrics", icon: BarChart3, label: "Metrics" },
     ],
   },
   {
     label: "Manage",
     items: [
-      { path: "/jobs", icon: Briefcase, label: "Action List" },
+      { path: "/jobs", icon: Briefcase, label: "WIPs" },
       { path: "/todos", icon: CheckSquare, label: "Tasks" },
       { path: "/projects", icon: FolderKanban, label: "Projects" },
       { path: "/suppliers", icon: Package, label: "Suppliers" },
@@ -64,6 +72,7 @@ const navGroups = [
       { path: "/schedule", icon: CalendarDays, label: "Schedule" },
       { path: "/notes", icon: FileText, label: "Notes" },
       { path: "/toolbox", icon: Wrench, label: "Toolbox" },
+      { path: "/fip", icon: Shield, label: "FIP Knowledge" },
       { path: "/settings", icon: Settings2, label: "Settings" },
     ],
   },
@@ -148,7 +157,7 @@ function SidebarNav() {
           {!collapsed && (
             <div className="flex flex-col">
               <AideWordmark color="#22d3ee" height={16} />
-              <span className="text-sidebar-foreground/30 text-[9px] font-medium tracking-wider uppercase mt-0.5">FlameSafe Ops</span>
+              <span className="text-sidebar-foreground/30 text-[9px] font-medium tracking-wider uppercase mt-0.5">Service Ops</span>
             </div>
           )}
         </button>
@@ -207,9 +216,9 @@ function SidebarNav() {
             "flex items-center rounded-lg transition-all duration-200 text-sidebar-foreground/30 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
             collapsed ? "w-9 h-9 justify-center" : "gap-2.5 px-3 py-2 w-full text-xs"
           )}
-          title={collapsed ? "Expand" : "Collapse"}
+          title={collapsed ? "Expand (Cmd+\\)" : "Collapse (Cmd+\\)"}
         >
-          {collapsed ? <ChevronRight size={14} /> : <><ChevronLeft size={14} /><span className="text-[11px]">Collapse</span></>}
+          {collapsed ? <ChevronRight size={14} /> : <><ChevronLeft size={14} /><span className="text-[11px]">Collapse</span><span className="ml-auto text-[9px] opacity-60 font-mono">⌘\</span></>}
         </button>
       </div>
     </aside>
@@ -219,7 +228,7 @@ function SidebarNav() {
 function BottomNav() {
   const [location, setLocation] = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
-  const PRIMARY_PATHS = ["/", "/chat", "/operations", "/analytics"];
+  const PRIMARY_PATHS = ["/", "/pa", "/operations", "/analytics"];
   const primaryItems = allNavItems.filter(i => PRIMARY_PATHS.includes(i.path));
   const moreItems = allNavItems.filter(i => !PRIMARY_PATHS.includes(i.path));
 
@@ -268,14 +277,36 @@ function BottomNav() {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const { collapsed } = useSidebar();
+  const { collapsed, setCollapsed } = useSidebar();
+  const [location] = useLocation();
   return (
     <div className="min-h-screen bg-background">
       <SidebarNav />
+      {/* Floating expand affordance on the left edge when the sidebar
+          is collapsed. Desktop-only. Gives the operator a visible way
+          back to the nav without having to hunt for the tiny chevron. */}
+      {collapsed && (
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          className="hidden md:flex fixed left-[68px] top-4 z-20 items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform"
+          title="Expand sidebar (⌘\\)"
+        >
+          <ChevronRight size={14} />
+        </button>
+      )}
       <div className={cn("pb-16 md:pb-0 min-h-screen transition-all duration-300", collapsed ? "md:ml-[60px]" : "md:ml-[210px]")}>
         {children}
       </div>
       <BottomNav />
+      {/* Unified tool-use AI surface — replaces AidePA / AnalyticsPanel mounts.
+          Uses /chat/agent under the hood so it can actually take action on
+          every page, not just describe data. See docs/audit/PASS_2_ux.md
+          target 1 and docs/FULL_AUDIT_REBUILD_PROMPT.md Phase 2. */}
+      {location !== "/chat" && location !== "/pa" && <AIDEAssistant />}
+      {/* Global Cmd-K command palette. Navigate, create, or ask AIDE. */}
+      <CommandPalette />
+      <KeyboardCheatSheet />
     </div>
   );
 }
@@ -316,9 +347,14 @@ function Router() {
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/"><Dashboard /></Route>
+          <Route path="/pa"><PA /></Route>
+          {/* /chat is kept as the legacy read-only viewer for the
+              historical anthropic_conversations rows. The new PA
+              surface lives at /pa. */}
           <Route path="/chat"><Chat /></Route>
           <Route path="/operations"><Operations /></Route>
           <Route path="/analytics"><Analytics /></Route>
+          <Route path="/metrics"><Metrics /></Route>
           <Route path="/schedule"><Schedule /></Route>
           <Route path="/jobs"><Jobs /></Route>
           <Route path="/jobs/:id"><JobDetail /></Route>
@@ -327,6 +363,7 @@ function Router() {
           <Route path="/projects"><PM /></Route>
           <Route path="/toolbox"><Toolbox /></Route>
           <Route path="/suppliers"><Suppliers /></Route>
+          <Route path="/fip"><FIP /></Route>
           <Route path="/settings"><SettingsPage /></Route>
           <Route><NotFound /></Route>
         </Switch>
@@ -336,8 +373,42 @@ function Router() {
   );
 }
 
+const SIDEBAR_COLLAPSED_KEY = "aide-sidebar-collapsed";
+
 function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+  // Persist collapsed state across refreshes (localStorage). Default to
+  // false on first load, but if the operator collapsed the sidebar last
+  // session we restore that state so their preference sticks.
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      if (typeof window === "undefined") return false;
+      return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  // Mirror state to localStorage whenever it changes.
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+      }
+    } catch { /* ignore quota / disabled storage */ }
+  }, [collapsed]);
+
+  // Global keyboard shortcut: Cmd/Ctrl + \ toggles the sidebar.
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
+        e.preventDefault();
+        setCollapsed((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return <SidebarContext.Provider value={{ collapsed, setCollapsed }}>{children}</SidebarContext.Provider>;
 }
 
@@ -347,48 +418,13 @@ const AuthContext = createContext<{ user: AuthUser | null; token: string | null;
 export function useAuth() { return useContext(AuthContext); }
 
 function App() {
-  const [authToken, setAuthToken] = useState<string | null>(() => localStorage.getItem("ops-auth-token"));
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
+  const defaultUser: AuthUser = { id: "default", username: "casper", displayName: "Casper Tavitian", role: "admin" };
 
-  // Check existing token on mount
-  React.useEffect(() => {
-    const token = localStorage.getItem("ops-auth-token");
-    if (!token) { setAuthChecked(true); return; }
-    fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(user => { setAuthUser(user); setAuthToken(token); setAuthChecked(true); })
-      .catch(() => { localStorage.removeItem("ops-auth-token"); setAuthChecked(true); });
-  }, []);
-
-  const handleLogin = (token: string, user: any) => {
-    localStorage.setItem("ops-auth-token", token);
-    setAuthToken(token);
-    setAuthUser(user);
-  };
-
-  const handleLogout = () => {
-    if (authToken) fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${authToken}` } }).catch(() => {});
-    localStorage.removeItem("ops-auth-token");
-    setAuthToken(null);
-    setAuthUser(null);
-  };
-
-  if (!authChecked) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-
-  if (!authUser) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<div />}>
-          <LoginPage onLogin={handleLogin} />
-        </Suspense>
-      </ThemeProvider>
-    );
-  }
+  const handleLogout = () => {};
 
   return (
     <ThemeProvider>
-      <AuthContext.Provider value={{ user: authUser, token: authToken, logout: handleLogout }}>
+      <AuthContext.Provider value={{ user: defaultUser, token: null, logout: handleLogout }}>
       <SidebarProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>

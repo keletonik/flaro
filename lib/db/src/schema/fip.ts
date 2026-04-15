@@ -69,6 +69,42 @@ export const fipModels = pgTable("fip_models", {
   yearsActive: text("years_active"),
   status: text("status").$type<"current" | "legacy" | "superseded" | "discontinued">().default("current"),
   imageChecksum: text("image_checksum"),
+  // ── Deep technical spec (FIP Command Centre rebuild, fip-v2.0) ──
+  maxLoops: integer("max_loops"),
+  devicesPerLoop: integer("devices_per_loop"),
+  loopProtocol: text("loop_protocol"),
+  networkCapable: boolean("network_capable"),
+  maxNetworkedPanels: integer("max_networked_panels"),
+  batteryStandbyAh: numeric("battery_standby_ah", { precision: 6, scale: 2 }),
+  batteryAlarmAh: numeric("battery_alarm_ah", { precision: 6, scale: 2 }),
+  recommendedBatterySize: text("recommended_battery_size"),
+  configOptions: jsonb("config_options").$type<Array<{ label: string; value: string; notes?: string }>>(),
+  approvals: jsonb("approvals").$type<string[]>(),
+  commissioningNotes: text("commissioning_notes"),
+  typicalPriceBand: text("typical_price_band"),
+  heroImage: text("hero_image"),
+  // ── FIP v2.1 deep spec expansion (April 2026) ──
+  dimensionsMm: text("dimensions_mm"),                      // "W x H x D" e.g. "440 x 620 x 130"
+  weightKg: numeric("weight_kg", { precision: 6, scale: 2 }),
+  ipRating: text("ip_rating"),                              // e.g. "IP30"
+  operatingTempC: text("operating_temp_c"),                 // e.g. "-5 to +40"
+  operatingHumidityPct: text("operating_humidity_pct"),     // e.g. "5-95 non-condensing"
+  mainsSupply: text("mains_supply"),                        // e.g. "230 VAC 50 Hz"
+  psuOutputA: numeric("psu_output_a", { precision: 6, scale: 2 }),  // e.g. 5.0
+  auxCurrentBudgetMa: integer("aux_current_budget_ma"),     // available 24V aux mA
+  maxZones: integer("max_zones"),
+  relayOutputs: integer("relay_outputs"),
+  supervisedNacs: integer("supervised_nacs"),
+  ledMimicChannels: integer("led_mimic_channels"),
+  lcdLines: integer("lcd_lines"),
+  eventLogCapacity: integer("event_log_capacity"),
+  causeEffectSupport: boolean("cause_effect_support"),
+  warrantyYears: integer("warranty_years"),
+  remoteAccess: text("remote_access"),                      // e.g. "USB + Ethernet (via config tool)"
+  loopCableSpec: text("loop_cable_spec"),                   // e.g. "2-core 1.5 mm² fire-rated, max 1500 m, max 44 Ω loop"
+  spareDraftingText: text("spare_drafting_text"),           // free-form notes for the datasheet block
+  datasheetUrl: text("datasheet_url"),
+  sourceNotes: text("source_notes"),                        // where the deep spec came from
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -77,6 +113,41 @@ export const fipModels = pgTable("fip_models", {
   index("fip_model_manufacturer_idx").on(t.manufacturerId),
   index("fip_model_slug_idx").on(t.slug),
   index("fip_model_deleted_idx").on(t.deletedAt),
+]);
+
+/**
+ * fip_common_products — commonly-purchased fire-protection items.
+ *
+ * Not a replacement for the supplier catalogue (that lives in
+ * supplier_products). This is a curated list of everyday items the
+ * technician references repeatedly — smoke heads, heat heads, MCPs,
+ * sounders, strobes, bases, isolators, batteries — with manufacturer,
+ * part code, unit, and an indicative price band. Unknown prices are
+ * left as N/A rather than invented.
+ */
+export const fipCommonProducts = pgTable("fip_common_products", {
+  id: text("id").primaryKey(),
+  category: text("category").notNull().$type<"smoke" | "heat" | "flame" | "mcp" | "sounder" | "strobe" | "base" | "isolator" | "module" | "battery" | "cable" | "other">(),
+  name: text("name").notNull(),
+  manufacturer: text("manufacturer"),
+  partCode: text("part_code"),
+  description: text("description"),
+  unit: text("unit").$type<"each" | "m" | "pack">().default("each"),
+  priceBand: text("price_band").$type<"$" | "$$" | "$$$" | "N/A">().default("N/A"),
+  indicativePriceAud: numeric("indicative_price_aud", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  // v2.1 — list of fip_models.slug strings this product is
+  // compatible with. Empty/null means universal (e.g. a 12V SLA
+  // battery works on any panel). Used to filter the Common Products
+  // card by the selected panel in the command centre.
+  compatiblePanelSlugs: jsonb("compatible_panel_slugs").$type<string[]>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (t) => [
+  index("fip_common_products_category_idx").on(t.category),
+  index("fip_common_products_manufacturer_idx").on(t.manufacturer),
+  index("fip_common_products_deleted_idx").on(t.deletedAt),
 ]);
 
 export const fipComponents = pgTable("fip_components", {
@@ -96,6 +167,59 @@ export const fipComponents = pgTable("fip_components", {
   index("fip_component_kind_idx").on(t.kind),
   index("fip_component_partnumber_idx").on(t.partNumber),
   index("fip_component_deleted_idx").on(t.deletedAt),
+]);
+
+// ───────────────────────────────────────────────────────────────────────────
+// 1b. Detector type reference library (Pass FIP-R1)
+// ───────────────────────────────────────────────────────────────────────────
+// Master-level technical content per detector technology. Exists
+// independently of the manufacturer hierarchy so an installer can look up
+// "what's a photoelectric smoke detector, where can I use it, what AS
+// standards apply" without first knowing the brand.
+
+export const fipDetectorTypes = pgTable("fip_detector_types", {
+  id: text("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  /** smoke | heat | flame | gas | aspirating | beam | duct | multi | manual_call_point | linear */
+  category: text("category").notNull(),
+  /** short 1-line summary for list views */
+  summary: text("summary").notNull(),
+  /** how the detector physically senses the alarm condition */
+  operatingPrinciple: text("operating_principle").notNull(),
+  /** markdown block describing sensing technology in depth */
+  sensingTechnology: text("sensing_technology").notNull(),
+  /** markdown-ish list of typical applications / occupancies */
+  typicalApplications: jsonb("typical_applications").$type<string[]>().notNull(),
+  /** markdown-ish list of unsuitable applications and why */
+  unsuitableApplications: jsonb("unsuitable_applications").$type<string[]>().notNull(),
+  /** installation requirements — spacing, height, environment */
+  installationRequirements: text("installation_requirements").notNull(),
+  /** common failure modes with symptoms + likely causes */
+  failureModes: jsonb("failure_modes").$type<Array<{ mode: string; symptom: string; cause: string; action: string }>>().notNull(),
+  /** routine test procedure steps */
+  testProcedure: text("test_procedure").notNull(),
+  /** cleaning / maintenance interval and procedure */
+  maintenance: text("maintenance").notNull(),
+  /** Australian standards references with clause numbers */
+  standardsRefs: jsonb("standards_refs").$type<Array<{ code: string; clause?: string; note: string }>>().notNull(),
+  /** example models from supported manufacturers with part numbers */
+  exampleModels: jsonb("example_models").$type<Array<{ manufacturer: string; model: string; partNumber?: string; notes?: string }>>().notNull(),
+  /** expected life span in years */
+  lifeSpanYears: integer("life_span_years"),
+  /** cost band — "$" | "$$" | "$$$" — rough order for planning */
+  costBand: text("cost_band"),
+  /** whether it requires any special addressable protocol support */
+  addressable: boolean("addressable"),
+  /** image URL for the detector icon / hero (optional) */
+  heroImage: text("hero_image"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (t) => [
+  index("fip_detector_types_slug_idx").on(t.slug),
+  index("fip_detector_types_category_idx").on(t.category),
+  index("fip_detector_types_deleted_idx").on(t.deletedAt),
 ]);
 
 // ───────────────────────────────────────────────────────────────────────────

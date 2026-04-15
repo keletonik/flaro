@@ -1,6 +1,20 @@
+/**
+ * GET /api/kpi/metrics — aggregate bento-block numbers for the dashboard.
+ *
+ * CANONICAL NUMBERS: fields marked "// via metric registry" below read
+ * from `lib/metrics/*` instead of re-aggregating here. The hand-rolled
+ * rollups are kept for the fields that don't yet have a named metric
+ * (overview counts, wip byTech, quotes byStatus) — those will migrate
+ * across as Pass 4 proceeds.
+ *
+ * See docs/audit/PASS_4_analytics.md §3.1 for why "revenue this month"
+ * used to be computed three different ways and why it must not be.
+ */
+
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, pool } from "@workspace/db";
 import { jobs, wipRecords, quotes, defects, invoices, todos } from "@workspace/db";
+import { computeMetric } from "../lib/metrics/registry";
 
 const router = Router();
 
@@ -40,8 +54,18 @@ router.get("/kpi/metrics", async (req, res, next) => {
     const outstandingInvoices = allInvoices.filter(i => i.status === "Sent" || i.status === "Overdue");
     const overdueInvoices = allInvoices.filter(i => i.status === "Overdue");
     const outstandingTotal = outstandingInvoices.reduce((sum, i) => sum + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
-    const paidThisMonth = allInvoices.filter(i => i.status === "Paid" && i.datePaid && new Date(i.datePaid) >= monthStart);
-    const revenueThisMonth = paidThisMonth.reduce((sum, i) => sum + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
+    // Canonical revenue-this-month comes from the metric registry.
+    // Falls back to the legacy hand-rolled sum only if the registry
+    // call errors — should never happen, but keeps the dashboard
+    // resilient while we migrate the other fields across.
+    let revenueThisMonth = 0;
+    try {
+      const mtdMetric = await computeMetric(pool as any, "revenue_vs_target_mtd", { period: "mtd" });
+      revenueThisMonth = mtdMetric.headline ?? 0;
+    } catch (e) {
+      const paidThisMonth = allInvoices.filter(i => i.status === "Paid" && i.datePaid && new Date(i.datePaid) >= monthStart);
+      revenueThisMonth = paidThisMonth.reduce((sum, i) => sum + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
+    }
     const revenueThisWeek = allInvoices.filter(i => i.status === "Paid" && i.datePaid && new Date(i.datePaid) >= weekStart)
       .reduce((sum, i) => sum + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
 

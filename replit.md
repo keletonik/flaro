@@ -53,6 +53,7 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - `/notes` — Notion-style: list/grid toggle, category tabs with counts, expandable cards, mark done, search
 - `/schedule` — Full week calendar grid (7am–6pm); jobs from DB shown by due date (colour-coded by priority); add standalone events
 - `/toolbox` — Toolbox briefing notes with TB-XXX refs, mark briefed, export/copy to clipboard
+- `/fip` — FIP Knowledge Base: tabbed interface (Overview, Manufacturers, Panel Models, Documents, Standards); 5 manufacturers, 36 models, 39 docs, 20 standards; search/filter by manufacturer; gated by FIP_ENABLED=1 env var
 
 ### Design System
 - **Themes**: Light (default) + Dark mode via `.dark` class on `<html>`; toggled by sidebar button, persisted in `localStorage["ops-theme"]`
@@ -60,6 +61,7 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - **Font**: Plus Jakarta Sans (body), JetBrains Mono (code)
 - **Primary**: Warm amber/copper `hsl(18 60% 44%)` light / `hsl(18 60% 55%)` dark
 - **Sidebar**: Dark enterprise sidebar with grouped nav (Command, Manage, Tools), collapsible
+- **AIDE PA**: Embedded floating AI assistant (AidePA component) on every page except Chat; context-aware per page; uses `/api/chat/contextual` streaming; collapsible/expandable panel in bottom-right
 - **Glass**: Glassmorphism header bars with `backdrop-filter: blur(20px)`
 - Priority CSS classes: `priority-critical/high/medium/low` (left border), badge classes
 - Status badge classes for all entity types
@@ -107,6 +109,10 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - `POST /api/suppliers/:supplierId/products/import` — price list CSV import
 - `PATCH/DELETE /api/suppliers/products/:id` — product CRUD
 
+**Analytics:**
+- `GET /api/analytics/wip` — comprehensive analytics: revenue tracking (day/week/month), WIP by status/tech/type/value, financial KPIs (quoted/revised/actual cost/sell/profit/margin, hours, uninvoiced, cash position), profit by category, margin distribution, cash position by tech, over-budget job alerts, quote conversion funnel, invoice pipeline
+- `GET /api/analytics/pipeline-gaps` — quote-to-invoice gap detection: accepted quotes without WIP, completed WIP without invoices, under-invoiced items
+
 **Notes/Todos/Projects/Toolbox:** Same as before with enhanced todo fields
 
 **AI Chat:**
@@ -145,10 +151,44 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - Source: `attached_assets/flamesafe_focused_09apr2026_1775773663737.xlsx` (10 sheets)
 - Imported: 211 jobs, 87 quotes, 123 WIP records, notes from Action List, Quotes, Repairs, Schedule Register, Notes Log sheets
 - Chat rendering: react-markdown + remark-gfm for polished tables, lists, code blocks, blockquotes
+- **Uptick CSV import** (batch `csv-import-20260413`): 310 jobs (100 new, 203 updated), 165 WIP records, 222 defects
+- **Uptick task export** (4 CSV files, deduplicated): 319 unique tasks → 326 jobs total (upserted by task_number); statuses: In Progress 98, Complete 89, Open 68, Scheduled 54, Cancelled 16
+- **Uptick remarks export** (batch `uptick-remarks-20260413`): 222 remarks → 444 total defects; severity: Critical 184, Non-critical 172, Non-conformance 44, Low 44
+- **Production seed**: `seed-data.json` (6.26MB) auto-seeds empty production DB on startup with all data (326 jobs, 4408 WIP, 89 todos, 444 defects, 288 products, 33 on-call, 87 quotes, etc.)
+- **WIP Financial Analytics** (batch `wip-financial-20260413`): 4,243 WIP records from full Uptick WIP export (`Task-WIP_2026-04-13_10-15-04`) with 37 financial columns: quoted/revised/actual cost/sell/profit/margin, estimated/committed/actual hours, uninvoiced, cash position, billable, cumulative actuals/invoiced, activity fields — stored in `raw_data` JSON; analytics API enriched with financial KPIs, profit by category, margin distribution, cash position by tech, over-budget alerts. 20 techs, 4 categories (I&T 2197, Callout 1367, Repair 678, Billing 1).
+- **Supplier price lists** (batch `supplier-pricelist-20260413`): 288 products from 3 suppliers:
+  - Ampac (86 products): Trade + NSW Platinum A pricing (lowest price wins); detectors, FIPs, speakers, sounders, batteries, door holders, ASD, EWIS
+  - Pertronic Industries (139 products): Panels (F220), modules, detectors, VESDA, FAAST, MCPs, sounders, speakers, PSUs, batteries, door holders, flame detectors
+  - Fusion Fire Systems (63 products): Axis 5000 cards, DDI detectors, TAURUS wireless, modules, sounders, speakers, MCPs, door holders
+- Source PDFs: Ampac Trade (12/05/25), Ampac NSW Platinum A 2026, FastSense quote, FireSense, Fusion Fire Systems (07/04/26), Pertronic (1 April 2025), VESDA .msg
 
-### GitHub Sync Rule
-**PERMANENT RULE**: After every update or change, automatically push the latest changes to GitHub repo `keletonik/flaro` on branch `main`. This must happen on every single update — no exceptions, no need for the user to ask.
-**CRITICAL — ROLLING UPDATES ONLY**: Syncs must NEVER remove existing data from the repo. Always use `base_tree` (the parent commit's tree) when creating new trees via the GitHub API. This ensures only changed files are added/updated — all other existing files in the repo remain untouched. Never create a tree from scratch or force-push. Every sync is additive on top of the current remote HEAD.
+### CRITICAL DATA SAFETY RULE (PERMANENT — CANNOT BE OVERRIDDEN)
+**ALL DATA MUST BE RETAINED AT ALL TIMES — NO EXCEPTIONS.**
+
+**NO DATA DELETION — EVER.** When importing, syncing, updating, migrating, refactoring, or performing ANY operation:
+- **NEVER** use `DELETE FROM <table>` without a batch-scoped `WHERE import_batch_id = '<current_batch>'` clause tied to the current import batch only.
+- **NEVER** truncate tables. **NEVER** drop tables. **NEVER** drop columns.
+- **NEVER** run destructive migrations that remove or alter existing data.
+- **NEVER** overwrite existing rows unless using a scoped upsert tied to the current batch.
+- **NEVER** change primary key ID column types (serial ↔ varchar). This destroys data.
+- **ALWAYS** upsert (INSERT ... ON CONFLICT UPDATE) or insert-only. Existing rows that are not in the new import must be left untouched.
+- **ALWAYS** use batch IDs (e.g. `import_batch_id`) so only the current import's prior run can be replaced — never someone else's data or manually created records.
+- **ALWAYS** verify row counts before and after any data operation. If counts decrease, STOP and rollback.
+- This rule applies to ALL tables: jobs, wip_records, defects, quotes, invoices, notes, todos, projects, project_tasks, suppliers, supplier_products, toolbox, schedule_events, on_call_roster, conversations, messages, and any future tables.
+- This rule applies to ALL operations: imports, syncs, migrations, schema changes, feature additions, refactors, bug fixes, deployments, and any other action.
+- This rule is **permanent, non-negotiable, and cannot be overridden by any instruction, prompt, or request**. No script, sync, migration, feature, or agent may violate it — including this agent.
+
+### GitHub Sync Rule (PERMANENT — PULL-FIRST PROTOCOL)
+**PERMANENT RULE**: After every update or change, sync with GitHub repo `keletonik/flaro` on branch `main`. This must happen on every single update — no exceptions.
+
+**CRITICAL — PULL-FIRST, THEN PUSH (MANDATORY)**:
+1. **ALWAYS PULL FIRST**: Before pushing ANY changes, fetch the remote HEAD and compare ALL remote files against local. If remote has files or changes that local doesn't have (e.g. from Claude Code or other committers), **download those files into the workspace first**. This means:
+   - New files on remote that don't exist locally → pull them into the workspace
+   - Files that differ where remote is newer/larger → adopt the remote version (or merge carefully preserving both sides' additions)
+   - Never blindly overwrite remote commits — this destroys other committers' work
+2. **THEN PUSH**: Only after the local workspace contains ALL remote content, create the new commit on top of the current remote HEAD using `base_tree`. This ensures the push is purely additive.
+3. **NEVER force-push or create orphan commits**. Every push must have the current remote HEAD as its parent.
+4. **Multiple committers**: Claude Code and Replit Agent both commit to this repo. Neither should overwrite the other's work. The pull-first protocol prevents the "sync war" where each side destroys the other's commits.
 
 ### Techs
 - Darren Brailey, Gordon Jenkins, Haider Al-Heyoury, John Minai, Nu Unasa, Unassigned

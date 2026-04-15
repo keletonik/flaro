@@ -19,6 +19,8 @@ import {
   fipProductFamilies,
   fipModels,
   fipComponents,
+  fipDetectorTypes,
+  fipCommonProducts,
   fipDocuments,
   fipDocumentVersions,
   fipDocumentSections,
@@ -36,7 +38,7 @@ import {
   fipAuditRuns,
 } from "@workspace/db";
 import { composeAnswer, type FaultLike, type GenerationMode } from "../lib/fip/retrieval";
-import { getIdentifier } from "../lib/fip/identification";
+import { getIdentifier, getIdentifierAsync } from "../lib/fip/identification";
 import { buildEstimate, buildEscalationPack } from "../lib/fip/estimation";
 import { parseBinaryInput, sha256 } from "../lib/fip/storage";
 import { runAllAudits, type AuditContext } from "../lib/fip/audits";
@@ -44,7 +46,7 @@ import { runAllAudits, type AuditContext } from "../lib/fip/audits";
 const router = Router();
 
 function fipEnabled(): boolean {
-  return process.env["FIP_ENABLED"] === "1";
+  return process.env["FIP_ENABLED"] !== "0";
 }
 
 function gate(res: any): boolean {
@@ -184,6 +186,215 @@ router.post("/fip/components", async (req, res, next) => {
       partNumber: partNumber ?? null, description: description ?? null, specs: specs ?? null,
     }).returning();
     res.status(201).json(serializeDates(row));
+  } catch (err) { next(err); }
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// FIP v2.0 Command Centre endpoints
+// ───────────────────────────────────────────────────────────────────────────
+
+// GET /fip/panels — list every model with its deep spec (for the dropdown)
+router.get("/fip/panels", async (_req, res, next) => {
+  if (!gate(res)) return;
+  try {
+    const rows = await db
+      .select()
+      .from(fipModels)
+      .where(isNull(fipModels.deletedAt))
+      .orderBy(fipModels.name);
+    const result = rows.map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      modelNumber: r.modelNumber,
+      description: r.description,
+      manufacturerId: r.manufacturerId,
+      familyId: r.familyId,
+      status: r.status,
+      maxLoops: r.maxLoops,
+      devicesPerLoop: r.devicesPerLoop,
+      loopProtocol: r.loopProtocol,
+      networkCapable: r.networkCapable,
+      maxNetworkedPanels: r.maxNetworkedPanels,
+      batteryStandbyAh: r.batteryStandbyAh ? Number(r.batteryStandbyAh) : null,
+      batteryAlarmAh: r.batteryAlarmAh ? Number(r.batteryAlarmAh) : null,
+      recommendedBatterySize: r.recommendedBatterySize,
+      configOptions: r.configOptions,
+      approvals: r.approvals,
+      commissioningNotes: r.commissioningNotes,
+      typicalPriceBand: r.typicalPriceBand,
+      dimensionsMm: r.dimensionsMm,
+      weightKg: r.weightKg ? Number(r.weightKg) : null,
+      ipRating: r.ipRating,
+      operatingTempC: r.operatingTempC,
+      operatingHumidityPct: r.operatingHumidityPct,
+      mainsSupply: r.mainsSupply,
+      psuOutputA: r.psuOutputA ? Number(r.psuOutputA) : null,
+      auxCurrentBudgetMa: r.auxCurrentBudgetMa,
+      maxZones: r.maxZones,
+      relayOutputs: r.relayOutputs,
+      supervisedNacs: r.supervisedNacs,
+      ledMimicChannels: r.ledMimicChannels,
+      lcdLines: r.lcdLines,
+      eventLogCapacity: r.eventLogCapacity,
+      causeEffectSupport: r.causeEffectSupport,
+      warrantyYears: r.warrantyYears,
+      remoteAccess: r.remoteAccess,
+      loopCableSpec: r.loopCableSpec,
+      datasheetUrl: r.datasheetUrl,
+      sourceNotes: r.sourceNotes,
+    }));
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+// GET /fip/common-products — curated everyday items catalogue
+//
+// v2.1 changes:
+//   - ?panelSlug= filter — only return products compatible with the
+//     given panel (matched against compatible_panel_slugs jsonb, null
+//     means universal / always included).
+//   - Joins supplier_products by part_code to surface live supplier
+//     pricing from the operator's own catalogue. Each product now
+//     carries an optional `supplierMatches` array with
+//     { supplier_name, product_code, unit_price, cost_price }.
+router.get("/fip/common-products", async (req, res, next) => {
+  if (!gate(res)) return;
+  try {
+    const { category, search, panelSlug } = req.query as Record<string, string | undefined>;
+    const conds: any[] = [isNull(fipCommonProducts.deletedAt)];
+    if (category) conds.push(eq(fipCommonProducts.category, category as any));
+    const rows = await db
+      .select()
+      .from(fipCommonProducts)
+      .where(and(...conds))
+      .orderBy(fipCommonProducts.category, fipCommonProducts.name);
+
+    // Text search (in-memory — catalogue is small, < 200 rows)
+    const searchFiltered = search
+      ? rows.filter((r) => {
+          const q = search.toLowerCase();
+          return (
+            r.name.toLowerCase().includes(q) ||
+            (r.manufacturer ?? "").toLowerCase().includes(q) ||
+            (r.partCode ?? "").toLowerCase().includes(q) ||
+            (r.description ?? "").toLowerCase().includes(q)
+          );
+        })
+      : rows;
+
+    // Panel compatibility filter — universal (null or empty) always wins
+    const panelFiltered = panelSlug
+      ? searchFiltered.filter((r) => {
+          const list = (r.compatiblePanelSlugs ?? null) as string[] | null;
+          if (!list || list.length === 0) return true; // universal
+          return list.includes(panelSlug);
+        })
+      : searchFiltered;
+
+    // Supplier price cross-reference. For every product with a part_code
+    // we look up every supplier_products row whose product_code matches
+    // (case-insensitive). This gives the operator live pricing from
+    // their own uploaded supplier catalogue.
+    const partCodes = panelFiltered
+      .map((r) => r.partCode)
+      .filter((c): c is string => !!c && c.length > 0);
+    const supplierByCode = new Map<string, any[]>();
+    if (partCodes.length > 0) {
+      // Import supplier_products + pool lazily so we don't fail if
+      // the operator's workspace hasn't loaded the estimation pack.
+      try {
+        const { supplierProducts } = await import("@workspace/db");
+        const { ilike: _ilike, or: _or } = await import("drizzle-orm");
+        // Case-insensitive IN-style match — build an OR clause. Cap
+        // at 100 codes to keep the query shape sensible.
+        const cap = partCodes.slice(0, 100);
+        const orClauses = cap.map((code) => _ilike(supplierProducts.productCode, code));
+        const supplierRows = orClauses.length > 0
+          ? await db.select().from(supplierProducts).where(_or(...orClauses))
+          : [];
+        for (const sr of supplierRows as any[]) {
+          const key = (sr.productCode ?? "").toLowerCase();
+          if (!key) continue;
+          if (!supplierByCode.has(key)) supplierByCode.set(key, []);
+          supplierByCode.get(key)!.push({
+            id: sr.id,
+            supplierId: sr.supplierId,
+            supplierName: sr.supplierName ?? null,
+            productCode: sr.productCode,
+            unitPriceAud: sr.unitPrice != null ? Number(sr.unitPrice) : null,
+            costPriceAud: sr.costPrice != null ? Number(sr.costPrice) : null,
+            description: sr.description ?? null,
+          });
+        }
+      } catch {
+        // supplier_products table may not exist yet on a fresh deploy
+        // or the import may fail — fall through without crashing.
+      }
+    }
+
+    res.json(panelFiltered.map((r) => {
+      const key = (r.partCode ?? "").toLowerCase();
+      const supplierMatches = key ? supplierByCode.get(key) ?? [] : [];
+      // Pick the cheapest supplier unit price as the "live" headline
+      // price. Fallback to the indicative price band constant.
+      const liveCheapest = supplierMatches
+        .filter((s) => s.unitPriceAud != null)
+        .sort((a, b) => a.unitPriceAud - b.unitPriceAud)[0];
+      return {
+        id: r.id,
+        category: r.category,
+        name: r.name,
+        manufacturer: r.manufacturer,
+        partCode: r.partCode,
+        description: r.description,
+        unit: r.unit,
+        priceBand: r.priceBand,
+        indicativePriceAud: r.indicativePriceAud ? Number(r.indicativePriceAud) : null,
+        notes: r.notes,
+        compatiblePanelSlugs: r.compatiblePanelSlugs ?? null,
+        // Live supplier data
+        supplierMatches,
+        livePriceAud: liveCheapest?.unitPriceAud ?? null,
+        liveSupplierName: liveCheapest?.supplierName ?? null,
+      };
+    }));
+  } catch (err) { next(err); }
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// Detector type reference library (Pass FIP-R1)
+// ───────────────────────────────────────────────────────────────────────────
+
+router.get("/fip/detector-types", async (req, res, next) => {
+  if (!gate(res)) return;
+  try {
+    const { category, search } = req.query as Record<string, string | undefined>;
+    const conds: any[] = [isNull(fipDetectorTypes.deletedAt)];
+    if (category) conds.push(eq(fipDetectorTypes.category, category));
+    const rows = await db.select().from(fipDetectorTypes).where(and(...conds)).orderBy(fipDetectorTypes.name);
+    const filtered = search
+      ? rows.filter((r) => {
+          const q = search.toLowerCase();
+          return (
+            r.name.toLowerCase().includes(q) ||
+            r.summary.toLowerCase().includes(q) ||
+            r.sensingTechnology.toLowerCase().includes(q) ||
+            r.category.toLowerCase().includes(q)
+          );
+        })
+      : rows;
+    res.json(filtered.map(serializeDates));
+  } catch (err) { next(err); }
+});
+
+router.get("/fip/detector-types/:slug", async (req, res, next) => {
+  if (!gate(res)) return;
+  try {
+    const [row] = await db.select().from(fipDetectorTypes)
+      .where(and(isNull(fipDetectorTypes.deletedAt), eq(fipDetectorTypes.slug, req.params.slug)));
+    if (!row) { res.status(404).json({ error: "Detector type not found" }); return; }
+    res.json(serializeDates(row));
   } catch (err) { next(err); }
 });
 
@@ -434,7 +645,7 @@ router.post("/fip/sessions/:sessionId/images/:imageId/identify", async (req, res
     const [image] = await db.select().from(fipSessionImages)
       .where(eq(fipSessionImages.id, req.params.imageId));
     if (!image) { res.status(404).json({ error: "image not found" }); return; }
-    const identifier = getIdentifier();
+    const identifier = await getIdentifierAsync();
     const result = await identifier.identify({
       imageId: image.id,
       sessionId: image.sessionId,

@@ -1,10 +1,10 @@
 /**
- * FIP Command Centre — master-level rebuild (fip-v2.0).
+ * FIP Workbench — master-level rebuild (fip-v2.0).
  *
  * Layout:
  *   ┌─ top menu ──────────────────────────────────────────────────┐
- *   │  Command Centre · Detector Library · Manufacturers          │
- *   │                 · AS Standards · Documents                  │
+ *   │  Workbench · Detector Library · Manufacturers               │
+ *   │           · AS Standards · Documents                        │
  *   └─────────────────────────────────────────────────────────────┘
  *   ┌──────────┬──────────────────────────────────────────────────┐
  *   │          │ ┌─────────────────┐ ┌─────────────────┐          │

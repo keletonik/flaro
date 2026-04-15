@@ -554,28 +554,54 @@ async function seedPanelDeepSpecs(client: any): Promise<void> {
     return id;
   }
 
+  let rewrittenSlug = 0;
+
   for (const spec of PANEL_DEEP_SPEC_SEED) {
+    // 1. Exact slug match — re-runs of this seed land here.
     let modelRow = await client.query(
       "SELECT id FROM fip_models WHERE slug = $1 LIMIT 1",
       [spec.slug],
     );
     let modelId: string;
-    if (modelRow.rows.length === 0) {
-      // Model row doesn't exist — create it along with any missing
-      // manufacturer / family rows it depends on.
-      const mfrId = await findOrCreateManufacturer(spec.manufacturerName);
-      const familyId = await findOrCreatePlaceholderFamily(mfrId, spec.manufacturerName);
-      modelId = randomUUID();
-      await client.query(
-        `INSERT INTO fip_models
-         (id, family_id, manufacturer_id, name, slug, status, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, 'current', now(), now())`,
-        [modelId, familyId, mfrId, spec.displayName, spec.slug],
-      );
-      insertedNew++;
-    } else {
+    if (modelRow.rows.length > 0) {
       modelId = modelRow.rows[0].id;
       updatedExisting++;
+    } else {
+      // 2. Fuzzy slug-prefix match — the base seed pack uses ugly
+      // slugs like "pertronic-f220-f220-fire-system" for what we call
+      // "pertronic-f220". Catch those by checking for existing rows
+      // whose slug starts with our clean slug, then rewrite the slug
+      // in place so future runs find the row via the exact match
+      // above. This collapses the two duplicates the operator was
+      // seeing in the dropdown into a single canonical row.
+      const fuzzy = await client.query(
+        `SELECT id FROM fip_models
+         WHERE slug LIKE $1 || '-%' AND deleted_at IS NULL
+         ORDER BY created_at ASC
+         LIMIT 1`,
+        [spec.slug],
+      );
+      if (fuzzy.rows.length > 0) {
+        modelId = fuzzy.rows[0].id;
+        await client.query(
+          `UPDATE fip_models SET slug = $1, name = $2, updated_at = now() WHERE id = $3`,
+          [spec.slug, spec.displayName, modelId],
+        );
+        rewrittenSlug++;
+      } else {
+        // 3. Nothing found — create the row along with any missing
+        // manufacturer / family rows it depends on.
+        const mfrId = await findOrCreateManufacturer(spec.manufacturerName);
+        const familyId = await findOrCreatePlaceholderFamily(mfrId, spec.manufacturerName);
+        modelId = randomUUID();
+        await client.query(
+          `INSERT INTO fip_models
+           (id, family_id, manufacturer_id, name, slug, status, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, 'current', now(), now())`,
+          [modelId, familyId, mfrId, spec.displayName, spec.slug],
+        );
+        insertedNew++;
+      }
     }
 
     await client.query(
@@ -652,7 +678,7 @@ async function seedPanelDeepSpecs(client: any): Promise<void> {
     );
   }
   logger.info(
-    { table: "fip_models", updatedExisting, insertedNew, feature: "deep_spec" },
+    { table: "fip_models", updatedExisting, insertedNew, rewrittenSlug, feature: "deep_spec" },
     "fip seed",
   );
 }

@@ -474,23 +474,110 @@ async function seedStandardClauses(client: any): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Panel deep specs — patch existing fip_models rows with technical detail.
-// Natural key: slug. Runs after the base seed pack so the rows exist.
-// Idempotent: re-runs re-write the deep-spec columns without touching the
-// row's identity columns (id / created_at / status).
+// Panel deep specs — upsert rich technical detail onto fip_models.
+//
+// Natural key: slug. If the slug already exists (e.g. the base FIP seed
+// pack created the row), we UPDATE the deep-spec columns in place. If
+// the slug doesn't exist, we CREATE the fip_models row from scratch —
+// that also means finding/creating the fip_manufacturers row and a
+// placeholder fip_product_families row, because fip_models has
+// NOT NULL foreign keys on both.
+//
+// This is the fix for the silent-skip bug where deep specs were keyed
+// on clean slugs (pertronic-f220) but the base seed pack used ugly
+// slugs (pertronic-f220-f220-fire-system), causing every row to be
+// skipped and every datasheet field to render as "N/A" in the UI.
 // ─────────────────────────────────────────────────────────────────────────────
 async function seedPanelDeepSpecs(client: any): Promise<void> {
-  let updated = 0;
-  let skipped = 0;
+  let updatedExisting = 0;
+  let insertedNew = 0;
+  const mfrCache = new Map<string, string>();   // name-lower → mfr id
+  const famCache = new Map<string, string>();   // mfr id → family id
+
+  async function findOrCreateManufacturer(name: string): Promise<string> {
+    const key = name.toLowerCase();
+    const cached = mfrCache.get(key);
+    if (cached) return cached;
+    // Case-insensitive name lookup — matches "Pertronic" to an existing
+    // "pertronic" / "Pertronic Fire Systems" row from the base pack.
+    const live = await client.query(
+      "SELECT id FROM fip_manufacturers WHERE LOWER(name) = $1 OR slug = $2 LIMIT 1",
+      [key, slugify(name)],
+    );
+    if (live.rows.length > 0) {
+      mfrCache.set(key, live.rows[0].id);
+      return live.rows[0].id;
+    }
+    const id = randomUUID();
+    await client.query(
+      `INSERT INTO fip_manufacturers (id, name, slug, created_at, updated_at)
+       VALUES ($1, $2, $3, now(), now())`,
+      [id, name, slugify(name)],
+    );
+    mfrCache.set(key, id);
+    return id;
+  }
+
+  async function findOrCreatePlaceholderFamily(mfrId: string, mfrName: string): Promise<string> {
+    const cached = famCache.get(mfrId);
+    if (cached) return cached;
+    const familySlug = `${slugify(mfrName)}-panels`;
+    const live = await client.query(
+      `SELECT id FROM fip_product_families
+       WHERE manufacturer_id = $1 AND slug = $2 LIMIT 1`,
+      [mfrId, familySlug],
+    );
+    if (live.rows.length > 0) {
+      famCache.set(mfrId, live.rows[0].id);
+      return live.rows[0].id;
+    }
+    // No placeholder family yet — reuse any existing family for this
+    // manufacturer so we don't fragment the family list.
+    const existingAny = await client.query(
+      `SELECT id FROM fip_product_families
+       WHERE manufacturer_id = $1 AND deleted_at IS NULL
+       ORDER BY created_at ASC LIMIT 1`,
+      [mfrId],
+    );
+    if (existingAny.rows.length > 0) {
+      famCache.set(mfrId, existingAny.rows[0].id);
+      return existingAny.rows[0].id;
+    }
+    const id = randomUUID();
+    await client.query(
+      `INSERT INTO fip_product_families
+       (id, manufacturer_id, name, slug, category, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, now(), now())`,
+      [id, mfrId, `${mfrName} Fire Panels`, familySlug, "fire-panel"],
+    );
+    famCache.set(mfrId, id);
+    return id;
+  }
+
   for (const spec of PANEL_DEEP_SPEC_SEED) {
-    const existing = await client.query(
+    let modelRow = await client.query(
       "SELECT id FROM fip_models WHERE slug = $1 LIMIT 1",
       [spec.slug],
     );
-    if (existing.rows.length === 0) {
-      skipped++;
-      continue;
+    let modelId: string;
+    if (modelRow.rows.length === 0) {
+      // Model row doesn't exist — create it along with any missing
+      // manufacturer / family rows it depends on.
+      const mfrId = await findOrCreateManufacturer(spec.manufacturerName);
+      const familyId = await findOrCreatePlaceholderFamily(mfrId, spec.manufacturerName);
+      modelId = randomUUID();
+      await client.query(
+        `INSERT INTO fip_models
+         (id, family_id, manufacturer_id, name, slug, status, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, 'current', now(), now())`,
+        [modelId, familyId, mfrId, spec.displayName, spec.slug],
+      );
+      insertedNew++;
+    } else {
+      modelId = modelRow.rows[0].id;
+      updatedExisting++;
     }
+
     await client.query(
       `UPDATE fip_models SET
          max_loops = $1,
@@ -560,12 +647,21 @@ async function seedPanelDeepSpecs(client: any): Promise<void> {
         spec.loopCableSpec ?? null,
         spec.datasheetUrl ?? null,
         spec.sourceNotes ?? null,
-        existing.rows[0].id,
+        modelId,
       ],
     );
-    updated++;
   }
-  logger.info({ table: "fip_models", updated, skipped, feature: "deep_spec" }, "fip seed");
+  logger.info(
+    { table: "fip_models", updatedExisting, insertedNew, feature: "deep_spec" },
+    "fip seed",
+  );
+}
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

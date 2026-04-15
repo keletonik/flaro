@@ -69,4 +69,51 @@ export const FIP_V2_DDL_STATEMENTS: string[] = [
   `CREATE INDEX IF NOT EXISTS fip_common_products_category_idx ON fip_common_products (category)`,
   `CREATE INDEX IF NOT EXISTS fip_common_products_manufacturer_idx ON fip_common_products (manufacturer)`,
   `CREATE INDEX IF NOT EXISTS fip_common_products_deleted_idx ON fip_common_products (deleted_at)`,
+
+  // v2.1 — panel compatibility filter on common products
+  `ALTER TABLE fip_common_products ADD COLUMN IF NOT EXISTS compatible_panel_slugs jsonb`,
+
+  // v2.1 — operator saved material lists
+  `CREATE TABLE IF NOT EXISTS fip_material_lists (
+     id text PRIMARY KEY,
+     name text NOT NULL,
+     owner text NOT NULL DEFAULT 'casper',
+     panel_slug text,
+     site_ref text,
+     task_ref text,
+     notes text,
+     status text NOT NULL DEFAULT 'open',
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
+     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+     deleted_at timestamp with time zone
+   )`,
+  `CREATE INDEX IF NOT EXISTS fip_material_lists_owner_idx ON fip_material_lists (owner)`,
+  `CREATE INDEX IF NOT EXISTS fip_material_lists_panel_idx ON fip_material_lists (panel_slug)`,
+  `CREATE INDEX IF NOT EXISTS fip_material_lists_status_idx ON fip_material_lists (status)`,
+  `CREATE INDEX IF NOT EXISTS fip_material_lists_deleted_idx ON fip_material_lists (deleted_at)`,
+
+  `CREATE TABLE IF NOT EXISTS fip_material_list_items (
+     id text PRIMARY KEY,
+     list_id text NOT NULL,
+     product_id text,
+     custom boolean NOT NULL DEFAULT false,
+     name text NOT NULL,
+     manufacturer text,
+     part_code text,
+     category text,
+     description text,
+     quantity numeric(10,2) NOT NULL DEFAULT 1,
+     unit text DEFAULT 'each',
+     unit_price_aud numeric(10,2),
+     total_aud numeric(12,2),
+     supplier_name text,
+     supplier_product_code text,
+     sort_order integer NOT NULL DEFAULT 0,
+     notes text,
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
+     deleted_at timestamp with time zone
+   )`,
+  `CREATE INDEX IF NOT EXISTS fip_material_list_items_list_idx ON fip_material_list_items (list_id)`,
+  `CREATE INDEX IF NOT EXISTS fip_material_list_items_product_idx ON fip_material_list_items (product_id)`,
+  `CREATE INDEX IF NOT EXISTS fip_material_list_items_deleted_idx ON fip_material_list_items (deleted_at)`,
 ];

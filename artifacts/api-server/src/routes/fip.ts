@@ -249,10 +249,19 @@ router.get("/fip/panels", async (_req, res, next) => {
 });
 
 // GET /fip/common-products — curated everyday items catalogue
+//
+// v2.1 changes:
+//   - ?panelSlug= filter — only return products compatible with the
+//     given panel (matched against compatible_panel_slugs jsonb, null
+//     means universal / always included).
+//   - Joins supplier_products by part_code to surface live supplier
+//     pricing from the operator's own catalogue. Each product now
+//     carries an optional `supplierMatches` array with
+//     { supplier_name, product_code, unit_price, cost_price }.
 router.get("/fip/common-products", async (req, res, next) => {
   if (!gate(res)) return;
   try {
-    const { category, search } = req.query as Record<string, string | undefined>;
+    const { category, search, panelSlug } = req.query as Record<string, string | undefined>;
     const conds: any[] = [isNull(fipCommonProducts.deletedAt)];
     if (category) conds.push(eq(fipCommonProducts.category, category as any));
     const rows = await db
@@ -260,7 +269,9 @@ router.get("/fip/common-products", async (req, res, next) => {
       .from(fipCommonProducts)
       .where(and(...conds))
       .orderBy(fipCommonProducts.category, fipCommonProducts.name);
-    const filtered = search
+
+    // Text search (in-memory — catalogue is small, < 200 rows)
+    const searchFiltered = search
       ? rows.filter((r) => {
           const q = search.toLowerCase();
           return (
@@ -271,18 +282,83 @@ router.get("/fip/common-products", async (req, res, next) => {
           );
         })
       : rows;
-    res.json(filtered.map((r) => ({
-      id: r.id,
-      category: r.category,
-      name: r.name,
-      manufacturer: r.manufacturer,
-      partCode: r.partCode,
-      description: r.description,
-      unit: r.unit,
-      priceBand: r.priceBand,
-      indicativePriceAud: r.indicativePriceAud ? Number(r.indicativePriceAud) : null,
-      notes: r.notes,
-    })));
+
+    // Panel compatibility filter — universal (null or empty) always wins
+    const panelFiltered = panelSlug
+      ? searchFiltered.filter((r) => {
+          const list = (r.compatiblePanelSlugs ?? null) as string[] | null;
+          if (!list || list.length === 0) return true; // universal
+          return list.includes(panelSlug);
+        })
+      : searchFiltered;
+
+    // Supplier price cross-reference. For every product with a part_code
+    // we look up every supplier_products row whose product_code matches
+    // (case-insensitive). This gives the operator live pricing from
+    // their own uploaded supplier catalogue.
+    const partCodes = panelFiltered
+      .map((r) => r.partCode)
+      .filter((c): c is string => !!c && c.length > 0);
+    const supplierByCode = new Map<string, any[]>();
+    if (partCodes.length > 0) {
+      // Import supplier_products + pool lazily so we don't fail if
+      // the operator's workspace hasn't loaded the estimation pack.
+      try {
+        const { supplierProducts } = await import("@workspace/db");
+        const { ilike: _ilike, or: _or } = await import("drizzle-orm");
+        // Case-insensitive IN-style match — build an OR clause. Cap
+        // at 100 codes to keep the query shape sensible.
+        const cap = partCodes.slice(0, 100);
+        const orClauses = cap.map((code) => _ilike(supplierProducts.productCode, code));
+        const supplierRows = orClauses.length > 0
+          ? await db.select().from(supplierProducts).where(_or(...orClauses))
+          : [];
+        for (const sr of supplierRows as any[]) {
+          const key = (sr.productCode ?? "").toLowerCase();
+          if (!key) continue;
+          if (!supplierByCode.has(key)) supplierByCode.set(key, []);
+          supplierByCode.get(key)!.push({
+            id: sr.id,
+            supplierId: sr.supplierId,
+            supplierName: sr.supplierName ?? null,
+            productCode: sr.productCode,
+            unitPriceAud: sr.unitPrice != null ? Number(sr.unitPrice) : null,
+            costPriceAud: sr.costPrice != null ? Number(sr.costPrice) : null,
+            description: sr.description ?? null,
+          });
+        }
+      } catch {
+        // supplier_products table may not exist yet on a fresh deploy
+        // or the import may fail — fall through without crashing.
+      }
+    }
+
+    res.json(panelFiltered.map((r) => {
+      const key = (r.partCode ?? "").toLowerCase();
+      const supplierMatches = key ? supplierByCode.get(key) ?? [] : [];
+      // Pick the cheapest supplier unit price as the "live" headline
+      // price. Fallback to the indicative price band constant.
+      const liveCheapest = supplierMatches
+        .filter((s) => s.unitPriceAud != null)
+        .sort((a, b) => a.unitPriceAud - b.unitPriceAud)[0];
+      return {
+        id: r.id,
+        category: r.category,
+        name: r.name,
+        manufacturer: r.manufacturer,
+        partCode: r.partCode,
+        description: r.description,
+        unit: r.unit,
+        priceBand: r.priceBand,
+        indicativePriceAud: r.indicativePriceAud ? Number(r.indicativePriceAud) : null,
+        notes: r.notes,
+        compatiblePanelSlugs: r.compatiblePanelSlugs ?? null,
+        // Live supplier data
+        supplierMatches,
+        livePriceAud: liveCheapest?.unitPriceAud ?? null,
+        liveSupplierName: liveCheapest?.supplierName ?? null,
+      };
+    }));
   } catch (err) { next(err); }
 });
 

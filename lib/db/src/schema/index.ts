@@ -24,3 +24,4 @@ export * from "./pa-reminders";
 export * from "./pa-instructions";
 export * from "./attachments";
 export * from "./task-cycle-times";
+export * from "./fip-material-lists";

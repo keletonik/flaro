@@ -1,10 +1,10 @@
 /**
- * FIP Command Centre — master-level rebuild (fip-v2.0).
+ * FIP Workbench — master-level rebuild (fip-v2.0).
  *
  * Layout:
  *   ┌─ top menu ──────────────────────────────────────────────────┐
- *   │  Command Centre · Detector Library · Manufacturers          │
- *   │                 · AS Standards · Documents                  │
+ *   │  Workbench · Detector Library · Manufacturers               │
+ *   │           · AS Standards · Documents                        │
  *   └─────────────────────────────────────────────────────────────┘
  *   ┌──────────┬──────────────────────────────────────────────────┐
  *   │          │ ┌─────────────────┐ ┌─────────────────┐          │
@@ -154,7 +154,7 @@ export default function FIPKnowledgeBase() {
   const famMap = Object.fromEntries(families.map((f) => [f.id, f.name]));
 
   const menu: { key: View; label: string; icon: typeof Shield; count?: number }[] = [
-    { key: "command", label: "Command Centre", icon: LayoutDashboard },
+    { key: "command", label: "Workbench", icon: LayoutDashboard },
     { key: "detectors", label: "Detector Library", icon: Shield },
     { key: "manufacturers", label: "Manufacturers", icon: Building2, count: manufacturers.length },
     { key: "models", label: "Panel Models", icon: Cpu, count: models.length },
@@ -209,7 +209,7 @@ export default function FIPKnowledgeBase() {
               <header>
                 <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
                   <LayoutDashboard className="w-4 h-4 text-primary" />
-                  FIP Command Centre
+                  FIP Workbench
                 </h1>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Panel specs · common products · defect analysis · battery sizing — all in one view.

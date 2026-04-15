@@ -26,6 +26,30 @@ export const FIP_V2_DDL_STATEMENTS: string[] = [
   `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS typical_price_band text`,
   `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS hero_image text`,
 
+  // FIP v2.1 deep spec expansion — dimensions, power, environmental,
+  // approvals, datasheet sourcing.
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS dimensions_mm text`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS weight_kg numeric(6,2)`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS ip_rating text`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS operating_temp_c text`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS operating_humidity_pct text`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS mains_supply text`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS psu_output_a numeric(6,2)`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS aux_current_budget_ma integer`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS max_zones integer`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS relay_outputs integer`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS supervised_nacs integer`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS led_mimic_channels integer`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS lcd_lines integer`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS event_log_capacity integer`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS cause_effect_support boolean`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS warranty_years integer`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS remote_access text`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS loop_cable_spec text`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS spare_drafting_text text`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS datasheet_url text`,
+  `ALTER TABLE fip_models ADD COLUMN IF NOT EXISTS source_notes text`,
+
   // ── fip_common_products table ───────────────────────────────────
   `CREATE TABLE IF NOT EXISTS fip_common_products (
      id text PRIMARY KEY,

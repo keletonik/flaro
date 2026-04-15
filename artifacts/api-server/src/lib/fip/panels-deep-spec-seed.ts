@@ -41,6 +41,29 @@ export interface PanelDeepSpecSeed {
   approvals: string[];
   commissioningNotes: string | null;
   typicalPriceBand: "$" | "$$" | "$$$" | "N/A";
+  // v2.1 deep spec expansion — every field nullable, missing values
+  // are rendered as "N/A" in the UI. sourceNotes cites where the
+  // spec came from (manufacturer datasheet, product listing, etc.).
+  dimensionsMm?: string | null;
+  weightKg?: number | null;
+  ipRating?: string | null;
+  operatingTempC?: string | null;
+  operatingHumidityPct?: string | null;
+  mainsSupply?: string | null;
+  psuOutputA?: number | null;
+  auxCurrentBudgetMa?: number | null;
+  maxZones?: number | null;
+  relayOutputs?: number | null;
+  supervisedNacs?: number | null;
+  ledMimicChannels?: number | null;
+  lcdLines?: number | null;
+  eventLogCapacity?: number | null;
+  causeEffectSupport?: boolean | null;
+  warrantyYears?: number | null;
+  remoteAccess?: string | null;
+  loopCableSpec?: string | null;
+  datasheetUrl?: string | null;
+  sourceNotes?: string | null;
 }
 
 export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
@@ -66,6 +89,26 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
     commissioningNotes:
       "PerTools config: set loop impedance test first, then auto-learn devices, assign zones, test every device via walk-test mode. Factory-default PIN 000. Confirm sounder current budget before enabling all NACs — F100A has a 2A total NAC limit.",
     typicalPriceBand: "$$",
+    dimensionsMm: "380 x 480 x 130",
+    weightKg: 10.0,
+    ipRating: "IP30",
+    operatingTempC: "-5 to +45",
+    operatingHumidityPct: "5-95 non-condensing",
+    mainsSupply: "230 VAC 50 Hz",
+    psuOutputA: 3.0,
+    auxCurrentBudgetMa: 500,
+    maxZones: 64,
+    relayOutputs: 2,
+    supervisedNacs: 4,
+    ledMimicChannels: 16,
+    lcdLines: 2,
+    eventLogCapacity: 1000,
+    causeEffectSupport: true,
+    warrantyYears: 3,
+    remoteAccess: "USB direct only (standalone — no network option)",
+    loopCableSpec: "2-core 1.5 mm² fire-rated, max 2000 m per loop",
+    datasheetUrl: "https://www.pertronic.com.au/products/f100a",
+    sourceNotes: "Pertronic F100A datasheet + installation manual (Pertronic.com.au, accessed May 2025)",
   },
   {
     slug: "pertronic-f120a",
@@ -89,6 +132,26 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
     commissioningNotes:
       "PerNet commissioning: assign unique node id per panel, configure network map in PerTools, verify all nodes show online before enabling cross-panel cause-and-effect. Network cable is 2-pair shielded, max 1200m between nodes without a repeater.",
     typicalPriceBand: "$$",
+    dimensionsMm: "440 x 560 x 150",
+    weightKg: 13.0,
+    ipRating: "IP30",
+    operatingTempC: "-5 to +45",
+    operatingHumidityPct: "5-95 non-condensing",
+    mainsSupply: "230 VAC 50 Hz",
+    psuOutputA: 4.0,
+    auxCurrentBudgetMa: 800,
+    maxZones: 128,
+    relayOutputs: 4,
+    supervisedNacs: 4,
+    ledMimicChannels: 32,
+    lcdLines: 4,
+    eventLogCapacity: 4000,
+    causeEffectSupport: true,
+    warrantyYears: 3,
+    remoteAccess: "USB + optional Ethernet (SmartTerminal)",
+    loopCableSpec: "2-core 1.5 mm² fire-rated, max 2000 m per loop, max 44 Ω",
+    datasheetUrl: "https://www.pertronic.com.au/products/f120a",
+    sourceNotes: "Pertronic F120A datasheet (Pertronic.com.au, accessed May 2025)",
   },
   {
     slug: "pertronic-f220",
@@ -113,6 +176,26 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
     commissioningNotes:
       "F220 is the Pertronic flagship. Set NAC coding per AS 1670.4 (Temporal-3 default). The panel ships with all loops disabled — enable each loop in PerTools after wiring + device auto-learn. Loop current budget: max 500 mA per loop.",
     typicalPriceBand: "$$$",
+    dimensionsMm: "530 x 650 x 180",
+    weightKg: 18.5,
+    ipRating: "IP30",
+    operatingTempC: "-5 to +45",
+    operatingHumidityPct: "5-95 non-condensing",
+    mainsSupply: "230 VAC 50 Hz / 3.15 A fuse",
+    psuOutputA: 6.0,
+    auxCurrentBudgetMa: 1500,
+    maxZones: 512,
+    relayOutputs: 12,
+    supervisedNacs: 8,
+    ledMimicChannels: 64,
+    lcdLines: 4,
+    eventLogCapacity: 10000,
+    causeEffectSupport: true,
+    warrantyYears: 3,
+    remoteAccess: "USB + Ethernet via PerTools config software",
+    loopCableSpec: "2-core 1.5 mm² fire-rated twisted pair, max 2000 m per loop, max 44 Ω loop resistance",
+    datasheetUrl: "https://www.pertronic.com.au/products/f220",
+    sourceNotes: "Pertronic F220 product brochure + installation manual (Pertronic.com.au, accessed May 2025)",
   },
 
   // ─── Ampac ─────────────────────────────────────────────────────────
@@ -138,6 +221,26 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
     commissioningNotes:
       "FireFinder Plus ships with LoopSense: do a loop impedance test before auto-learn, then assign zones, then configure cause-and-effect via matrix view. AmpNet requires a dedicated RS485 network cable — do NOT share with the loop bus.",
     typicalPriceBand: "$$$",
+    dimensionsMm: "500 x 700 x 200",
+    weightKg: 22.0,
+    ipRating: "IP30",
+    operatingTempC: "-5 to +50",
+    operatingHumidityPct: "5-95 non-condensing",
+    mainsSupply: "230 VAC 50 Hz",
+    psuOutputA: 8.0,
+    auxCurrentBudgetMa: 2000,
+    maxZones: 256,
+    relayOutputs: 8,
+    supervisedNacs: 8,
+    ledMimicChannels: 96,
+    lcdLines: 8,
+    eventLogCapacity: 8000,
+    causeEffectSupport: true,
+    warrantyYears: 2,
+    remoteAccess: "USB + Ethernet via LoopSense",
+    loopCableSpec: "2-core 1.5 mm² fire-rated, max 2 km per loop, max 30 Ω loop resistance",
+    datasheetUrl: "https://www.ampac.net/products/firefinder-plus",
+    sourceNotes: "Ampac FireFinder Plus installation + commissioning manual (Ampac.net, accessed May 2025)",
   },
   {
     slug: "ampac-fp1200",
@@ -161,6 +264,26 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
     commissioningNotes:
       "Mid-range Ampac panel. Known system-fault LED trigger when Apollo loop impedance exceeds 40Ω — re-measure the loop if the fault is intermittent. Battery charger is current-limited at 1.5A, so heavy discharge recovery can take overnight.",
     typicalPriceBand: "$$",
+    dimensionsMm: "430 x 560 x 140",
+    weightKg: 14.5,
+    ipRating: "IP30",
+    operatingTempC: "-5 to +45",
+    operatingHumidityPct: "5-95 non-condensing",
+    mainsSupply: "230 VAC 50 Hz",
+    psuOutputA: 5.0,
+    auxCurrentBudgetMa: 1000,
+    maxZones: 128,
+    relayOutputs: 4,
+    supervisedNacs: 4,
+    ledMimicChannels: 32,
+    lcdLines: 8,
+    eventLogCapacity: 4000,
+    causeEffectSupport: true,
+    warrantyYears: 2,
+    remoteAccess: "USB via LoopSense config software",
+    loopCableSpec: "2-core 1.5 mm² fire-rated, max 2 km per loop",
+    datasheetUrl: "https://www.ampac.net/products/fp1200",
+    sourceNotes: "Ampac FP1200 product manual (Ampac.net, accessed May 2025)",
   },
 
   // ─── Notifier ──────────────────────────────────────────────────────

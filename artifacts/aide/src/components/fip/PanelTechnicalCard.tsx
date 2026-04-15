@@ -38,6 +38,26 @@ interface PanelSpec {
   approvals: string[] | null;
   commissioningNotes: string | null;
   typicalPriceBand: string | null;
+  dimensionsMm?: string | null;
+  weightKg?: number | null;
+  ipRating?: string | null;
+  operatingTempC?: string | null;
+  operatingHumidityPct?: string | null;
+  mainsSupply?: string | null;
+  psuOutputA?: number | null;
+  auxCurrentBudgetMa?: number | null;
+  maxZones?: number | null;
+  relayOutputs?: number | null;
+  supervisedNacs?: number | null;
+  ledMimicChannels?: number | null;
+  lcdLines?: number | null;
+  eventLogCapacity?: number | null;
+  causeEffectSupport?: boolean | null;
+  warrantyYears?: number | null;
+  remoteAccess?: string | null;
+  loopCableSpec?: string | null;
+  datasheetUrl?: string | null;
+  sourceNotes?: string | null;
 }
 
 export function PanelTechnicalCard() {
@@ -210,11 +230,89 @@ function PanelDetail({ panel }: { panel: PanelSpec }) {
         </div>
       )}
 
+      {/* ── v2.1 — expanded datasheet block ── */}
+      {hasAnyDatasheetField(panel) && (
+        <div>
+          <div className="flex items-center gap-1.5 mb-2 text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+            <Info className="w-3 h-3" /> Datasheet
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            <DatasheetRow label="Dimensions" value={panel.dimensionsMm ?? "N/A"} />
+            <DatasheetRow label="Weight" value={panel.weightKg != null ? `${panel.weightKg} kg` : "N/A"} />
+            <DatasheetRow label="IP rating" value={panel.ipRating ?? "N/A"} />
+            <DatasheetRow label="Temp range" value={panel.operatingTempC != null ? `${panel.operatingTempC} °C` : "N/A"} />
+            <DatasheetRow label="Humidity" value={panel.operatingHumidityPct ?? "N/A"} />
+            <DatasheetRow label="Mains" value={panel.mainsSupply ?? "N/A"} />
+            <DatasheetRow label="PSU output" value={panel.psuOutputA != null ? `${panel.psuOutputA} A` : "N/A"} />
+            <DatasheetRow label="Aux budget" value={panel.auxCurrentBudgetMa != null ? `${panel.auxCurrentBudgetMa} mA` : "N/A"} />
+            <DatasheetRow label="Max zones" value={panel.maxZones != null ? String(panel.maxZones) : "N/A"} />
+            <DatasheetRow label="Relay outputs" value={panel.relayOutputs != null ? String(panel.relayOutputs) : "N/A"} />
+            <DatasheetRow label="Supervised NACs" value={panel.supervisedNacs != null ? String(panel.supervisedNacs) : "N/A"} />
+            <DatasheetRow label="LED mimic" value={panel.ledMimicChannels != null ? `${panel.ledMimicChannels} ch` : "N/A"} />
+            <DatasheetRow label="LCD lines" value={panel.lcdLines != null ? String(panel.lcdLines) : "N/A"} />
+            <DatasheetRow label="Event log" value={panel.eventLogCapacity != null ? `${panel.eventLogCapacity.toLocaleString()} events` : "N/A"} />
+            <DatasheetRow
+              label="Cause & effect"
+              value={panel.causeEffectSupport == null ? "N/A" : panel.causeEffectSupport ? "Yes" : "No"}
+            />
+            <DatasheetRow label="Warranty" value={panel.warrantyYears != null ? `${panel.warrantyYears} years` : "N/A"} />
+          </div>
+          {panel.remoteAccess && (
+            <p className="mt-2 text-[10px] text-muted-foreground">
+              <span className="font-semibold text-foreground">Remote access:</span> {panel.remoteAccess}
+            </p>
+          )}
+          {panel.loopCableSpec && (
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              <span className="font-semibold text-foreground">Loop cable:</span> {panel.loopCableSpec}
+            </p>
+          )}
+        </div>
+      )}
+
+      {(panel.sourceNotes || panel.datasheetUrl) && (
+        <div className="pt-2 border-t border-border">
+          {panel.sourceNotes && (
+            <p className="text-[9px] text-muted-foreground italic">Source: {panel.sourceNotes}</p>
+          )}
+          {panel.datasheetUrl && (
+            <a
+              href={panel.datasheetUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-[9px] text-primary hover:underline font-mono break-all"
+            >
+              {panel.datasheetUrl}
+            </a>
+          )}
+        </div>
+      )}
+
       {panel.typicalPriceBand && (
         <p className="text-[10px] text-muted-foreground">
           Typical price band: <span className="text-foreground font-mono">{panel.typicalPriceBand}</span>
         </p>
       )}
+    </div>
+  );
+}
+
+function hasAnyDatasheetField(p: PanelSpec): boolean {
+  return !!(
+    p.dimensionsMm || p.weightKg || p.ipRating || p.operatingTempC ||
+    p.mainsSupply || p.psuOutputA || p.maxZones || p.relayOutputs ||
+    p.supervisedNacs || p.warrantyYears || p.remoteAccess || p.loopCableSpec
+  );
+}
+
+function DatasheetRow({ label, value }: { label: string; value: string }) {
+  const isNa = value === "N/A";
+  return (
+    <div className="flex items-center justify-between gap-2 px-2 py-1 rounded bg-muted/20 border border-border/60">
+      <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wide">{label}</span>
+      <span className={cn("text-[10px] font-mono", isNa ? "text-muted-foreground/40" : "text-foreground")}>
+        {value}
+      </span>
     </div>
   );
 }

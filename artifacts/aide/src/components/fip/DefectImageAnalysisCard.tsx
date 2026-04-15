@@ -33,6 +33,7 @@ interface DefectAnalysis {
   summary: string;
   severity: "critical" | "high" | "medium" | "low" | "unknown";
   category: string;
+  mode?: "diagnosis" | "identification" | "unknown";
   observations: string[];
   likelyCauses: string[];
   fixOptions: FixOption[];
@@ -195,7 +196,7 @@ export function DefectImageAnalysisCard() {
           <textarea
             value={context}
             onChange={(e) => setContext(e.target.value)}
-            placeholder="Optional context — e.g. 'Ampac FP1200 system fault LED after the 16A cleaner'"
+            placeholder="What do you want to know? e.g. 'identify this panel' or 'what's wrong with this wiring'"
             rows={2}
             className="w-full px-2 py-1.5 rounded-md bg-background border border-border text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary"
           />
@@ -211,7 +212,7 @@ export function DefectImageAnalysisCard() {
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Analysing…
               </>
             ) : (
-              <>Run defect analysis</>
+              <>Analyse image</>
             )}
           </button>
         </div>
@@ -229,14 +230,20 @@ export function DefectImageAnalysisCard() {
 }
 
 function DefectResult({ analysis }: { analysis: DefectAnalysis }) {
+  const isIdentification = analysis.mode === "identification";
+  const pillLabel = isIdentification ? "identify" : analysis.severity;
+  const pillStyle = isIdentification
+    ? "bg-blue-500/10 text-blue-500 border-blue-500/30"
+    : SEVERITY_STYLE[analysis.severity] ?? SEVERITY_STYLE.unknown;
+
   return (
     <div className="mt-4 space-y-3">
       <div className="flex items-start gap-2">
         <span className={cn(
-          "px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase border",
-          SEVERITY_STYLE[analysis.severity] ?? SEVERITY_STYLE.unknown,
+          "px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase border shrink-0",
+          pillStyle,
         )}>
-          {analysis.severity}
+          {pillLabel}
         </span>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-foreground">{analysis.summary}</p>

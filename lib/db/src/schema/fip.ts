@@ -83,6 +83,28 @@ export const fipModels = pgTable("fip_models", {
   commissioningNotes: text("commissioning_notes"),
   typicalPriceBand: text("typical_price_band"),
   heroImage: text("hero_image"),
+  // ── FIP v2.1 deep spec expansion (April 2026) ──
+  dimensionsMm: text("dimensions_mm"),                      // "W x H x D" e.g. "440 x 620 x 130"
+  weightKg: numeric("weight_kg", { precision: 6, scale: 2 }),
+  ipRating: text("ip_rating"),                              // e.g. "IP30"
+  operatingTempC: text("operating_temp_c"),                 // e.g. "-5 to +40"
+  operatingHumidityPct: text("operating_humidity_pct"),     // e.g. "5-95 non-condensing"
+  mainsSupply: text("mains_supply"),                        // e.g. "230 VAC 50 Hz"
+  psuOutputA: numeric("psu_output_a", { precision: 6, scale: 2 }),  // e.g. 5.0
+  auxCurrentBudgetMa: integer("aux_current_budget_ma"),     // available 24V aux mA
+  maxZones: integer("max_zones"),
+  relayOutputs: integer("relay_outputs"),
+  supervisedNacs: integer("supervised_nacs"),
+  ledMimicChannels: integer("led_mimic_channels"),
+  lcdLines: integer("lcd_lines"),
+  eventLogCapacity: integer("event_log_capacity"),
+  causeEffectSupport: boolean("cause_effect_support"),
+  warrantyYears: integer("warranty_years"),
+  remoteAccess: text("remote_access"),                      // e.g. "USB + Ethernet (via config tool)"
+  loopCableSpec: text("loop_cable_spec"),                   // e.g. "2-core 1.5 mm² fire-rated, max 1500 m, max 44 Ω loop"
+  spareDraftingText: text("spare_drafting_text"),           // free-form notes for the datasheet block
+  datasheetUrl: text("datasheet_url"),
+  sourceNotes: text("source_notes"),                        // where the deep spec came from
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),

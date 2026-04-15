@@ -1,32 +1,34 @@
 /**
  * POST /api/fip/defect-analysis
  *
- * Dedicated defect-triage endpoint for the FIP Command Centre. Takes
- * an attachment id (uploaded via /api/attachments) and optionally a
- * free-text context note. Runs Claude vision with a defect-specific
- * system prompt that returns a structured diagnosis + ranked fix options.
+ * Dedicated defect-triage + device-identification endpoint for the FIP
+ * Command Centre. Takes an attachment id (uploaded via /api/attachments)
+ * and an optional free-text context note. Runs Claude vision with a
+ * forced tool-use output so the JSON shape is guaranteed.
  *
- * Shape of response:
- *   {
- *     summary: string,              // one-line diagnosis
- *     severity: "critical" | "high" | "medium" | "low" | "unknown",
- *     category: string,             // e.g. "wiring fault", "LED indicator", etc.
- *     observations: string[],       // what the model literally saw
- *     likelyCauses: string[],       // ranked candidate causes
- *     fixOptions: Array<{
- *       priority: number,           // 1 = try first
- *       action: string,             // what to do
- *       skillLevel: "tech1" | "tech2" | "senior",
- *       tools: string[],
- *       estimatedTimeMin: number,
- *       safetyNotes: string,
- *     }>,
- *     complianceNotes: string[],    // AS clause references if relevant
- *     warnings: string[],           // things the model cannot determine from the image
- *   }
+ * Design (fip-v2.1 — structured tool-use fix, April 2026):
  *
- * Uses the same Claude-vision wiring as the identifier but with a
- * different system prompt and a stricter JSON schema.
+ * The earlier version asked Claude to emit a JSON object as plain text
+ * in the system prompt. That was unreliable: Claude sometimes wrapped
+ * the JSON in a code fence, sometimes prefixed with prose, sometimes
+ * emitted valid-looking text that wasn't quite parseable. Result: the
+ * "Unable to parse model response" screen the operator reported.
+ *
+ * The fix is Anthropic's recommended pattern for forced JSON output:
+ * define a tool with an input_schema matching the desired shape, then
+ * pass `tool_choice: { type: "tool", name: "emit_defect_analysis" }`.
+ * The model is forced to emit the result as a tool_use block with an
+ * input object conforming to the schema — no text parsing, no fences,
+ * no prose. We read `block.input` directly.
+ *
+ * Dual-mode. The system prompt + tool description covers BOTH:
+ *   1. "Diagnose this defect" (original purpose)
+ *   2. "What is this device / panel / model?" (identification)
+ *
+ * When the operator types a question like "what panel is this", the
+ * model treats the summary as the identification answer and leaves
+ * fixOptions empty — severity becomes "low" or "unknown" depending
+ * on whether anything visibly abnormal is present.
  */
 
 import { Router } from "express";
@@ -39,40 +41,119 @@ const router = Router();
 
 const MODEL = "claude-sonnet-4-6";
 
-const DEFECT_SYSTEM_PROMPT = `You are a master Australian fire-protection service engineer diagnosing a defect from a single photograph. The technician on site has sent you an image and expects a structured diagnosis plus a ranked set of fix options.
+const DEFECT_SYSTEM_PROMPT = `You are a master Australian fire-protection service engineer analysing a single photograph for a technician on site. You operate in two modes and choose between them based on the operator's context note:
 
-OUTPUT FORMAT: respond with a JSON object exactly matching this shape, and nothing else. No markdown, no code fence.
+MODE A — DEFECT DIAGNOSIS. The operator wants to know what's wrong with the pictured device and how to fix it. Return a ranked set of fix options.
 
-{
-  "summary": string,
-  "severity": "critical" | "high" | "medium" | "low" | "unknown",
-  "category": string,
-  "observations": string[],
-  "likelyCauses": string[],
-  "fixOptions": [
-    {
-      "priority": number,
-      "action": string,
-      "skillLevel": "tech1" | "tech2" | "senior",
-      "tools": string[],
-      "estimatedTimeMin": number,
-      "safetyNotes": string
-    }
-  ],
-  "complianceNotes": string[],
-  "warnings": string[]
-}
+MODE B — DEVICE IDENTIFICATION. The operator wants to know what panel / detector / module / component is pictured. Return the identification in the summary and category fields, leave fixOptions empty, and set severity to "low" (or "unknown" if you're genuinely not sure).
+
+If the context note is empty or ambiguous, default to MODE A for a device that looks obviously faulty (burnt, broken, corroded, displaying a fault LED, glass broken) and to MODE B for a device that looks normal.
 
 HARD RULES:
-- If the image is not a fire-protection device or you cannot identify any defect, set severity="unknown", leave fixOptions as an empty array, and write the reason in warnings.
-- Never fabricate part numbers. If you can't read a label, say so in warnings.
-- Rank fixOptions by priority: 1 is the first thing to try, higher numbers are fallbacks.
-- Every fixOption must carry a realistic estimatedTimeMin (integer), not a range.
-- Skill level: tech1 = basic service tech, tech2 = experienced service tech, senior = senior engineer or commissioner.
-- Always include at least one safetyNote per fixOption. If nothing specific applies write "standard PPE + lockout".
-- Cite AS standards in complianceNotes when relevant, e.g. "AS 1670.1 §3.34 requires loop isolators every 32 devices".
-- Favour Australian-market brands (Apollo, Hochiki, Notifier, System Sensor, Pertronic, Ampac, Bosch, Honeywell, Xtralis).
-- Flag obvious safety concerns in warnings: exposed conductors, damaged housing, corroded terminals, broken MCP glass, missing tamper cover.`;
+- Call the emit_defect_analysis tool. This is the ONLY way to produce your answer. Never write prose outside the tool call.
+- Never fabricate part numbers or model numbers. If you can't read a label clearly, say so in warnings and leave modelName-ish fields unspecified.
+- MODE A fix options are ranked by priority (1 = try first). Each must carry a realistic estimatedTimeMin (integer), skillLevel (tech1 / tech2 / senior), tools array, and a safetyNote. If nothing specific applies write "standard PPE + lockout".
+- MODE B: summary = one-line identification ("Notifier NFS-320 main control panel" or "Apollo XP95 photoelectric smoke head"), category = the device class ("FIP main panel", "photoelectric smoke detector", etc.).
+- Cite AS standards inline in complianceNotes when relevant (e.g. "AS 1670.1 §3.34 loop isolator spacing").
+- Favour Australian-market brands: Apollo, Hochiki, Notifier, System Sensor, Pertronic, Ampac, Bosch, Honeywell, Xtralis, Fike, Wormald, Gent, Siemens.
+- Flag obvious safety concerns in warnings: exposed conductors, damaged housing, corroded terminals, broken MCP glass, missing tamper cover.
+- warnings is also where you say what you CANNOT determine from the image — blurred labels, cropped views, unfamiliar brand, etc.`;
+
+// Forced-output tool schema. Anthropic's recommended way to get
+// guaranteed JSON from a vision model. Every field is required so
+// the model can't omit anything — enum constraints are enforced
+// client-side but documented here for the reader.
+const EMIT_TOOL: any = {
+  name: "emit_defect_analysis",
+  description:
+    "Emit the structured defect-analysis or device-identification result. Always call this. Never write prose outside this tool call.",
+  input_schema: {
+    type: "object",
+    properties: {
+      summary: {
+        type: "string",
+        description:
+          "One-line answer. For MODE A: the diagnosis. For MODE B: the identification, e.g. 'Notifier NFS-320 main control panel'.",
+      },
+      severity: {
+        type: "string",
+        enum: ["critical", "high", "medium", "low", "unknown"],
+        description:
+          "Severity of the defect. For MODE B (identification only, device looks normal) use 'low' or 'unknown'.",
+      },
+      category: {
+        type: "string",
+        description:
+          "Short category string. Examples: 'wiring fault', 'LED indicator', 'photoelectric smoke detector', 'FIP main panel'.",
+      },
+      mode: {
+        type: "string",
+        enum: ["diagnosis", "identification"],
+        description: "Which mode the model actually ran in for this request.",
+      },
+      observations: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          "Literal visual evidence the model sees in the image. One observation per array entry. Min 1, max 8.",
+      },
+      likelyCauses: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          "MODE A only — ranked candidate causes. MODE B can return an empty array.",
+      },
+      fixOptions: {
+        type: "array",
+        description:
+          "MODE A only — ranked fix options. MODE B can return an empty array. Each option has priority, action, skillLevel, tools, estimatedTimeMin, safetyNotes.",
+        items: {
+          type: "object",
+          properties: {
+            priority: { type: "number" },
+            action: { type: "string" },
+            skillLevel: { type: "string", enum: ["tech1", "tech2", "senior"] },
+            tools: { type: "array", items: { type: "string" } },
+            estimatedTimeMin: { type: "number" },
+            safetyNotes: { type: "string" },
+          },
+          required: ["priority", "action", "skillLevel", "tools", "estimatedTimeMin", "safetyNotes"],
+        },
+      },
+      complianceNotes: {
+        type: "array",
+        items: { type: "string" },
+        description: "AS standards references relevant to the device or the fix.",
+      },
+      warnings: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          "What the model CANNOT determine from the image — blurred labels, cropped views, uncertain brand — plus any safety concerns.",
+      },
+    },
+    required: [
+      "summary",
+      "severity",
+      "category",
+      "mode",
+      "observations",
+      "likelyCauses",
+      "fixOptions",
+      "complianceNotes",
+      "warnings",
+    ],
+  },
+};
+
+function normaliseMediaType(ct: string): string {
+  const lower = (ct || "").toLowerCase();
+  if (lower.includes("jpeg") || lower.includes("jpg")) return "image/jpeg";
+  if (lower.includes("png")) return "image/png";
+  if (lower.includes("webp")) return "image/webp";
+  if (lower.includes("gif")) return "image/gif";
+  return "image/jpeg";
+}
 
 router.post("/fip/defect-analysis", async (req, res, next) => {
   try {
@@ -96,72 +177,86 @@ router.post("/fip/defect-analysis", async (req, res, next) => {
     }
 
     const base64 = (row.blob as Buffer).toString("base64");
-    const mediaType = row.contentType || "image/jpeg";
+    const mediaType = normaliseMediaType(row.contentType);
 
-    const userContentBlocks: any[] = [
-      {
-        type: "image",
-        source: { type: "base64", media_type: mediaType, data: base64 },
-      },
-      {
-        type: "text",
-        text: context
-          ? `Technician context: ${String(context).slice(0, 1000)}\n\nDiagnose the defect and return ONLY the JSON object defined in the system prompt.`
-          : "Diagnose the defect in this image and return ONLY the JSON object defined in the system prompt.",
-      },
-    ];
+    const userPromptText = context
+      ? `Operator context: ${String(context).slice(0, 1000)}\n\nAnalyse the image and call emit_defect_analysis with the structured result.`
+      : "Analyse the image and call emit_defect_analysis with the structured result.";
 
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 2500,
       system: DEFECT_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userContentBlocks }],
+      tools: [EMIT_TOOL],
+      // Force the tool so the model cannot respond with free-form text.
+      tool_choice: { type: "tool", name: "emit_defect_analysis" } as any,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: mediaType as any, data: base64 },
+            },
+            { type: "text", text: userPromptText },
+          ],
+        },
+      ],
     });
 
-    const text = (response.content as any[])
-      .filter((b: any) => b.type === "text")
-      .map((b: any) => b.text as string)
-      .join("")
-      .trim();
+    // Find the tool_use block. With tool_choice forced it's always
+    // there, but we handle the error case defensively so the
+    // operator sees a useful message instead of a crash.
+    const blocks = response.content as any[];
+    const toolUse = blocks.find((b) => b?.type === "tool_use" && b?.name === "emit_defect_analysis");
 
-    let parsed: any = null;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      const match = text.match(/\{[\s\S]*\}/);
-      if (match) {
-        try { parsed = JSON.parse(match[0]); } catch { /* noop */ }
-      }
-    }
-
-    if (!parsed) {
+    if (!toolUse || !toolUse.input) {
+      // Surface the raw content to the operator + server logs so we
+      // can see what the model emitted in the rare case it refused
+      // to call the tool.
+      const rawText = blocks
+        .filter((b) => b?.type === "text")
+        .map((b) => b.text ?? "")
+        .join("");
+      // eslint-disable-next-line no-console
+      console.warn("[fip-defect] model did not emit tool_use block", { rawTextLen: rawText.length });
       res.json({
-        summary: "Unable to parse model response",
+        summary: "Unable to produce a structured analysis for this image",
         severity: "unknown",
         category: "unknown",
+        mode: "unknown",
         observations: [],
         likelyCauses: [],
         fixOptions: [],
         complianceNotes: [],
-        warnings: ["Model returned unparsable JSON — try again with a clearer image."],
-        _rawText: text.slice(0, 500),
+        warnings: [
+          "Vision model declined to emit a structured result. Try a different image, add more context in the text box, or describe what you want to know (e.g. 'identify this panel' or 'what's wrong with this wiring').",
+          ...(rawText ? [`Model text: ${rawText.slice(0, 300)}`] : []),
+        ],
+        attachmentId,
       });
       return;
     }
 
-    // Normalise the shape so the frontend always gets every field.
+    const input = toolUse.input as any;
+
+    // Normalise the shape so the frontend always gets every field
+    // even if the model occasionally omits one.
     res.json({
-      summary: parsed.summary ?? "No summary",
-      severity: parsed.severity ?? "unknown",
-      category: parsed.category ?? "unknown",
-      observations: Array.isArray(parsed.observations) ? parsed.observations : [],
-      likelyCauses: Array.isArray(parsed.likelyCauses) ? parsed.likelyCauses : [],
-      fixOptions: Array.isArray(parsed.fixOptions) ? parsed.fixOptions : [],
-      complianceNotes: Array.isArray(parsed.complianceNotes) ? parsed.complianceNotes : [],
-      warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
+      summary: input.summary ?? "No summary",
+      severity: input.severity ?? "unknown",
+      category: input.category ?? "unknown",
+      mode: input.mode ?? "diagnosis",
+      observations: Array.isArray(input.observations) ? input.observations : [],
+      likelyCauses: Array.isArray(input.likelyCauses) ? input.likelyCauses : [],
+      fixOptions: Array.isArray(input.fixOptions) ? input.fixOptions : [],
+      complianceNotes: Array.isArray(input.complianceNotes) ? input.complianceNotes : [],
+      warnings: Array.isArray(input.warnings) ? input.warnings : [],
       attachmentId,
     });
   } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[fip-defect] error", err);
     next(err);
   }
 });

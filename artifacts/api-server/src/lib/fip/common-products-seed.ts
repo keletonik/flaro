@@ -23,7 +23,26 @@ export interface CommonProductSeed {
   priceBand: "$" | "$$" | "$$$" | "N/A";
   indicativePriceAud: number | null;
   notes: string | null;
+  /**
+   * Slugs of fip_models this product is known to be compatible with.
+   * Null/empty = universal (works on any panel — e.g. batteries, cable,
+   * conventional MCPs). A non-empty list scopes the Common Products
+   * card's panel filter so only relevant items show up.
+   */
+  compatiblePanelSlugs?: string[];
 }
+
+// Panel compatibility groups (reused below)
+const APOLLO_PANELS = [
+  "pertronic-f100a",
+  "pertronic-f120a",
+  "pertronic-f220",
+  "ampac-fireFinder-plus",
+  "ampac-fp1200",
+  "honeywell-morley-dxc",
+];
+const HOCHIKI_PANELS = ["hochiki-latitude-l32"];
+const NOTIFIER_PANELS = ["notifier-nfs-320", "notifier-nfs2-640", "notifier-nfs-3030"];
 
 export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
   // ─── Smoke detectors ───────────────────────────────────────────────
@@ -37,6 +56,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$",
     indicativePriceAud: 95,
     notes: "Most common addressable smoke head in AU. Requires XP95 base (45681-210APO).",
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
   {
     category: "smoke",
@@ -48,6 +68,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$$",
     indicativePriceAud: 110,
     notes: "Requires Hochiki YBN-R/3 or YBO-R/6 base.",
+    compatiblePanelSlugs: HOCHIKI_PANELS,
   },
   {
     category: "smoke",
@@ -59,6 +80,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$$",
     indicativePriceAud: 120,
     notes: "Pairs with B501 base series.",
+    compatiblePanelSlugs: NOTIFIER_PANELS,
   },
   {
     category: "smoke",
@@ -70,6 +92,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$$",
     indicativePriceAud: 145,
     notes: "Reduces false alarms in kitchen-adjacent areas.",
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
 
   // ─── Heat detectors ─────────────────────────────────────────────────
@@ -83,6 +106,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$",
     indicativePriceAud: 85,
     notes: "Default heat head for kitchens, car parks, laundries.",
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
   {
     category: "heat",
@@ -94,6 +118,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$",
     indicativePriceAud: 95,
     notes: "Hochiki equivalent to Apollo XP95 heat.",
+    compatiblePanelSlugs: HOCHIKI_PANELS,
   },
   {
     category: "heat",
@@ -105,6 +130,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$$",
     indicativePriceAud: 105,
     notes: "Pairs with B501 base.",
+    compatiblePanelSlugs: NOTIFIER_PANELS,
   },
 
   // ─── Flame ──────────────────────────────────────────────────────────
@@ -118,6 +144,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$$$",
     indicativePriceAud: 480,
     notes: "For fuel storage, switchrooms, hangars. Requires line-of-sight.",
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
 
   // ─── MCPs ──────────────────────────────────────────────────────────
@@ -131,6 +158,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$",
     indicativePriceAud: 75,
     notes: "Reset with test key — spare glass is 29600-246 (not needed on resettable).",
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
   {
     category: "mcp",
@@ -142,6 +170,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$",
     indicativePriceAud: 80,
     notes: null,
+    compatiblePanelSlugs: HOCHIKI_PANELS,
   },
 
   // ─── Sounders + Strobes ────────────────────────────────────────────
@@ -155,6 +184,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$$",
     indicativePriceAud: 135,
     notes: "Current draw ~0.8 mA quiescent, 6 mA in alarm.",
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
   {
     category: "sounder",
@@ -166,6 +196,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$$",
     indicativePriceAud: 95,
     notes: "Screws directly into ESP detector base.",
+    compatiblePanelSlugs: HOCHIKI_PANELS,
   },
   {
     category: "strobe",
@@ -190,6 +221,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$",
     indicativePriceAud: 22,
     notes: "Never re-use a damaged base — replace as a matter of course.",
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
   {
     category: "base",
@@ -201,6 +233,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$",
     indicativePriceAud: 65,
     notes: "Use every 20-30 devices on long loops per AS 1670.1 §3.34.",
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
 
   // ─── Isolators / Modules ──────────────────────────────────────────
@@ -214,6 +247,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$",
     indicativePriceAud: 85,
     notes: null,
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
   {
     category: "module",
@@ -225,6 +259,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$",
     indicativePriceAud: 140,
     notes: "For interfacing waterflow, tamper, HVAC shutdown.",
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
   {
     category: "module",
@@ -236,6 +271,7 @@ export const COMMON_PRODUCT_SEED: CommonProductSeed[] = [
     priceBand: "$",
     indicativePriceAud: 125,
     notes: "For waterflow + tamper switch on a single address.",
+    compatiblePanelSlugs: APOLLO_PANELS,
   },
 
   // ─── Batteries ──────────────────────────────────────────────────────

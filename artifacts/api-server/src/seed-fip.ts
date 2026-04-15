@@ -474,136 +474,23 @@ async function seedStandardClauses(client: any): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Panel deep specs — upsert rich technical detail onto fip_models.
-//
-// Natural key: slug. If the slug already exists (e.g. the base FIP seed
-// pack created the row), we UPDATE the deep-spec columns in place. If
-// the slug doesn't exist, we CREATE the fip_models row from scratch —
-// that also means finding/creating the fip_manufacturers row and a
-// placeholder fip_product_families row, because fip_models has
-// NOT NULL foreign keys on both.
-//
-// This is the fix for the silent-skip bug where deep specs were keyed
-// on clean slugs (pertronic-f220) but the base seed pack used ugly
-// slugs (pertronic-f220-f220-fire-system), causing every row to be
-// skipped and every datasheet field to render as "N/A" in the UI.
+// Panel deep specs — patch existing fip_models rows with technical detail.
+// Natural key: slug. Runs after the base seed pack so the rows exist.
+// Idempotent: re-runs re-write the deep-spec columns without touching the
+// row's identity columns (id / created_at / status).
 // ─────────────────────────────────────────────────────────────────────────────
 async function seedPanelDeepSpecs(client: any): Promise<void> {
-  let updatedExisting = 0;
-  let insertedNew = 0;
-  const mfrCache = new Map<string, string>();   // name-lower → mfr id
-  const famCache = new Map<string, string>();   // mfr id → family id
-
-  async function findOrCreateManufacturer(name: string): Promise<string> {
-    const key = name.toLowerCase();
-    const cached = mfrCache.get(key);
-    if (cached) return cached;
-    // Case-insensitive name lookup — matches "Pertronic" to an existing
-    // "pertronic" / "Pertronic Fire Systems" row from the base pack.
-    const live = await client.query(
-      "SELECT id FROM fip_manufacturers WHERE LOWER(name) = $1 OR slug = $2 LIMIT 1",
-      [key, slugify(name)],
-    );
-    if (live.rows.length > 0) {
-      mfrCache.set(key, live.rows[0].id);
-      return live.rows[0].id;
-    }
-    const id = randomUUID();
-    await client.query(
-      `INSERT INTO fip_manufacturers (id, name, slug, created_at, updated_at)
-       VALUES ($1, $2, $3, now(), now())`,
-      [id, name, slugify(name)],
-    );
-    mfrCache.set(key, id);
-    return id;
-  }
-
-  async function findOrCreatePlaceholderFamily(mfrId: string, mfrName: string): Promise<string> {
-    const cached = famCache.get(mfrId);
-    if (cached) return cached;
-    const familySlug = `${slugify(mfrName)}-panels`;
-    const live = await client.query(
-      `SELECT id FROM fip_product_families
-       WHERE manufacturer_id = $1 AND slug = $2 LIMIT 1`,
-      [mfrId, familySlug],
-    );
-    if (live.rows.length > 0) {
-      famCache.set(mfrId, live.rows[0].id);
-      return live.rows[0].id;
-    }
-    // No placeholder family yet — reuse any existing family for this
-    // manufacturer so we don't fragment the family list.
-    const existingAny = await client.query(
-      `SELECT id FROM fip_product_families
-       WHERE manufacturer_id = $1 AND deleted_at IS NULL
-       ORDER BY created_at ASC LIMIT 1`,
-      [mfrId],
-    );
-    if (existingAny.rows.length > 0) {
-      famCache.set(mfrId, existingAny.rows[0].id);
-      return existingAny.rows[0].id;
-    }
-    const id = randomUUID();
-    await client.query(
-      `INSERT INTO fip_product_families
-       (id, manufacturer_id, name, slug, category, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, now(), now())`,
-      [id, mfrId, `${mfrName} Fire Panels`, familySlug, "fire-panel"],
-    );
-    famCache.set(mfrId, id);
-    return id;
-  }
-
-  let rewrittenSlug = 0;
-
+  let updated = 0;
+  let skipped = 0;
   for (const spec of PANEL_DEEP_SPEC_SEED) {
-    // 1. Exact slug match — re-runs of this seed land here.
-    let modelRow = await client.query(
+    const existing = await client.query(
       "SELECT id FROM fip_models WHERE slug = $1 LIMIT 1",
       [spec.slug],
     );
-    let modelId: string;
-    if (modelRow.rows.length > 0) {
-      modelId = modelRow.rows[0].id;
-      updatedExisting++;
-    } else {
-      // 2. Fuzzy slug-prefix match — the base seed pack uses ugly
-      // slugs like "pertronic-f220-f220-fire-system" for what we call
-      // "pertronic-f220". Catch those by checking for existing rows
-      // whose slug starts with our clean slug, then rewrite the slug
-      // in place so future runs find the row via the exact match
-      // above. This collapses the two duplicates the operator was
-      // seeing in the dropdown into a single canonical row.
-      const fuzzy = await client.query(
-        `SELECT id FROM fip_models
-         WHERE slug LIKE $1 || '-%' AND deleted_at IS NULL
-         ORDER BY created_at ASC
-         LIMIT 1`,
-        [spec.slug],
-      );
-      if (fuzzy.rows.length > 0) {
-        modelId = fuzzy.rows[0].id;
-        await client.query(
-          `UPDATE fip_models SET slug = $1, name = $2, updated_at = now() WHERE id = $3`,
-          [spec.slug, spec.displayName, modelId],
-        );
-        rewrittenSlug++;
-      } else {
-        // 3. Nothing found — create the row along with any missing
-        // manufacturer / family rows it depends on.
-        const mfrId = await findOrCreateManufacturer(spec.manufacturerName);
-        const familyId = await findOrCreatePlaceholderFamily(mfrId, spec.manufacturerName);
-        modelId = randomUUID();
-        await client.query(
-          `INSERT INTO fip_models
-           (id, family_id, manufacturer_id, name, slug, status, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, 'current', now(), now())`,
-          [modelId, familyId, mfrId, spec.displayName, spec.slug],
-        );
-        insertedNew++;
-      }
+    if (existing.rows.length === 0) {
+      skipped++;
+      continue;
     }
-
     await client.query(
       `UPDATE fip_models SET
          max_loops = $1,
@@ -673,21 +560,12 @@ async function seedPanelDeepSpecs(client: any): Promise<void> {
         spec.loopCableSpec ?? null,
         spec.datasheetUrl ?? null,
         spec.sourceNotes ?? null,
-        modelId,
+        existing.rows[0].id,
       ],
     );
+    updated++;
   }
-  logger.info(
-    { table: "fip_models", updatedExisting, insertedNew, rewrittenSlug, feature: "deep_spec" },
-    "fip seed",
-  );
-}
-
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  logger.info({ table: "fip_models", updated, skipped, feature: "deep_spec" }, "fip seed");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

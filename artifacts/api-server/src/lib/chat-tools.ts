@@ -67,6 +67,52 @@ export const AGENT_TOOLS = [
         priority: { type: "string", description: "Optional priority filter." },
         client: { type: "string", description: "Optional client-name substring filter." },
         assigned_tech: { type: "string", description: "Optional technician name filter." },
+        // ── Ops-manager filters (wip_records, jobs) ─────────────────────
+        near_location: {
+          type: "string",
+          description:
+            "Suburb, address fragment or locality. Matches site + address + notes " +
+            "with ILIKE. Use for 'jobs near Wetherill Park'-style questions. " +
+            "For cluster searches call db_search multiple times with adjacent suburbs.",
+        },
+        job_type: {
+          type: "string",
+          description:
+            "Substring match on job_type (e.g. '5-yearly', 'AFSS', 'repair', 'monitoring'). " +
+            "Use for scope filtering.",
+        },
+        unassigned: {
+          type: "boolean",
+          description:
+            "True → only return rows with no assigned_tech. Use for 'jobs without a tech'.",
+        },
+        overdue: {
+          type: "boolean",
+          description:
+            "True → dueDate < today AND status not in Completed/Cancelled/Performed. " +
+            "Use for 'overdue jobs', 'what's slipped'.",
+        },
+        due_before: {
+          type: "string",
+          description:
+            "ISO date (YYYY-MM-DD). Returns rows whose dueDate <= this. " +
+            "Use for 'due this week' (pass end-of-week).",
+        },
+        due_after: {
+          type: "string",
+          description:
+            "ISO date (YYYY-MM-DD). Returns rows whose dueDate >= this. " +
+            "Combine with due_before for a window.",
+        },
+        min_value: {
+          type: "number",
+          description:
+            "Only rows whose quote_amount >= this value. Use for 'high-value jobs'.",
+        },
+        max_value: {
+          type: "number",
+          description: "Only rows whose quote_amount <= this value.",
+        },
         limit: {
           type: "number",
           description: "Max rows to return (default 20, hard cap 100).",

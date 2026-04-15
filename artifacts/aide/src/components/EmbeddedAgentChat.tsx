@@ -14,26 +14,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader2, Wrench, Check, AlertCircle, Trash2, Bot } from "lucide-react";
 import { useLocation } from "wouter";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { streamAgent, type AgentToolEvent, type AttachmentMeta } from "@/lib/api";
 import { AttachmentPicker, AttachmentPreviewChip } from "@/components/AttachmentPicker";
 import { cn } from "@/lib/utils";
-
-// Page notes — the operator can pin free-text guidance on a page
-// (column preferences, "hide anything older than 90 days", "always
-// show site name"). Stored in localStorage so they survive reloads;
-// read on every send and shipped to /api/chat/agent as `pageNotes`
-// so the master prompt can apply them.
-export const PAGE_NOTES_KEY_PREFIX = "aide-page-notes:";
-export function loadPageNotes(section: string): string {
-  try { return localStorage.getItem(PAGE_NOTES_KEY_PREFIX + section) ?? ""; }
-  catch { return ""; }
-}
-export function savePageNotes(section: string, text: string) {
-  try { localStorage.setItem(PAGE_NOTES_KEY_PREFIX + section, text); }
-  catch { /* ignore */ }
-}
 
 interface ToolRun {
   name: string;
@@ -54,64 +37,22 @@ interface Props {
   suggestions?: string[];
 }
 
-// Message rendering — delegates to react-markdown with GitHub-flavoured
-// markdown so the assistant's tables, inline code, headings and lists
-// all render properly. The previous hand-rolled parser matched only
-// bullets + headings and rendered pipe-delimited tables as raw text,
-// which is why operator screenshots were full of "|------|------|" noise.
-function MarkdownMessage({ text }: { text: string }) {
-  return (
-    <div className="prose-aide text-[12px] leading-relaxed">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          h1: ({ children }) => <h4 className="text-[13px] font-semibold text-foreground mt-2 mb-1">{children}</h4>,
-          h2: ({ children }) => <h4 className="text-[12.5px] font-semibold text-foreground mt-2 mb-1">{children}</h4>,
-          h3: ({ children }) => <h5 className="text-[12px] font-semibold text-foreground mt-1.5 mb-0.5 uppercase tracking-wide">{children}</h5>,
-          p:  ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc pl-4 mb-1.5 space-y-0.5">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal pl-4 mb-1.5 space-y-0.5">{children}</ol>,
-          li: ({ children }) => <li className="text-[12px]">{children}</li>,
-          strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-          em: ({ children }) => <em className="italic">{children}</em>,
-          code: ({ children, className }) => {
-            const isBlock = /language-/.test(className ?? "");
-            if (isBlock) {
-              return (
-                <pre className="bg-muted/50 border border-border rounded-md p-2 my-1.5 overflow-x-auto text-[11px] font-mono">
-                  <code>{children}</code>
-                </pre>
-              );
-            }
-            return (
-              <code className="bg-muted/70 border border-border/60 rounded px-1 py-[1px] text-[11px] font-mono text-foreground">
-                {children}
-              </code>
-            );
-          },
-          a: ({ href, children }) => (
-            <a href={href ?? "#"} target="_blank" rel="noreferrer noopener" className="text-primary hover:underline break-all">{children}</a>
-          ),
-          blockquote: ({ children }) => (
-            <blockquote className="border-l-2 border-border pl-2 my-1.5 text-muted-foreground italic">{children}</blockquote>
-          ),
-          table: ({ children }) => (
-            <div className="my-2 -mx-1 overflow-x-auto">
-              <table className="w-full text-[11px] border-collapse">{children}</table>
-            </div>
-          ),
-          thead: ({ children }) => <thead className="bg-muted/40">{children}</thead>,
-          tbody: ({ children }) => <tbody>{children}</tbody>,
-          tr: ({ children }) => <tr className="border-b border-border/60 last:border-0">{children}</tr>,
-          th: ({ children }) => <th className="text-left font-semibold px-2 py-1 text-foreground uppercase tracking-wide text-[10px]">{children}</th>,
-          td: ({ children }) => <td className="px-2 py-1 align-top text-foreground/90">{children}</td>,
-          hr: () => <hr className="my-2 border-border/40" />,
-        }}
-      >
-        {text}
-      </ReactMarkdown>
-    </div>
-  );
+function formatInline(text: string): string {
+  return text
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`(.+?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-[11px] font-mono">$1</code>')
+    .replace(/\$([0-9,.]+)/g, '<span class="font-mono font-semibold">$$$1</span>');
+}
+
+function renderMarkdown(text: string) {
+  return text.split("\n").map((line, i) => {
+    if (line.startsWith("### ")) return <h4 key={i} className="font-semibold text-foreground mt-2 mb-1 text-[12px]">{line.slice(4)}</h4>;
+    if (line.startsWith("- ") || line.startsWith("* ")) return <li key={i} className="ml-3 list-disc text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line.slice(2)) }} />;
+    if (/^\d+\.\s/.test(line)) return <li key={i} className="ml-3 list-decimal text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line.replace(/^\d+\.\s/, "")) }} />;
+    if (line.trim() === "") return <div key={i} className="h-2" />;
+    return <p key={i} className="text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line) }} />;
+  });
 }
 
 const DATA_CHANGED_EVENT = "aide-data-changed";
@@ -171,7 +112,6 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
       });
     };
 
-    const pageNotes = loadPageNotes(section);
     controllerRef.current = streamAgent(
       section,
       msg,
@@ -219,7 +159,6 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
         onError: (err) => { patch({ content: assistantContent || `Error: ${err}` }); setStreaming(false); },
       },
       attachmentIds,
-      pageNotes || undefined,
     );
   };
 
@@ -317,7 +256,7 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
                     </div>
                   )}
                   {msg.content ? (
-                    <MarkdownMessage text={msg.content} />
+                    <div>{renderMarkdown(msg.content)}</div>
                   ) : (streaming && i === messages.length - 1 ? (
                     <span className="flex items-center gap-1.5">
                       <Loader2 size={11} className="animate-spin text-primary" />

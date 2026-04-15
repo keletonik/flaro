@@ -14,11 +14,10 @@
  * Empty fields render as "N/A" — never fabricated.
  */
 
-import { useEffect, useMemo, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { Cpu, ChevronDown, Loader2, Network, Battery, ShieldCheck, Wrench, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PanelMark, NetworkMark, CellMark, SpecGridMark } from "./FipGlyph";
 
 interface PanelSpec {
   id: string;
@@ -105,14 +104,14 @@ export function PanelTechnicalCard({ value, onChange }: Props = {}) {
   return (
     <section className="bg-card border border-border rounded-2xl p-4">
       <header className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-sky-500/10 to-blue-500/5 border border-sky-500/25 flex items-center justify-center">
-            <PanelMark className="w-4 h-4 text-sky-400" />
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+            <Cpu className="w-4 h-4 text-blue-500" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold tracking-tight text-foreground">Panel Specs</h3>
-            <p className="text-[10px] text-muted-foreground/80">
-              Deep technical profile · every supported panel
+            <h3 className="text-sm font-semibold text-foreground">FIP Panel Specs</h3>
+            <p className="text-[10px] text-muted-foreground">
+              Deep technical profile for every supported panel
             </p>
           </div>
         </div>
@@ -181,20 +180,20 @@ function PanelDetail({ panel }: { panel: PanelSpec }) {
             panel.networkCapable === null
               ? "N/A"
               : panel.networkCapable
-                ? `Yes · up to ${panel.maxNetworkedPanels ?? "N/A"} nodes`
+                ? `Yes (up to ${panel.maxNetworkedPanels ?? "N/A"} nodes)`
                 : "No"
           }
-          icon={NetworkMark}
+          icon={Network}
         />
         <SpecTile
-          label="Battery · standby"
+          label="Battery (standby)"
           value={panel.batteryStandbyAh != null ? `${panel.batteryStandbyAh} Ah` : "N/A"}
-          icon={CellMark}
+          icon={Battery}
         />
         <SpecTile
-          label="Battery · alarm"
+          label="Battery (alarm)"
           value={panel.batteryAlarmAh != null ? `${panel.batteryAlarmAh} Ah` : "N/A"}
-          icon={CellMark}
+          icon={Battery}
         />
       </div>
 
@@ -209,8 +208,8 @@ function PanelDetail({ panel }: { panel: PanelSpec }) {
 
       {panel.configOptions && panel.configOptions.length > 0 && (
         <div>
-          <div className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-            <span className="w-1 h-1 rounded-full bg-sky-400/70" /> Config options
+          <div className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+            <Wrench className="w-3 h-3" /> Config options
           </div>
           <ul className="space-y-1 text-xs">
             {panel.configOptions.map((opt, i) => (
@@ -225,8 +224,8 @@ function PanelDetail({ panel }: { panel: PanelSpec }) {
 
       {panel.approvals && panel.approvals.length > 0 && (
         <div>
-          <div className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-            <span className="w-1 h-1 rounded-full bg-emerald-400/70" /> Approvals
+          <div className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+            <ShieldCheck className="w-3 h-3" /> Approvals
           </div>
           <div className="flex flex-wrap gap-1">
             {panel.approvals.map((a, i) => (
@@ -243,8 +242,8 @@ function PanelDetail({ panel }: { panel: PanelSpec }) {
 
       {panel.commissioningNotes && (
         <div>
-          <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-            <span className="w-1 h-1 rounded-full bg-amber-400/70" /> Commissioning notes
+          <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+            <Info className="w-3 h-3" /> Commissioning notes
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">{panel.commissioningNotes}</p>
         </div>
@@ -253,8 +252,8 @@ function PanelDetail({ panel }: { panel: PanelSpec }) {
       {/* ── v2.1 — expanded datasheet block ── */}
       {hasAnyDatasheetField(panel) && (
         <div>
-          <div className="flex items-center gap-1.5 mb-2 text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-            <SpecGridMark className="w-3 h-3 text-sky-400/70" /> Datasheet
+          <div className="flex items-center gap-1.5 mb-2 text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+            <Info className="w-3 h-3" /> Datasheet
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             <DatasheetRow label="Dimensions" value={panel.dimensionsMm ?? "N/A"} />
@@ -337,8 +336,6 @@ function DatasheetRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-type IconComponent = ComponentType<{ className?: string }>;
-
 function SpecTile({
   label,
   value,
@@ -346,15 +343,15 @@ function SpecTile({
 }: {
   label: string;
   value: string;
-  icon?: IconComponent;
+  icon?: typeof Cpu;
 }) {
   return (
-    <div className="p-2.5 rounded-lg bg-muted/20 border border-border/70 hover:border-border transition-colors">
+    <div className="p-2.5 rounded-lg bg-muted/30 border border-border">
       <div className="flex items-center gap-1.5 mb-0.5">
-        {Icon && <Icon className="w-3 h-3 text-sky-400/70" />}
-        <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">{label}</p>
+        {Icon && <Icon className="w-3 h-3 text-muted-foreground" />}
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">{label}</p>
       </div>
-      <p className={cn("text-xs text-foreground font-medium", value === "N/A" && "text-muted-foreground/40")}>
+      <p className={cn("text-xs text-foreground font-medium", value === "N/A" && "text-muted-foreground/60")}>
         {value}
       </p>
     </div>

@@ -43,6 +43,9 @@ router.get("/jobs", async (req, res, next) => {
         ilike(jobs.client, `%${safe}%`),
         ilike(jobs.taskNumber!, `%${safe}%`),
         ilike(jobs.assignedTech!, `%${safe}%`),
+        ilike(jobs.address!, `%${safe}%`),
+        ilike(jobs.actionRequired, `%${safe}%`),
+        ilike(jobs.notes!, `%${safe}%`),
       ));
     }
 

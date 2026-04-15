@@ -29,13 +29,6 @@
 
 export interface PanelDeepSpecSeed {
   slug: string;
-  /** Display name. When we have to create the fip_models row ourselves
-   * (because the base seed pack doesn't have a matching slug) this is
-   * what shows in the dropdown. */
-  displayName: string;
-  /** Manufacturer name. Looked up in fip_manufacturers at insert time,
-   * created if missing. Also drives the placeholder family row. */
-  manufacturerName: string;
   maxLoops: number | null;
   devicesPerLoop: number | null;
   loopProtocol: string | null;
@@ -77,8 +70,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Pertronic ─────────────────────────────────────────────────────
   {
     slug: "pertronic-f100a",
-    displayName: "Pertronic F100A",
-    manufacturerName: "Pertronic",
     maxLoops: 2,
     devicesPerLoop: 250,
     loopProtocol: "Pertronic / Apollo XP95/Discovery",
@@ -121,8 +112,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   },
   {
     slug: "pertronic-f120a",
-    displayName: "Pertronic F120A",
-    manufacturerName: "Pertronic",
     maxLoops: 2,
     devicesPerLoop: 250,
     loopProtocol: "Pertronic / Apollo XP95/Discovery",
@@ -166,8 +155,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   },
   {
     slug: "pertronic-f220",
-    displayName: "Pertronic F220",
-    manufacturerName: "Pertronic",
     maxLoops: 8,
     devicesPerLoop: 250,
     loopProtocol: "Pertronic / Apollo XP95/Discovery",
@@ -214,8 +201,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Ampac ─────────────────────────────────────────────────────────
   {
     slug: "ampac-fireFinder-plus",
-    displayName: "Ampac FireFinder Plus",
-    manufacturerName: "Ampac",
     maxLoops: 8,
     devicesPerLoop: 250,
     loopProtocol: "Apollo XP95/Discovery or Ampac proprietary",
@@ -259,8 +244,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   },
   {
     slug: "ampac-fp1200",
-    displayName: "Ampac FP1200",
-    manufacturerName: "Ampac",
     maxLoops: 4,
     devicesPerLoop: 250,
     loopProtocol: "Apollo XP95/Discovery",
@@ -306,8 +289,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Notifier ──────────────────────────────────────────────────────
   {
     slug: "notifier-nfs-320",
-    displayName: "Notifier NFS-320",
-    manufacturerName: "Notifier",
     maxLoops: 1,
     devicesPerLoop: 318,
     loopProtocol: "Notifier CLIP / FlashScan",
@@ -351,8 +332,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   },
   {
     slug: "notifier-nfs2-640",
-    displayName: "Notifier NFS2-640",
-    manufacturerName: "Notifier",
     maxLoops: 2,
     devicesPerLoop: 318,
     loopProtocol: "Notifier CLIP / FlashScan",
@@ -398,8 +377,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Simplex ───────────────────────────────────────────────────────
   {
     slug: "simplex-4010es",
-    displayName: "Simplex 4010ES",
-    manufacturerName: "Simplex",
     maxLoops: 1,
     devicesPerLoop: 250,
     loopProtocol: "Simplex IDNet or MAPNET II",
@@ -444,8 +421,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Bosch ─────────────────────────────────────────────────────────
   {
     slug: "bosch-fpa-1200",
-    displayName: "Bosch FPA-1200 MPC",
-    manufacturerName: "Bosch",
     maxLoops: 4,
     devicesPerLoop: 254,
     loopProtocol: "Bosch LSN (Local SecurityNet)",
@@ -490,8 +465,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Hochiki ───────────────────────────────────────────────────────
   {
     slug: "hochiki-latitude-l32",
-    displayName: "Hochiki Latitude L32",
-    manufacturerName: "Hochiki",
     maxLoops: 2,
     devicesPerLoop: 240,
     loopProtocol: "Hochiki ESP (Enhanced Systems Protocol)",
@@ -536,8 +509,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Honeywell ─────────────────────────────────────────────────────
   {
     slug: "honeywell-morley-dxc",
-    displayName: "Morley-IAS DX Connexion",
-    manufacturerName: "Honeywell Morley-IAS",
     maxLoops: 4,
     devicesPerLoop: 250,
     loopProtocol: "Apollo XP95 / Discovery / CoreProtocol",
@@ -582,8 +553,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Tyco / Kidde ──────────────────────────────────────────────────
   {
     slug: "tyco-mx-4000",
-    displayName: "Tyco MX-4000",
-    manufacturerName: "Tyco",
     maxLoops: 2,
     devicesPerLoop: 200,
     loopProtocol: "MX Digital",
@@ -628,8 +597,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Xtralis VESDA (aspirating) ────────────────────────────────────
   {
     slug: "xtralis-vesda-vep",
-    displayName: "VESDA-E VEP",
-    manufacturerName: "Xtralis",
     maxLoops: null,
     devicesPerLoop: null,
     loopProtocol: "VESDAnet (proprietary)",
@@ -672,8 +639,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   },
   {
     slug: "xtralis-vesda-vli",
-    displayName: "VESDA-E VLI",
-    manufacturerName: "Xtralis",
     maxLoops: null,
     devicesPerLoop: null,
     loopProtocol: "VESDAnet",
@@ -717,8 +682,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Wormald ───────────────────────────────────────────────────────
   {
     slug: "wormald-vigilant-mx1",
-    displayName: "Vigilant MX1",
-    manufacturerName: "Vigilant",
     maxLoops: 8,
     devicesPerLoop: 200,
     loopProtocol: "Tyco MX Digital",
@@ -763,8 +726,6 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
   // ─── Notifier large ────────────────────────────────────────────────
   {
     slug: "notifier-nfs-3030",
-    displayName: "Notifier NFS-3030",
-    manufacturerName: "Notifier",
     maxLoops: 10,
     devicesPerLoop: 318,
     loopProtocol: "Notifier FlashScan / CLIP",

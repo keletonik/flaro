@@ -52,7 +52,7 @@ type TableEntry = {
 
 const REGISTRY: Record<AgentTable, TableEntry> = {
   jobs: { table: jobs, textCols: ["site", "client", "task_number", "action_required", "notes"], softDelete: true },
-  wip_records: { table: wipRecords, textCols: ["site", "client", "task_number", "description", "notes"], softDelete: true },
+  wip_records: { table: wipRecords, textCols: ["site", "client", "task_number", "description", "notes", "address", "job_type"], softDelete: true },
   quotes: { table: quotes, textCols: ["site", "client", "task_number", "quote_number", "description"], softDelete: true },
   defects: { table: defects, textCols: ["site", "client", "task_number", "description", "notes", "location"], softDelete: true },
   invoices: { table: invoices, textCols: ["site", "client", "invoice_number", "task_number", "description"], softDelete: true },
@@ -115,7 +115,7 @@ function summariseRow(table: string, row: Record<string, any>): Record<string, a
   const out: Record<string, any> = { id: row.id };
   const keep: Record<string, string[]> = {
     jobs: ["task_number", "site", "client", "action_required", "priority", "status", "assigned_tech", "due_date"],
-    wip_records: ["task_number", "site", "client", "description", "status", "priority", "assigned_tech", "quote_amount", "invoice_amount", "due_date"],
+    wip_records: ["task_number", "site", "address", "client", "job_type", "description", "status", "priority", "assigned_tech", "quote_amount", "invoice_amount", "due_date"],
     quotes: ["quote_number", "task_number", "site", "client", "quote_amount", "status", "date_created"],
     defects: ["task_number", "site", "client", "description", "severity", "status", "asset_type", "location"],
     invoices: ["invoice_number", "task_number", "site", "client", "amount", "total_amount", "status", "date_due"],
@@ -154,7 +154,24 @@ function summariseRow(table: string, row: Record<string, any>): Record<string, a
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function dbSearch(input: any): Promise<any> {
-  const { table: tableName, query, status, priority, client, assigned_tech, limit } = input;
+  const {
+    table: tableName,
+    query,
+    status,
+    priority,
+    client,
+    assigned_tech,
+    limit,
+    // Ops-manager filters for wip_records / jobs
+    near_location,
+    job_type,
+    unassigned,
+    overdue,
+    due_before,
+    due_after,
+    min_value,
+    max_value,
+  } = input;
   const e = entry(tableName);
   const t = e.table;
 
@@ -165,6 +182,48 @@ export async function dbSearch(input: any): Promise<any> {
   if (priority && t.priority) conds.push(eq(t.priority, priority));
   if (client && t.client) conds.push(ilike(t.client, `%${client}%`));
   if (assigned_tech && t.assignedTech) conds.push(ilike(t.assignedTech, `%${assigned_tech}%`));
+
+  // ── Ops-manager extensions (wip_records, jobs) ─────────────────────
+  if (near_location && typeof near_location === "string") {
+    // Match suburb / address / site — covers "jobs near Wetherill Park".
+    const s = `%${near_location.replace(/[%_\\]/g, "\\$&")}%`;
+    const locConds: any[] = [];
+    if ((t as any).site) locConds.push(ilike((t as any).site, s));
+    if ((t as any).address) locConds.push(ilike((t as any).address, s));
+    if ((t as any).notes) locConds.push(ilike((t as any).notes, s));
+    if (locConds.length) conds.push(or(...locConds));
+  }
+  if (job_type && (t as any).jobType) {
+    conds.push(ilike((t as any).jobType, `%${job_type}%`));
+  }
+  if (unassigned === true && (t as any).assignedTech) {
+    conds.push(
+      or(
+        isNull((t as any).assignedTech),
+        eq((t as any).assignedTech, ""),
+      ) as any,
+    );
+  }
+  if (overdue === true && (t as any).dueDate && (t as any).status) {
+    // dueDate is stored as text — use a lexicographic ISO compare.
+    const today = new Date().toISOString().slice(0, 10);
+    conds.push(sql`${(t as any).dueDate} < ${today}`);
+    conds.push(sql`${(t as any).status} NOT IN ('Completed','Cancelled','Performed')`);
+  }
+  if (due_before && (t as any).dueDate) {
+    conds.push(sql`${(t as any).dueDate} <= ${String(due_before)}`);
+  }
+  if (due_after && (t as any).dueDate) {
+    conds.push(sql`${(t as any).dueDate} >= ${String(due_after)}`);
+  }
+  if (min_value !== undefined && min_value !== null && (t as any).quoteAmount) {
+    const n = Number(min_value);
+    if (Number.isFinite(n)) conds.push(sql`${(t as any).quoteAmount} >= ${n}`);
+  }
+  if (max_value !== undefined && max_value !== null && (t as any).quoteAmount) {
+    const n = Number(max_value);
+    if (Number.isFinite(n)) conds.push(sql`${(t as any).quoteAmount} <= ${n}`);
+  }
 
   if (query) {
     const s = `%${String(query).replace(/[%_\\]/g, "\\$&")}%`;

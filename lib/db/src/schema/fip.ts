@@ -136,6 +136,11 @@ export const fipCommonProducts = pgTable("fip_common_products", {
   priceBand: text("price_band").$type<"$" | "$$" | "$$$" | "N/A">().default("N/A"),
   indicativePriceAud: numeric("indicative_price_aud", { precision: 10, scale: 2 }),
   notes: text("notes"),
+  // v2.1 — list of fip_models.slug strings this product is
+  // compatible with. Empty/null means universal (e.g. a 12V SLA
+  // battery works on any panel). Used to filter the Common Products
+  // card by the selected panel in the command centre.
+  compatiblePanelSlugs: jsonb("compatible_panel_slugs").$type<string[]>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),

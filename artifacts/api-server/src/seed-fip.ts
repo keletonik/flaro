@@ -590,11 +590,14 @@ async function seedCommonProducts(client: any): Promise<void> {
       await client.query(
         `UPDATE fip_common_products SET
            name = $1, description = $2, unit = $3, price_band = $4,
-           indicative_price_aud = $5, notes = $6, updated_at = now()
-         WHERE id = $7`,
+           indicative_price_aud = $5, notes = $6,
+           compatible_panel_slugs = $7, updated_at = now()
+         WHERE id = $8`,
         [
           p.name, p.description, p.unit, p.priceBand,
-          p.indicativePriceAud, p.notes, byCode.rows[0].id,
+          p.indicativePriceAud, p.notes,
+          p.compatiblePanelSlugs ? JSON.stringify(p.compatiblePanelSlugs) : null,
+          byCode.rows[0].id,
         ],
       );
       updated++;
@@ -603,8 +606,8 @@ async function seedCommonProducts(client: any): Promise<void> {
     await client.query(
       `INSERT INTO fip_common_products
        (id, category, name, manufacturer, part_code, description, unit,
-        price_band, indicative_price_aud, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        price_band, indicative_price_aud, notes, compatible_panel_slugs)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
       [
         randomUUID(),
         p.category,
@@ -616,6 +619,7 @@ async function seedCommonProducts(client: any): Promise<void> {
         p.priceBand,
         p.indicativePriceAud,
         p.notes,
+        p.compatiblePanelSlugs ? JSON.stringify(p.compatiblePanelSlugs) : null,
       ],
     );
     inserted++;

@@ -115,6 +115,7 @@ export function streamAgent(
   history: { role: string; content: string }[],
   handlers: AgentStreamHandlers,
   attachmentIds?: string[],
+  pageNotes?: string,
 ): AbortController {
   const controller = new AbortController();
   // Pass 5 §3.4: retry initial connection up to 2 times with 1s + 3s
@@ -129,7 +130,7 @@ export function streamAgent(
       const res = await fetch(`${BASE}/chat/agent`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader() },
-        body: JSON.stringify({ section, message, history, attachmentIds }),
+        body: JSON.stringify({ section, message, history, attachmentIds, pageNotes }),
         signal: controller.signal,
       });
       if (!res.ok) {

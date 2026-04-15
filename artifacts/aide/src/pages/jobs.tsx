@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
+import { PageNotesPanel } from "@/components/PageNotesPanel";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
 import { exportToCSV } from "@/lib/api";
@@ -188,7 +189,7 @@ function JobModal({ job, onClose, onSave }: {
   );
 }
 
-const PAGE_SIZES = [25, 50, 100, 200];
+const PAGE_SIZES = [25, 50, 100, 200, 500];
 
 export default function Jobs() {
   const [search, setSearch] = useState("");
@@ -380,6 +381,10 @@ export default function Jobs() {
               <Plus size={12} />Add WIP
             </button>
           </div>
+        </div>
+
+        <div className="px-3 pb-2">
+          <PageNotesPanel section="wip" pageLabel="WIPs" />
         </div>
 
         {(activeFilterCount > 0 || search) && (

@@ -18,6 +18,7 @@ export const jobs = pgTable("jobs", {
   dueDate: text("due_date"),
   notes: text("notes"),
   uptickNotes: text("uptick_notes").array().notNull().default([]),
+  airtableRecordId: text("airtable_record_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -25,6 +26,7 @@ export const jobs = pgTable("jobs", {
   index("jobs_status_idx").on(table.status),
   index("jobs_priority_idx").on(table.priority),
   index("jobs_created_at_idx").on(table.createdAt),
+  index("jobs_airtable_record_id_idx").on(table.airtableRecordId),
 ]);
 
 export const insertJobSchema = createInsertSchema(jobs).omit({

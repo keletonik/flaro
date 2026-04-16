@@ -26,4 +26,4 @@ export * from "./attachments";
 export * from "./task-cycle-times";
 export * from "./fip-material-lists";
 export * from "./purchase-orders";
-export * from "./change-logs";
+export * from "./contacts";

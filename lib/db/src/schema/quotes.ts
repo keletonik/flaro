@@ -22,6 +22,7 @@ export const quotes = pgTable("quotes", {
   notes: text("notes"),
   rawData: jsonb("raw_data"),
   importBatchId: text("import_batch_id"),
+  airtableRecordId: text("airtable_record_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -29,6 +30,7 @@ export const quotes = pgTable("quotes", {
   index("quotes_status_idx").on(table.status),
   index("quotes_client_idx").on(table.client),
   index("quotes_created_at_idx").on(table.createdAt),
+  index("quotes_airtable_record_id_idx").on(table.airtableRecordId),
 ]);
 
 export const insertQuoteSchema = createInsertSchema(quotes).omit({

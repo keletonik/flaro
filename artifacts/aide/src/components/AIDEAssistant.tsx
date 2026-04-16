@@ -1,230 +1,221 @@
 /**
- * The one true in-app AI surface.
+ * Global AIDE panel — the single AI surface for the entire app.
  *
- * Mounted once at the top of <Layout> in App.tsx. Floating launcher
- * bottom-right on every page; click to open a right-hand drawer that
- * renders the tool-use EmbeddedAgentChat. Remembers open/closed state
- * per-session via sessionStorage so tab-to-tab switching keeps the
- * user's context.
+ * Mounted once in <Layout> (App.tsx). Supports three dock modes:
+ *   - right: fixed right-side panel, content gets margin-right
+ *   - left:  fixed left-side panel, content gets extra margin-left
+ *   - bottom: fixed bottom panel, content gets padding-bottom
  *
- * This component intentionally replaces the affordance that was
- * previously split three ways (AidePA floating widget, AnalyticsPanel
- * drawer, EmbeddedAgentChat inline). Under the hood every surface now
- * speaks /api/chat/agent — one code path, tool use always on.
+ * When collapsed: renders a thin tab at the bottom edge (not a bubble).
+ * When expanded: pushes page content via AIDEContext (consumed by Layout).
  *
- * AidePA.tsx and AnalyticsPanel.tsx still exist on disk (hands-off
- * files per the audit ground rules); they're just no longer mounted
- * in Layout. Any page can still import them directly if a specific
- * use case needs the old behaviour.
- *
- * The section prop is derived from wouter's useLocation() so the
- * agent knows which page the user is looking at and primes its
- * tools accordingly (wip_records on /operations, estimates on
- * /suppliers?mode=estimation, etc.).
+ * Persists dock mode and open/collapsed state to localStorage.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import { MessageCircle, X, Maximize2, Minimize2 } from "lucide-react";
+import {
+  MessageCircle, X, Maximize2, Minimize2,
+  PanelRight, PanelLeft, PanelBottom,
+  ChevronUp, GripVertical,
+} from "lucide-react";
 import EmbeddedAgentChat from "@/components/EmbeddedAgentChat";
 import { cn } from "@/lib/utils";
+import { useAIDE, useSidebar } from "@/App";
 
-const STORAGE_KEY = "aide-assistant-open";
+export type DockMode = "right" | "left" | "bottom";
+
+const DOCK_KEY = "aide-dock-mode";
+const OPEN_KEY = "aide-assistant-open";
 const WIDE_KEY = "aide-assistant-wide";
 
-/**
- * Map the current route to the section slug the agent expects. Drives
- * the system-prompt hint and the starter suggestions in
- * EmbeddedAgentChat.
- */
+function persistDock(mode: DockMode) {
+  try { localStorage.setItem(DOCK_KEY, mode); } catch { /* noop */ }
+}
+function loadDock(): DockMode {
+  try { return (localStorage.getItem(DOCK_KEY) as DockMode) || "right"; } catch { return "right"; }
+}
+
 function sectionFromPath(path: string): { section: string; title: string; suggestions: string[] } {
   if (path === "/" || path.startsWith("/dashboard"))
-    return {
-      section: "dashboard",
-      title: "AIDE — Dashboard",
-      suggestions: [
-        "Give me a full KPI snapshot",
-        "What are the three most urgent things today?",
-        "Take me to overdue defects",
-        "Revenue this month vs $180k target",
-      ],
-    };
+    return { section: "dashboard", title: "Dashboard", suggestions: ["Give me a full KPI snapshot", "What are the three most urgent things today?", "Revenue this month vs target", "Show overdue jobs"] };
   if (path.startsWith("/operations"))
-    return {
-      section: "wip",
-      title: "AIDE — Operations",
-      suggestions: [
-        "Show open WIPs over $5000",
-        "Mark T-39833 as Scheduled and assign to Gordon",
-        "Which tech has the most jobs right now?",
-        "Defects needing quotes",
-      ],
-    };
+    return { section: "wip", title: "Operations", suggestions: ["Show open WIPs over $5000", "Which tech has the most jobs?", "Defects needing quotes", "Revenue gap analysis"] };
   if (path.startsWith("/suppliers"))
-    return {
-      section: "estimation",
-      title: "AIDE — Suppliers & Estimation",
-      suggestions: [
-        "Find the cheapest smoke detector",
-        "Create a new estimate for Goodman Silverwater, 42% markup",
-        "Compare F220 panel pricing by supplier",
-        "Add 2 Ampac detectors at 35% markup",
-      ],
-    };
+    return { section: "estimation", title: "Suppliers", suggestions: ["Find the cheapest smoke detector", "Compare panel prices", "Create a new estimate", "Total spend by supplier"] };
   if (path.startsWith("/jobs"))
-    return {
-      section: "wip",
-      title: "AIDE — Jobs",
-      suggestions: [
-        "Assign every open critical job to Gordon",
-        "Show me overdue jobs",
-        "Create a new job for Goodman Silverwater",
-        "Mark T-39042 as Done",
-      ],
-    };
+    return { section: "wip", title: "Jobs / WIP", suggestions: ["Show overdue jobs", "Assign open critical jobs", "Create a new job", "WIP value by tech"] };
   if (path.startsWith("/todos"))
-    return {
-      section: "tasks",
-      title: "AIDE — Tasks",
-      suggestions: [
-        "Add a todo to chase Pertronic on Monday, High priority",
-        "What's overdue right now?",
-        "Prioritise for today",
-        "Mark the FIP retrieval todo as done",
-      ],
-    };
+    return { section: "tasks", title: "Tasks", suggestions: ["What's overdue?", "Prioritise for today", "Add a follow-up todo", "Completion rate this week"] };
   if (path.startsWith("/fip"))
-    return {
-      section: "fip",
-      title: "AIDE — FIP Library",
-      suggestions: [
-        "Show every Pertronic F220 manual",
-        "Which Ampac models are current?",
-        "Find all AS 1670.1 revisions",
-        "Add a fault signature for Pertronic F220 E-03",
-      ],
-    };
+    return { section: "fip", title: "FIP Library", suggestions: ["Show Pertronic F220 manuals", "Find AS 1670.1 revisions", "Ampac current models", "Add fault signature"] };
   if (path.startsWith("/schedule"))
-    return {
-      section: "wip",
-      title: "AIDE — Schedule",
-      suggestions: [
-        "What's booked for tomorrow?",
-        "Suggest an optimal schedule for this week",
-        "Show me Gordon's next 3 jobs",
-        "Any scheduling conflicts?",
-      ],
-    };
-  if (path.startsWith("/analytics"))
-    return {
-      section: "dashboard",
-      title: "AIDE — Analytics",
-      suggestions: [
-        "Revenue vs $180k target month-to-date",
-        "Quote conversion rate last 30 days",
-        "Margin by client top 10",
-        "Repeat-site frequency this quarter",
-      ],
-    };
-  return {
-    section: "dashboard",
-    title: "AIDE",
-    suggestions: [
-      "What needs my attention today?",
-      "Give me a full KPI snapshot",
-      "Create a todo",
-      "Take me to the dashboard",
-    ],
-  };
+    return { section: "wip", title: "Schedule", suggestions: ["What's booked tomorrow?", "Suggest optimal schedule", "Any scheduling conflicts?", "Show Gordon's next jobs"] };
+  if (path.startsWith("/analytics") || path.startsWith("/metrics"))
+    return { section: "dashboard", title: "Analytics", suggestions: ["Revenue vs target MTD", "Quote conversion rate", "Margin by client top 10", "WIP pipeline gaps"] };
+  if (path.startsWith("/purchase-orders"))
+    return { section: "purchase-orders", title: "Purchase Orders", suggestions: ["Which POs are approved but not actioned?", "Total unapproved PO value?", "Match POs to defects", "POs with incomplete checklists"] };
+  if (path.startsWith("/notes"))
+    return { section: "tasks", title: "Notes", suggestions: ["Summarise open notes", "What needs follow-up?", "Key insights this week", "Create a note"] };
+  if (path.startsWith("/projects"))
+    return { section: "tasks", title: "Projects", suggestions: ["Project status summary", "What's blocked?", "Overdue milestones", "Resource allocation"] };
+  return { section: "dashboard", title: "AIDE", suggestions: ["What needs attention today?", "Full KPI snapshot", "Create a todo", "Show me the dashboard"] };
 }
+
+// ── Panel widths / heights ──────────────────────────────────────────
+const SIDE_W = 400;
+const SIDE_W_WIDE = 560;
+const BOTTOM_H = 360;
+const BOTTOM_H_WIDE = 480;
 
 export default function AIDEAssistant() {
   const [location] = useLocation();
+  const { setAideState } = useAIDE();
+  const { collapsed } = useSidebar();
+  const sidebarW = collapsed ? 60 : 210;
+
   const [open, setOpen] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem(STORAGE_KEY) === "1";
-    } catch {
-      return false;
-    }
+    try { return localStorage.getItem(OPEN_KEY) === "1"; } catch { return false; }
   });
+  const [dock, setDock] = useState<DockMode>(loadDock);
   const [wide, setWide] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem(WIDE_KEY) === "1";
-    } catch {
-      return false;
-    }
+    try { return localStorage.getItem(WIDE_KEY) === "1"; } catch { return false; }
   });
 
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, open ? "1" : "0");
-    } catch { /* ignore */ }
-  }, [open]);
+  // Persist
+  useEffect(() => { try { localStorage.setItem(OPEN_KEY, open ? "1" : "0"); } catch {} }, [open]);
+  useEffect(() => { try { localStorage.setItem(WIDE_KEY, wide ? "1" : "0"); } catch {} }, [wide]);
 
-  // Open the drawer automatically when the command palette forwards a
-  // prompt. EmbeddedAgentChat listens for the same event and auto-sends
-  // the message once the drawer is mounted.
+  // Publish state to context so Layout can adjust content margins
+  useEffect(() => {
+    if (!open) { setAideState({ open: false, dock, width: 0, height: 0 }); return; }
+    if (dock === "bottom") {
+      setAideState({ open: true, dock, width: 0, height: wide ? BOTTOM_H_WIDE : BOTTOM_H });
+    } else {
+      setAideState({ open: true, dock, width: wide ? SIDE_W_WIDE : SIDE_W, height: 0 });
+    }
+  }, [open, dock, wide, setAideState]);
+
+  // Listen for aide-open-with-prompt (from CommandPalette)
   useEffect(() => {
     const handler = () => setOpen(true);
     window.addEventListener("aide-open-with-prompt", handler);
     return () => window.removeEventListener("aide-open-with-prompt", handler);
   }, []);
 
+  // Listen for aide-analyse (from CSV import)
   useEffect(() => {
-    try {
-      sessionStorage.setItem(WIDE_KEY, wide ? "1" : "0");
-    } catch { /* ignore */ }
-  }, [wide]);
+    const handler = () => setOpen(true);
+    window.addEventListener("aide-analyse", handler);
+    return () => window.removeEventListener("aide-analyse", handler);
+  }, []);
+
+  const changeDock = useCallback((mode: DockMode) => {
+    setDock(mode);
+    persistDock(mode);
+  }, []);
 
   const { section, title, suggestions } = useMemo(() => sectionFromPath(location), [location]);
 
-  return (
-    <>
-      {!open && (
+  // ── Collapsed: thin bottom tab ──────────────────────────────────
+  if (!open) {
+    return (
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 flex items-center">
         <button
           onClick={() => setOpen(true)}
-          className="fixed right-4 bottom-20 md:bottom-4 z-40 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center"
-          title="Open AIDE (tool-use agent)"
-          aria-label="Open AIDE assistant"
+          className="flex items-center gap-2 px-5 py-2 rounded-t-xl bg-card border border-b-0 border-border shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 text-foreground"
+          title="Open AIDE"
         >
-          <MessageCircle size={20} />
+          <MessageCircle size={14} className="text-primary" />
+          <span className="text-xs font-semibold">AIDE</span>
+          <span className="text-[10px] text-muted-foreground">— {title}</span>
+          <ChevronUp size={12} className="text-muted-foreground ml-1" />
         </button>
-      )}
+      </div>
+    );
+  }
 
-      <div
-        className={cn(
-          "fixed right-0 top-0 bottom-0 z-50 flex flex-col transition-all duration-300 border-l border-border bg-card shadow-xl",
-          open
-            ? wide
-              ? "w-[560px] max-w-[95vw]"
-              : "w-[400px] max-w-[90vw]"
-            : "w-0 overflow-hidden",
-        )}
-        aria-hidden={!open}
-      >
-        {/* Thin control bar so the user can widen / close without reaching
-            inside the EmbeddedAgentChat's own header. */}
-        <div className="flex items-center justify-end px-2 py-1 border-b border-border/60 shrink-0 gap-1">
-          <button
-            onClick={() => setWide(v => !v)}
-            className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title={wide ? "Compact" : "Wide"}
-          >
-            {wide ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-          </button>
-          <button
-            onClick={() => setOpen(false)}
-            className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title="Close"
-          >
-            <X size={14} />
-          </button>
+  // ── Dock picker (shared across all modes) ───────────────────────
+  const dockPicker = (
+    <div className="flex items-center gap-0.5">
+      <button onClick={() => changeDock("left")} title="Dock left"
+        className={cn("p-1.5 rounded transition-colors", dock === "left" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
+        <PanelLeft size={13} />
+      </button>
+      <button onClick={() => changeDock("bottom")} title="Dock bottom"
+        className={cn("p-1.5 rounded transition-colors", dock === "bottom" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
+        <PanelBottom size={13} />
+      </button>
+      <button onClick={() => changeDock("right")} title="Dock right"
+        className={cn("p-1.5 rounded transition-colors", dock === "right" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
+        <PanelRight size={13} />
+      </button>
+    </div>
+  );
+
+  // ── Header bar ──────────────────────────────────────────────────
+  const header = (
+    <div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0 bg-card">
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+          <MessageCircle size={12} className="text-primary" />
         </div>
-
-        <div className="flex-1 overflow-hidden">
-          <EmbeddedAgentChat section={section} title={title} suggestions={suggestions} />
+        <div>
+          <p className="text-[13px] font-semibold text-foreground">AIDE — {title}</p>
+          <p className="text-[9px] text-muted-foreground">Tool-use agent · {section}</p>
         </div>
       </div>
-    </>
+      <div className="flex items-center gap-1">
+        {dockPicker}
+        <div className="w-px h-4 bg-border mx-1" />
+        <button onClick={() => setWide(v => !v)} title={wide ? "Compact" : "Expand"}
+          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          {wide ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+        </button>
+        <button onClick={() => setOpen(false)} title="Collapse AIDE"
+          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── SIDE DOCK (left or right) ───────────────────────────────────
+  if (dock === "left" || dock === "right") {
+    const w = wide ? SIDE_W_WIDE : SIDE_W;
+    // Left dock sits to the right of the sidebar
+    const leftOffset = dock === "left" ? sidebarW : undefined;
+    return (
+      <div
+        className={cn(
+          "fixed top-0 bottom-0 z-40 flex flex-col bg-card shadow-xl transition-all duration-300 max-md:inset-x-0 max-md:!w-auto",
+          dock === "right" ? "right-0 border-l border-border" : "border-r border-border",
+        )}
+        style={{
+          width: `${w}px`,
+          maxWidth: "90vw",
+          ...(leftOffset != null ? { left: `${leftOffset}px` } : {}),
+        }}
+      >
+        {header}
+        <div className="flex-1 overflow-hidden">
+          <EmbeddedAgentChat section={section} title={`AIDE — ${title}`} suggestions={suggestions} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── BOTTOM DOCK ─────────────────────────────────────────────────
+  const h = wide ? BOTTOM_H_WIDE : BOTTOM_H;
+  return (
+    <div
+      className="fixed inset-x-0 bottom-0 z-50 flex flex-col bg-card border-t border-border shadow-xl transition-all duration-300"
+      style={{ height: `${h}px`, maxHeight: "70vh" }}
+    >
+      {header}
+      <div className="flex-1 overflow-hidden">
+        <EmbeddedAgentChat section={section} title={`AIDE — ${title}`} suggestions={suggestions} />
+      </div>
+    </div>
   );
 }

@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { Plus, Search, X, Pin, Grid3X3, List, ChevronDown, Check } from "lucide-react";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { useListNotes, useCreateNote, useUpdateNote, useDeleteNote, getListNotesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -279,7 +278,6 @@ export default function Notes() {
   };
 
   return (
-    <div className="h-full flex">
       <div className="flex-1 min-w-0 min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
@@ -391,7 +389,5 @@ export default function Notes() {
       {showAdd && <AddNoteSheet onClose={() => setShowAdd(false)} onSave={handleSave} />}
 
       </div>
-      <AnalyticsPanel section="tasks" title="Notes Analyst" />
-    </div>
   );
 }

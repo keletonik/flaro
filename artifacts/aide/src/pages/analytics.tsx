@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { BarChart3, TrendingUp, Target, DollarSign, Clock, CheckCircle2, Settings2, Palette, ChevronDown, AlertTriangle, Users, Activity, Upload } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { apiFetch, formatCurrency } from "@/lib/api";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import LiveToggle from "@/components/LiveToggle";
 import CSVImportModal from "@/components/CSVImportModal";
 import { cn } from "@/lib/utils";
@@ -329,7 +328,6 @@ export default function Analytics() {
     : data.revenue.monthlyTarget;
 
   return (
-    <div className="h-full flex">
       <div className="flex-1 min-w-0 min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
@@ -602,7 +600,5 @@ export default function Analytics() {
       />
 
       </div>
-      <AnalyticsPanel section="dashboard" title="Analytics Analyst" />
-    </div>
   );
 }

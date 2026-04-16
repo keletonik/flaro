@@ -3,7 +3,6 @@ import {
   Plus, Search, X, CheckCircle2, Circle, Mail, FileText, Link2,
   Filter, Trash2, Pencil, ChevronDown, AlertCircle, CheckSquare,
 } from "lucide-react";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import {
   useListPurchaseOrders,
   useCreatePurchaseOrder,
@@ -200,7 +199,6 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
-    <div className="h-full flex">
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="border-b border-border px-4 md:px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
@@ -560,8 +558,6 @@ export default function PurchaseOrdersPage() {
         </div>
       )}
       </div>
-      <AnalyticsPanel section="purchase-orders" />
-    </div>
   );
 }
 

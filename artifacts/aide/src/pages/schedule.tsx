@@ -284,7 +284,8 @@ export default function Schedule() {
   const isCurrentWeek = weekDates.some(d => toDateStr(d) === todayStr);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-full flex">
+      <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between gap-3">
@@ -482,6 +483,7 @@ export default function Schedule() {
         />
       )}
 
+      </div>
       <AnalyticsPanel section="wip" title="Schedule Analyst" />
     </div>
   );

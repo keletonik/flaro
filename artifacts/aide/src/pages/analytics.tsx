@@ -324,7 +324,8 @@ export default function Analytics() {
     : data.revenue.monthlyTarget;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full flex">
+      <div className="flex-1 min-w-0 min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between">
@@ -570,6 +571,7 @@ export default function Analytics() {
         </>}
       </div>
 
+      </div>
       <AnalyticsPanel section="dashboard" title="Analytics Analyst" />
     </div>
   );

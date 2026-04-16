@@ -199,7 +199,8 @@ export default function Dashboard() {
   const fmt = formatCurrency;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full flex">
+      <div className="flex-1 min-w-0 min-h-screen bg-background">
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
@@ -394,6 +395,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      </div>
       <AnalyticsPanel section="dashboard" title="Dashboard Analyst" />
     </div>
   );

@@ -200,8 +200,8 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
-    <div className="flex h-full">
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="h-full flex">
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="border-b border-border px-4 md:px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div>
@@ -466,11 +466,8 @@ export default function PurchaseOrdersPage() {
             })}
           </div>
         </div>
-      </div>
 
-      <AnalyticsPanel section="purchase-orders" />
-
-      {/* Modal */}
+        {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="bg-card border border-border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
@@ -562,6 +559,8 @@ export default function PurchaseOrdersPage() {
           </div>
         </div>
       )}
+      </div>
+      <AnalyticsPanel section="purchase-orders" />
     </div>
   );
 }

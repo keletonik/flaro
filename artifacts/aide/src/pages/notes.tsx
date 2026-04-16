@@ -279,7 +279,8 @@ export default function Notes() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full flex">
+      <div className="flex-1 min-w-0 min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
         <div className="flex items-center gap-3 flex-wrap">
@@ -389,6 +390,7 @@ export default function Notes() {
 
       {showAdd && <AddNoteSheet onClose={() => setShowAdd(false)} onSave={handleSave} />}
 
+      </div>
       <AnalyticsPanel section="tasks" title="Notes Analyst" />
     </div>
   );

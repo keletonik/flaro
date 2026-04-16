@@ -31,7 +31,7 @@ import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
   Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal, Settings2,
-  Shield, Mail, DollarSign
+  Shield, Mail, DollarSign, Sparkles
 } from "lucide-react";
 import AidePA from "@/components/AidePA";
 import AIDEAssistant from "@/components/AIDEAssistant";
@@ -218,6 +218,28 @@ function SidebarNav() {
           </div>
         ))}
       </nav>
+
+      {/* AIDE AI Button */}
+      <div className={cn("px-2 mb-1")}>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("aide-toggle"))}
+          title={collapsed ? "Open AIDE" : undefined}
+          className={cn(
+            "w-full flex items-center rounded-xl transition-all duration-200 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border border-primary/20 hover:border-primary/30 group",
+            collapsed ? "justify-center px-0 py-2.5" : "gap-2.5 px-3 py-2.5"
+          )}
+        >
+          <div className={cn("rounded-lg bg-primary/15 flex items-center justify-center shrink-0", collapsed ? "w-7 h-7" : "w-6 h-6")}>
+            <Sparkles size={collapsed ? 14 : 12} className="text-primary" />
+          </div>
+          {!collapsed && (
+            <div className="flex-1 text-left">
+              <p className="text-[11px] font-semibold text-foreground tracking-wide">AIDE</p>
+              <p className="text-[9px] text-muted-foreground">Intelligence engine</p>
+            </div>
+          )}
+        </button>
+      </div>
 
       {/* Footer */}
       <div className={cn("border-t border-sidebar-border pt-2 pb-3 space-y-1", collapsed ? "px-2" : "px-2")}>

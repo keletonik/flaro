@@ -1,18 +1,20 @@
 /**
- * Always-visible inline agent chat used by the Estimation Workbench.
+ * Embedded agent chat used by the AIDE popout and the Estimation Workbench.
  *
- * Purpose-built so it can coexist with:
- *   - Replit's floating AidePA widget (read-only / streamChat)
- *   - The legacy AnalyticsPanel drawer (read-only / streamChat)
- * without conflicting with either. This one talks to /api/chat/agent and
- * has the full tool-use surface: search / create / update / delete / navigate.
+ * Talks to /api/chat/agent with the full tool-use surface:
+ * search / create / update / delete / navigate.
  *
- * Fills 100% of its parent container — the Workbench mounts it in a 360px
- * right-hand column.
+ * Features:
+ *   - GFM markdown rendering with table support
+ *   - Follow-up suggestion chips after assistant messages
+ *   - File attachment support (images, PDFs, CSV, text)
+ *   - Tool execution progress inline
+ *
+ * Fills 100% of its parent container.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Loader2, Wrench, Check, AlertCircle, Trash2, Bot } from "lucide-react";
+import { Send, Loader2, Wrench, Check, AlertCircle, Trash2, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { streamAgent, type AgentToolEvent, type AttachmentMeta } from "@/lib/api";
 import { AttachmentPicker, AttachmentPreviewChip } from "@/components/AttachmentPicker";
@@ -29,12 +31,14 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   tools?: ToolRun[];
+  followUps?: string[];
 }
 
 interface Props {
   section: string;
   title?: string;
   suggestions?: string[];
+  hideHeader?: boolean;
 }
 
 function formatInline(text: string): string {
@@ -81,6 +85,15 @@ function renderTable(lines: string[], key: number) {
       </table>
     </div>
   );
+}
+
+/** Extract <follow-ups>...</follow-ups> block from assistant text */
+function extractFollowUps(text: string): { cleaned: string; followUps: string[] } {
+  const match = text.match(/<follow-ups>([\s\S]*?)<\/follow-ups>/);
+  if (!match) return { cleaned: text, followUps: [] };
+  const cleaned = text.replace(/<follow-ups>[\s\S]*?<\/follow-ups>/, "").trim();
+  const followUps = match[1].split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  return { cleaned, followUps };
 }
 
 function renderMarkdown(text: string) {
@@ -131,7 +144,7 @@ function emitDataChanged() {
   try { window.dispatchEvent(new CustomEvent(DATA_CHANGED_EVENT)); } catch { /* ignore */ }
 }
 
-export default function EmbeddedAgentChat({ section, title = "AIDE Agent", suggestions = [] }: Props) {
+export default function EmbeddedAgentChat({ section, title = "AIDE", suggestions = [], hideHeader = false }: Props) {
   const [, setLocation] = useLocation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -141,10 +154,7 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
-  // Listen for the command palette's "ask AIDE" event. When the user
-  // types a question in Cmd-K and hits enter on the Ask-AIDE row, the
-  // palette dispatches `aide-open-with-prompt` with the query; we
-  // pick it up here and auto-send.
+  // Listen for the command palette / CSV import auto-send events
   useEffect(() => {
     const handler = (ev: Event) => {
       const prompt = (ev as CustomEvent).detail?.prompt;
@@ -203,11 +213,6 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
           patch({ tools: [...tools] });
         },
         onUiAction: (action) => {
-          // navigate + refresh are the original pair.
-          // set_filter / open_record / open_modal were added in Pass 3
-          // fix #4. Each one dispatches a window custom event that the
-          // host page listens for. Pages opt in by adding a single
-          // useEffect + event listener — zero prop threading.
           if (action.type === "navigate" && typeof action.path === "string") {
             setLocation(action.path);
           } else if (action.type === "refresh") {
@@ -226,7 +231,19 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
             }));
           }
         },
-        onDone: () => setStreaming(false),
+        onDone: () => {
+          setStreaming(false);
+          // Extract follow-up suggestions from the final content
+          setMessages(prev => {
+            const u = [...prev];
+            const last = u[u.length - 1];
+            if (last?.role === "assistant" && last.content) {
+              const { cleaned, followUps } = extractFollowUps(last.content);
+              u[u.length - 1] = { ...last, content: cleaned, followUps };
+            }
+            return u;
+          });
+        },
         onError: (err) => { patch({ content: assistantContent || `Error: ${err}` }); setStreaming(false); },
       },
       attachmentIds,
@@ -245,45 +262,60 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
 
   return (
     <div className="h-full w-full flex flex-col bg-card">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
-            <Bot size={12} className="text-primary" />
+      {/* Header (only shown when not embedded in AIDEAssistant popout) */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <Sparkles size={13} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-foreground tracking-tight">AIDE</p>
+              <p className="text-[9px] text-muted-foreground font-medium">{title}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[13px] font-semibold text-foreground">{title}</p>
-            <p className="text-[9px] text-muted-foreground">Tool-use enabled · {section}</p>
-          </div>
+          {messages.length > 0 && (
+            <button
+              onClick={clearChat}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              title="New conversation"
+            >
+              <Trash2 size={12} />
+            </button>
+          )}
         </div>
-        {messages.length > 0 && (
+      )}
+
+      {/* Clear chat button when header is hidden (popout mode) */}
+      {hideHeader && messages.length > 0 && (
+        <div className="absolute top-[52px] right-3 z-10">
           <button
             onClick={clearChat}
-            className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-            title="New chat"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors bg-card/80 backdrop-blur-sm"
+            title="New conversation"
           >
-            <Trash2 size={12} />
+            <Trash2 size={11} />
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center px-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center mb-3">
-              <Bot size={18} className="text-primary" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mb-4">
+              <Sparkles size={20} className="text-primary" />
             </div>
-            <p className="text-[13px] font-medium text-foreground mb-1">Action-capable agent</p>
-            <p className="text-[11px] text-muted-foreground mb-4 leading-relaxed">
-              I can search the catalogue, create estimates, add lines, adjust markup, and navigate. Try:
+            <p className="text-sm font-semibold text-foreground mb-1">What can I help with?</p>
+            <p className="text-[11px] text-muted-foreground mb-5 leading-relaxed max-w-[280px]">
+              Search, create, update, analyse data, or paste email trails for a full breakdown.
             </p>
-            <div className="space-y-1.5 w-full">
-              {suggestions.map((s, i) => (
+            <div className="space-y-1.5 w-full max-w-[320px]">
+              {suggestions.slice(0, 4).map((s, i) => (
                 <button
                   key={i}
                   onClick={() => send(s)}
-                  className="w-full text-left px-3 py-2 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent hover:border-border transition-all"
+                  className="w-full text-left px-3 py-2.5 rounded-xl text-[11px] text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/60 border border-border/50 hover:border-border transition-all leading-relaxed"
                 >
                   {s}
                 </button>
@@ -293,64 +325,81 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
         )}
 
         {messages.map((msg, i) => (
-          <div key={i} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
-            <div className={cn(
-              "max-w-[92%] rounded-xl px-3.5 py-2.5 text-[12px] leading-relaxed",
-              msg.role === "user"
-                ? "bg-primary text-primary-foreground rounded-br-sm"
-                : "bg-muted/40 text-foreground rounded-bl-sm border border-border/50",
-            )}>
-              {msg.role === "assistant" ? (
-                <>
-                  {msg.tools && msg.tools.length > 0 && (
-                    <div className="mb-2 space-y-1">
-                      {msg.tools.map((t, tk) => (
-                        <div key={tk} className="flex items-center gap-1.5 text-[10.5px]">
-                          {t.status === "running" ? (
-                            <Loader2 size={10} className="animate-spin text-primary shrink-0" />
-                          ) : t.status === "ok" ? (
-                            <Check size={10} className="text-emerald-500 shrink-0" />
-                          ) : (
-                            <AlertCircle size={10} className="text-destructive shrink-0" />
-                          )}
-                          <Wrench size={9} className="text-muted-foreground/50 shrink-0" />
-                          <span className="font-mono text-muted-foreground truncate">
-                            {t.name}
-                            {t.input?.table ? `(${String(t.input.table)})` : ""}
-                            {t.input?.estimate_id ? ` [#${String(t.input.estimate_id).slice(0, 8)}]` : ""}
-                          </span>
-                          {t.status === "error" && t.error && (
-                            <span className="text-destructive truncate" title={t.error}>— {t.error}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {msg.content ? (
-                    <div>{renderMarkdown(msg.content)}</div>
-                  ) : (streaming && i === messages.length - 1 ? (
-                    <span className="flex items-center gap-1.5">
-                      <Loader2 size={11} className="animate-spin text-primary" />
-                      <span className="text-muted-foreground text-[11px]">Working…</span>
-                    </span>
-                  ) : "")}
-                </>
-              ) : msg.content}
+          <div key={i}>
+            <div className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
+              <div className={cn(
+                "max-w-[92%] rounded-2xl px-3.5 py-2.5 text-[12px] leading-relaxed",
+                msg.role === "user"
+                  ? "bg-primary text-primary-foreground rounded-br-md"
+                  : "bg-muted/40 text-foreground rounded-bl-md border border-border/50",
+              )}>
+                {msg.role === "assistant" ? (
+                  <>
+                    {msg.tools && msg.tools.length > 0 && (
+                      <div className="mb-2 space-y-1">
+                        {msg.tools.map((t, tk) => (
+                          <div key={tk} className="flex items-center gap-1.5 text-[10.5px]">
+                            {t.status === "running" ? (
+                              <Loader2 size={10} className="animate-spin text-primary shrink-0" />
+                            ) : t.status === "ok" ? (
+                              <Check size={10} className="text-emerald-500 shrink-0" />
+                            ) : (
+                              <AlertCircle size={10} className="text-destructive shrink-0" />
+                            )}
+                            <Wrench size={9} className="text-muted-foreground/50 shrink-0" />
+                            <span className="font-mono text-muted-foreground truncate">
+                              {t.name}
+                              {t.input?.table ? `(${String(t.input.table)})` : ""}
+                              {t.input?.estimate_id ? ` [#${String(t.input.estimate_id).slice(0, 8)}]` : ""}
+                            </span>
+                            {t.status === "error" && t.error && (
+                              <span className="text-destructive truncate" title={t.error}>{t.error}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {msg.content ? (
+                      <div>{renderMarkdown(msg.content)}</div>
+                    ) : (streaming && i === messages.length - 1 ? (
+                      <span className="flex items-center gap-1.5">
+                        <Loader2 size={11} className="animate-spin text-primary" />
+                        <span className="text-muted-foreground text-[11px]">Working...</span>
+                      </span>
+                    ) : "")}
+                  </>
+                ) : msg.content}
+              </div>
             </div>
+
+            {/* Follow-up chips (multiple choice style) */}
+            {msg.role === "assistant" && msg.followUps && msg.followUps.length > 0 && !streaming && (
+              <div className="flex flex-wrap gap-1.5 mt-2 ml-1">
+                {msg.followUps.map((fu, fi) => (
+                  <button
+                    key={fi}
+                    onClick={() => send(fu)}
+                    className="px-3 py-1.5 rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted border border-border/50 hover:border-border transition-all"
+                  >
+                    {fu}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
 
       {/* Input */}
-      <div className="shrink-0 border-t border-border px-3 py-2">
+      <div className="shrink-0 border-t border-border px-3 py-2.5">
         {pending.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-1.5">
+          <div className="flex flex-wrap gap-1.5 mb-2">
             {pending.map((p) => (
               <AttachmentPreviewChip key={p.id} meta={p} onRemove={() => setPending((prev) => prev.filter((x) => x.id !== p.id))} />
             ))}
           </div>
         )}
-        <div className="flex items-end gap-2 bg-muted/30 rounded-xl px-3 py-2 border border-border focus-within:border-primary/30 transition-all">
+        <div className="flex items-end gap-2 bg-muted/30 rounded-xl px-3 py-2.5 border border-border focus-within:border-primary/30 transition-all">
           <AttachmentPicker
             pending={pending}
             onChange={setPending}
@@ -363,20 +412,20 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search, create, update — ask in plain English"
+            placeholder="Ask anything, paste emails, or upload docs..."
             rows={1}
-            className="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none min-h-[18px] max-h-[80px]"
+            className="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none min-h-[20px] max-h-[80px]"
             onInput={e => { const t = e.target as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 80) + 'px'; }}
           />
           <button
             onClick={() => send()}
             disabled={!input.trim() || streaming}
             className={cn(
-              "shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-all",
-              input.trim() && !streaming ? "bg-primary text-white" : "bg-muted text-muted-foreground/30",
+              "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all",
+              input.trim() && !streaming ? "bg-primary text-white hover:bg-primary/90" : "bg-muted text-muted-foreground/30",
             )}
           >
-            <Send size={11} />
+            <Send size={12} />
           </button>
         </div>
       </div>

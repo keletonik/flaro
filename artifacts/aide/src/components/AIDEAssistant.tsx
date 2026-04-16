@@ -1,46 +1,33 @@
 /**
- * Global AIDE panel — the single AI surface for the entire app.
+ * Global AIDE popout — the single AI surface for the entire app.
  *
- * Mounted once in <Layout> (App.tsx). Supports three dock modes:
- *   - right: fixed right-side panel, content gets margin-right
- *   - left:  fixed left-side panel, content gets extra margin-left
- *   - bottom: fixed bottom panel, content gets padding-bottom
+ * Mounted once in <Layout> (App.tsx). Renders as a floating popout
+ * window that can be repositioned, resized, and persists across
+ * page navigation. One unified conversation across the whole site.
  *
- * When collapsed: renders a thin tab at the bottom edge (not a bubble).
- * When expanded: pushes page content via AIDEContext (consumed by Layout).
+ * Also triggered from the sidebar AI button.
  *
- * Persists dock mode and open/collapsed state to localStorage.
+ * Persists open/collapsed state and size to localStorage.
  */
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import {
   MessageCircle, X, Maximize2, Minimize2,
-  PanelRight, PanelLeft, PanelBottom,
-  ChevronUp, GripVertical,
+  ChevronUp, Sparkles, Minus,
 } from "lucide-react";
 import EmbeddedAgentChat from "@/components/EmbeddedAgentChat";
 import { cn } from "@/lib/utils";
-import { useAIDE, useSidebar } from "@/App";
+import { useAIDE } from "@/App";
 
-export type DockMode = "right" | "left" | "bottom";
-
-const DOCK_KEY = "aide-dock-mode";
 const OPEN_KEY = "aide-assistant-open";
 const WIDE_KEY = "aide-assistant-wide";
-
-function persistDock(mode: DockMode) {
-  try { localStorage.setItem(DOCK_KEY, mode); } catch { /* noop */ }
-}
-function loadDock(): DockMode {
-  try { return (localStorage.getItem(DOCK_KEY) as DockMode) || "right"; } catch { return "right"; }
-}
 
 function sectionFromPath(path: string): { section: string; title: string; suggestions: string[] } {
   if (path === "/" || path.startsWith("/dashboard"))
     return { section: "dashboard", title: "Dashboard", suggestions: ["Give me a full KPI snapshot", "What are the three most urgent things today?", "Revenue this month vs target", "Show overdue jobs"] };
   if (path.startsWith("/operations"))
-    return { section: "wip", title: "Operations", suggestions: ["Show open WIPs over $5000", "Which tech has the most jobs?", "Defects needing quotes", "Revenue gap analysis"] };
+    return { section: "wip", title: "Operations", suggestions: ["Show open WIPs over $5,000", "Which tech has the most jobs?", "Defects needing quotes", "Revenue gap analysis"] };
   if (path.startsWith("/suppliers"))
     return { section: "estimation", title: "Suppliers", suggestions: ["Find the cheapest smoke detector", "Compare panel prices", "Create a new estimate", "Total spend by supplier"] };
   if (path.startsWith("/jobs"))
@@ -70,55 +57,59 @@ function sectionFromPath(path: string): { section: string; title: string; sugges
   return { section: "dashboard", title: "AIDE", suggestions: ["What needs attention today?", "Full KPI snapshot", "Create a todo", "Show me the dashboard"] };
 }
 
-// ── Panel widths / heights ──────────────────────────────────────────
-const SIDE_W = 400;
-const SIDE_W_WIDE = 560;
-const BOTTOM_H = 360;
-const BOTTOM_H_WIDE = 480;
+// Popout dimensions
+const POP_W = 420;
+const POP_W_WIDE = 580;
+const POP_H = 520;
+const POP_H_WIDE = 680;
 
 export default function AIDEAssistant() {
   const [location] = useLocation();
   const { setAideState } = useAIDE();
-  const { collapsed } = useSidebar();
-  const sidebarW = collapsed ? 60 : 210;
 
   const [open, setOpen] = useState<boolean>(() => {
     try { return localStorage.getItem(OPEN_KEY) === "1"; } catch { return false; }
   });
-  const [dock, setDock] = useState<DockMode>(loadDock);
   const [wide, setWide] = useState<boolean>(() => {
     try { return localStorage.getItem(WIDE_KEY) === "1"; } catch { return false; }
   });
+  const [minimised, setMinimised] = useState(false);
 
   // Persist
   useEffect(() => { try { localStorage.setItem(OPEN_KEY, open ? "1" : "0"); } catch {} }, [open]);
   useEffect(() => { try { localStorage.setItem(WIDE_KEY, wide ? "1" : "0"); } catch {} }, [wide]);
 
-  // Publish state to context so Layout can adjust content margins
+  // Popout doesn't push content, so always report zero to layout
   useEffect(() => {
-    if (!open) { setAideState({ open: false, dock, width: 0, height: 0 }); return; }
-    if (dock === "bottom") {
-      setAideState({ open: true, dock, width: 0, height: wide ? BOTTOM_H_WIDE : BOTTOM_H });
-    } else {
-      setAideState({ open: true, dock, width: wide ? SIDE_W_WIDE : SIDE_W, height: 0 });
-    }
-  }, [open, dock, wide, setAideState]);
+    setAideState({ open: false, dock: "right", width: 0, height: 0 });
+  }, [setAideState]);
 
-  // Listen for aide-open-with-prompt (from CommandPalette)
+  // Listen for aide-open-with-prompt (from CommandPalette or sidebar button)
   useEffect(() => {
-    const handler = () => setOpen(true);
+    const handler = () => { setOpen(true); setMinimised(false); };
     window.addEventListener("aide-open-with-prompt", handler);
     return () => window.removeEventListener("aide-open-with-prompt", handler);
   }, []);
 
-  // Listen for aide-analyse (from CSV import) — open the panel and
-  // forward the message to EmbeddedAgentChat via aide-open-with-prompt
+  // Listen for aide-toggle (from sidebar button)
+  useEffect(() => {
+    const handler = () => {
+      setOpen(prev => {
+        if (prev) { setMinimised(false); return false; }
+        return true;
+      });
+    };
+    window.addEventListener("aide-toggle", handler);
+    return () => window.removeEventListener("aide-toggle", handler);
+  }, []);
+
+  // Listen for aide-analyse (from CSV import)
   useEffect(() => {
     const handler = (e: Event) => {
       const msg = (e as CustomEvent).detail?.message;
       setOpen(true);
+      setMinimised(false);
       if (msg) {
-        // Small delay so the panel mounts before EmbeddedAgentChat tries to send
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent("aide-open-with-prompt", { detail: { prompt: msg } }));
         }, 300);
@@ -128,111 +119,66 @@ export default function AIDEAssistant() {
     return () => window.removeEventListener("aide-analyse", handler);
   }, []);
 
-  const changeDock = useCallback((mode: DockMode) => {
-    setDock(mode);
-    persistDock(mode);
-  }, []);
-
   const { section, title, suggestions } = useMemo(() => sectionFromPath(location), [location]);
 
-  // ── Collapsed: thin bottom tab ──────────────────────────────────
-  if (!open) {
+  // Not open at all: show nothing (sidebar button handles the trigger)
+  if (!open) return null;
+
+  const w = wide ? POP_W_WIDE : POP_W;
+  const h = wide ? POP_H_WIDE : POP_H;
+
+  // Minimised: small pill at bottom right
+  if (minimised) {
     return (
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 flex items-center">
-        <button
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-2 px-5 py-2 rounded-t-xl bg-card border border-b-0 border-border shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 text-foreground"
-          title="Open AIDE"
-        >
-          <MessageCircle size={14} className="text-primary" />
-          <span className="text-xs font-semibold">AIDE</span>
-          <span className="text-[10px] text-muted-foreground">— {title}</span>
-          <ChevronUp size={12} className="text-muted-foreground ml-1" />
-        </button>
-      </div>
-    );
-  }
-
-  // ── Dock picker (shared across all modes) ───────────────────────
-  const dockPicker = (
-    <div className="flex items-center gap-0.5">
-      <button onClick={() => changeDock("left")} title="Dock left"
-        className={cn("p-1.5 rounded transition-colors", dock === "left" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
-        <PanelLeft size={13} />
-      </button>
-      <button onClick={() => changeDock("bottom")} title="Dock bottom"
-        className={cn("p-1.5 rounded transition-colors", dock === "bottom" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
-        <PanelBottom size={13} />
-      </button>
-      <button onClick={() => changeDock("right")} title="Dock right"
-        className={cn("p-1.5 rounded transition-colors", dock === "right" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
-        <PanelRight size={13} />
-      </button>
-    </div>
-  );
-
-  // ── Header bar ──────────────────────────────────────────────────
-  const header = (
-    <div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0 bg-card">
-      <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
-          <MessageCircle size={12} className="text-primary" />
-        </div>
-        <div>
-          <p className="text-[13px] font-semibold text-foreground">AIDE — {title}</p>
-          <p className="text-[9px] text-muted-foreground">Tool-use agent · {section}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-1">
-        {dockPicker}
-        <div className="w-px h-4 bg-border mx-1" />
-        <button onClick={() => setWide(v => !v)} title={wide ? "Compact" : "Expand"}
-          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          {wide ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-        </button>
-        <button onClick={() => setOpen(false)} title="Collapse AIDE"
-          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          <X size={14} />
-        </button>
-      </div>
-    </div>
-  );
-
-  // ── SIDE DOCK (left or right) ───────────────────────────────────
-  if (dock === "left" || dock === "right") {
-    const w = wide ? SIDE_W_WIDE : SIDE_W;
-    // Left dock sits to the right of the sidebar
-    const leftOffset = dock === "left" ? sidebarW : undefined;
-    return (
-      <div
-        className={cn(
-          "fixed top-0 bottom-0 z-40 flex flex-col bg-card shadow-xl transition-all duration-300 max-md:inset-x-0 max-md:!w-auto",
-          dock === "right" ? "right-0 border-l border-border" : "border-r border-border",
-        )}
-        style={{
-          width: `${w}px`,
-          maxWidth: "90vw",
-          ...(leftOffset != null ? { left: `${leftOffset}px` } : {}),
-        }}
+      <button
+        onClick={() => setMinimised(false)}
+        className="fixed bottom-4 right-4 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card border border-border shadow-2xl hover:shadow-xl transition-all hover:-translate-y-0.5 text-foreground group"
       >
-        {header}
-        <div className="flex-1 overflow-hidden">
-          <EmbeddedAgentChat section={section} title={`AIDE — ${title}`} suggestions={suggestions} />
+        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Sparkles size={12} className="text-primary" />
         </div>
-      </div>
+        <span className="text-xs font-semibold">AIDE</span>
+        <span className="text-[10px] text-muted-foreground">{title}</span>
+        <ChevronUp size={12} className="text-muted-foreground group-hover:text-foreground transition-colors" />
+      </button>
     );
   }
 
-  // ── BOTTOM DOCK ─────────────────────────────────────────────────
-  const h = wide ? BOTTOM_H_WIDE : BOTTOM_H;
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-50 flex flex-col bg-card border-t border-border shadow-xl transition-all duration-300"
-      style={{ height: `${h}px`, maxHeight: "70vh" }}
+      className="fixed bottom-4 right-4 z-[60] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden transition-all duration-200 max-md:inset-4 max-md:!w-auto max-md:!h-auto"
+      style={{ width: `${w}px`, height: `${h}px`, maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 32px)" }}
     >
-      {header}
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0 bg-card/95 backdrop-blur-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+            <Sparkles size={13} className="text-primary" />
+          </div>
+          <div>
+            <p className="text-[13px] font-semibold text-foreground tracking-tight">AIDE</p>
+            <p className="text-[9px] text-muted-foreground font-medium">{title}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-0.5">
+          <button onClick={() => setWide(v => !v)} title={wide ? "Compact" : "Expand"}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            {wide ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          </button>
+          <button onClick={() => setMinimised(true)} title="Minimise"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <Minus size={13} />
+          </button>
+          <button onClick={() => setOpen(false)} title="Close AIDE"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Chat body */}
       <div className="flex-1 overflow-hidden">
-        <EmbeddedAgentChat section={section} title={`AIDE — ${title}`} suggestions={suggestions} />
+        <EmbeddedAgentChat section={section} title={title} suggestions={suggestions} hideHeader />
       </div>
     </div>
   );

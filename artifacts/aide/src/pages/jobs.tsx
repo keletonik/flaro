@@ -188,7 +188,7 @@ function JobModal({ job, onClose, onSave }: {
   );
 }
 
-const PAGE_SIZES = [25, 50, 100, 200, 500];
+const PAGE_SIZES = [0, 25, 50, 100, 200, 500]; // 0 = All
 
 export default function Jobs() {
   const [search, setSearch] = useState("");
@@ -197,7 +197,7 @@ export default function Jobs() {
   const [sortField, setSortField] = useState<SortField>("priority");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(0); // 0 = All
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -273,8 +273,8 @@ export default function Jobs() {
     return arr;
   }, [filtered, sortField, sortDir]);
 
-  const totalPages = Math.ceil(sorted.length / pageSize);
-  const paged = sorted.slice(page * pageSize, (page + 1) * pageSize);
+  const totalPages = pageSize === 0 ? 1 : Math.ceil(sorted.length / pageSize);
+  const paged = pageSize === 0 ? sorted : sorted.slice(page * pageSize, (page + 1) * pageSize);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -623,11 +623,11 @@ export default function Jobs() {
           <span>Rows per page:</span>
           <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(0); }}
             className="bg-muted border border-border rounded px-1.5 py-0.5 text-[10px] text-foreground focus:outline-none">
-            {PAGE_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+            {PAGE_SIZES.map(s => <option key={s} value={s}>{s === 0 ? "All" : s}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-3">
-          <span>{page * pageSize + 1}–{Math.min((page + 1) * pageSize, sorted.length)} of {sorted.length}</span>
+          <span>{pageSize === 0 ? `${sorted.length} rows` : `${page * pageSize + 1}–${Math.min((page + 1) * pageSize, sorted.length)} of ${sorted.length}`}</span>
           <div className="flex items-center gap-0.5">
             <button onClick={() => setPage(0)} disabled={page === 0} className={cn("px-1 py-0.5 rounded hover:bg-muted", page === 0 && "opacity-30 cursor-not-allowed")}>
               <ChevronLeft size={12} /><ChevronLeft size={12} className="-ml-2" />

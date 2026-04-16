@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Search, Upload, Download, Filter, X, ChevronDown, BarChart3, MessageCircle, Send, Trash2, PanelRightClose, PanelRightOpen, Loader2, Pencil, Eye, ArrowUpDown } from "lucide-react";
+import { Search, Upload, Download, Filter, X, ChevronDown, MessageCircle, Send, Trash2, PanelRightClose, PanelRightOpen, Loader2, Pencil, Eye, ArrowUpDown } from "lucide-react";
 import { apiFetch, exportToCSV, streamChat } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
 import LiveToggle from "@/components/LiveToggle";
@@ -67,30 +67,36 @@ function formatCurrency(n: any) {
   return isNaN(num) ? "-" : `$${num.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function StatusPill({ status, tab }: { status: string; tab: TabKey }) {
+function StatusPill({ status }: { status: string; tab?: TabKey }) {
   const colorMap: Record<string, string> = {
-    Open: "bg-violet-100 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400",
-    "In Progress": "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
-    Quoted: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
-    Scheduled: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
-    Completed: "bg-slate-100 text-slate-600 dark:bg-slate-900/20 dark:text-slate-400",
-    "On Hold": "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
-    Draft: "bg-slate-100 text-slate-600 dark:bg-slate-900/20 dark:text-slate-400",
-    Sent: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
-    Accepted: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
-    Declined: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
-    Expired: "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400",
-    Revised: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400",
-    Resolved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
-    Deferred: "bg-slate-100 text-slate-600 dark:bg-slate-900/20 dark:text-slate-400",
-    Overdue: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
-    Paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
-    Void: "bg-slate-100 text-slate-600 dark:bg-slate-900/20 dark:text-slate-400",
-    Partial: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
+    Open: "text-violet-600 border-violet-200 dark:text-violet-400 dark:border-violet-800",
+    "In Progress": "text-amber-600 border-amber-200 dark:text-amber-400 dark:border-amber-800",
+    Quoted: "text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800",
+    Scheduled: "text-emerald-600 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800",
+    Completed: "text-slate-500 border-slate-200 dark:text-slate-400 dark:border-slate-700",
+    "On Hold": "text-red-600 border-red-200 dark:text-red-400 dark:border-red-800",
+    Draft: "text-slate-500 border-slate-200 dark:text-slate-400 dark:border-slate-700",
+    Sent: "text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800",
+    Accepted: "text-emerald-600 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800",
+    Declined: "text-red-600 border-red-200 dark:text-red-400 dark:border-red-800",
+    Expired: "text-orange-600 border-orange-200 dark:text-orange-400 dark:border-orange-800",
+    Revised: "text-purple-600 border-purple-200 dark:text-purple-400 dark:border-purple-800",
+    Resolved: "text-emerald-600 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800",
+    Deferred: "text-slate-500 border-slate-200 dark:text-slate-400 dark:border-slate-700",
+    Overdue: "text-red-600 border-red-200 dark:text-red-400 dark:border-red-800",
+    Paid: "text-emerald-600 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800",
+    Void: "text-slate-500 border-slate-200 dark:text-slate-400 dark:border-slate-700",
+    Partial: "text-amber-600 border-amber-200 dark:text-amber-400 dark:border-amber-800",
+  };
+  const dotMap: Record<string, string> = {
+    Open: "●", "In Progress": "●", Quoted: "●", Scheduled: "●", Completed: "✓",
+    "On Hold": "◻", Draft: "○", Sent: "●", Accepted: "✓", Declined: "✗",
+    Expired: "○", Revised: "●", Resolved: "✓", Deferred: "○", Overdue: "!!",
+    Paid: "✓", Void: "—", Partial: "◐",
   };
   return (
-    <span className={cn("inline-flex px-2 py-0.5 rounded-md text-[10px] font-semibold", colorMap[status] || "bg-muted text-muted-foreground")}>
-      {status}
+    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded border font-mono text-[10px] font-medium", colorMap[status] || "text-muted-foreground border-border")}>
+      <span className="text-[8px]">{dotMap[status] || "●"}</span>{status}
     </span>
   );
 }
@@ -502,8 +508,8 @@ export default function Operations() {
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h1 className="text-foreground font-bold text-lg tracking-tight flex items-center gap-2">
-              <BarChart3 size={18} className="text-primary" /> Operations
+            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2">
+              <span className="font-mono text-[13px] text-primary/60">::</span> Operations
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">Uptick data management and analytics</p>
           </div>

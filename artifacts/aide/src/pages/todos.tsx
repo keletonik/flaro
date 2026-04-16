@@ -407,7 +407,7 @@ export default function Todos() {
       <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
       <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2">
-          <h1 className="text-foreground font-bold text-base tracking-tight shrink-0">Tasks</h1>
+          <h1 className="text-foreground font-medium text-sm tracking-tight shrink-0 flex items-center gap-1.5"><span className="font-mono text-[12px] text-primary/60">++</span> Tasks</h1>
           <div className="flex-1 max-w-sm">
             <div className="relative">
               <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />

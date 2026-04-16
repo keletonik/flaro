@@ -287,7 +287,7 @@ export default function Schedule() {
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-foreground font-bold text-lg tracking-tight">Schedule</h1>
+          <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2"><span className="font-mono text-[13px] text-primary/60">..</span> Schedule</h1>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
               <button

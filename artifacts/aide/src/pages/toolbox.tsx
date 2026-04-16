@@ -88,7 +88,7 @@ export default function Toolbox() {
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-foreground font-bold text-lg tracking-tight">Toolbox</h1>
+            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2"><span className="font-mono text-[13px] text-primary/60">{"&&"}</span> Toolbox</h1>
             <p className="text-xs text-muted-foreground">
               {activeCount} active note{activeCount !== 1 ? "s" : ""} for team briefing
             </p>

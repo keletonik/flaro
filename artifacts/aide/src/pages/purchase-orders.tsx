@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import {
   Plus, Search, X, CheckCircle2, Circle, Mail, FileText, Link2,
-  Filter, Trash2, Pencil, ChevronDown, AlertCircle, CheckSquare, Upload,
+  Trash2, Pencil, ChevronDown, AlertCircle, CheckSquare, Upload,
 } from "lucide-react";
 import {
   useListPurchaseOrders,
@@ -207,8 +207,8 @@ export default function PurchaseOrdersPage() {
         {/* Header */}
         <div className="border-b border-border px-4 md:px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Mail size={18} className="text-primary" /> Purchase Orders
+            <h1 className="text-sm font-medium text-foreground flex items-center gap-2">
+              <span className="font-mono text-[13px] text-primary/60">[]</span> Purchase Orders
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               Match approval emails to defects &amp; service quotes, then tick off the follow-up checklist.

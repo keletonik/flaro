@@ -148,7 +148,7 @@ export default function MetricsPage() {
     <div className="p-6 max-w-[1400px] mx-auto">
       <header className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Metrics</h1>
+          <h1 className="text-sm font-medium tracking-tight flex items-center gap-2"><span className="font-mono text-[13px] text-primary/60">##</span> Metrics</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Every chart on this page reads from the metric registry. One number, one definition.
           </p>

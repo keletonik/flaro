@@ -270,6 +270,10 @@ router.post("/chat/agent", async (req, res, next) => {
     // Service Manager persona + NSW geography + dispatch scoring +
     // decisive filter protocol. See prompts/ops-manager-prompt.ts.
     const isOpsMode = section === "jobs" || section === "wip";
+    // Email Intelligence mode fires on the quotes/estimates page and
+    // when the operator pastes email trails. Full NSW fire industry
+    // expert: BCA/NCC, AS standards, estimating, certifier knowledge.
+    const isEmailIntelMode = section === "email-intel" || section === "quotes";
     let corePrompt = AGENT_SYSTEM_PROMPT;
     if (isPaMode) corePrompt = PA_SYSTEM_PROMPT;
     else if (isAideMode) {
@@ -278,6 +282,9 @@ router.post("/chat/agent", async (req, res, next) => {
     } else if (isOpsMode) {
       const { OPS_MANAGER_SYSTEM_PROMPT } = await import("../lib/prompts/ops-manager-prompt");
       corePrompt = OPS_MANAGER_SYSTEM_PROMPT;
+    } else if (isEmailIntelMode) {
+      const { EMAIL_INTEL_SYSTEM_PROMPT } = await import("../lib/prompts/email-intel-prompt");
+      corePrompt = EMAIL_INTEL_SYSTEM_PROMPT;
     }
     const systemBlocks: any[] = [
       {

@@ -1,0 +1,68 @@
+Done. Database is fully built and populated. Here's the complete summary:
+SM_MANAGER — FLAMESAFE OPS DATABASE
+Base ID: appuKqojpI3bmO79D
+airtable.com/appuKqojpI3bmO79D
+════════════════════════════════════════
+
+TABLE 1: Jobs        tblfX6SQYVJJmkdeK
+  21 records — all active dry fire jobs
+  Fields: Task No, Site, Client, Contact,
+  Email, Phone, Priority, Status, Tech,
+  Scheduled Date, WO, PO, Scope, Notes,
+  Invoice Flag, AFSS Impact
+
+TABLE 2: Quotes      tbl6k5nXbDVGE4Pnd
+  20 records — Q1 through Q20
+  Fields: Quote Ref, Site, Client, Contact,
+  Email, Scope, Deadline, Status, Notes
+
+TABLE 3: Contacts    tblzyaBUUZTF8fn6J
+  20 records — internal team + key clients
+  Fields: Name, Company, Role, Email,
+  Mobile, Type, Notes
+
+════════════════════════════════════════
+REPLIT SYNC — USE THIS SNIPPET
+════════════════════════════════════════
+For Replit, here's your Python sync snippet:
+pythonimport requests
+
+AIRTABLE_TOKEN = "your_token_here"
+BASE_ID = "appuKqojpI3bmO79D"
+
+TABLES = {
+    "jobs":     "tblfX6SQYVJJmkdeK",
+    "quotes":   "tbl6k5nXbDVGE4Pnd",
+    "contacts": "tblzyaBUUZTF8fn6J"
+}
+
+HEADERS = {
+    "Authorization": f"Bearer {AIRTABLE_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+def get_records(table_name):
+    url = f"https://api.airtable.com/v0/{BASE_ID}/{TABLES[table_name]}"
+    records, offset = [], None
+    while True:
+        params = {"offset": offset} if offset else {}
+        r = requests.get(url, headers=HEADERS, params=params)
+        data = r.json()
+        records.extend(data.get("records", []))
+        offset = data.get("offset")
+        if not offset:
+            break
+    return records
+
+def update_record(table_name, record_id, fields):
+    url = f"https://api.airtable.com/v0/{BASE_ID}/{TABLES[table_name]}/{record_id}"
+    return requests.patch(url, headers=HEADERS, json={"fields": fields}).json()
+
+def create_record(table_name, fields):
+    url = f"https://api.airtable.com/v0/{BASE_ID}/{TABLES[table_name]}"
+    return requests.post(url, headers=HEADERS, json={"fields": fields}).json()
+
+# Example usage
+jobs = get_records("jobs")
+print(f"Loaded {len(jobs)} jobs")
+Store your token in Replit Secrets as AIRTABLE_TOKEN and reference it with os.environ["AIRTABLE_TOKEN"] — never hardcode it.

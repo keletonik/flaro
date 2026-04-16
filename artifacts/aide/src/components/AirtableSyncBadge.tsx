@@ -4,12 +4,21 @@ import { useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { getListTodosQueryKey } from "@workspace/api-client-react";
 
+interface TableResult {
+  tableId: string;
+  inserted: number;
+  updated: number;
+  deleted: number;
+  total: number;
+  error: string | null;
+}
+
 interface SyncStatus {
   enabled: boolean;
   lastSyncAt: string | null;
-  recordsFromAirtable: number;
   lastError: string | null;
   pollIntervalMs: number;
+  tables: Record<string, TableResult>;
 }
 
 function timeAgo(iso: string | null): string {
@@ -53,12 +62,13 @@ export default function AirtableSyncBadge() {
   if (!status || !status.enabled) return null;
 
   const hasError = !!status.lastError;
+  const totals = status.tables ? Object.entries(status.tables).map(([k, v]) => `${v.total} ${k}`).join(" • ") : "";
 
   return (
     <button
       onClick={manualSync}
       disabled={syncing}
-      title={hasError ? status.lastError! : `Syncing ${status.recordsFromAirtable} Airtable records every ${Math.round(status.pollIntervalMs / 1000)}s. Click to sync now.`}
+      title={hasError ? status.lastError! : `${totals} synced every ${Math.round(status.pollIntervalMs / 1000)}s. Click to sync now.`}
       className={`flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-medium transition ${
         hasError
           ? "border-red-500/40 bg-red-500/10 text-red-400"

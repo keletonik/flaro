@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSyncStatus, syncAirtableToTodos } from "../lib/airtable-sync";
+import { getSyncStatus, syncAirtableAll } from "../lib/airtable-sync";
 
 const router = Router();
 
@@ -9,8 +9,8 @@ router.get("/airtable/status", (_req, res) => {
 
 router.post("/airtable/sync", async (_req, res, next) => {
   try {
-    const result = await syncAirtableToTodos();
-    res.json({ ...result, status: getSyncStatus() });
+    const tables = await syncAirtableAll();
+    res.json({ tables, status: getSyncStatus() });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || String(err) });
   }

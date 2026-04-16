@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { invoices } from "@workspace/db";
 import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
+import { logDataChange } from "../lib/change-log";
 import { randomUUID } from "crypto";
 import { deleteRow, softDeleteEnabled } from "../lib/soft-delete";
 
@@ -83,6 +84,7 @@ router.post("/invoices/import", async (req, res, next) => {
       };
     });
     const inserted = await db.insert(invoices).values(records).returning();
+    await logDataChange({ batchId, category: "invoices", action: "csv_import", recordsInserted: inserted.length, sourceRows: rows.length });
     res.status(201).json({ imported: inserted.length, batchId, records: inserted.map(serialize) });
   } catch (err) { next(err); }
 });

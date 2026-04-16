@@ -5,6 +5,7 @@ import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { randomUUID } from "crypto";
 import { deleteRow, deleteRows, softDeleteEnabled } from "../lib/soft-delete";
+import { logDataChange } from "../lib/change-log";
 
 const MAX_IMPORT_ROWS = Number(process.env["MAX_IMPORT_ROWS"]) || 10000;
 
@@ -80,6 +81,7 @@ router.post("/quotes/import", async (req, res, next) => {
       };
     });
     const inserted = await db.insert(quotes).values(records).returning();
+    await logDataChange({ batchId, category: "quotes", action: "csv_import", recordsInserted: inserted.length, sourceRows: rows.length, summary: { statuses: Object.fromEntries(inserted.reduce((m, r) => { m.set(r.status, (m.get(r.status) || 0) + 1); return m; }, new Map<string, number>())) } });
     res.status(201).json({ imported: inserted.length, batchId, records: inserted.map(serialize) });
   } catch (err) { next(err); }
 });

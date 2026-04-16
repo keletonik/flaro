@@ -1,18 +1,11 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { purchaseOrders } from "@workspace/db";
-import type { PurchaseOrderChecklistItem } from "@workspace/db";
 import { eq, and, or, ilike, sql, isNull } from "drizzle-orm";
-import {
-  CreatePurchaseOrderBody,
-  UpdatePurchaseOrderBody,
-  ListPurchaseOrdersQueryParams,
-  GetPurchaseOrderParams,
-  UpdatePurchaseOrderParams,
-  DeletePurchaseOrderParams,
-} from "@workspace/api-zod";
 import { randomUUID } from "crypto";
 import { deleteRow, softDeleteEnabled } from "../lib/soft-delete";
+
+type PurchaseOrderChecklistItem = { id: string; label: string; done: boolean; doneAt: string | null };
 
 const router = Router();
 
@@ -48,10 +41,7 @@ const serializePO = (p: typeof purchaseOrders.$inferSelect) => ({
 
 router.get("/purchase-orders", async (req, res, next) => {
   try {
-    const parsed = ListPurchaseOrdersQueryParams.safeParse(req.query);
-    if (!parsed.success) { res.status(400).json({ error: "Invalid query params" }); return; }
-
-    const { status, client, search } = parsed.data;
+    const { status, client, search } = req.query as Record<string, string | undefined>;
     const conditions = [];
 
     if (softDeleteEnabled()) conditions.push(isNull(purchaseOrders.deletedAt));
@@ -127,12 +117,12 @@ router.post("/purchase-orders/import", async (req, res, next) => {
 
 router.post("/purchase-orders", async (req, res, next) => {
   try {
-    const parsed = CreatePurchaseOrderBody.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: "Invalid request body" }); return; }
+    const body = req.body ?? {};
+    if (!body.poNumber || !body.client) { res.status(400).json({ error: "poNumber and client required" }); return; }
 
     const id = randomUUID();
     const now = new Date();
-    const { checklist, emailReceivedAt, approvedAt, ...rest } = parsed.data as any;
+    const { checklist, emailReceivedAt, approvedAt, ...rest } = body;
 
     const [po] = await db.insert(purchaseOrders).values({
       id,
@@ -150,10 +140,10 @@ router.post("/purchase-orders", async (req, res, next) => {
 
 router.get("/purchase-orders/:id", async (req, res, next) => {
   try {
-    const parsed = GetPurchaseOrderParams.safeParse(req.params);
-    if (!parsed.success) { res.status(400).json({ error: "Invalid params" }); return; }
+    const { id } = req.params;
+    if (!id) { res.status(400).json({ error: "Invalid params" }); return; }
 
-    const [po] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, parsed.data.id));
+    const [po] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id));
     if (!po) { res.status(404).json({ error: "Purchase order not found" }); return; }
 
     res.json(serializePO(po));
@@ -162,16 +152,15 @@ router.get("/purchase-orders/:id", async (req, res, next) => {
 
 router.patch("/purchase-orders/:id", async (req, res, next) => {
   try {
-    const paramsParsed = UpdatePurchaseOrderParams.safeParse(req.params);
-    if (!paramsParsed.success) { res.status(400).json({ error: "Invalid params" }); return; }
+    const { id } = req.params;
+    if (!id) { res.status(400).json({ error: "Invalid params" }); return; }
 
-    const bodyParsed = UpdatePurchaseOrderBody.safeParse(req.body);
-    if (!bodyParsed.success) { res.status(400).json({ error: "Invalid request body" }); return; }
+    const body = req.body ?? {};
 
-    const [existing] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, paramsParsed.data.id));
+    const [existing] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id));
     if (!existing) { res.status(404).json({ error: "Purchase order not found" }); return; }
 
-    const { checklistToggle, checklist, emailReceivedAt, approvedAt, ...rest } = bodyParsed.data as any;
+    const { checklistToggle, checklist, emailReceivedAt, approvedAt, ...rest } = body;
 
     // Allow toggling a single checklist item without having to resend the whole array
     let nextChecklist = (existing.checklist as PurchaseOrderChecklistItem[] | null) ?? [];
@@ -196,7 +185,7 @@ router.patch("/purchase-orders/:id", async (req, res, next) => {
 
     const [updated] = await db.update(purchaseOrders)
       .set(updates)
-      .where(eq(purchaseOrders.id, paramsParsed.data.id))
+      .where(eq(purchaseOrders.id, id))
       .returning();
 
     res.json(serializePO(updated));
@@ -205,13 +194,13 @@ router.patch("/purchase-orders/:id", async (req, res, next) => {
 
 router.delete("/purchase-orders/:id", async (req, res, next) => {
   try {
-    const parsed = DeletePurchaseOrderParams.safeParse(req.params);
-    if (!parsed.success) { res.status(400).json({ error: "Invalid params" }); return; }
+    const { id } = req.params;
+    if (!id) { res.status(400).json({ error: "Invalid params" }); return; }
 
-    const [existing] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, parsed.data.id));
+    const [existing] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id));
     if (!existing) { res.status(404).json({ error: "Purchase order not found" }); return; }
 
-    await deleteRow(purchaseOrders, parsed.data.id);
+    await deleteRow(purchaseOrders, id);
     res.status(204).end();
   } catch (err) { next(err); }
 });

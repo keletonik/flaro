@@ -14,8 +14,5 @@ export const CreateNoteBodyCategory = {
   To_Do: "To Do",
   To_Ask: "To Ask",
   Schedule: "Schedule",
-  Quote: "Quote",
-  Follow_Up: "Follow Up",
-  Investigate: "Investigate",
   Done: "Done",
 } as const;

@@ -109,6 +109,18 @@ Premium service management operations platform for Casper Tavitian (FlameSafe Fi
 - `POST /api/suppliers/:supplierId/products/import` — price list CSV import
 - `PATCH/DELETE /api/suppliers/products/:id` — product CRUD
 
+**Purchase Orders:**
+- `GET /api/purchase-orders` — list POs (filter by status, client, search)
+- `POST /api/purchase-orders` — create PO
+- `GET/PATCH/DELETE /api/purchase-orders/:id` — PO CRUD
+- `POST /api/purchase-orders/import` — CSV import
+
+**Change Log (Data Import Tracking):**
+- `GET /api/change-log` — master change log of all data imports/refreshes
+- `GET /api/change-log/summary` — grouped by batch with category breakdown
+- Table: `data_change_log` — tracks batch_id, category, action, records counts, source file, timestamps
+- All CSV import routes (wip, quotes, invoices) auto-log to change log
+
 **Analytics:**
 - `GET /api/analytics/wip` — comprehensive analytics: revenue tracking (day/week/month), WIP by status/tech/type/value, financial KPIs (quoted/revised/actual cost/sell/profit/margin, hours, uninvoiced, cash position), profit by category, margin distribution, cash position by tech, over-budget job alerts, quote conversion funnel, invoice pipeline
 - `GET /api/analytics/pipeline-gaps` — quote-to-invoice gap detection: accepted quotes without WIP, completed WIP without invoices, under-invoiced items

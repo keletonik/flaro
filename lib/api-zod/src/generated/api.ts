@@ -250,236 +250,6 @@ export const DeleteJobParams = zod.object({
 });
 
 /**
- * @summary List all purchase orders
- */
-export const ListPurchaseOrdersQueryParams = zod.object({
-  status: zod.coerce.string().optional(),
-  client: zod.coerce.string().optional(),
-  search: zod.coerce.string().optional(),
-});
-
-export const ListPurchaseOrdersResponseItem = zod.object({
-  id: zod.string(),
-  poNumber: zod.string(),
-  client: zod.string(),
-  site: zod.string().nullish(),
-  amount: zod.string().nullish(),
-  status: zod.enum([
-    "Received",
-    "Matched",
-    "Approved",
-    "Actioned",
-    "Completed",
-    "Cancelled",
-  ]),
-  defectId: zod.string().nullish(),
-  quoteId: zod.string().nullish(),
-  quoteNumber: zod.string().nullish(),
-  taskNumber: zod.string().nullish(),
-  emailSubject: zod.string().nullish(),
-  emailFrom: zod.string().nullish(),
-  emailReceivedAt: zod.coerce.date().nullish(),
-  emailBody: zod.string().nullish(),
-  approvedAt: zod.coerce.date().nullish(),
-  approvedBy: zod.string().nullish(),
-  checklist: zod.array(
-    zod.object({
-      id: zod.string(),
-      label: zod.string(),
-      done: zod.boolean(),
-      doneAt: zod.string().nullish(),
-    }),
-  ),
-  notes: zod.string().nullish(),
-  createdAt: zod.coerce.date(),
-  updatedAt: zod.coerce.date(),
-});
-export const ListPurchaseOrdersResponse = zod.array(
-  ListPurchaseOrdersResponseItem,
-);
-
-/**
- * @summary Create a new purchase order
- */
-export const CreatePurchaseOrderBody = zod.object({
-  poNumber: zod.string(),
-  client: zod.string(),
-  site: zod.string().optional(),
-  amount: zod.string().optional(),
-  status: zod
-    .enum([
-      "Received",
-      "Matched",
-      "Approved",
-      "Actioned",
-      "Completed",
-      "Cancelled",
-    ])
-    .optional(),
-  defectId: zod.string().optional(),
-  quoteId: zod.string().optional(),
-  quoteNumber: zod.string().optional(),
-  taskNumber: zod.string().optional(),
-  emailSubject: zod.string().optional(),
-  emailFrom: zod.string().optional(),
-  emailReceivedAt: zod.coerce.date().optional(),
-  emailBody: zod.string().optional(),
-  approvedAt: zod.coerce.date().optional(),
-  approvedBy: zod.string().optional(),
-  notes: zod.string().optional(),
-  checklist: zod
-    .array(
-      zod.object({
-        id: zod.string(),
-        label: zod.string(),
-        done: zod.boolean(),
-        doneAt: zod.string().nullish(),
-      }),
-    )
-    .optional(),
-});
-
-/**
- * @summary Get a purchase order
- */
-export const GetPurchaseOrderParams = zod.object({
-  id: zod.coerce.string(),
-});
-
-export const GetPurchaseOrderResponse = zod.object({
-  id: zod.string(),
-  poNumber: zod.string(),
-  client: zod.string(),
-  site: zod.string().nullish(),
-  amount: zod.string().nullish(),
-  status: zod.enum([
-    "Received",
-    "Matched",
-    "Approved",
-    "Actioned",
-    "Completed",
-    "Cancelled",
-  ]),
-  defectId: zod.string().nullish(),
-  quoteId: zod.string().nullish(),
-  quoteNumber: zod.string().nullish(),
-  taskNumber: zod.string().nullish(),
-  emailSubject: zod.string().nullish(),
-  emailFrom: zod.string().nullish(),
-  emailReceivedAt: zod.coerce.date().nullish(),
-  emailBody: zod.string().nullish(),
-  approvedAt: zod.coerce.date().nullish(),
-  approvedBy: zod.string().nullish(),
-  checklist: zod.array(
-    zod.object({
-      id: zod.string(),
-      label: zod.string(),
-      done: zod.boolean(),
-      doneAt: zod.string().nullish(),
-    }),
-  ),
-  notes: zod.string().nullish(),
-  createdAt: zod.coerce.date(),
-  updatedAt: zod.coerce.date(),
-});
-
-/**
- * @summary Update a purchase order
- */
-export const UpdatePurchaseOrderParams = zod.object({
-  id: zod.coerce.string(),
-});
-
-export const UpdatePurchaseOrderBody = zod.object({
-  poNumber: zod.string().optional(),
-  client: zod.string().optional(),
-  site: zod.string().optional(),
-  amount: zod.string().optional(),
-  status: zod
-    .enum([
-      "Received",
-      "Matched",
-      "Approved",
-      "Actioned",
-      "Completed",
-      "Cancelled",
-    ])
-    .optional(),
-  defectId: zod.string().optional(),
-  quoteId: zod.string().optional(),
-  quoteNumber: zod.string().optional(),
-  taskNumber: zod.string().optional(),
-  emailSubject: zod.string().optional(),
-  emailFrom: zod.string().optional(),
-  emailReceivedAt: zod.coerce.date().optional(),
-  emailBody: zod.string().optional(),
-  approvedAt: zod.coerce.date().optional(),
-  approvedBy: zod.string().optional(),
-  notes: zod.string().optional(),
-  checklist: zod
-    .array(
-      zod.object({
-        id: zod.string(),
-        label: zod.string(),
-        done: zod.boolean(),
-        doneAt: zod.string().nullish(),
-      }),
-    )
-    .optional(),
-  checklistToggle: zod
-    .object({
-      id: zod.string(),
-      done: zod.boolean(),
-    })
-    .optional()
-    .describe("Toggle a single checklist item by id"),
-});
-
-export const UpdatePurchaseOrderResponse = zod.object({
-  id: zod.string(),
-  poNumber: zod.string(),
-  client: zod.string(),
-  site: zod.string().nullish(),
-  amount: zod.string().nullish(),
-  status: zod.enum([
-    "Received",
-    "Matched",
-    "Approved",
-    "Actioned",
-    "Completed",
-    "Cancelled",
-  ]),
-  defectId: zod.string().nullish(),
-  quoteId: zod.string().nullish(),
-  quoteNumber: zod.string().nullish(),
-  taskNumber: zod.string().nullish(),
-  emailSubject: zod.string().nullish(),
-  emailFrom: zod.string().nullish(),
-  emailReceivedAt: zod.coerce.date().nullish(),
-  emailBody: zod.string().nullish(),
-  approvedAt: zod.coerce.date().nullish(),
-  approvedBy: zod.string().nullish(),
-  checklist: zod.array(
-    zod.object({
-      id: zod.string(),
-      label: zod.string(),
-      done: zod.boolean(),
-      doneAt: zod.string().nullish(),
-    }),
-  ),
-  notes: zod.string().nullish(),
-  createdAt: zod.coerce.date(),
-  updatedAt: zod.coerce.date(),
-});
-
-/**
- * @summary Delete a purchase order
- */
-export const DeletePurchaseOrderParams = zod.object({
-  id: zod.coerce.string(),
-});
-
-/**
  * @summary List all notes
  */
 export const ListNotesQueryParams = zod.object({
@@ -490,16 +260,7 @@ export const ListNotesQueryParams = zod.object({
 export const ListNotesResponseItem = zod.object({
   id: zod.string(),
   text: zod.string(),
-  category: zod.enum([
-    "Urgent",
-    "To Do",
-    "To Ask",
-    "Schedule",
-    "Quote",
-    "Follow Up",
-    "Investigate",
-    "Done",
-  ]),
+  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"]),
   owner: zod.string(),
   status: zod.enum(["Open", "Done"]),
   createdAt: zod.coerce.date(),
@@ -511,16 +272,7 @@ export const ListNotesResponse = zod.array(ListNotesResponseItem);
  */
 export const CreateNoteBody = zod.object({
   text: zod.string(),
-  category: zod.enum([
-    "Urgent",
-    "To Do",
-    "To Ask",
-    "Schedule",
-    "Quote",
-    "Follow Up",
-    "Investigate",
-    "Done",
-  ]),
+  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"]),
   owner: zod.string(),
 });
 
@@ -534,16 +286,7 @@ export const GetNoteParams = zod.object({
 export const GetNoteResponse = zod.object({
   id: zod.string(),
   text: zod.string(),
-  category: zod.enum([
-    "Urgent",
-    "To Do",
-    "To Ask",
-    "Schedule",
-    "Quote",
-    "Follow Up",
-    "Investigate",
-    "Done",
-  ]),
+  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"]),
   owner: zod.string(),
   status: zod.enum(["Open", "Done"]),
   createdAt: zod.coerce.date(),
@@ -559,16 +302,7 @@ export const UpdateNoteParams = zod.object({
 export const UpdateNoteBody = zod.object({
   text: zod.string().optional(),
   category: zod
-    .enum([
-      "Urgent",
-      "To Do",
-      "To Ask",
-      "Schedule",
-      "Quote",
-      "Follow Up",
-      "Investigate",
-      "Done",
-    ])
+    .enum(["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"])
     .optional(),
   owner: zod.string().optional(),
   status: zod.enum(["Open", "Done"]).optional(),
@@ -577,16 +311,7 @@ export const UpdateNoteBody = zod.object({
 export const UpdateNoteResponse = zod.object({
   id: zod.string(),
   text: zod.string(),
-  category: zod.enum([
-    "Urgent",
-    "To Do",
-    "To Ask",
-    "Schedule",
-    "Quote",
-    "Follow Up",
-    "Investigate",
-    "Done",
-  ]),
+  category: zod.enum(["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"]),
   owner: zod.string(),
   status: zod.enum(["Open", "Done"]),
   createdAt: zod.coerce.date(),

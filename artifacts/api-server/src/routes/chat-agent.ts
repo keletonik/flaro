@@ -265,26 +265,11 @@ router.post("/chat/agent", async (req, res, next) => {
     // See docs/aide-master-prompt/MASTER.md §5 for the rationale.
     const isPaMode = section === "pa";
     const isAideMode = section === "aide";
-    // Ops-manager mode fires on the WIP / Jobs page — the single most
-    // operationally critical surface. Gives the agent the god-level
-    // Service Manager persona + NSW geography + dispatch scoring +
-    // decisive filter protocol. See prompts/ops-manager-prompt.ts.
-    const isOpsMode = section === "jobs" || section === "wip";
-    // Email Intelligence mode fires on the quotes/estimates page and
-    // when the operator pastes email trails. Full NSW fire industry
-    // expert: BCA/NCC, AS standards, estimating, certifier knowledge.
-    const isEmailIntelMode = section === "email-intel" || section === "quotes";
     let corePrompt = AGENT_SYSTEM_PROMPT;
     if (isPaMode) corePrompt = PA_SYSTEM_PROMPT;
     else if (isAideMode) {
       const { AIDE_MASTER_PROMPT_V1_0 } = await import("../lib/prompts/aide-master-prompt");
       corePrompt = AIDE_MASTER_PROMPT_V1_0;
-    } else if (isOpsMode) {
-      const { OPS_MANAGER_SYSTEM_PROMPT } = await import("../lib/prompts/ops-manager-prompt");
-      corePrompt = OPS_MANAGER_SYSTEM_PROMPT;
-    } else if (isEmailIntelMode) {
-      const { EMAIL_INTEL_SYSTEM_PROMPT } = await import("../lib/prompts/email-intel-prompt");
-      corePrompt = EMAIL_INTEL_SYSTEM_PROMPT;
     }
     const systemBlocks: any[] = [
       {

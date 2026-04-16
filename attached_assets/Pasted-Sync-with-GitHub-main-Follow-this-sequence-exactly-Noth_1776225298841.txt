@@ -1,0 +1,74 @@
+Sync with GitHub main. Follow this sequence exactly. Nothing in the
+database or Replit Secrets gets touched — only the repo files and
+then a boot-time additive seed run.
+
+1. Open the Shell tab.
+
+2. Run: git status
+   If it shows clean, skip to step 4.
+   If it shows "modified" or "untracked" files:
+   a. If you want to keep the Replit-side changes:
+        git add -A
+        git commit -m "replit: local changes before sync"
+   b. If you don't want them:
+        git stash
+
+3. Run: git fetch origin main
+
+4. Run: git pull --rebase origin main
+
+5. If rebase reports conflicts:
+   - Do NOT abort.
+   - For each conflicted file, prefer the GitHub version:
+       git checkout --theirs <filename>
+       git add <filename>
+   - Then: git rebase --continue
+
+6. Run: pnpm install
+   (no-op if nothing changed; needed when lockfile updated)
+
+7. Restart the workspace (Stop, then Run — or click Restart).
+
+8. Watch the boot logs. You should see these lines run in order:
+   [boot] running seedFipKnowledgeBase
+   FIP schema ensured (v2.0)
+   fip seed ... (with inserted / updated counts)
+   [boot] running seedEstimationWorkbench
+   [boot] running seedPaSurface
+   [boot] running seedApr15Batch
+   apr15 batch load complete
+   [boot] seed pipeline complete — site is ready
+
+9. Verify with these read-only diag endpoints in a browser:
+   https://i-aide.replit.app/api/diag
+   https://i-aide.replit.app/api/diag/apr15
+   https://i-aide.replit.app/api/diag/pa
+
+   Expected counts after this sync:
+     wip_records       >= 628
+     quotes            >= 103
+     defects           >= 228
+     task_cycle_times  >= 9,743
+     fip_models        15 (with 21 deep spec columns populated)
+     fip_common_products ~31 (with compatible_panel_slugs tags)
+     fip_material_lists 0 or more (operator-created)
+
+NEVER run these - they destroy data:
+   git reset --hard
+   git checkout -- .
+   git clean -fd
+   git clean -fdx
+   DROP TABLE
+   TRUNCATE
+
+The Postgres database is untouched by git operations.
+Replit Secrets (DATABASE_URL, ANTHROPIC_API_KEY, FIP_ENABLED, etc.)
+are untouched.
+
+Every seed loader in the boot sequence is additive:
+  - ALTER TABLE ADD COLUMN IF NOT EXISTS for new columns
+  - CREATE TABLE IF NOT EXISTS for new tables
+  - INSERT ... WHERE NOT EXISTS / UPDATE for hot columns on existing rows
+None of them ever delete or truncate.
+
+Full recovery guide is at: docs/REPLIT_SYNC.md in the repo.

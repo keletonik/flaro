@@ -188,7 +188,7 @@ function JobModal({ job, onClose, onSave }: {
   );
 }
 
-const PAGE_SIZES = [25, 50, 100, 200];
+const PAGE_SIZES = [25, 50, 100, 200, 500];
 
 export default function Jobs() {
   const [search, setSearch] = useState("");
@@ -213,6 +213,11 @@ export default function Jobs() {
   });
   const [filterTech, setFilterTech] = useState<Set<string>>(new Set());
   const [filterClient, setFilterClient] = useState<Set<string>>(new Set());
+  // Decisive ops-manager filter toggles — every one is a day-planning verb
+  // on its own, not a column filter. See OPS_MANAGER_SYSTEM_PROMPT.
+  const [overdueOnly, setOverdueOnly] = useState(false);
+  const [unassignedOnly, setUnassignedOnly] = useState(false);
+  const [nearLocation, setNearLocation] = useState("");
 
   const { data: jobs, isLoading } = useListJobs({ search: search || undefined });
   const createJob = useCreateJob();
@@ -224,7 +229,11 @@ export default function Jobs() {
   const uniqueClients = useMemo(() => [...new Set(allJobs.map(j => j.client))].sort(), [allJobs]);
   const uniqueTechs = useMemo(() => [...new Set(allJobs.map(j => j.assignedTech || "Unassigned"))].sort(), [allJobs]);
 
-  const activeFilterCount = [filterPriority, filterStatus, filterTech, filterClient].filter(s => s.size > 0).length;
+  const activeFilterCount =
+    [filterPriority, filterStatus, filterTech, filterClient].filter(s => s.size > 0).length +
+    (overdueOnly ? 1 : 0) +
+    (unassignedOnly ? 1 : 0) +
+    (nearLocation.trim() ? 1 : 0);
 
   const filtered = useMemo(() => {
     let list = allJobs;
@@ -232,8 +241,18 @@ export default function Jobs() {
     if (filterStatus.size > 0) list = list.filter(j => filterStatus.has(j.status));
     if (filterTech.size > 0) list = list.filter(j => filterTech.has(j.assignedTech || "Unassigned"));
     if (filterClient.size > 0) list = list.filter(j => filterClient.has(j.client));
+    if (overdueOnly) list = list.filter(j => isOverdue(j.dueDate) && j.status !== "Done");
+    if (unassignedOnly) list = list.filter(j => !j.assignedTech);
+    if (nearLocation.trim()) {
+      const needle = nearLocation.trim().toLowerCase();
+      list = list.filter(j =>
+        (j.site ?? "").toLowerCase().includes(needle) ||
+        (j.address ?? "").toLowerCase().includes(needle) ||
+        (j.notes ?? "").toLowerCase().includes(needle)
+      );
+    }
     return list;
-  }, [allJobs, filterPriority, filterStatus, filterTech, filterClient]);
+  }, [allJobs, filterPriority, filterStatus, filterTech, filterClient, overdueOnly, unassignedOnly, nearLocation]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -279,6 +298,9 @@ export default function Jobs() {
     setFilterStatus(new Set());
     setFilterTech(new Set());
     setFilterClient(new Set());
+    setOverdueOnly(false);
+    setUnassignedOnly(false);
+    setNearLocation("");
     setSearch("");
     setPage(0);
   };
@@ -348,7 +370,8 @@ export default function Jobs() {
   const tdBase = "px-2 py-1.5 border border-neutral-600 dark:border-neutral-500 text-xs";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-full flex">
+    <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col overflow-hidden">
       <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2">
           <h1 className="text-foreground font-bold text-base tracking-tight shrink-0">WIPs</h1>
@@ -382,6 +405,39 @@ export default function Jobs() {
           </div>
         </div>
 
+        {/* Ops-manager quick-filter bar — day-planning verbs */}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/20 border-t border-border flex-wrap">
+          <div className="relative flex-1 max-w-[200px]">
+            <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={nearLocation}
+              onChange={e => { setNearLocation(e.target.value); setPage(0); }}
+              placeholder="Near suburb / address..."
+              className="w-full bg-background border border-border rounded pl-6 pr-6 py-0.5 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            {nearLocation && <button onClick={() => setNearLocation("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X size={10} /></button>}
+          </div>
+          <button
+            onClick={() => { setOverdueOnly(v => !v); setPage(0); }}
+            className={cn(
+              "px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors",
+              overdueOnly
+                ? "bg-red-500/15 text-red-600 border-red-500/30 dark:text-red-400"
+                : "bg-transparent text-muted-foreground border-border hover:text-foreground hover:bg-muted"
+            )}
+          >Overdue</button>
+          <button
+            onClick={() => { setUnassignedOnly(v => !v); setPage(0); }}
+            className={cn(
+              "px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors",
+              unassignedOnly
+                ? "bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400"
+                : "bg-transparent text-muted-foreground border-border hover:text-foreground hover:bg-muted"
+            )}
+          >Unassigned</button>
+          <span className="text-[10px] text-muted-foreground/70 ml-auto hidden sm:inline">Ask AIDE: <span className="italic">"any jobs near Wetherill Park"</span></span>
+        </div>
+
         {(activeFilterCount > 0 || search) && (
           <div className="flex items-center gap-1.5 px-3 pb-2 flex-wrap">
             {search && (
@@ -407,6 +463,21 @@ export default function Jobs() {
             {filterClient.size > 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
                 Client: {filterClient.size} selected <button onClick={() => setFilterClient(new Set())}><X size={9} /></button>
+              </span>
+            )}
+            {nearLocation.trim() && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-900/20 dark:text-sky-400 dark:border-sky-800">
+                Near: "{nearLocation}" <button onClick={() => setNearLocation("")}><X size={9} /></button>
+              </span>
+            )}
+            {overdueOnly && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
+                Overdue only <button onClick={() => setOverdueOnly(false)}><X size={9} /></button>
+              </span>
+            )}
+            {unassignedOnly && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
+                Unassigned only <button onClick={() => setUnassignedOnly(false)}><X size={9} /></button>
               </span>
             )}
           </div>
@@ -576,7 +647,8 @@ export default function Jobs() {
       </div>
 
       {showModal && <JobModal job={editingJob} onClose={() => { setShowModal(false); setEditingJob(undefined); }} onSave={handleSave} />}
-      <AnalyticsPanel section="wip" title="WIPs Analyst" />
+    </div>
+    <AnalyticsPanel section="wip" title="WIPs" />
     </div>
   );
 }

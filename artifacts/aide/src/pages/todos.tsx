@@ -372,7 +372,8 @@ export default function Todos() {
   const tdBase = "px-2 py-1.5 border border-neutral-600 dark:border-neutral-500 text-xs";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-full flex">
+      <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
       <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2">
           <h1 className="text-foreground font-bold text-base tracking-tight shrink-0">Tasks</h1>
@@ -664,6 +665,7 @@ export default function Todos() {
       )}
 
       {showModal && <TaskModal todo={editingTodo} onClose={() => { setShowModal(false); setEditingTodo(undefined); }} onSave={editingTodo ? handleUpdate : handleAdd} />}
+      </div>
       <AnalyticsPanel section="tasks" title="Task Analyst" />
     </div>
   );

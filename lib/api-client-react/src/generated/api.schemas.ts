@@ -163,6 +163,136 @@ export interface UpdateJobBody {
   uptickNote?: string;
 }
 
+export interface PurchaseOrderChecklistItem {
+  id: string;
+  label: string;
+  done: boolean;
+  /** @nullable */
+  doneAt?: string | null;
+}
+
+export type PurchaseOrderStatus =
+  (typeof PurchaseOrderStatus)[keyof typeof PurchaseOrderStatus];
+
+export const PurchaseOrderStatus = {
+  Received: "Received",
+  Matched: "Matched",
+  Approved: "Approved",
+  Actioned: "Actioned",
+  Completed: "Completed",
+  Cancelled: "Cancelled",
+} as const;
+
+export interface PurchaseOrder {
+  id: string;
+  poNumber: string;
+  client: string;
+  /** @nullable */
+  site?: string | null;
+  /** @nullable */
+  amount?: string | null;
+  status: PurchaseOrderStatus;
+  /** @nullable */
+  defectId?: string | null;
+  /** @nullable */
+  quoteId?: string | null;
+  /** @nullable */
+  quoteNumber?: string | null;
+  /** @nullable */
+  taskNumber?: string | null;
+  /** @nullable */
+  emailSubject?: string | null;
+  /** @nullable */
+  emailFrom?: string | null;
+  /** @nullable */
+  emailReceivedAt?: string | null;
+  /** @nullable */
+  emailBody?: string | null;
+  /** @nullable */
+  approvedAt?: string | null;
+  /** @nullable */
+  approvedBy?: string | null;
+  checklist: PurchaseOrderChecklistItem[];
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreatePurchaseOrderBodyStatus =
+  (typeof CreatePurchaseOrderBodyStatus)[keyof typeof CreatePurchaseOrderBodyStatus];
+
+export const CreatePurchaseOrderBodyStatus = {
+  Received: "Received",
+  Matched: "Matched",
+  Approved: "Approved",
+  Actioned: "Actioned",
+  Completed: "Completed",
+  Cancelled: "Cancelled",
+} as const;
+
+export interface CreatePurchaseOrderBody {
+  poNumber: string;
+  client: string;
+  site?: string;
+  amount?: string;
+  status?: CreatePurchaseOrderBodyStatus;
+  defectId?: string;
+  quoteId?: string;
+  quoteNumber?: string;
+  taskNumber?: string;
+  emailSubject?: string;
+  emailFrom?: string;
+  emailReceivedAt?: string;
+  emailBody?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  notes?: string;
+  checklist?: PurchaseOrderChecklistItem[];
+}
+
+export type UpdatePurchaseOrderBodyStatus =
+  (typeof UpdatePurchaseOrderBodyStatus)[keyof typeof UpdatePurchaseOrderBodyStatus];
+
+export const UpdatePurchaseOrderBodyStatus = {
+  Received: "Received",
+  Matched: "Matched",
+  Approved: "Approved",
+  Actioned: "Actioned",
+  Completed: "Completed",
+  Cancelled: "Cancelled",
+} as const;
+
+/**
+ * Toggle a single checklist item by id
+ */
+export type UpdatePurchaseOrderBodyChecklistToggle = {
+  id: string;
+  done: boolean;
+};
+
+export interface UpdatePurchaseOrderBody {
+  poNumber?: string;
+  client?: string;
+  site?: string;
+  amount?: string;
+  status?: UpdatePurchaseOrderBodyStatus;
+  defectId?: string;
+  quoteId?: string;
+  quoteNumber?: string;
+  taskNumber?: string;
+  emailSubject?: string;
+  emailFrom?: string;
+  emailReceivedAt?: string;
+  emailBody?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  notes?: string;
+  checklist?: PurchaseOrderChecklistItem[];
+  /** Toggle a single checklist item by id */
+  checklistToggle?: UpdatePurchaseOrderBodyChecklistToggle;
+}
+
 export type NoteCategory = (typeof NoteCategory)[keyof typeof NoteCategory];
 
 export const NoteCategory = {
@@ -200,6 +330,9 @@ export const CreateNoteBodyCategory = {
   To_Do: "To Do",
   To_Ask: "To Ask",
   Schedule: "Schedule",
+  Quote: "Quote",
+  Follow_Up: "Follow Up",
+  Investigate: "Investigate",
   Done: "Done",
 } as const;
 
@@ -217,6 +350,9 @@ export const UpdateNoteBodyCategory = {
   To_Do: "To Do",
   To_Ask: "To Ask",
   Schedule: "Schedule",
+  Quote: "Quote",
+  Follow_Up: "Follow Up",
+  Investigate: "Investigate",
   Done: "Done",
 } as const;
 
@@ -566,6 +702,12 @@ export interface ApiError {
 export type ListJobsParams = {
   status?: string;
   priority?: string;
+  search?: string;
+};
+
+export type ListPurchaseOrdersParams = {
+  status?: string;
+  client?: string;
   search?: string;
 };
 

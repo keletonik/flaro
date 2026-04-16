@@ -302,8 +302,9 @@ export default function Suppliers() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
+    <div className="h-full flex">
+      <div className="flex-1 min-w-0 min-h-screen bg-background">
+        <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h1 className="text-foreground font-bold text-lg tracking-tight flex items-center gap-2">
@@ -375,6 +376,7 @@ export default function Suppliers() {
         )}
       </div>
 
+      </div>
       <AnalyticsPanel section="suppliers" title="Procurement Analyst" />
     </div>
   );

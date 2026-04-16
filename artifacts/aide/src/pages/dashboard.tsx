@@ -199,7 +199,8 @@ export default function Dashboard() {
   const fmt = formatCurrency;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full flex">
+      <div className="flex-1 min-w-0 min-h-screen bg-background">
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
@@ -295,28 +296,6 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Today's Dispatch */}
-          {kpi && Object.keys(kpi.wip.byTech).length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Briefcase size={14} className="text-primary" />
-                <span className="text-xs font-bold text-foreground uppercase tracking-wide">Today's Dispatch</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {Object.entries(kpi.wip.byTech).sort(([,a], [,b]) => b - a).map(([tech, count]) => (
-                  <div key={tech} className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-muted/40 border border-border">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[9px]">
-                      {tech.split(" ").map(w => w[0]).join("").slice(0, 2)}
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-foreground leading-tight">{tech.split(" ")[0]}</p>
-                      <p className="text-[10px] text-muted-foreground">{count} active</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -345,25 +324,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-
-        {kpi && Object.keys(kpi.wip.byTech).length > 0 && (
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-4"><Briefcase size={14} className="text-primary" /><span className="text-xs font-bold text-foreground uppercase tracking-wide">Tech Workload</span></div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {Object.entries(kpi.wip.byTech).sort(([,a], [,b]) => b - a).map(([tech, count]) => (
-                <div key={tech} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-muted/40 border border-border">
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
-                    {tech.split(" ").map(w => w[0]).join("").slice(0, 2)}
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-foreground leading-tight">{tech.split(" ")[0]}</p>
-                    <p className="text-[10px] text-muted-foreground">{count} jobs</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Quick Tasks & Notes */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -435,6 +395,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      </div>
       <AnalyticsPanel section="dashboard" title="Dashboard Analyst" />
     </div>
   );

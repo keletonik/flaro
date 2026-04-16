@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, FolderKanban, Trash2, Archive, ChevronRight, LayoutGrid, Table2, BarChart3, Calendar, Columns3, X } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import PmBoardPage from "@/pages/pm-board";
 import { cn } from "@/lib/utils";
@@ -66,9 +66,9 @@ export default function PM() {
         <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
           <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-card shrink-0">
             <button onClick={() => setSelectedBoardId(null)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-              <FolderKanban size={13} /> All Boards
+              <span className="font-mono text-[11px] text-primary/60">//</span> All Boards
             </button>
-            <ChevronRight size={12} className="text-muted-foreground/30" />
+            <span className="font-mono text-[10px] text-muted-foreground/30">›</span>
             <span className="text-xs font-semibold text-foreground">{boards.find(b => b.id === selectedBoardId)?.name}</span>
           </div>
           <div className="flex-1">
@@ -83,8 +83,8 @@ export default function PM() {
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-foreground font-bold text-lg tracking-tight flex items-center gap-2">
-              <FolderKanban size={18} className="text-primary" /> Project Management
+            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2">
+              <span className="font-mono text-[13px] text-primary/60">//</span> Project Management
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">Boards, tasks, timelines, and Kanban views</p>
           </div>
@@ -112,8 +112,8 @@ export default function PM() {
                     className={cn("text-left px-3 py-2.5 rounded-xl border transition-all",
                       newBoardTemplate === t.key ? "border-primary bg-primary/5" : "border-border hover:border-primary/30 hover:bg-muted/30"
                     )}>
-                    <div className="w-6 h-6 rounded-lg mb-1.5 flex items-center justify-center" style={{ backgroundColor: `${TEMPLATE_COLORS[t.key]}15` }}>
-                      <FolderKanban size={13} style={{ color: TEMPLATE_COLORS[t.key] }} />
+                    <div className="w-6 h-6 rounded-md mb-1.5 flex items-center justify-center font-mono text-[11px] font-bold" style={{ backgroundColor: `${TEMPLATE_COLORS[t.key]}15`, color: TEMPLATE_COLORS[t.key] }}>
+                      //
                     </div>
                     <p className="text-xs font-semibold text-foreground">{t.name}</p>
                     <p className="text-[10px] text-muted-foreground">{t.groups} groups · {t.columns} fields</p>
@@ -135,9 +135,9 @@ export default function PM() {
           </div>
         ) : boards.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <FolderKanban size={32} className="text-muted-foreground/20 mb-3" />
-            <p className="text-sm font-semibold text-foreground mb-1">No boards yet</p>
-            <p className="text-xs text-muted-foreground">Create your first board to start managing projects</p>
+            <span className="font-mono text-2xl text-muted-foreground/20 mb-3">//</span>
+            <p className="text-sm font-medium text-foreground mb-1">No boards yet</p>
+            <p className="font-mono text-[11px] text-muted-foreground">Create your first board to start managing projects</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

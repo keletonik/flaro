@@ -26,17 +26,11 @@ const PM = lazy(() => import("@/pages/pm"));
 const FIP = lazy(() => import("@/pages/fip"));
 const PurchaseOrders = lazy(() => import("@/pages/purchase-orders"));
 const NotFound = lazy(() => import("@/pages/not-found"));
-import {
-  LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
-  CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
-  Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal, Settings2,
-  Shield, Mail
-} from "lucide-react";
+// All Lucide nav icons replaced with text-based prefixes
 import AidePA from "@/components/AidePA";
 import AIDEAssistant from "@/components/AIDEAssistant";
 import CommandPalette from "@/components/CommandPalette";
 import { KeyboardCheatSheet } from "@/components/KeyboardCheatSheet";
-import { AideFavicon, AideWordmark } from "@/components/AideLogo";
 
 const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>> }>({ collapsed: false, setCollapsed: () => {} });
 export function useSidebar() { return useContext(SidebarContext); }
@@ -58,33 +52,33 @@ const queryClient = new QueryClient({
 
 const navGroups = [
   {
-    label: "Command",
+    label: "cmd",
     items: [
-      { path: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
-      { path: "/pa", icon: MessageCircle, label: "PA" },
-      { path: "/operations", icon: BarChart3, label: "Operations" },
-      { path: "/analytics", icon: PieChart, label: "Analytics" },
-      { path: "/metrics", icon: BarChart3, label: "Metrics" },
+      { path: "/", prefix: "~", label: "Dashboard", exact: true },
+      { path: "/pa", prefix: ">_", label: "PA" },
+      { path: "/operations", prefix: "::", label: "Operations" },
+      { path: "/analytics", prefix: ">>", label: "Analytics" },
+      { path: "/metrics", prefix: "##", label: "Metrics" },
     ],
   },
   {
-    label: "Manage",
+    label: "ops",
     items: [
-      { path: "/jobs", icon: Briefcase, label: "WIPs" },
-      { path: "/purchase-orders", icon: Mail, label: "POs" },
-      { path: "/todos", icon: CheckSquare, label: "Tasks" },
-      { path: "/projects", icon: FolderKanban, label: "Projects" },
-      { path: "/suppliers", icon: Package, label: "Suppliers" },
+      { path: "/jobs", prefix: "--", label: "WIPs" },
+      { path: "/purchase-orders", prefix: "[]", label: "POs" },
+      { path: "/todos", prefix: "++", label: "Tasks" },
+      { path: "/projects", prefix: "//", label: "Projects" },
+      { path: "/suppliers", prefix: "<>", label: "Suppliers" },
     ],
   },
   {
-    label: "Tools",
+    label: "sys",
     items: [
-      { path: "/schedule", icon: CalendarDays, label: "Schedule" },
-      { path: "/notes", icon: FileText, label: "Notes" },
-      { path: "/toolbox", icon: Wrench, label: "Toolbox" },
-      { path: "/fip", icon: Shield, label: "FIP Knowledge" },
-      { path: "/settings", icon: Settings2, label: "Settings" },
+      { path: "/schedule", prefix: "..", label: "Schedule" },
+      { path: "/notes", prefix: "**", label: "Notes" },
+      { path: "/toolbox", prefix: "&&", label: "Toolbox" },
+      { path: "/fip", prefix: "{}", label: "FIP" },
+      { path: "/settings", prefix: "./", label: "Settings" },
     ],
   },
 ];
@@ -106,23 +100,23 @@ function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
         onClick={() => collapsed ? toggleMode() : setShowPicker(v => !v)}
         title="Change theme"
         className={cn(
-          "flex items-center gap-2.5 rounded-lg transition-all duration-200",
+          "flex items-center gap-2 rounded-md transition-all duration-200",
           collapsed
             ? "w-9 h-9 justify-center text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-            : "px-3 py-2 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs w-full font-medium"
+            : "px-2 py-1.5 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs w-full font-medium"
         )}
       >
-        {mode === "light" ? <Sun size={14} strokeWidth={1.75} /> : <Moon size={14} strokeWidth={1.75} />}
+        <span className="font-mono text-[11px] w-5 text-center shrink-0">{mode === "light" ? "☀" : "◑"}</span>
         {!collapsed && <span className="text-[11px]">Theme</span>}
       </button>
       {showPicker && !collapsed && (
-        <div className="absolute bottom-full left-0 mb-1 w-full bg-sidebar-accent border border-sidebar-border rounded-lg p-1.5 shadow-lg z-50">
+        <div className="absolute bottom-full left-0 mb-1 w-full bg-sidebar-accent border border-sidebar-border rounded-md p-1.5 shadow-lg z-50">
           {THEME_OPTIONS.map(opt => (
             <button key={opt.key} onClick={() => { setTheme(opt.key); setShowPicker(false); }}
               className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium transition-all",
                 theme === opt.key ? "text-sidebar-primary-foreground bg-sidebar-primary" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
               )}>
-              <div className="w-3 h-3 rounded-full border border-sidebar-border" style={{ backgroundColor: opt.accent }} />
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: opt.accent }} />
               {opt.label}
             </button>
           ))}
@@ -135,15 +129,14 @@ function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
 function UserBadge({ collapsed }: { collapsed: boolean }) {
   const { user, logout } = useAuth();
   if (!user) return null;
+  const initials = user.displayName.split(" ").map(w => w[0]).join("").slice(0, 2);
   return (
-    <div className={cn("flex items-center rounded-lg", collapsed ? "justify-center py-1" : "gap-2 px-3 py-1.5")}>
-      <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
-        {user.displayName.split(" ").map(w => w[0]).join("").slice(0, 2)}
-      </div>
+    <div className={cn("flex items-center rounded-md", collapsed ? "justify-center py-1" : "gap-2 px-2 py-1.5")}>
+      <span className="font-mono text-[11px] font-bold text-primary w-5 text-center shrink-0">{initials}</span>
       {!collapsed && (
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-medium text-sidebar-foreground truncate">{user.displayName}</p>
-          <button onClick={logout} className="text-[9px] text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors">Sign out</button>
+          <button onClick={logout} className="font-mono text-[9px] text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors">sign out</button>
         </div>
       )}
     </div>
@@ -159,16 +152,14 @@ function SidebarNav() {
       "hidden md:flex fixed left-0 top-0 bottom-0 flex-col z-50 bg-sidebar sidebar-shadow transition-all duration-300",
       collapsed ? "w-[60px]" : "w-[210px]"
     )}>
-      {/* Logo */}
+      {/* Logo — typographic wordmark */}
       <div className={cn("flex items-center pt-5 pb-4", collapsed ? "px-3 justify-center" : "px-4")}>
-        <button onClick={() => setLocation("/")} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 rounded-xl bg-[#0b1014] border border-[#1e293b] flex items-center justify-center shrink-0">
-            <AideFavicon color="#22d3ee" size={22} />
-          </div>
+        <button onClick={() => setLocation("/")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <span className="font-mono text-[15px] font-bold tracking-tighter text-primary shrink-0">A</span>
           {!collapsed && (
             <div className="flex flex-col">
-              <AideWordmark color="#22d3ee" height={16} />
-              <span className="text-sidebar-foreground/30 text-[9px] font-medium tracking-wider uppercase mt-0.5">Service Ops</span>
+              <span className="font-mono text-[13px] font-bold tracking-tight text-sidebar-foreground">AIDE</span>
+              <span className="font-mono text-[9px] text-sidebar-foreground/30 tracking-widest uppercase">service ops</span>
             </div>
           )}
         </button>
@@ -182,11 +173,13 @@ function SidebarNav() {
         {navGroups.map(group => (
           <div key={group.label}>
             {!collapsed && (
-              <p className="px-2 text-[10px] font-bold uppercase tracking-[0.06em] text-sidebar-foreground/30 mb-1.5">{group.label}</p>
+              <div className="flex items-center gap-2 px-2 mb-1.5">
+                <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-sidebar-foreground/25">{group.label}</span>
+                <div className="h-px flex-1 bg-sidebar-border/50" />
+              </div>
             )}
             <div className="space-y-0.5">
               {group.items.map((item) => {
-                const Icon = item.icon;
                 const active = isActive(location, item);
                 return (
                   <button
@@ -195,19 +188,24 @@ function SidebarNav() {
                     onClick={() => setLocation(item.path)}
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      "w-full flex items-center rounded-lg transition-all duration-150 text-left relative group",
-                      collapsed ? "justify-center px-0 py-2.5" : "gap-2.5 px-2.5 py-2",
+                      "w-full flex items-center rounded-md transition-all duration-100 text-left relative group",
+                      collapsed ? "justify-center px-0 py-2" : "gap-2 px-2 py-1.5",
                       active
                         ? "bg-sidebar-accent text-sidebar-foreground"
-                        : "text-sidebar-foreground/45 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                        : "text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
                     )}
                   >
-                    {active && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-primary rounded-r-full" />
-                    )}
-                    <Icon size={collapsed ? 17 : 15} strokeWidth={active ? 2.25 : 1.75} className="shrink-0" />
+                    <span className={cn(
+                      "w-5 shrink-0 text-center font-mono text-[11px] leading-none transition-colors duration-100",
+                      active ? "text-primary" : "text-sidebar-foreground/25 group-hover:text-sidebar-foreground/50"
+                    )}>
+                      {item.prefix}
+                    </span>
                     {!collapsed && (
-                      <span className="text-[11px] font-semibold tracking-wide">{item.label}</span>
+                      <span className={cn(
+                        "text-[11px] tracking-wide truncate",
+                        active ? "font-semibold" : "font-medium"
+                      )}>{item.label}</span>
                     )}
                   </button>
                 );
@@ -217,6 +215,26 @@ function SidebarNav() {
         ))}
       </nav>
 
+      {/* AIDE AI Button — text-based */}
+      <div className={cn("px-2 mb-1")}>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("aide-toggle"))}
+          title={collapsed ? "Open AIDE" : undefined}
+          className={cn(
+            "w-full flex items-center rounded-md transition-all duration-200 border border-primary/20 hover:border-primary/40 hover:bg-primary/5 group",
+            collapsed ? "justify-center px-0 py-2" : "gap-2 px-2 py-2"
+          )}
+        >
+          <span className="font-mono text-[11px] font-bold text-primary shrink-0 w-5 text-center">⚡</span>
+          {!collapsed && (
+            <div className="flex-1 text-left">
+              <p className="font-mono text-[11px] font-semibold text-foreground tracking-wide">AIDE</p>
+              <p className="font-mono text-[8px] text-muted-foreground tracking-wider uppercase">intelligence</p>
+            </div>
+          )}
+        </button>
+      </div>
+
       {/* Footer */}
       <div className={cn("border-t border-sidebar-border pt-2 pb-3 space-y-1", collapsed ? "px-2" : "px-2")}>
         <UserBadge collapsed={collapsed} />
@@ -224,12 +242,19 @@ function SidebarNav() {
         <button
           onClick={() => setCollapsed(v => !v)}
           className={cn(
-            "flex items-center rounded-lg transition-all duration-200 text-sidebar-foreground/30 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
-            collapsed ? "w-9 h-9 justify-center" : "gap-2.5 px-3 py-2 w-full text-xs"
+            "flex items-center rounded-md transition-all duration-200 text-sidebar-foreground/30 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+            collapsed ? "w-9 h-9 justify-center" : "gap-2 px-2 py-1.5 w-full text-xs"
           )}
           title={collapsed ? "Expand (Cmd+\\)" : "Collapse (Cmd+\\)"}
         >
-          {collapsed ? <ChevronRight size={14} /> : <><ChevronLeft size={14} /><span className="text-[11px]">Collapse</span><span className="ml-auto text-[9px] opacity-60 font-mono">⌘\</span></>}
+          {collapsed
+            ? <span className="font-mono text-[11px]">&raquo;</span>
+            : <>
+                <span className="font-mono text-[11px]">&laquo;</span>
+                <span className="text-[11px] font-medium">Collapse</span>
+                <span className="ml-auto font-mono text-[9px] opacity-50">⌘\</span>
+              </>
+          }
         </button>
       </div>
     </aside>
@@ -249,16 +274,13 @@ function BottomNav() {
         <div className="fixed inset-0 z-[60] md:hidden" onClick={() => setMoreOpen(false)}>
           <div className="absolute bottom-16 left-0 right-0 bg-sidebar border-t border-sidebar-border rounded-t-2xl p-3 shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="grid grid-cols-4 gap-2">
-              {moreItems.map(item => {
-                const Icon = item.icon;
-                return (
-                  <button key={item.path} onClick={() => { setLocation(item.path); setMoreOpen(false); }}
-                    className="flex flex-col items-center gap-1 py-2 rounded-xl text-sidebar-foreground/50 hover:text-primary transition-colors">
-                    <Icon size={18} strokeWidth={1.5} />
-                    <span className="text-[8px] font-bold tracking-wider uppercase">{item.label}</span>
-                  </button>
-                );
-              })}
+              {moreItems.map(item => (
+                <button key={item.path} onClick={() => { setLocation(item.path); setMoreOpen(false); }}
+                  className="flex flex-col items-center gap-1 py-2 rounded-xl text-sidebar-foreground/50 hover:text-primary transition-colors">
+                  <span className="font-mono text-[13px] leading-none text-sidebar-foreground/30">{item.prefix}</span>
+                  <span className="text-[8px] font-bold tracking-wider uppercase">{item.label}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -266,19 +288,18 @@ function BottomNav() {
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
         <div className="flex items-center justify-around px-1 py-1.5 safe-area-inset-bottom">
           {primaryItems.map((item) => {
-            const Icon = item.icon;
             const active = isActive(location, item);
             return (
               <button key={item.path} onClick={() => setLocation(item.path)}
                 className={cn("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]", active ? "text-primary" : "text-sidebar-foreground/35")}>
-                <Icon size={20} strokeWidth={active ? 2.25 : 1.5} />
+                <span className={cn("font-mono text-[14px] leading-none", active ? "text-primary font-bold" : "opacity-60")}>{item.prefix}</span>
                 <span className="text-[9px] font-bold tracking-wider uppercase">{item.label}</span>
               </button>
             );
           })}
           <button onClick={() => setMoreOpen(v => !v)}
             className={cn("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]", moreOpen ? "text-primary" : "text-sidebar-foreground/35")}>
-            <MoreHorizontal size={20} strokeWidth={1.5} />
+            <span className="font-mono text-[14px] leading-none">···</span>
             <span className="text-[9px] font-bold tracking-wider uppercase">More</span>
           </button>
         </div>
@@ -305,10 +326,10 @@ function Layout({ children }: { children: React.ReactNode }) {
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          className="hidden md:flex fixed left-[68px] top-4 z-20 items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform"
+          className="hidden md:flex fixed left-[68px] top-4 z-20 items-center justify-center w-6 h-6 rounded-md bg-sidebar-accent border border-sidebar-border text-sidebar-foreground/50 hover:text-sidebar-foreground shadow-sm hover:shadow transition-all"
           title="Expand sidebar (⌘\\)"
         >
-          <ChevronRight size={14} />
+          <span className="font-mono text-[10px]">&raquo;</span>
         </button>
       )}
       {/* On mobile (<md) sidebar is hidden, so no ml. On desktop, add
@@ -345,14 +366,12 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[50vh] px-8 text-center">
-          <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center mb-4">
-            <span className="text-destructive text-xl">!</span>
-          </div>
-          <h2 className="text-foreground font-semibold text-lg mb-2">Something went wrong</h2>
-          <p className="text-muted-foreground text-sm mb-4 max-w-md">{this.state.error}</p>
+          <span className="font-mono text-2xl text-destructive mb-4">!!</span>
+          <h2 className="text-foreground font-medium text-sm tracking-tight mb-2">Something went wrong</h2>
+          <p className="font-mono text-muted-foreground text-xs mb-4 max-w-md">{this.state.error}</p>
           <button onClick={() => { this.setState({ hasError: false, error: "" }); window.location.reload(); }}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90">
-            Reload
+            className="px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-primary-foreground hover:opacity-90 font-mono">
+            reload
           </button>
         </div>
       );

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Settings2, Palette, User, Bell, Database, Layout, Monitor, Moon, Sun, Check } from "lucide-react";
 import { useTheme, THEME_OPTIONS, type ThemeVariant } from "@/lib/theme";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -8,11 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 const TECHS = ["Darren Brailey", "Gordon Jenkins", "Haider Al-Heyoury", "John Minai", "Nu Unasa"];
 
 const SECTIONS = [
-  { id: "appearance", label: "Appearance", icon: Palette },
-  { id: "profile", label: "Profile", icon: User },
-  { id: "dashboard", label: "Dashboard", icon: Layout },
-  { id: "data", label: "Data & Import", icon: Database },
-  { id: "display", label: "Display", icon: Monitor },
+  { id: "appearance", label: "Appearance", prefix: "◑" },
+  { id: "profile", label: "Profile", prefix: "@" },
+  { id: "dashboard", label: "Dashboard", prefix: "~" },
+  { id: "data", label: "Data & Import", prefix: "▤" },
+  { id: "display", label: "Display", prefix: "□" },
 ];
 
 function SettingRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
@@ -77,8 +76,8 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
-        <h1 className="text-foreground font-bold text-lg tracking-tight flex items-center gap-2">
-          <Settings2 size={18} className="text-primary" /> Settings
+        <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2">
+          <span className="font-mono text-[13px] text-primary/60">./</span> Settings
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">Configure your workspace preferences</p>
       </div>
@@ -87,17 +86,14 @@ export default function SettingsPage() {
         {/* Section nav */}
         <div className="w-[180px] shrink-0 hidden sm:block">
           <div className="sticky top-20 space-y-0.5">
-            {SECTIONS.map(s => {
-              const Icon = s.icon;
-              return (
+            {SECTIONS.map(s => (
                 <button key={s.id} onClick={() => setActiveSection(s.id)}
-                  className={cn("w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                  className={cn("w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all",
                     activeSection === s.id ? "bg-primary/8 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}>
-                  <Icon size={14} />{s.label}
+                  <span className="font-mono text-[11px] w-4 text-center opacity-50">{s.prefix}</span>{s.label}
                 </button>
-              );
-            })}
+            ))}
           </div>
         </div>
 

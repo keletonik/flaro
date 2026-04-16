@@ -320,6 +320,7 @@ function getSuggestions(section: string): string[] {
     case "suppliers": return ["Price for MFB-1000?", "Compare panel prices", "Cheapest detector supplier?", "Total spend by supplier"];
     case "dashboard": return ["Performance summary", "What to focus on today?", "Weekly trend analysis", "Revenue vs target status"];
     case "tasks": return ["Overdue tasks?", "Prioritise for today", "Blocked items?", "Completion rate this week"];
+    case "purchase-orders": return ["Which POs are approved but not actioned?", "Total value of unapproved POs?", "Match new POs to defects and quotes", "Show POs with incomplete checklists"];
     default: return ["Summarise the data", "What needs attention?", "Trend analysis", "Key metrics overview"];
   }
 }

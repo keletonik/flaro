@@ -35,6 +35,7 @@ import {
   fipStandards,
   fipFaultSignatures,
   fipTroubleshootingSessions,
+  purchaseOrders,
 } from "@workspace/db";
 import { pool } from "@workspace/db";
 import { TABLE_ALLOWLIST, type AgentTable } from "./chat-tools";
@@ -71,6 +72,7 @@ const REGISTRY: Record<AgentTable, TableEntry> = {
   fip_standards: { table: fipStandards, textCols: ["code", "title", "notes"], softDelete: true },
   fip_fault_signatures: { table: fipFaultSignatures, textCols: ["code", "display_text", "symptom"], softDelete: true },
   fip_troubleshooting_sessions: { table: fipTroubleshootingSessions, textCols: ["site_name", "entered_fault_code", "entered_display_text", "entered_symptom", "summary"], softDelete: true },
+  purchase_orders: { table: purchaseOrders, textCols: ["po_number", "client", "site", "task_number", "quote_number", "defect_id", "email_subject", "email_from", "notes"], softDelete: true },
 };
 
 function entry(table: string): TableEntry {
@@ -134,6 +136,7 @@ function summariseRow(table: string, row: Record<string, any>): Record<string, a
     fip_standards: ["code", "title", "jurisdiction", "year", "current_version", "notes"],
     fip_fault_signatures: ["code", "display_text", "symptom", "severity", "likely_causes", "first_checks", "next_actions"],
     fip_troubleshooting_sessions: ["site_name", "entered_fault_code", "entered_display_text", "entered_symptom", "escalation_status", "summary", "started_at", "closed_at"],
+    purchase_orders: ["po_number", "client", "site", "amount", "status", "defect_id", "quote_id", "quote_number", "task_number", "email_subject", "email_from", "email_received_at", "approved_at", "approved_by", "checklist", "notes"],
   };
   const cols = keep[table] ?? Object.keys(row);
   for (const c of cols) {

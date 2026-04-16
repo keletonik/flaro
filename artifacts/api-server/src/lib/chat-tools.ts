@@ -35,6 +35,7 @@ export const TABLE_ALLOWLIST = [
   "fip_standards",
   "fip_fault_signatures",
   "fip_troubleshooting_sessions",
+  "purchase_orders",
 ] as const;
 
 export type AgentTable = (typeof TABLE_ALLOWLIST)[number];
@@ -170,7 +171,8 @@ export const AGENT_TOOLS = [
       "notes{text,category,owner}; " +
       "suppliers{name,category}; " +
       "supplier_products{supplier_id,product_name}; " +
-      "toolbox{ref,text}. " +
+      "toolbox{ref,text}; " +
+      "purchase_orders{po_number,client}. " +
       "Any other field may be supplied in the same data object.",
     input_schema: {
       type: "object" as const,

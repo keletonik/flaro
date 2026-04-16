@@ -7,7 +7,7 @@ import { logger } from "./lib/logger";
 import { addSSEClient, broadcastEvent } from "./lib/events";
 import { invalidateAnalyticsCache } from "./routes/analytics";
 import { requireAuth } from "./middlewares/require-auth";
-import { apiRateLimiter, loginRateLimiter } from "./middlewares/rate-limit";
+import { apiRateLimiter, loginRateLimiter, visionRateLimiter } from "./middlewares/rate-limit";
 import { perfMiddleware } from "./lib/perf-ring";
 
 const app: Express = express();
@@ -93,6 +93,9 @@ app.use(express.urlencoded({ extended: true, limit: defaultBodyLimit }));
 // Rate limiting
 // ───────────────────────────────────────────────────────────────────────────
 app.use("/api/auth/login", loginRateLimiter());
+// Expensive vision endpoint gets its own tight bucket so a runaway
+// caller can't drain the Anthropic budget inside the global limit.
+app.use("/api/fip/defect-analysis", visionRateLimiter());
 app.use("/api", apiRateLimiter());
 
 // SSE stream registered before the API router so the router 404 handler can't

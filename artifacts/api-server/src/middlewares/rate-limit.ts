@@ -51,3 +51,23 @@ export function apiRateLimiter(): RateLimitRequestHandler | PassthroughMiddlewar
     message: { error: "Rate limit exceeded. Please slow down." },
   });
 }
+
+/**
+ * Dedicated bucket for paid-LLM vision calls. Defaults are tight because
+ * each call hits a vision model and the global 600/min ceiling is far too
+ * loose for cost protection. Rollback: RATE_LIMIT_DISABLED=1.
+ */
+export function visionRateLimiter(): RateLimitRequestHandler | PassthroughMiddleware {
+  if (process.env["RATE_LIMIT_DISABLED"] === "1") {
+    return (_req: Request, _res: Response, next: NextFunction) => next();
+  }
+  const windowMs = Number(process.env["VISION_RATE_WINDOW_MS"]) || 60 * 1000;
+  const max = Number(process.env["VISION_RATE_MAX"]) || 20;
+  return rateLimit({
+    windowMs,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Vision endpoint rate limit exceeded. Please wait before retrying." },
+  });
+}

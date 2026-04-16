@@ -119,11 +119,15 @@ interface Props {
   /** Optional panel slug — when set, only products compatible with
    * this panel (or marked as universal) are shown in the catalogue. */
   selectedPanelSlug?: string;
+  /** Notify the parent when a reopened list has a panel slug attached
+   * so sibling cards can retarget. */
+  onPanelSlugChange?: (slug: string) => void;
 }
 
-export function CommonProductsCard({ selectedPanelSlug }: Props) {
+export function CommonProductsCard({ selectedPanelSlug, onPanelSlugChange }: Props) {
   // ── catalogue state ─────────────────────────────────────────────────
   const [products, setProducts] = useState<CommonProduct[]>([]);
+  const [allCategories, setAllCategories] = useState<string[]>([]);
   const [loadingCatalogue, setLoadingCatalogue] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("");
@@ -146,6 +150,9 @@ export function CommonProductsCard({ selectedPanelSlug }: Props) {
   const [customNotes, setCustomNotes] = useState("");
 
   const savedBannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Deduplicate concurrent ensureActiveList() calls so rapid clicks
+  // never spawn two empty lists on the server.
+  const pendingListRef = useRef<Promise<MaterialList> | null>(null);
 
   // ── load catalogue when panel or filters change ────────────────────
   const loadCatalogue = useCallback(async () => {
@@ -168,22 +175,41 @@ export function CommonProductsCard({ selectedPanelSlug }: Props) {
 
   useEffect(() => { void loadCatalogue(); }, [loadCatalogue]);
 
+  // Fetch the full category list once so the dropdown stays stable
+  // even while the filtered catalogue is being narrowed down.
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch<CommonProduct[]>("/fip/common-products")
+      .then((rows) => {
+        if (cancelled) return;
+        const cats = Array.from(new Set(rows.map((r) => r.category))).sort();
+        setAllCategories(cats);
+      })
+      .catch(() => { /* non-fatal — dropdown falls back to in-memory list */ });
+    return () => { cancelled = true; };
+  }, []);
+
   // ── ensure we always have an active list to add items into ────────
   const ensureActiveList = useCallback(async (): Promise<MaterialList> => {
     if (activeList) return activeList;
+    if (pendingListRef.current) return pendingListRef.current;
     const name = selectedPanelSlug
       ? `Materials for ${selectedPanelSlug} · ${new Date().toLocaleDateString("en-AU")}`
       : `Materials · ${new Date().toLocaleDateString("en-AU")}`;
-    const created = await apiFetch<MaterialList>("/fip/material-lists", {
+    const promise = apiFetch<MaterialList>("/fip/material-lists", {
       method: "POST",
       body: JSON.stringify({
         name,
-        owner: "casper",
         panelSlug: selectedPanelSlug ?? null,
       }),
+    }).then((created) => {
+      setActiveList(created);
+      return created;
+    }).finally(() => {
+      pendingListRef.current = null;
     });
-    setActiveList(created);
-    return created;
+    pendingListRef.current = promise;
+    return promise;
   }, [activeList, selectedPanelSlug]);
 
   // ── catalogue search (in-memory on the loaded rows) ────────────────
@@ -201,8 +227,9 @@ export function CommonProductsCard({ selectedPanelSlug }: Props) {
   }, [products, search]);
 
   const categories = useMemo(() => {
+    if (allCategories.length > 0) return allCategories;
     return Array.from(new Set(products.map((p) => p.category))).sort();
-  }, [products]);
+  }, [allCategories, products]);
 
   // ── running total for the builder footer ───────────────────────────
   const runningTotal = useMemo(() => {
@@ -337,10 +364,12 @@ export function CommonProductsCard({ selectedPanelSlug }: Props) {
   }
 
   // ── LOAD previously saved lists on demand ─────────────────────────
+  // The server scopes to the authenticated user when AUTH_ENFORCE is on,
+  // so no explicit owner filter is needed from the client.
   async function loadSavedLists() {
     try {
       const res = await apiFetch<{ lists: MaterialList[] }>(
-        "/fip/material-lists?owner=casper",
+        "/fip/material-lists",
       );
       setSavedLists(res.lists ?? []);
     } catch (e: any) {
@@ -357,6 +386,12 @@ export function CommonProductsCard({ selectedPanelSlug }: Props) {
       setListItems(res.items);
       setShowSavedLists(false);
       setShowBuilder(true);
+      // When a reopened list has a panel slug, let the parent retarget
+      // sibling cards so PanelTechnicalCard + BatteryCalculatorCard
+      // snap to the same panel.
+      if (res.list.panelSlug && onPanelSlugChange) {
+        onPanelSlugChange(res.list.panelSlug);
+      }
     } catch (e: any) {
       setError(e?.message ?? "Failed to reopen list");
     }

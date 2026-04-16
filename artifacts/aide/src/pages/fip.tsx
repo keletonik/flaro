@@ -1,30 +1,20 @@
 /**
- * FIP Command Centre — master-level rebuild (fip-v2.0).
+ * FIP Command Centre.
  *
- * Layout:
- *   ┌─ top menu ──────────────────────────────────────────────────┐
- *   │  Command Centre · Detector Library · Manufacturers          │
- *   │                 · AS Standards · Documents                  │
- *   └─────────────────────────────────────────────────────────────┘
- *   ┌──────────┬──────────────────────────────────────────────────┐
- *   │          │ ┌─────────────────┐ ┌─────────────────┐          │
- *   │ FIP chat │ │ Panel selector  │ │ Common products │          │
- *   │ (360px)  │ └─────────────────┘ └─────────────────┘          │
- *   │ fip-v2.0 │ ┌─────────────────┐ ┌─────────────────┐          │
- *   │ prompt   │ │ Defect image    │ │ Battery calc    │          │
- *   │          │ │ analysis        │ │ AS 1670.1/4428  │          │
- *   │          │ └─────────────────┘ └─────────────────┘          │
- *   └──────────┴──────────────────────────────────────────────────┘
- *
- * Default view is the command centre (4-module grid). The legacy
- * library views (detectors / manufacturers / standards / documents)
- * are still accessible via the top menu — they're just no longer
- * the default.
+ * Top-menu layout: Command Centre (4-card grid) + legacy library tabs
+ * (detectors / manufacturers / panel models / standards / documents).
+ * Sidebar on the left hosts the FIP assistant chat.
  *
  * Mobile <768px: chat collapses into a drawer, cards stack full-width.
+ *
+ * Loading policy: the shell renders immediately. Each tab's data is
+ * fetched on first entry, and a failure in one dataset never blocks
+ * another. /fip/panels is lifted to this parent so the panel dropdown
+ * in PanelTechnicalCard and the battery calculator share a single
+ * fetch instead of duplicating the call.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
@@ -37,7 +27,10 @@ import {
   FipDetectorTypeDetail,
   type DetectorType,
 } from "@/components/FipDetectorTypeCard";
-import { PanelTechnicalCard } from "@/components/fip/PanelTechnicalCard";
+import {
+  PanelTechnicalCard,
+  type PanelSpec,
+} from "@/components/fip/PanelTechnicalCard";
 import { CommonProductsCard } from "@/components/fip/CommonProductsCard";
 import { BatteryCalculatorCard } from "@/components/fip/BatteryCalculatorCard";
 import { DefectImageAnalysisCard } from "@/components/fip/DefectImageAnalysisCard";
@@ -75,50 +68,56 @@ type View = "command" | "detectors" | "manufacturers" | "models" | "standards" |
 
 export default function FIPKnowledgeBase() {
   const [view, setView] = useState<View>("command");
-  // Shared selection across the PanelTechnicalCard and CommonProductsCard
-  // — picking a panel in one filters the other to compatible products.
+  // Shared panel selection across PanelTechnicalCard and CommonProductsCard —
+  // picking a panel in one filters the other to compatible products.
   const [commandPanelSlug, setCommandPanelSlug] = useState<string>("");
   const [selectedDetector, setSelectedDetector] = useState<DetectorType | null>(null);
   const [status, setStatus] = useState<FipStatus | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusLoading, setStatusLoading] = useState(true);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [models, setModels] = useState<FipModel[]>([]);
   const [families, setFamilies] = useState<ProductFamily[]>([]);
   const [standards, setStandards] = useState<FipStandard[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [panels, setPanels] = useState<PanelSpec[]>([]);
+  const [panelsLoading, setPanelsLoading] = useState(true);
 
-  useEffect(() => { void loadData(); }, []);
-
-  async function loadData() {
-    setLoading(true);
+  const loadStatus = useCallback(async () => {
+    setStatusLoading(true);
     setStatusError(null);
     try {
-      let st: FipStatus | null = null;
-      try {
-        st = await apiFetch<FipStatus>("/fip/status");
-      } catch (e: any) {
-        setStatusError(e?.message ?? "Failed to reach /fip/status");
-      }
-      const [mfrs, mods, fams, stds, docs] = await Promise.all([
-        apiFetch<Manufacturer[]>("/fip/manufacturers").catch(() => []),
-        apiFetch<FipModel[]>("/fip/models").catch(() => []),
-        apiFetch<ProductFamily[]>("/fip/product-families").catch(() => []),
-        apiFetch<FipStandard[]>("/fip/standards").catch(() => []),
-        apiFetch<any[]>("/fip/documents").catch(() => []),
-      ]);
+      const st = await apiFetch<FipStatus>("/fip/status");
       setStatus(st);
-      setManufacturers(mfrs);
-      setModels(mods);
-      setFamilies(fams);
-      setStandards(stds);
-      setDocuments(docs);
+    } catch (e: any) {
+      setStatusError(e?.message ?? "Failed to reach /fip/status");
     } finally {
-      setLoading(false);
+      setStatusLoading(false);
     }
-  }
+  }, []);
 
-  if (loading) {
+  // Load status first, then library data in parallel. Failures in the
+  // library calls are isolated per-endpoint — one slow or broken query
+  // doesn't hold the whole page hostage.
+  useEffect(() => {
+    void loadStatus();
+    void Promise.all([
+      apiFetch<Manufacturer[]>("/fip/manufacturers").then(setManufacturers).catch(() => {}),
+      apiFetch<FipModel[]>("/fip/models").then(setModels).catch(() => {}),
+      apiFetch<ProductFamily[]>("/fip/product-families").then(setFamilies).catch(() => {}),
+      apiFetch<FipStandard[]>("/fip/standards").then(setStandards).catch(() => {}),
+      apiFetch<any[]>("/fip/documents").then(setDocuments).catch(() => {}),
+    ]);
+    apiFetch<PanelSpec[]>("/fip/panels")
+      .then((rows) => setPanels(rows))
+      .catch(() => setPanels([]))
+      .finally(() => setPanelsLoading(false));
+  }, [loadStatus]);
+
+  // Status is the only blocking call — until we know whether FIP is
+  // enabled or disabled we can't decide whether to render the shell
+  // or the disabled screen.
+  if (statusLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -138,10 +137,10 @@ export default function FIPKnowledgeBase() {
         <p className="text-muted-foreground text-sm max-w-md">
           {statusError
             ? `Couldn't reach /api/fip/status — ${statusError}.`
-            : "FIP_ENABLED is explicitly set to 0. Remove it to activate."}
+            : "Set FIP_ENABLED=1 in Replit Secrets to activate."}
         </p>
         <button
-          onClick={() => loadData()}
+          onClick={() => void loadStatus()}
           className="mt-4 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90"
         >
           Retry
@@ -216,10 +215,21 @@ export default function FIPKnowledgeBase() {
                 </p>
               </header>
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                <PanelTechnicalCard value={commandPanelSlug} onChange={setCommandPanelSlug} />
-                <CommonProductsCard selectedPanelSlug={commandPanelSlug || undefined} />
+                <PanelTechnicalCard
+                  panels={panels}
+                  loading={panelsLoading}
+                  value={commandPanelSlug}
+                  onChange={setCommandPanelSlug}
+                />
+                <CommonProductsCard
+                  selectedPanelSlug={commandPanelSlug || undefined}
+                  onPanelSlugChange={setCommandPanelSlug}
+                />
                 <DefectImageAnalysisCard />
-                <BatteryCalculatorCard />
+                <BatteryCalculatorCard
+                  panels={panels}
+                  panelSlug={commandPanelSlug || undefined}
+                />
               </div>
             </div>
           )}

@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Plus, Search, X, LayoutGrid, List, Filter, ChevronUp, ChevronDown, ChevronsUpDown, MoreHorizontal, Pencil, Trash2, ExternalLink, Download, SlidersHorizontal, ChevronLeft, ChevronRight, FilterX } from "lucide-react";
+import { Plus, Search, X, LayoutGrid, List, Filter, ChevronUp, ChevronDown, ChevronsUpDown, MoreHorizontal, Pencil, Trash2, ExternalLink, Download, Upload, SlidersHorizontal, ChevronLeft, ChevronRight, FilterX } from "lucide-react";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
+import LiveToggle from "@/components/LiveToggle";
+import CSVImportModal from "@/components/CSVImportModal";
 import {
   useListJobs, useCreateJob, useUpdateJob, useDeleteJob,
   getListJobsQueryKey, getGetDashboardSummaryQueryKey
@@ -11,7 +13,7 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
-import { exportToCSV } from "@/lib/api";
+import { apiFetch, exportToCSV } from "@/lib/api";
 import type { Job } from "@workspace/api-client-react";
 
 const STATUSES = ["Open", "In Progress", "Booked", "Blocked", "Waiting", "Done"] as const;
@@ -199,6 +201,7 @@ export default function Jobs() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(0); // 0 = All
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [importOpen, setImportOpen] = useState(false);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -393,8 +396,12 @@ export default function Jobs() {
                 <FilterX size={11} /> Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
               </button>
             )}
+            <LiveToggle onTick={() => queryClient.invalidateQueries({ queryKey: getListJobsQueryKey() })} interval={10_000} />
             <button onClick={handleExport} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors">
               <Download size={11} /> Export
+            </button>
+            <button onClick={() => setImportOpen(true)} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors">
+              <Upload size={11} /> Import
             </button>
             <button
               onClick={() => { setEditingJob(undefined); setShowModal(true); }}
@@ -647,6 +654,28 @@ export default function Jobs() {
       </div>
 
       {showModal && <JobModal job={editingJob} onClose={() => { setShowModal(false); setEditingJob(undefined); }} onSave={handleSave} />}
+
+      <CSVImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={async (rows, columnMap) => {
+          await apiFetch("/jobs/import", { method: "POST", body: JSON.stringify({ rows, columnMap }) });
+          queryClient.invalidateQueries({ queryKey: getListJobsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+          toast({ title: `${rows.length} jobs imported` });
+          window.dispatchEvent(new CustomEvent("aide-analyse", { detail: { message: `I just imported ${rows.length} jobs via CSV. Analyse the import: check for duplicates, missing critical fields (site, client, priority), data quality issues, and flag anything that needs attention. Summarise the breakdown by status and priority.` } }));
+        }}
+        availableFields={[
+          { key: "taskNumber", label: "Task Number" }, { key: "site", label: "Site", required: true },
+          { key: "address", label: "Address" }, { key: "client", label: "Client", required: true },
+          { key: "actionRequired", label: "Action Required" }, { key: "priority", label: "Priority" },
+          { key: "status", label: "Status" }, { key: "assignedTech", label: "Assigned Tech" },
+          { key: "dueDate", label: "Due Date" }, { key: "notes", label: "Notes" },
+          { key: "contactName", label: "Contact Name" }, { key: "contactNumber", label: "Contact Number" },
+          { key: "contactEmail", label: "Contact Email" },
+        ]}
+        title="Import Jobs"
+      />
     </div>
     <AnalyticsPanel section="wip" title="WIPs" />
     </div>

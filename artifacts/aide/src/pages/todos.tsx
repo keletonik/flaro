@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Plus, X, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronsUpDown, Pencil, Download, MoreHorizontal, Trash2, Search, Filter, FilterX, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, X, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronsUpDown, Pencil, Download, Upload, MoreHorizontal, Trash2, Search, Filter, FilterX, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   useListTodos, useCreateTodo, useUpdateTodo, useDeleteTodo,
   getListTodosQueryKey
@@ -7,8 +7,10 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { exportToCSV } from "@/lib/api";
+import { apiFetch, exportToCSV } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
+import LiveToggle from "@/components/LiveToggle";
+import CSVImportModal from "@/components/CSVImportModal";
 import { EditableCell } from "@/components/EditableCell";
 
 const PRIORITIES = ["Critical", "High", "Medium", "Low"] as const;
@@ -171,6 +173,7 @@ export default function Todos() {
   const [showModal, setShowModal] = useState(false);
   const [editingTodo, setEditingTodo] = useState<any>(undefined);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [importOpen, setImportOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(0); // 0 = All
 
@@ -400,8 +403,12 @@ export default function Todos() {
                 <FilterX size={11} /> Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
               </button>
             )}
+            <LiveToggle onTick={() => queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() })} interval={10_000} />
             <button onClick={handleExport} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted border border-border">
               <Download size={11} /> Export
+            </button>
+            <button onClick={() => setImportOpen(true)} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted border border-border">
+              <Upload size={11} /> Import
             </button>
             <button onClick={() => { setEditingTodo(undefined); setShowModal(true); }}
               className="flex items-center gap-1 px-2.5 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded hover:opacity-90">
@@ -665,6 +672,25 @@ export default function Todos() {
       )}
 
       {showModal && <TaskModal todo={editingTodo} onClose={() => { setShowModal(false); setEditingTodo(undefined); }} onSave={editingTodo ? handleUpdate : handleAdd} />}
+
+      <CSVImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={async (rows, columnMap) => {
+          await apiFetch("/todos/import", { method: "POST", body: JSON.stringify({ rows, columnMap }) });
+          queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() });
+          toast({ title: `${rows.length} tasks imported` });
+          window.dispatchEvent(new CustomEvent("aide-analyse", { detail: { message: `I just imported ${rows.length} tasks via CSV. Analyse the import: check for duplicates, missing fields, priority distribution, and flag anything overdue or needing attention.` } }));
+        }}
+        availableFields={[
+          { key: "text", label: "Task / Description", required: true },
+          { key: "priority", label: "Priority" }, { key: "category", label: "Category" },
+          { key: "dueDate", label: "Due Date" }, { key: "assignee", label: "Assignee" },
+          { key: "notes", label: "Notes" }, { key: "nextSteps", label: "Next Steps" },
+          { key: "urgencyTag", label: "Urgency Tag" },
+        ]}
+        title="Import Tasks"
+      />
       </div>
       <AnalyticsPanel section="tasks" title="Task Analyst" />
     </div>

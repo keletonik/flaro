@@ -25,6 +25,43 @@ router.get("/todos", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+const MAX_IMPORT_ROWS = parseInt(process.env.MAX_IMPORT_ROWS || "10000", 10);
+
+router.post("/todos/import", async (req, res, next) => {
+  try {
+    const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
+    if (!rows?.length) { res.status(400).json({ error: "No data rows provided" }); return; }
+    if (rows.length > MAX_IMPORT_ROWS) { res.status(413).json({ error: `Too many rows (${rows.length}). Limit is ${MAX_IMPORT_ROWS}.` }); return; }
+    const now = new Date();
+    const records = rows.map(row => {
+      const mapped: Record<string, any> = {};
+      for (const [csvCol, dbField] of Object.entries(columnMap)) {
+        if (row[csvCol] !== undefined && row[csvCol] !== "") mapped[dbField] = row[csvCol];
+      }
+      const safePriority: Priority = VALID_PRIORITIES.includes(mapped.priority as Priority) ? mapped.priority : "Medium";
+      const safeCategory: Category = VALID_CATEGORIES.includes(mapped.category as Category) ? mapped.category : "Work";
+      return {
+        id: randomUUID(),
+        text: mapped.text || mapped.description || mapped.task || "Imported task",
+        completed: mapped.completed === "true" || mapped.completed === "1" || false,
+        priority: safePriority,
+        category: safeCategory,
+        dueDate: mapped.dueDate || null,
+        assignee: mapped.assignee || null,
+        urgencyTag: mapped.urgencyTag || null,
+        colorCode: mapped.colorCode || null,
+        notes: mapped.notes || null,
+        nextSteps: mapped.nextSteps || null,
+        dependencies: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+    });
+    const inserted = await db.insert(todos).values(records).returning();
+    res.status(201).json({ imported: inserted.length, records: inserted.map(serializeTodo) });
+  } catch (err) { next(err); }
+});
+
 router.post("/todos", async (req, res, next) => {
   try {
     const { text, priority, category, dueDate } = req.body;

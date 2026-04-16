@@ -196,6 +196,55 @@ export default function AnalyticsPanel({ section, title = "AIDE" }: AnalyticsPan
     }
   }, [open, showHistory, section]);
 
+  // Listen for aide-analyse custom events (fired after CSV imports)
+  const pendingSendRef = useRef<string | null>(null);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const msg = (e as CustomEvent).detail?.message;
+      if (msg) { pendingSendRef.current = msg; setOpen(true); }
+    };
+    window.addEventListener("aide-analyse", handler);
+    return () => window.removeEventListener("aide-analyse", handler);
+  }, []);
+
+  // When we open via aide-analyse event, send the pending message once the panel is open
+  useEffect(() => {
+    if (open && pendingSendRef.current && !streaming) {
+      const msg = pendingSendRef.current;
+      pendingSendRef.current = null;
+      // Small delay to let the panel render before sending
+      const t = setTimeout(() => {
+        const userMsg: Message = { role: "user", content: msg };
+        setMessages(prev => [...prev, userMsg]);
+        setStreaming(true);
+        let assistantContent = "";
+        setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+        controllerRef.current = streamChat(
+          section, msg, messages,
+          (chunk) => {
+            assistantContent += chunk;
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+              return updated;
+            });
+          },
+          () => setStreaming(false),
+          (err) => {
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[updated.length - 1] = { role: "assistant", content: `Error: ${err}` };
+              return updated;
+            });
+            setStreaming(false);
+          },
+        );
+      }, 200);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [open]);
+
   const toggleDock = () => {
     const next = dock === "side" ? "bottom" : "side";
     setDock(next);

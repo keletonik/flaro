@@ -65,6 +65,44 @@ router.get("/jobs", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+const MAX_IMPORT_ROWS = parseInt(process.env.MAX_IMPORT_ROWS || "10000", 10);
+
+router.post("/jobs/import", async (req, res, next) => {
+  try {
+    const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
+    if (!rows?.length) { res.status(400).json({ error: "No data rows provided" }); return; }
+    if (rows.length > MAX_IMPORT_ROWS) { res.status(413).json({ error: `Too many rows (${rows.length}). Limit is ${MAX_IMPORT_ROWS}.` }); return; }
+    const now = new Date();
+    const records = rows.map(row => {
+      const mapped: Record<string, any> = {};
+      for (const [csvCol, dbField] of Object.entries(columnMap)) {
+        if (row[csvCol] !== undefined && row[csvCol] !== "") mapped[dbField] = row[csvCol];
+      }
+      return {
+        id: randomUUID(),
+        site: mapped.site || "Unknown",
+        client: mapped.client || "Unknown",
+        actionRequired: mapped.actionRequired || mapped.description || "Imported",
+        priority: mapped.priority || "Medium",
+        status: mapped.status || "Open",
+        taskNumber: mapped.taskNumber || null,
+        address: mapped.address || null,
+        contactName: mapped.contactName || null,
+        contactNumber: mapped.contactNumber || null,
+        contactEmail: mapped.contactEmail || null,
+        assignedTech: mapped.assignedTech || null,
+        dueDate: mapped.dueDate || null,
+        notes: mapped.notes || null,
+        uptickNotes: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+    });
+    const inserted = await db.insert(jobs).values(records).returning();
+    res.status(201).json({ imported: inserted.length, records: inserted.map(serializeJob) });
+  } catch (err) { next(err); }
+});
+
 router.post("/jobs", async (req, res, next) => {
   try {
     const parsed = CreateJobBody.safeParse(req.body);

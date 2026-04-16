@@ -27,6 +27,7 @@ import {
 } from "@/components/analytics/PeriodPicker";
 import { ChartShell, type ChartShellMetric } from "@/components/analytics/ChartShell";
 import { DrillDownPanel } from "@/components/analytics/DrillDownPanel";
+import LiveToggle from "@/components/LiveToggle";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line,
@@ -52,7 +53,7 @@ function pickDefaultPeriod(supported: Period[]): PeriodPickerValue {
   return { period: supported[0] ?? "30d" };
 }
 
-function MetricCardView({ id, displayName }: { id: string; displayName: string }) {
+function MetricCardView({ id, displayName, refreshKey }: { id: string; displayName: string; refreshKey: number }) {
   const [picker, setPicker] = useState<PeriodPickerValue>(DEFAULT_PICKER);
   const [metric, setMetric] = useState<ChartShellMetric | null>(null);
   const [loading, setLoading] = useState(false);
@@ -70,7 +71,7 @@ function MetricCardView({ id, displayName }: { id: string; displayName: string }
     } finally {
       setLoading(false);
     }
-  }, [id, picker]);
+  }, [id, picker, refreshKey]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -127,6 +128,7 @@ function MetricCardView({ id, displayName }: { id: string; displayName: string }
 export default function MetricsPage() {
   const [list, setList] = useState<MetricListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     apiFetch<{ metrics: MetricListItem[] }>("/metrics")
@@ -144,11 +146,14 @@ export default function MetricsPage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Metrics</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Every chart on this page reads from the metric registry. One number, one definition.
-        </p>
+      <header className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Metrics</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Every chart on this page reads from the metric registry. One number, one definition.
+          </p>
+        </div>
+        <LiveToggle onTick={() => setRefreshKey(k => k + 1)} interval={10_000} />
       </header>
 
       {Object.entries(groups).map(([category, metrics]) => (
@@ -158,7 +163,7 @@ export default function MetricsPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {metrics.map((m) => (
-              <MetricCardView key={m.id} id={m.id} displayName={m.displayName} />
+              <MetricCardView key={m.id} id={m.id} displayName={m.displayName} refreshKey={refreshKey} />
             ))}
           </div>
         </section>

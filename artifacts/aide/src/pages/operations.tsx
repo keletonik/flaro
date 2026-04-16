@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Search, Upload, Download, Filter, X, ChevronDown, BarChart3, MessageCircle, Send, Trash2, PanelRightClose, PanelRightOpen, Loader2, Pencil, Eye, ArrowUpDown } from "lucide-react";
 import { apiFetch, exportToCSV, streamChat } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
+import LiveToggle from "@/components/LiveToggle";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -436,6 +437,7 @@ export default function Operations() {
     await apiFetch(`${ENDPOINTS[activeTab]}/import`, { method: "POST", body: JSON.stringify({ rows, columnMap }) });
     toast({ title: `${rows.length} records imported` });
     fetchData(activeTab);
+    window.dispatchEvent(new CustomEvent("aide-analyse", { detail: { message: `I just imported ${rows.length} rows of ${activeTab.toUpperCase()} data. Analyse the import: check for duplicates, missing fields, data quality issues, and patterns. Cross-reference with existing records and flag anything that needs attention.` } }));
   };
 
   const handleDelete = async (id: string) => {
@@ -506,6 +508,7 @@ export default function Operations() {
             <p className="text-xs text-muted-foreground mt-0.5">Uptick data management and analytics</p>
           </div>
           <div className="flex items-center gap-2">
+            <LiveToggle onTick={() => fetchData(activeTab)} interval={10_000} />
             <button onClick={() => setChatOpen(v => !v)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all", chatOpen ? "bg-primary text-white border-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted border-border")} title="Toggle analyst panel">
               {chatOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />} Analyst
             </button>

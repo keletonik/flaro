@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Search, Plus, X, Upload, Download, Phone, Mail, MapPin, Edit2, Trash2, Package, ChevronDown, Calculator, BookOpen } from "lucide-react";
 import { apiFetch, exportToCSV } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import EstimationWorkbench from "@/components/EstimationWorkbench";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -302,7 +301,6 @@ export default function Suppliers() {
   }
 
   return (
-    <div className="h-full flex">
       <div className="flex-1 min-w-0 min-h-screen bg-background">
         <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between mb-3">
@@ -377,7 +375,5 @@ export default function Suppliers() {
       </div>
 
       </div>
-      <AnalyticsPanel section="suppliers" title="Procurement Analyst" />
-    </div>
   );
 }

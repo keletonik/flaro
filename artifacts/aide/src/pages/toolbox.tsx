@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Download, X, Clipboard } from "lucide-react";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { useListToolboxNotes, useCreateToolboxNote, useUpdateToolboxNote, useDeleteToolboxNote, getListToolboxNotesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -84,7 +83,6 @@ export default function Toolbox() {
   };
 
   return (
-    <div className="h-full flex">
       <div className="flex-1 min-w-0 min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
@@ -201,8 +199,6 @@ export default function Toolbox() {
         )}
       </div>
       </div>
-      <AnalyticsPanel section="tasks" title="Toolbox Analyst" />
-    </div>
   );
 }
 

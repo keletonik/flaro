@@ -5,7 +5,6 @@ import {
   CheckCircle2, Circle, Star, AlertTriangle, User, Tag, Link2, FileText, Pencil
 } from "lucide-react";
 import { apiFetch, exportToCSV } from "@/lib/api";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 

@@ -12,10 +12,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
-import {
-  MessageCircle, X, Maximize2, Minimize2,
-  ChevronUp, Sparkles, Minus,
-} from "lucide-react";
+// Lucide icons replaced with text-based typography
 import EmbeddedAgentChat from "@/components/EmbeddedAgentChat";
 import { cn } from "@/lib/utils";
 import { useAIDE } from "@/App";
@@ -130,14 +127,12 @@ export default function AIDEAssistant() {
     return (
       <button
         onClick={() => setMinimised(false)}
-        className="fixed bottom-4 right-4 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card border border-border shadow-2xl hover:shadow-xl transition-all hover:-translate-y-0.5 text-foreground group"
+        className="fixed bottom-4 right-4 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border shadow-2xl hover:shadow-xl transition-all hover:-translate-y-0.5 text-foreground group"
       >
-        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Sparkles size={12} className="text-primary" />
-        </div>
-        <span className="text-xs font-semibold">AIDE</span>
-        <span className="text-[10px] text-muted-foreground">{title}</span>
-        <ChevronUp size={12} className="text-muted-foreground group-hover:text-foreground transition-colors" />
+        <span className="font-mono text-[11px] font-bold text-primary">⚡</span>
+        <span className="font-mono text-xs font-semibold">AIDE</span>
+        <span className="font-mono text-[10px] text-muted-foreground">{title}</span>
+        <span className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground transition-colors">↑</span>
       </button>
     );
   }
@@ -149,27 +144,25 @@ export default function AIDEAssistant() {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0 bg-card/95 backdrop-blur-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            <Sparkles size={13} className="text-primary" />
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[12px] font-bold text-primary">⚡</span>
           <div>
-            <p className="text-[13px] font-semibold text-foreground tracking-tight">AIDE</p>
-            <p className="text-[9px] text-muted-foreground font-medium">{title}</p>
+            <p className="font-mono text-[12px] font-semibold text-foreground tracking-tight">AIDE</p>
+            <p className="font-mono text-[9px] text-muted-foreground">{title}</p>
           </div>
         </div>
         <div className="flex items-center gap-0.5">
           <button onClick={() => setWide(v => !v)} title={wide ? "Compact" : "Expand"}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            {wide ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            {wide ? "⊟" : "⊞"}
           </button>
           <button onClick={() => setMinimised(true)} title="Minimise"
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <Minus size={13} />
+            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            ─
           </button>
           <button onClick={() => setOpen(false)} title="Close AIDE"
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <X size={14} />
+            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            ×
           </button>
         </div>
       </div>

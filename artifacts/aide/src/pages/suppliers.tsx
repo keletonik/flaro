@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, X, Upload, Download, Phone, Mail, MapPin, Edit2, Trash2, Package, ChevronDown, Calculator, BookOpen } from "lucide-react";
+import { Search, Plus, Upload, Download, Phone, Mail, MapPin, Edit2, Trash2, Package, ChevronDown, Calculator, BookOpen } from "lucide-react";
 import { apiFetch, exportToCSV } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
 import EstimationWorkbench from "@/components/EstimationWorkbench";
@@ -279,8 +279,8 @@ export default function Suppliers() {
         <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3 shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-foreground font-bold text-lg tracking-tight flex items-center gap-2">
-                <Calculator size={18} className="text-primary" /> Suppliers — Estimation Workbench
+              <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2">
+                <span className="font-mono text-[13px] text-primary/60">&lt;&gt;</span> Suppliers — Estimation Workbench
               </h1>
               <p className="text-[11px] text-muted-foreground">1 730 products · live markup/margin · agent embedded right</p>
             </div>
@@ -306,8 +306,8 @@ export default function Suppliers() {
         <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h1 className="text-foreground font-bold text-lg tracking-tight flex items-center gap-2">
-              <Package size={18} className="text-primary" /> Suppliers
+            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2">
+              <span className="font-mono text-[13px] text-primary/60">&lt;&gt;</span> Suppliers
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">Fire protection supplier directory and price lists</p>
           </div>

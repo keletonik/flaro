@@ -206,8 +206,8 @@ export default function FIPKnowledgeBase() {
           {view === "command" && (
             <div className="space-y-4">
               <header>
-                <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  <LayoutDashboard className="w-4 h-4 text-primary" />
+                <h1 className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <span className="font-mono text-[13px] text-primary/60">{"{}"}</span>
                   FIP Command Centre
                 </h1>
                 <p className="text-xs text-muted-foreground mt-0.5">

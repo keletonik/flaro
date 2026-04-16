@@ -286,7 +286,7 @@ export default function Notes() {
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
         <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-foreground font-bold text-lg tracking-tight">Notes</h1>
+          <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2"><span className="font-mono text-[13px] text-primary/60">**</span> Notes</h1>
           <div className="flex-1 max-w-xs">
             <div className="relative">
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />

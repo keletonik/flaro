@@ -550,12 +550,10 @@ export default function Projects() {
   return (
       <div className="flex-1 min-w-0 max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-            <FolderKanban size={18} className="text-primary" />
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[13px] text-primary/60">//</span>
           <div>
-            <h1 className="text-lg font-bold text-foreground tracking-tight">Projects</h1>
+            <h1 className="text-sm font-medium text-foreground tracking-tight">Projects</h1>
             <p className="text-xs text-muted-foreground">{projects.length} project{projects.length !== 1 ? "s" : ""}</p>
           </div>
         </div>

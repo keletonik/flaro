@@ -233,8 +233,8 @@ export default function PAPage() {
             >
               {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
-            <Sparkles className="w-4 h-4 text-primary" />
-            <h1 className="text-sm font-semibold text-foreground">AIDE PA</h1>
+            <span className="font-mono text-[13px] text-primary/60">&gt;_</span>
+            <h1 className="text-sm font-medium text-foreground">AIDE PA</h1>
             <span className="text-[10px] text-muted-foreground hidden sm:inline">
               Voice · slash commands · tool-use agent
             </span>

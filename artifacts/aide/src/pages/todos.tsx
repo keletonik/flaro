@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Plus, X, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronsUpDown, Pencil, Download, Upload, MoreHorizontal, Trash2, Search, Filter, FilterX, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   useListTodos, useCreateTodo, useUpdateTodo, useDeleteTodo,
@@ -42,6 +42,8 @@ function ColumnFilter({ label, options, selected, onChange, onClear }: {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -57,13 +59,23 @@ function ColumnFilter({ label, options, selected, onChange, onClear }: {
   return (
     <div className="relative inline-flex" ref={ref}>
       <button
-        onClick={e => { e.stopPropagation(); setOpen(!open); }}
+        ref={btnRef}
+        onClick={e => {
+          e.stopPropagation();
+          if (btnRef.current) {
+            const r = btnRef.current.getBoundingClientRect();
+            setPos({ top: r.bottom + 4, left: Math.max(r.left, 8) });
+          }
+          setOpen(!open);
+        }}
         className={cn("p-0.5 rounded transition-colors", hasFilter ? "text-primary" : "text-muted-foreground/40 hover:text-muted-foreground")}
       >
         <Filter size={10} />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-lg shadow-xl min-w-[170px] max-h-[300px] overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="fixed z-[100] bg-card border border-border rounded-lg shadow-xl min-w-[170px] max-h-[300px] overflow-hidden"
+          style={{ top: pos.top, left: pos.left }}
+          onClick={e => e.stopPropagation()}>
           <div className="p-2 border-b border-border">
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ${label}...`}
               className="w-full bg-muted border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" autoFocus />
@@ -141,15 +153,33 @@ function TaskModal({ todo, onClose, onSave }: { todo?: any; onClose: () => void;
 
 function ActionMenu({ todo, onEdit, onToggle, onDelete }: { todo: any; onEdit: () => void; onToggle: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  const openMenu = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      const menuH = 120; // approximate menu height
+      const spaceBelow = window.innerHeight - r.bottom;
+      setPos({
+        top: spaceBelow < menuH ? r.top - menuH : r.bottom + 4,
+        left: Math.min(r.right - 130, window.innerWidth - 140),
+      });
+    }
+    setOpen(!open);
+  }, [open]);
+
   return (
     <div className="relative">
-      <button onClick={e => { e.stopPropagation(); setOpen(!open); }} className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+      <button ref={btnRef} onClick={openMenu} className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
         <MoreHorizontal size={13} />
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[130px]">
+          <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
+          <div className="fixed z-[100] bg-card border border-border rounded-lg shadow-lg py-1 min-w-[130px]"
+            style={{ top: pos.top, left: pos.left }}>
             <button onClick={() => { onToggle(); setOpen(false); }} className="w-full px-3 py-1.5 text-left text-xs text-foreground hover:bg-muted flex items-center gap-2">
               {todo.completed ? <Circle size={11} /> : <CheckCircle2 size={11} />} {todo.completed ? "Mark Active" : "Mark Done"}
             </button>

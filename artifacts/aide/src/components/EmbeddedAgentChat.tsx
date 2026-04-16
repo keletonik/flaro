@@ -20,6 +20,14 @@ import { streamAgent, type AgentToolEvent, type AttachmentMeta } from "@/lib/api
 import { AttachmentPicker, AttachmentPreviewChip } from "@/components/AttachmentPicker";
 import { cn } from "@/lib/utils";
 
+const PAGE_NOTES_KEY = "aide-page-notes";
+export function loadPageNotes(section: string): string {
+  try { return localStorage.getItem(`${PAGE_NOTES_KEY}:${section}`) || ""; } catch { return ""; }
+}
+export function savePageNotes(section: string, notes: string): void {
+  try { if (notes) localStorage.setItem(`${PAGE_NOTES_KEY}:${section}`, notes); else localStorage.removeItem(`${PAGE_NOTES_KEY}:${section}`); } catch {}
+}
+
 interface ToolRun {
   name: string;
   input?: Record<string, unknown>;

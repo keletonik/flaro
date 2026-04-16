@@ -25,7 +25,6 @@ const SettingsPage = lazy(() => import("@/pages/settings"));
 const PM = lazy(() => import("@/pages/pm"));
 const FIP = lazy(() => import("@/pages/fip"));
 const PurchaseOrders = lazy(() => import("@/pages/purchase-orders"));
-const Quotes = lazy(() => import("@/pages/quotes"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
@@ -73,7 +72,6 @@ const navGroups = [
     items: [
       { path: "/jobs", icon: Briefcase, label: "WIPs" },
       { path: "/purchase-orders", icon: Mail, label: "POs" },
-      { path: "/quotes", icon: DollarSign, label: "Quotes" },
       { path: "/todos", icon: CheckSquare, label: "Tasks" },
       { path: "/projects", icon: FolderKanban, label: "Projects" },
       { path: "/suppliers", icon: Package, label: "Suppliers" },
@@ -404,7 +402,6 @@ function Router() {
           <Route path="/jobs"><Jobs /></Route>
           <Route path="/jobs/:id"><JobDetail /></Route>
           <Route path="/purchase-orders"><PurchaseOrders /></Route>
-          <Route path="/quotes"><Quotes /></Route>
           <Route path="/notes"><Notes /></Route>
           <Route path="/todos"><Todos /></Route>
           <Route path="/projects"><PM /></Route>

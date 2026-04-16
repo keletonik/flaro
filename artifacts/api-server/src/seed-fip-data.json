@@ -54,17 +54,6 @@
       "created_at": "2026-04-13T11:00:00+00:00",
       "updated_at": "2026-04-13T11:00:00+00:00",
       "deleted_at": null
-    },
-    {
-      "id": "401a8d14-8494-45a3-878e-04c0a897983d",
-      "name": "Securiton",
-      "slug": "securiton",
-      "country": "Switzerland",
-      "website": "https://www.securiton.com/",
-      "notes": "Swiss manufacturer of special-hazard fire detection systems. SecuriHeat dLIST is their addressable linear heat detection product. Distributed in Australia by Incite Fire.",
-      "created_at": "2026-04-16T00:00:00+00:00",
-      "updated_at": "2026-04-16T00:00:00+00:00",
-      "deleted_at": null
     }
   ],
   "product_families": [
@@ -363,17 +352,6 @@
       "description": null,
       "created_at": "2026-04-13T11:00:00+00:00",
       "updated_at": "2026-04-13T11:00:00+00:00",
-      "deleted_at": null
-    },
-    {
-      "id": "b8b34590-b0c3-461e-821e-75de9cd7731b",
-      "manufacturer_id": "401a8d14-8494-45a3-878e-04c0a897983d",
-      "name": "SecuriHeat dLIST",
-      "slug": "securiton-dlist",
-      "category": "Linear heat detection",
-      "description": "Addressable line-type heat detector. Sensor cable embeds digital sensors at programmable 1-10 m spacing; a sensor control unit polls the cable continuously and pinpoints alarm location to the individual sensor. Used in road / rail tunnels, car parks, cable trays, conveyors, warehouses, refrigerated stores, industrial plants and harsh-environment applications where point detectors are impractical.",
-      "created_at": "2026-04-16T00:00:00+00:00",
-      "updated_at": "2026-04-16T00:00:00+00:00",
       "deleted_at": null
     }
   ],
@@ -916,51 +894,6 @@
       "image_checksum": null,
       "created_at": "2026-04-13T11:00:00+00:00",
       "updated_at": "2026-04-13T11:00:00+00:00",
-      "deleted_at": null
-    },
-    {
-      "id": "5a953235-e05e-4798-9ebc-849946d65a87",
-      "family_id": "b8b34590-b0c3-461e-821e-75de9cd7731b",
-      "manufacturer_id": "401a8d14-8494-45a3-878e-04c0a897983d",
-      "name": "SCU835 Sensor Control Unit",
-      "model_number": "SCU 835",
-      "slug": "securiton-dlist-scu835",
-      "description": "Current-generation evaluation unit for the SecuriHeat dLIST addressable linear heat detection system. Two independent SEC15 sensor cable channels, up to ~350 m per channel (700 m total), up to 188 digital sensors per unit. VdS and EN 54-22 / EN 54-28 approved. Interfaces to host fire panels via programmable relays or via a fieldbus interface module (conventional, LON, Modbus).",
-      "years_active": null,
-      "status": "current",
-      "image_checksum": null,
-      "created_at": "2026-04-16T00:00:00+00:00",
-      "updated_at": "2026-04-16T00:00:00+00:00",
-      "deleted_at": null
-    },
-    {
-      "id": "7937ddd3-437e-476d-b26c-b23c9d47cf58",
-      "family_id": "b8b34590-b0c3-461e-821e-75de9cd7731b",
-      "manufacturer_id": "401a8d14-8494-45a3-878e-04c0a897983d",
-      "name": "SCU800 Sensor Control Unit (legacy)",
-      "model_number": "SCU 800",
-      "slug": "securiton-dlist-scu800",
-      "description": "Legacy SecuriHeat dLIST sensor control unit, still in service on many Australian sites. Functionally similar to the SCU835 with slightly lower per-channel length and a smaller event history. Superseded by SCU835 on new installations but remains supported for spares and replacement.",
-      "years_active": null,
-      "status": "current",
-      "image_checksum": null,
-      "created_at": "2026-04-16T00:00:00+00:00",
-      "updated_at": "2026-04-16T00:00:00+00:00",
-      "deleted_at": null
-    },
-    {
-      "id": "1d440e86-14aa-4457-b809-41da26758a1a",
-      "family_id": "b8b34590-b0c3-461e-821e-75de9cd7731b",
-      "manufacturer_id": "401a8d14-8494-45a3-878e-04c0a897983d",
-      "name": "SEC15 Addressable Sensor Cable",
-      "model_number": "SEC 15",
-      "slug": "securiton-dlist-sec15",
-      "description": "Digital addressable linear heat sensor cable for the dLIST system. Each cable contains a string of individually addressed, pre-calibrated semiconductor sensors at programmable spacing (1 m, 2 m, 3 m, 5 m or 10 m) \u2014 chosen to match the risk profile of the protected area. Sensor resolution 0.1 \u00b0C; the control unit polls every sensor every 10 s so a fault or alarm is pinpointed to the exact metre. Multiple jacket variants (PVC, FEP, stainless over-braid) for different environments. Requires a connection box + UCM terminator / connection module at the end of every run.",
-      "years_active": null,
-      "status": "current",
-      "image_checksum": null,
-      "created_at": "2026-04-16T00:00:00+00:00",
-      "updated_at": "2026-04-16T00:00:00+00:00",
       "deleted_at": null
     }
   ],

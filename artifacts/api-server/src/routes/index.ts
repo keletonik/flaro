@@ -32,9 +32,10 @@ import metricsRouter from "./metrics";
 import remindersRouter from "./reminders";
 import paInstructionsRouter from "./pa-instructions";
 import attachmentsRouter from "./attachments";
-import diagRouter from "./diag";
 import purchaseOrdersRouter from "./purchase-orders";
 import changeLogsRouter from "./change-logs";
+import changeLogRouter from "./change-log";
+import diagRouter from "./diag";
 
 const router: IRouter = Router();
 
@@ -71,8 +72,9 @@ router.use(metricsRouter);
 router.use(remindersRouter);
 router.use(paInstructionsRouter);
 router.use(attachmentsRouter);
-router.use(diagRouter);
 router.use(purchaseOrdersRouter);
 router.use(changeLogsRouter);
+router.use(changeLogRouter);
+router.use(diagRouter);
 
 export default router;

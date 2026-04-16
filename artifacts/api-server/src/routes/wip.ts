@@ -5,6 +5,7 @@ import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { deleteRow, deleteRows, softDeleteEnabled } from "../lib/soft-delete";
+import { logDataChange } from "../lib/change-log";
 
 const MAX_IMPORT_ROWS = Number(process.env["MAX_IMPORT_ROWS"]) || 10000;
 
@@ -101,6 +102,7 @@ router.post("/wip/import", async (req, res, next) => {
       };
     });
     const inserted = await db.insert(wipRecords).values(records).returning();
+    await logDataChange({ batchId, category: "wip", action: "csv_import", recordsInserted: inserted.length, sourceRows: rows.length });
     res.status(201).json({ imported: inserted.length, batchId, records: inserted.map(serialize) });
   } catch (err) { next(err); }
 });

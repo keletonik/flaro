@@ -1,0 +1,52 @@
+"ID","Ref","Type","Status","Description","Supplier","Supplier Ref","Contractor","Warehouse","Date","Last Invoice Date","Last Invoice Number","Subtotal","Yet to be Billed","Yet to be Delivered","Tax","Total","Currency","FX Rate","Task ID","Task","Task Cost Centre","Property","Branch","Office Assignee","Purchase Order Supplier Ref","Delivery Instructions","Created","Updated","Created By","Submitted By","Reviewed By","Est. Delivery Date","Partner UID","Last Delivery Date"
+27094,"PO-2998","MATERIALS","SUBMITTED","","FireSense","","","","2026-04-01","","",103.00000000,103.00000000,0E-8,10.30,113.30000000,"AUD","1.0000","36038","QD-2126... Works","","3M - 1A Rivett Road, North Ryde, NSW 2113","","","","","2026-04-01 07:17:19","2026-04-07 11:03:13","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-07"
+27160,"PO-3003","MATERIALS","APPROVED","","MAGUIRE ELECTRICAL SERVICES PTY LTD","","","","2026-04-01","","",0,0,0,0.00,0.00,"AUD","1.0000","36829","SQ-0723 Works","","Gateway Business Park - Unit 3/9/10 - 63-79 Parramatta Road, Silverwater, NSW 2128","","Jade Ogony","","","2026-04-01 15:09:45","2026-04-01 15:10:05","Jade Ogony","Jade Ogony","Jade Ogony","","",""
+27556,"PO-3024","MATERIALS","SUBMITTED","1 addressable red bga for pick up please","Ampac","","","","2026-04-07","","",1.00000000,1.00000000,0E-8,0.10,1.10000000,"AUD","1.0000","35114","613 – replace break glass device ","","ACU - Building 600-650 - 25a Baker Road, Strathfield, NSW 2055","","Jamie Wright","","","2026-04-07 11:10:03","2026-04-07 11:42:28","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-07"
+27557,"PO-3025","MATERIALS","SUBMITTED","","Ampac","","","","2026-04-07","","",67.00000000,67.00000000,0E-8,6.70,73.70000000,"AUD","1.0000","37325","Further to fault – and inspection ","","ACU - Building 600-650 - 25a Baker Road, Strathfield, NSW 2055","","Jamie Wright","","","2026-04-07 11:11:36","2026-04-07 11:41:59","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-07"
+27754,"PO-3034","MATERIALS","DELETED","","Flamestop Australia Pty Limited","*None","","","2026-04-08","","",2816.63000000,2816.63000000,2816.63000000,281.66,3098.29000000,"AUD","1.0000","38941","QD-2668 Works","","Centennial Park - Grand Drive Sydney NSW 2021","","","","","2026-04-08 09:32:14","2026-04-08 10:55:38","Casper Tavitian","Casper Tavitian","Casper Tavitian","","",""
+27755,"PO-3035","MATERIALS","DELETED","","MAGUIRE ELECTRICAL SERVICES PTY LTD","","","","2026-04-08","","",682.50000000,682.50000000,682.50000000,68.25,750.75000000,"AUD","1.0000","38941","QD-2668 Works","","Centennial Park - Grand Drive Sydney NSW 2021","","","","","2026-04-08 09:35:49","2026-04-10 11:36:15","Casper Tavitian","Casper Tavitian","Casper Tavitian","","",""
+27756,"PO-3036","MATERIALS","DELETED","","MAGUIRE ELECTRICAL SERVICES PTY LTD","","","","2026-04-08","","",682.50000000,682.50000000,682.50000000,68.25,750.75000000,"AUD","1.0000","38942","QD-2664 Works","","Centennial Park - Grand Drive Sydney NSW 2021","","","","","2026-04-08 09:38:35","2026-04-10 11:30:41","Casper Tavitian","Casper Tavitian","Casper Tavitian","","",""
+27757,"PO-3037","MATERIALS","DELETED","","Flamestop Australia Pty Limited","*None","","","2026-04-08","","",2832.02000000,2832.02000000,2832.02000000,283.20,3115.22000000,"AUD","1.0000","38942","QD-2664 Works","","Centennial Park - Grand Drive Sydney NSW 2021","","","","","2026-04-08 09:42:34","2026-04-08 10:55:12","Casper Tavitian","Casper Tavitian","Casper Tavitian","","",""
+27787,"PO-3043","MATERIALS","SUBMITTED","","Ampac","","","","2026-04-08","","",1.00000000,1.00000000,0E-8,0.10,1.10000000,"AUD","1.0000","38842","QD-2660 Works","","15-19 McPherson St, Banksmeadow, NSW 2019","","","","","2026-04-08 11:59:23","2026-04-08 12:03:43","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-08"
+27952,"PO-3058","MATERIALS","SUBMITTED","PSU Fire Brigade Monitoring Unit 
+3301-0015 - 22AMPPSU","Ampac","","","","2026-04-09","","",796.00000000,796.00000000,0E-8,79.60,875.60000000,"AUD","1.0000","39238","QD-2676 Works","","Goodman AU106 - M5 Industry Park - Building 1 -  1 Moorebank Avenue, Moorebank, NSW 2170","","","","","2026-04-09 14:01:04","2026-04-10 09:38:27","Casper Tavitian","Casper Tavitian","Casper Tavitian","","","2026-04-10"
+28051,"PO-3065","MATERIALS","SUBMITTED","Centennial Parklands – Superintendent’s House
+
+**Description of Works:**
+
+Supply and install new 240V interconnected smoke
+detection system to the Superintendent’s House,
+including:
+Supply and installation of:
+10 x 240V photoelectric smoke alarms
+3 x 240V thermal (heat) alarms
+All alarms to be Clipsal 240V hardwired units with 9V
+battery backup
+ALLOW 4 WIRELESS BASES
+Interconnection of all alarms
+Wiring of all alarms back to the switchboard
+Supply and installation of all required cabling, fixings, and
+accessories","MAGUIRE ELECTRICAL SERVICES PTY LTD","","","","2026-04-10","","",3100.02000000,3100.02000000,3100.02000000,310.00,3410.02000000,"AUD","1.0000","38942","QD-2664 Works","","Centennial Park - Grand Drive Sydney NSW 2021","","","","","2026-04-10 11:31:17","2026-04-10 11:35:09","Casper Tavitian","Casper Tavitian","Casper Tavitian","","",""
+28052,"PO-3066","MATERIALS","SUBMITTED","Ranger’s House
+
+**Description of Works:**
+
+Supply and install new 240V interconnected smoke
+detection system, including:
+9 x 240V photoelectric smoke alarms
+2 x 240V thermal (heat) alarms
+All alarms to be Clipsal 240V hardwired units with 9V
+battery backup
+Interconnection of all alarms
+Wiring of all alarms back to switchboard
+Supply and installation of all required cabling, fixings, and
+accessories","MAGUIRE ELECTRICAL SERVICES PTY LTD","","","","2026-04-10","","",2849.99400000,2849.99400000,2849.99400000,285.00,3134.99400000,"AUD","1.0000","38941","QD-2668 Works","","Centennial Park - Grand Drive Sydney NSW 2021","","","","","2026-04-10 11:37:04","2026-04-10 11:38:39","Casper Tavitian","Casper Tavitian","Casper Tavitian","","",""
+28117,"PO-3068","MATERIALS","SUBMITTED","","Ampac","","","","2026-04-10","","",327.00000000,327.00000000,0E-8,32.70,359.70000000,"AUD","1.0000","39503","Call Out - FIP Fault ","","Goodman AU106 - M5 Industry Park - Building 2B/2C - 1 Moorebank Avenue, MoorebankNSW 2071","","Casper Tavitian","","","2026-04-10 12:43:53","2026-04-13 08:45:00","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-13"
+28249,"PO-3073","MATERIALS","SUBMITTED","","Olympic","","","","2026-04-13","","",286.08000000,286.08000000,0E-8,28.61,314.69000000,"AUD","1.0000","32692","FIP Battery replacement (Quote QD-2402)","","Precinct 5 AU186 - 3 Tundra Close, Kemps Kreek, NSW 2178","","","","","2026-04-13 09:04:22","2026-04-13 09:05:51","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-13"
+28447,"PO-3085","MATERIALS","SUBMITTED","","Olympic","","","","2026-04-13","","",1333.52000000,1333.52000000,0E-8,133.35,1466.87000000,"AUD","1.0000","39952","QD-2708 Works","","MONDC - 13 Bushmaster Avenue, Moorebank, NSW 2170","","","","","2026-04-13 16:17:43","2026-04-14 14:19:31","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-14"
+28645,"PO-3098","MATERIALS","SUBMITTED","","Petronics","Petronics","","","2026-04-14","","",912.00000000,912.00000000,0E-8,91.20,1003.20000000,"AUD","1.0000","34915","FIP Monthly defect repairs (Quote QD-2528)","","11-13 Orion Road, Lane Cove West, NSW 2066","","","","","2026-04-14 11:03:58","2026-04-14 11:06:13","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-14"
+28777,"PO-3104","MATERIALS","SUBMITTED","","Olympic","","","","2026-04-15","","",834.38000000,834.38000000,0E-8,83.43,917.81000000,"AUD","1.0000","40163","QD-2468 Works","","Australian Red Cross Lifeblood - 17 O'Riordan Street, Alexandria, NSW 2015","","","","","2026-04-15 07:17:44","2026-04-15 10:57:51","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-15"
+28843,"PO-3107","MATERIALS","SUBMITTED","","Olympic","","","","2026-04-15","","",450.00000000,450.00000000,450.00000000,45.00,495.00000000,"AUD","1.0000","39042","QD-2651 Works","","Goodman AU877 - Silverwater D/C - Light & Wonder - 4 Newington Road, Silverwater, NSW 1044","","","","","2026-04-15 10:25:26","2026-04-15 14:55:43","Gordon Jenkins","Casper Tavitian","Casper Tavitian","","",""
+28975,"PO-3116","MATERIALS","SUBMITTED","","Olympic","","","","2026-04-15","","",980.72000000,980.72000000,0E-8,98.07,1078.79000000,"AUD","1.0000","36635","QD-2592 - FIP Works","","COLES RRM - 54 Templar Road, Erskine Park, NSW 2759","","","","","2026-04-15 17:01:03","2026-04-16 12:23:27","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-16"
+28976,"PO-3117","MATERIALS","SUBMITTED","","Ampac","","","","2026-04-15","","",67.00000000,67.00000000,0E-8,6.70,73.70000000,"AUD","1.0000","40492","QD-2748 Works","","ACU - Building 532 - 8-20 Napier Street, North Sydney, NSW 2055","","","","","2026-04-15 17:06:46","2026-04-16 08:11:06","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-16"
+28977,"PO-3118","MATERIALS","SUBMITTED","","Ampac","","","","2026-04-15","","",1340.00000000,1340.00000000,0E-8,134.00,1474.00000000,"AUD","1.0000","36635","QD-2592 - FIP Works","","COLES RRM - 54 Templar Road, Erskine Park, NSW 2759","","","","","2026-04-15 17:09:31","2026-04-16 08:11:37","Gordon Jenkins","Gordon Jenkins","Gordon Jenkins","","","2026-04-16"

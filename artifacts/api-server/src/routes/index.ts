@@ -33,6 +33,7 @@ import remindersRouter from "./reminders";
 import paInstructionsRouter from "./pa-instructions";
 import attachmentsRouter from "./attachments";
 import purchaseOrdersRouter from "./purchase-orders";
+import changeLogRouter from "./change-log";
 import diagRouter from "./diag";
 
 const router: IRouter = Router();
@@ -71,6 +72,7 @@ router.use(remindersRouter);
 router.use(paInstructionsRouter);
 router.use(attachmentsRouter);
 router.use(purchaseOrdersRouter);
+router.use(changeLogRouter);
 router.use(diagRouter);
 
 export default router;

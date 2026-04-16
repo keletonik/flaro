@@ -10,6 +10,7 @@ import { seedFipKnowledgeBase } from "./seed-fip";
 import { seedEstimationWorkbench } from "./seed-estimation";
 import { seedPaSurface } from "./seed-pa";
 import { seedApr15Batch } from "./seed-apr15-batch";
+import { startAirtableSync } from "./lib/airtable-sync";
 
 const rawPort = process.env["PORT"];
 
@@ -114,4 +115,6 @@ app.listen(port, (err) => {
   // traffic immediately. Health checks (/api/healthz and /api/diag) both
   // respond before the seed finishes.
   runStartupSeed();
+  // Start Airtable poll sync (no-op if AIRTABLE_PAT not set)
+  startAirtableSync();
 });

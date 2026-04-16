@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { apiFetch, exportToCSV } from "@/lib/api";
 import LiveToggle from "@/components/LiveToggle";
+import AirtableSyncBadge from "@/components/AirtableSyncBadge";
 import CSVImportModal from "@/components/CSVImportModal";
 import { EditableCell } from "@/components/EditableCell";
 
@@ -388,6 +389,7 @@ export default function Todos() {
             </div>
           </div>
           <div className="flex items-center gap-1 ml-auto">
+            <AirtableSyncBadge />
             {allTodos.length > 0 && (
               <div className="flex items-center gap-2 mr-2 hidden sm:flex">
                 <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">

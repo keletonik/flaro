@@ -79,6 +79,52 @@ router.get("/purchase-orders", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// POST /purchase-orders/import — bulk CSV import
+const MAX_PO_IMPORT = 5000;
+router.post("/purchase-orders/import", async (req, res, next) => {
+  try {
+    const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
+    if (!Array.isArray(rows) || rows.length === 0) { res.status(400).json({ error: "No rows" }); return; }
+    if (rows.length > MAX_PO_IMPORT) { res.status(400).json({ error: `Max ${MAX_PO_IMPORT} rows` }); return; }
+
+    const map = (r: Record<string, string>, ...keys: string[]) => {
+      for (const k of keys) { const v = r[k] || r[columnMap?.[k] ?? ""]; if (v?.trim()) return v.trim(); }
+      return undefined;
+    };
+
+    const VALID_STATUSES = ["Received", "Matched", "Approved", "Actioned", "Completed", "Cancelled"];
+    const now = new Date();
+    const records: any[] = [];
+
+    for (const row of rows) {
+      const poNumber = map(row, "poNumber", "po_number", "po", "PO Number", "PO") || `PO-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const client = map(row, "client", "Client", "customer", "Customer") || "Unknown";
+      const site = map(row, "site", "Site", "location", "Location") || null;
+      const amountStr = map(row, "amount", "Amount", "value", "Value", "total", "Total");
+      const amount = amountStr ? parseFloat(amountStr.replace(/[^0-9.-]/g, "")) || null : null;
+      let status = map(row, "status", "Status") || "Received";
+      if (!VALID_STATUSES.includes(status)) status = "Received";
+      const notes_val = map(row, "notes", "Notes", "description", "Description") || null;
+      const quoteNumber = map(row, "quoteNumber", "quote_number", "Quote Number", "Quote") || null;
+      const taskNumber = map(row, "taskNumber", "task_number", "Task Number", "Task") || null;
+
+      const id = randomUUID();
+      records.push({
+        id, poNumber, client, site, amount: amount?.toString() ?? null, status, notes: notes_val,
+        quoteNumber, taskNumber, checklist: DEFAULT_CHECKLIST, createdAt: now, updatedAt: now,
+      });
+    }
+
+    if (records.length > 0) {
+      for (let i = 0; i < records.length; i += 500) {
+        await db.insert(purchaseOrders).values(records.slice(i, i + 500));
+      }
+    }
+
+    res.json({ imported: records.length, records: records.map(serializePO) });
+  } catch (err) { next(err); }
+});
+
 router.post("/purchase-orders", async (req, res, next) => {
   try {
     const parsed = CreatePurchaseOrderBody.safeParse(req.body);

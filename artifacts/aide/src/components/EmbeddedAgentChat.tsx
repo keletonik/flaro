@@ -41,18 +41,89 @@ function formatInline(text: string): string {
   return text
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-[11px] font-mono">$1</code>')
     .replace(/\$([0-9,.]+)/g, '<span class="font-mono font-semibold">$$$1</span>');
 }
 
+function isTableSep(line: string): boolean {
+  return /^\|[\s:]*-{2,}[\s:|-]*\|$/.test(line.trim()) || /^[\s:]*-{2,}[\s:|-]*$/.test(line.trim());
+}
+
+function parseTableRow(line: string): string[] {
+  return line.split("|").map(c => c.trim()).filter((_, i, arr) => i > 0 && i < arr.length);
+}
+
+function renderTable(lines: string[], key: number) {
+  const headerCells = parseTableRow(lines[0]);
+  const bodyRows = lines.slice(2).map(parseTableRow);
+  return (
+    <div key={key} className="overflow-x-auto my-2 rounded-lg border border-border">
+      <table className="w-full text-[11px]">
+        <thead>
+          <tr className="bg-muted/60">
+            {headerCells.map((cell, i) => (
+              <th key={i} className="text-left px-2.5 py-1.5 text-muted-foreground font-semibold uppercase tracking-wide text-[10px] whitespace-nowrap border-b border-border"
+                dangerouslySetInnerHTML={{ __html: formatInline(cell) }} />
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {bodyRows.map((row, ri) => (
+            <tr key={ri} className={ri % 2 === 0 ? "bg-card" : "bg-muted/20"}>
+              {row.map((cell, ci) => (
+                <td key={ci} className="px-2.5 py-1.5 text-foreground border-b border-border/40 whitespace-nowrap"
+                  dangerouslySetInnerHTML={{ __html: formatInline(cell) }} />
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function renderMarkdown(text: string) {
-  return text.split("\n").map((line, i) => {
-    if (line.startsWith("### ")) return <h4 key={i} className="font-semibold text-foreground mt-2 mb-1 text-[12px]">{line.slice(4)}</h4>;
-    if (line.startsWith("- ") || line.startsWith("* ")) return <li key={i} className="ml-3 list-disc text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line.slice(2)) }} />;
-    if (/^\d+\.\s/.test(line)) return <li key={i} className="ml-3 list-decimal text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line.replace(/^\d+\.\s/, "")) }} />;
-    if (line.trim() === "") return <div key={i} className="h-2" />;
-    return <p key={i} className="text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line) }} />;
-  });
+  const lines = text.split("\n");
+  const elements: React.JSX.Element[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // GFM table: row starting with |, followed by separator line
+    if (line.trim().startsWith("|") && i + 1 < lines.length && isTableSep(lines[i + 1])) {
+      const tableLines: string[] = [line, lines[i + 1]];
+      i += 2;
+      while (i < lines.length && lines[i].trim().startsWith("|") && !isTableSep(lines[i])) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      elements.push(renderTable(tableLines, elements.length));
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^---+$/.test(line.trim())) { elements.push(<hr key={elements.length} className="my-2 border-border/40" />); i++; continue; }
+
+    // Headers
+    if (line.startsWith("### ")) { elements.push(<h4 key={elements.length} className="font-semibold text-foreground mt-2 mb-1 text-[12px]">{line.slice(4)}</h4>); i++; continue; }
+    if (line.startsWith("## ")) { elements.push(<h3 key={elements.length} className="font-semibold text-foreground mt-2 mb-1 text-[13px]">{line.slice(3)}</h3>); i++; continue; }
+
+    // Unordered list
+    if (line.startsWith("- ") || line.startsWith("* ")) { elements.push(<li key={elements.length} className="ml-3 list-disc text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line.slice(2)) }} />); i++; continue; }
+
+    // Ordered list
+    if (/^\d+\.\s/.test(line)) { elements.push(<li key={elements.length} className="ml-3 list-decimal text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line.replace(/^\d+\.\s/, "")) }} />); i++; continue; }
+
+    // Empty line
+    if (line.trim() === "") { elements.push(<div key={elements.length} className="h-2" />); i++; continue; }
+
+    // Normal paragraph
+    elements.push(<p key={elements.length} className="text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(line) }} />);
+    i++;
+  }
+  return elements;
 }
 
 const DATA_CHANGED_EVENT = "aide-data-changed";
@@ -281,8 +352,8 @@ export default function EmbeddedAgentChat({ section, title = "AIDE Agent", sugge
         )}
         <div className="flex items-end gap-2 bg-muted/30 rounded-xl px-3 py-2 border border-border focus-within:border-primary/30 transition-all">
           <AttachmentPicker
-            pending={[]}
-            onChange={(added) => setPending((prev) => [...prev, ...added])}
+            pending={pending}
+            onChange={setPending}
             source="embedded"
             disabled={streaming}
             className="shrink-0"

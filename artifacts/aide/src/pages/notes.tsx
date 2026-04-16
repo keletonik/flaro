@@ -1,11 +1,14 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, X, Pin, Grid3X3, List, ChevronDown, Check } from "lucide-react";
+import { Plus, Search, X, Pin, Grid3X3, List, ChevronDown, Check, Upload } from "lucide-react";
 import { useListNotes, useCreateNote, useUpdateNote, useDeleteNote, getListNotesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import { cn } from "@/lib/utils";
 import type { Note } from "@workspace/api-client-react";
+import LiveToggle from "@/components/LiveToggle";
+import CSVImportModal from "@/components/CSVImportModal";
+import { apiFetch } from "@/lib/api";
 
 const CATEGORIES = ["All", "Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"] as const;
 
@@ -204,6 +207,7 @@ export default function Notes() {
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [showAdd, setShowAdd] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -297,10 +301,17 @@ export default function Notes() {
             </div>
           </div>
           <div className="flex items-center gap-1.5 ml-auto">
+            <LiveToggle onTick={() => queryClient.invalidateQueries({ queryKey: getListNotesQueryKey() })} interval={10_000} />
             <div className="flex items-center bg-muted border border-border rounded-lg p-0.5">
               <button onClick={() => setViewMode("list")} className={cn("p-1.5 rounded-md transition-all", viewMode === "list" ? "bg-card shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground")} title="List"><List size={14} /></button>
               <button onClick={() => setViewMode("grid")} className={cn("p-1.5 rounded-md transition-all", viewMode === "grid" ? "bg-card shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground")} title="Grid"><Grid3X3 size={14} /></button>
             </div>
+            <button
+              onClick={() => setImportOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-lg text-xs font-medium hover:bg-muted transition-colors"
+            >
+              <Upload size={14} /> Import
+            </button>
             <button
               data-testid="button-add-note"
               onClick={() => setShowAdd(true)}
@@ -387,6 +398,22 @@ export default function Notes() {
       </button>
 
       {showAdd && <AddNoteSheet onClose={() => setShowAdd(false)} onSave={handleSave} />}
+
+      <CSVImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={async (rows, columnMap) => {
+          await apiFetch("/notes/import", { method: "POST", body: JSON.stringify({ rows, columnMap }) });
+          queryClient.invalidateQueries({ queryKey: getListNotesQueryKey() });
+          toast({ title: `Imported ${rows.length} notes` });
+          window.dispatchEvent(new CustomEvent("aide-analyse", { detail: { message: `I just imported ${rows.length} notes via CSV. Analyse the import: check for duplicates, category distribution, any urgent items, and flag anything that needs attention.` } }));
+        }}
+        availableFields={[
+          { key: "text", label: "Note Text", required: true }, { key: "category", label: "Category" },
+          { key: "owner", label: "Owner" }, { key: "status", label: "Status" },
+        ]}
+        title="Import Notes"
+      />
 
       </div>
   );

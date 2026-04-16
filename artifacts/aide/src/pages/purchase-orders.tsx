@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import {
   Plus, Search, X, CheckCircle2, Circle, Mail, FileText, Link2,
-  Filter, Trash2, Pencil, ChevronDown, AlertCircle, CheckSquare,
+  Filter, Trash2, Pencil, ChevronDown, AlertCircle, CheckSquare, Upload,
 } from "lucide-react";
 import {
   useListPurchaseOrders,
@@ -14,6 +14,9 @@ import type { PurchaseOrder, PurchaseOrderChecklistItem } from "@workspace/api-c
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import LiveToggle from "@/components/LiveToggle";
+import CSVImportModal from "@/components/CSVImportModal";
+import { apiFetch } from "@/lib/api";
 
 const STATUSES = ["Received", "Matched", "Approved", "Actioned", "Completed", "Cancelled"] as const;
 type Status = typeof STATUSES[number];
@@ -80,6 +83,7 @@ export default function PurchaseOrdersPage() {
   const [editingPO, setEditingPO] = useState<PurchaseOrder | null>(null);
   const [form, setForm] = useState<POFormData>(DEFAULT_FORM);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -210,12 +214,21 @@ export default function PurchaseOrdersPage() {
               Match approval emails to defects &amp; service quotes, then tick off the follow-up checklist.
             </p>
           </div>
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={14} /> New PO
-          </button>
+          <div className="flex items-center gap-2">
+            <LiveToggle onTick={() => queryClient.invalidateQueries({ queryKey: getListPurchaseOrdersQueryKey() })} interval={10_000} />
+            <button
+              onClick={() => setImportOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-lg text-xs font-medium hover:bg-muted transition-colors"
+            >
+              <Upload size={14} /> Import
+            </button>
+            <button
+              onClick={openCreate}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={14} /> New PO
+            </button>
+          </div>
         </div>
 
         {/* Status chips */}
@@ -557,6 +570,24 @@ export default function PurchaseOrdersPage() {
           </div>
         </div>
       )}
+
+      <CSVImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={async (rows, columnMap) => {
+          await apiFetch("/purchase-orders/import", { method: "POST", body: JSON.stringify({ rows, columnMap }) });
+          queryClient.invalidateQueries({ queryKey: getListPurchaseOrdersQueryKey() });
+          toast({ title: `Imported ${rows.length} purchase orders` });
+          window.dispatchEvent(new CustomEvent("aide-analyse", { detail: { message: `I just imported ${rows.length} purchase orders via CSV. Analyse the import: check for duplicates, missing fields (PO number, client, amount), status distribution, and flag anything that needs attention.` } }));
+        }}
+        availableFields={[
+          { key: "poNumber", label: "PO Number", required: true }, { key: "client", label: "Client", required: true },
+          { key: "site", label: "Site" }, { key: "amount", label: "Amount" },
+          { key: "status", label: "Status" }, { key: "notes", label: "Notes" },
+          { key: "quoteNumber", label: "Quote Number" }, { key: "taskNumber", label: "Task Number" },
+        ]}
+        title="Import Purchase Orders"
+      />
       </div>
   );
 }

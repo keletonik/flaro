@@ -33,10 +33,10 @@ function makeId() {
 }
 
 const STARTER_PROMPTS: { label: string; prompt: string }[] = [
-  { label: "Brief me", prompt: "Give me my daily focus brief — stale tasks, upcoming reminders, key numbers." },
-  { label: "What have I been neglecting?", prompt: "What have I been neglecting? Show me the top 5 stale tasks." },
-  { label: "Remind me tomorrow 9am", prompt: "Remind me tomorrow 9am to run the morning standup" },
-  { label: "Add a training rule", prompt: "From now on, never ask me about the insurance claim — save that as a training rule." },
+  { label: "What's on today?", prompt: "What's on my plate today? Show me tasks due today, appointments, and reminders firing in the next 24 hours." },
+  { label: "What's overdue?", prompt: "Show me everything overdue — tasks past due date and reminders I've missed, sorted by how late they are." },
+  { label: "What have I missed?", prompt: "What have I dropped the ball on? Surface stale tasks, ignored reminders, and anything that's slipped through the cracks this week." },
+  { label: "Book an appointment", prompt: "Set an appointment for " },
 ];
 
 /**
@@ -282,9 +282,9 @@ export default function PAPage() {
               </div>
               <h2 className="text-base font-semibold text-foreground">How can I help?</h2>
               <p className="text-xs text-muted-foreground mt-1">
-                I'm your Personal Assistant for tasks, reminders, and everything on your plate.
-                Hold the mic to talk, type "/" for commands, or hit <b>Brief me</b> to see what
-                needs attention.
+                Your to-do list, appointments, reminders, and everything due today or overdue —
+                all in one place. Hold the mic to talk, type "/" for commands, or tap a shortcut
+                below to see what needs attention.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-5">
                 {STARTER_PROMPTS.map((s) => (

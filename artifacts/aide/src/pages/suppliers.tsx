@@ -131,6 +131,7 @@ function SupplierCard({ supplier, expanded, onToggle, onEdit, onDelete, products
     await apiFetch(`/suppliers/${supplier.id}/products/import`, { method: "POST", body: JSON.stringify({ rows, columnMap }) });
     toast({ title: `Products imported for ${supplier.name}` });
     onFetchProducts();
+    window.dispatchEvent(new CustomEvent("aide-analyse", { detail: { message: `I just imported ${rows.length} products for supplier "${supplier.name}" via CSV. Analyse the import: check for duplicate product codes, missing prices, category distribution, and flag anything that needs attention.` } }));
   };
 
   return (

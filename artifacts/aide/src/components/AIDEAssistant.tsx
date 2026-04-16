@@ -59,6 +59,12 @@ function sectionFromPath(path: string): { section: string; title: string; sugges
     return { section: "tasks", title: "Notes", suggestions: ["Summarise open notes", "What needs follow-up?", "Key insights this week", "Create a note"] };
   if (path.startsWith("/projects"))
     return { section: "tasks", title: "Projects", suggestions: ["Project status summary", "What's blocked?", "Overdue milestones", "Resource allocation"] };
+  if (path.startsWith("/pa") || path.startsWith("/chat"))
+    return { section: "dashboard", title: "Personal Assistant", suggestions: ["What's on today?", "Log a job for a site", "Draft a note", "Show my reminders"] };
+  if (path.startsWith("/toolbox"))
+    return { section: "tasks", title: "Toolbox", suggestions: ["Show active briefing notes", "Create a new toolbox note", "What needs attention?", "Summarise briefed items"] };
+  if (path.startsWith("/settings"))
+    return { section: "dashboard", title: "Settings", suggestions: ["What settings are available?", "Help me configure notifications", "Show system status", "Data export options"] };
   return { section: "dashboard", title: "AIDE", suggestions: ["What needs attention today?", "Full KPI snapshot", "Create a todo", "Show me the dashboard"] };
 }
 
@@ -103,9 +109,19 @@ export default function AIDEAssistant() {
     return () => window.removeEventListener("aide-open-with-prompt", handler);
   }, []);
 
-  // Listen for aide-analyse (from CSV import)
+  // Listen for aide-analyse (from CSV import) — open the panel and
+  // forward the message to EmbeddedAgentChat via aide-open-with-prompt
   useEffect(() => {
-    const handler = () => setOpen(true);
+    const handler = (e: Event) => {
+      const msg = (e as CustomEvent).detail?.message;
+      setOpen(true);
+      if (msg) {
+        // Small delay so the panel mounts before EmbeddedAgentChat tries to send
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("aide-open-with-prompt", { detail: { prompt: msg } }));
+        }, 300);
+      }
+    };
     window.addEventListener("aide-analyse", handler);
     return () => window.removeEventListener("aide-analyse", handler);
   }, []);

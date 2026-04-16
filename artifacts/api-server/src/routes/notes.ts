@@ -30,6 +30,44 @@ router.get("/notes", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// POST /notes/import — bulk CSV import
+const MAX_NOTE_IMPORT = 5000;
+const VALID_CATEGORIES = ["Urgent", "To Do", "To Ask", "Schedule", "Quote", "Follow Up", "Investigate", "Done"];
+router.post("/notes/import", async (req, res, next) => {
+  try {
+    const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
+    if (!Array.isArray(rows) || rows.length === 0) { res.status(400).json({ error: "No rows" }); return; }
+    if (rows.length > MAX_NOTE_IMPORT) { res.status(400).json({ error: `Max ${MAX_NOTE_IMPORT} rows` }); return; }
+
+    const map = (r: Record<string, string>, ...keys: string[]) => {
+      for (const k of keys) { const v = r[k] || r[columnMap?.[k] ?? ""]; if (v?.trim()) return v.trim(); }
+      return undefined;
+    };
+
+    const now = new Date();
+    const records: any[] = [];
+
+    for (const row of rows) {
+      const text = map(row, "text", "Text", "note", "Note", "description", "Description", "content", "Content") || "Imported note";
+      let category = map(row, "category", "Category", "type", "Type") || "To Do";
+      if (!VALID_CATEGORIES.includes(category)) category = "To Do";
+      const owner = map(row, "owner", "Owner", "assignee", "Assignee") || "Casper";
+      const statusRaw = map(row, "status", "Status") || "Open";
+      const status = statusRaw === "Done" ? "Done" : "Open";
+
+      records.push({ id: randomUUID(), text, category, owner, status, createdAt: now });
+    }
+
+    if (records.length > 0) {
+      for (let i = 0; i < records.length; i += 500) {
+        await db.insert(notes).values(records.slice(i, i + 500));
+      }
+    }
+
+    res.json({ imported: records.length, records: records.map(serializeNote) });
+  } catch (err) { next(err); }
+});
+
 router.post("/notes", async (req, res, next) => {
   try {
     const parsed = CreateNoteBody.safeParse(req.body);

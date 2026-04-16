@@ -577,3 +577,80 @@ export type ListNotesParams = {
 export type ListToolboxNotesParams = {
   status?: string;
 };
+
+export interface PurchaseOrderChecklistItem {
+  id: string;
+  label: string;
+  done: boolean;
+  doneAt: string | null;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  poNumber: string;
+  client: string;
+  site?: string | null;
+  amount?: string | null;
+  status: string;
+  defectId?: string | null;
+  quoteId?: string | null;
+  quoteNumber?: string | null;
+  taskNumber?: string | null;
+  emailSubject?: string | null;
+  emailFrom?: string | null;
+  emailReceivedAt?: string | null;
+  emailBody?: string | null;
+  approvedAt?: string | null;
+  approvedBy?: string | null;
+  notes?: string | null;
+  checklist: PurchaseOrderChecklistItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePurchaseOrderBody {
+  poNumber: string;
+  client: string;
+  site?: string;
+  amount?: string;
+  status?: string;
+  defectId?: string;
+  quoteId?: string;
+  quoteNumber?: string;
+  taskNumber?: string;
+  emailSubject?: string;
+  emailFrom?: string;
+  emailReceivedAt?: string;
+  emailBody?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  notes?: string;
+  checklist?: PurchaseOrderChecklistItem[];
+}
+
+export interface UpdatePurchaseOrderBody {
+  poNumber?: string;
+  client?: string;
+  site?: string;
+  amount?: string;
+  status?: string;
+  defectId?: string;
+  quoteId?: string;
+  quoteNumber?: string;
+  taskNumber?: string;
+  emailSubject?: string;
+  emailFrom?: string;
+  emailReceivedAt?: string;
+  emailBody?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  notes?: string;
+  checklist?: PurchaseOrderChecklistItem[];
+  checklistToggle?: { id: string; done: boolean };
+}
+
+export type ListPurchaseOrdersParams = {
+  status?: string;
+  client?: string;
+  search?: string;
+};

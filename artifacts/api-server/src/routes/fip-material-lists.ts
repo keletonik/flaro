@@ -89,10 +89,15 @@ router.post("/fip/material-lists", async (req, res, next) => {
       res.status(400).json({ error: "name required" });
       return;
     }
+    // Prefer the authenticated user id over whatever the client sent.
+    // Falls back to the legacy single-operator default so existing
+    // deployments without AUTH_ENFORCE keep working.
+    const authUserId = (req as any).auth?.userId as string | undefined;
+    const resolvedOwner = authUserId ?? (typeof owner === "string" && owner.trim() ? owner : "casper");
     const [row] = await db.insert(fipMaterialLists).values({
       id: randomUUID(),
       name: String(name).slice(0, 200),
-      owner: (owner ?? "casper") as string,
+      owner: resolvedOwner,
       panelSlug: panelSlug ?? null,
       siteRef: siteRef ?? null,
       taskRef: taskRef ?? null,
@@ -159,8 +164,13 @@ router.post("/fip/material-lists/:id/items", async (req, res, next) => {
       quantity, unit, unitPriceAud, supplierName, supplierProductCode, notes: note,
     } = req.body ?? {};
     if (!name) { res.status(400).json({ error: "name required" }); return; }
-    const qty = Number(quantity) || 1;
-    const unitPrice = unitPriceAud != null ? Number(unitPriceAud) : null;
+    const qtyRaw = Number(quantity);
+    const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
+    const unitPriceRaw = unitPriceAud != null ? Number(unitPriceAud) : null;
+    const unitPrice =
+      unitPriceRaw == null || !Number.isFinite(unitPriceRaw) || unitPriceRaw < 0
+        ? null
+        : unitPriceRaw;
     const [row] = await db.insert(fipMaterialListItems).values({
       id: randomUUID(),
       listId,
@@ -196,12 +206,20 @@ router.patch("/fip/material-lists/:id/items/:itemId", async (req, res, next) => 
     let newQty: number | null = null;
     let newUnitPrice: number | null | undefined;
     if (quantity !== undefined) {
-      newQty = Number(quantity) || 0;
+      const parsed = Number(quantity);
+      newQty = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
       updates.quantity = String(newQty);
     }
     if (unitPriceAud !== undefined) {
-      newUnitPrice = unitPriceAud == null ? null : Number(unitPriceAud);
-      updates.unitPriceAud = newUnitPrice == null ? null : String(newUnitPrice);
+      if (unitPriceAud == null) {
+        newUnitPrice = null;
+        updates.unitPriceAud = null;
+      } else {
+        const parsed = Number(unitPriceAud);
+        newUnitPrice =
+          Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+        updates.unitPriceAud = newUnitPrice == null ? null : String(newUnitPrice);
+      }
     }
     if (note !== undefined) updates.notes = note;
     if (sortOrder !== undefined) updates.sortOrder = Number(sortOrder) || 0;

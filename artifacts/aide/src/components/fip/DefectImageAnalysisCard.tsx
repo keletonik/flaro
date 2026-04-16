@@ -1,6 +1,6 @@
 /**
  * DefectImageAnalysisCard — upload an image + get a structured
- * defect diagnosis from Claude vision.
+ * defect diagnosis from the vision backend.
  *
  * Flow:
  *   1. Drag-drop or click-upload an image (jpg/png/webp)
@@ -15,7 +15,7 @@
  * conversation history, just image in / analysis out.
  */
 
-import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { apiFetch, uploadAttachment, type AttachmentMeta } from "@/lib/api";
 import { ImageIcon, Loader2, X, AlertTriangle, CheckCircle, Wrench, Info, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -59,6 +59,14 @@ export function DefectImageAnalysisCard() {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Release the object URL when the component unmounts so the
+  // browser isn't holding onto the preview blob forever.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   async function handleFile(file: File) {
     setError(null);

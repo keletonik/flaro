@@ -301,18 +301,18 @@ router.get("/fip/common-products", async (req, res, next) => {
       .filter((c): c is string => !!c && c.length > 0);
     const supplierByCode = new Map<string, any[]>();
     if (partCodes.length > 0) {
-      // Import supplier_products + pool lazily so we don't fail if
-      // the operator's workspace hasn't loaded the estimation pack.
+      // Lazy import keeps the route working if the workspace hasn't
+      // loaded the estimation pack on a fresh deploy.
       try {
         const { supplierProducts } = await import("@workspace/db");
-        const { ilike: _ilike, or: _or } = await import("drizzle-orm");
-        // Case-insensitive IN-style match — build an OR clause. Cap
-        // at 100 codes to keep the query shape sensible.
-        const cap = partCodes.slice(0, 100);
-        const orClauses = cap.map((code) => _ilike(supplierProducts.productCode, code));
-        const supplierRows = orClauses.length > 0
-          ? await db.select().from(supplierProducts).where(_or(...orClauses))
-          : [];
+        // Case-insensitive exact match against the lowered part codes.
+        // Using a single ANY() avoids the ilike wildcard pitfall where
+        // `%` or `_` inside a part code would match the wrong rows.
+        const cap = partCodes.slice(0, 200).map((c) => c.toLowerCase());
+        const supplierRows = await db
+          .select()
+          .from(supplierProducts)
+          .where(sql`lower(${supplierProducts.productCode}) = ANY(${cap}::text[])`);
         for (const sr of supplierRows as any[]) {
           const key = (sr.productCode ?? "").toLowerCase();
           if (!key) continue;
@@ -327,9 +327,15 @@ router.get("/fip/common-products", async (req, res, next) => {
             description: sr.description ?? null,
           });
         }
-      } catch {
-        // supplier_products table may not exist yet on a fresh deploy
-        // or the import may fail — fall through without crashing.
+      } catch (e: any) {
+        // Narrowed catch — log unexpected failures instead of silently
+        // dropping every supplier row. The most common legitimate case
+        // is `supplier_products` not existing yet on a brand-new deploy.
+        const msg = String(e?.message ?? e ?? "");
+        if (!/relation .* does not exist|does not exist|supplier_products/i.test(msg)) {
+          // eslint-disable-next-line no-console
+          console.warn("fip/common-products: supplier lookup failed", msg);
+        }
       }
     }
 
@@ -716,10 +722,16 @@ router.post("/fip/retrieve", async (req, res, next) => {
     }
 
     const sections = sectionIds.size > 0
-      ? await db.select().from(fipDocumentSections).where(sql`${fipDocumentSections.id} = ANY(${Array.from(sectionIds)})`)
+      ? await db
+          .select()
+          .from(fipDocumentSections)
+          .where(sql`${fipDocumentSections.id} = ANY(${Array.from(sectionIds)}::uuid[])`)
       : [];
     const clauses = clauseIds.size > 0
-      ? await db.select().from(fipStandardClauses).where(sql`${fipStandardClauses.id} = ANY(${Array.from(clauseIds)})`)
+      ? await db
+          .select()
+          .from(fipStandardClauses)
+          .where(sql`${fipStandardClauses.id} = ANY(${Array.from(clauseIds)}::uuid[])`)
       : [];
 
     const answer = composeAnswer(

@@ -1,25 +1,17 @@
 /**
  * PanelTechnicalCard — FIP panel dropdown + deep technical profile.
  *
- * Reads GET /api/fip/panels and renders a dropdown with every model.
- * Selecting one loads an inline deep-spec block with:
- *   - loops / devices per loop / protocol
- *   - network capability + max networked panels
- *   - battery standby + alarm + recommended size
- *   - config options list
- *   - approvals chips
- *   - commissioning notes
- *   - typical price band
- *
- * Empty fields render as "N/A" — never fabricated.
+ * Expects the panels list to be supplied by the parent so the dropdown
+ * and the battery calculator can share a single fetch. Empty fields
+ * render as "N/A" — values are never fabricated.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { Cpu, ChevronDown, Loader2, Network, Battery, ShieldCheck, Wrench, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface PanelSpec {
+export interface PanelSpec {
   id: string;
   slug: string;
   name: string;
@@ -61,40 +53,64 @@ interface PanelSpec {
 }
 
 interface Props {
+  /** Panels supplied by the parent (shared with the battery calculator). */
+  panels?: PanelSpec[];
+  /** Controls the card's loading state. Optional — falls back to
+   * fetching internally when the parent isn't managing panels. */
+  loading?: boolean;
   /** Optional controlled panel slug. When provided, the parent owns
-   * which panel is selected (so other cards like CommonProductsCard
-   * can filter to the same panel). When omitted, the card manages
-   * selection internally. */
+   * which panel is selected; other sibling cards can react to it. */
   value?: string;
   onChange?: (slug: string) => void;
 }
 
-export function PanelTechnicalCard({ value, onChange }: Props = {}) {
-  const [panels, setPanels] = useState<PanelSpec[]>([]);
-  const [loading, setLoading] = useState(true);
+export function PanelTechnicalCard({
+  panels: panelsProp,
+  loading: loadingProp,
+  value,
+  onChange,
+}: Props = {}) {
+  const [fetchedPanels, setFetchedPanels] = useState<PanelSpec[]>([]);
+  const [fetchLoading, setFetchLoading] = useState(panelsProp == null);
+  const panels = panelsProp ?? fetchedPanels;
+  const loading = loadingProp ?? fetchLoading;
+
   const [internalSlug, setInternalSlug] = useState<string>("");
-  const selectedSlug = value ?? internalSlug;
+  const isControlled = onChange != null || value != null;
+  const selectedSlug = isControlled ? (value ?? "") : internalSlug;
   const setSelectedSlug = (slug: string) => {
     if (onChange) onChange(slug);
-    else setInternalSlug(slug);
+    if (!isControlled) setInternalSlug(slug);
   };
 
+  // Only fetch when the parent hasn't supplied panels. This path is
+  // kept so the card still works if it's rendered standalone.
   useEffect(() => {
+    if (panelsProp != null) return;
+    let cancelled = false;
+    setFetchLoading(true);
     apiFetch<PanelSpec[]>("/fip/panels")
-      .then((rows) => {
-        setPanels(rows);
-        // Default-select a panel with a real deep spec on first
-        // load, but only if nothing is already selected by the parent
-        // (controlled) or by us (uncontrolled).
-        if (!selectedSlug) {
-          const rich = rows.find((r) => r.maxLoops != null);
-          if (rich) setSelectedSlug(rich.slug);
-        }
-      })
-      .catch(() => setPanels([]))
-      .finally(() => setLoading(false));
+      .then((rows) => { if (!cancelled) setFetchedPanels(rows); })
+      .catch(() => { if (!cancelled) setFetchedPanels([]); })
+      .finally(() => { if (!cancelled) setFetchLoading(false); });
+    return () => { cancelled = true; };
+  }, [panelsProp]);
+
+  // Default-select a rich panel once the list is available and no
+  // selection has been made yet. Runs only on the first non-empty
+  // panels list to avoid fighting a controlled parent.
+  const defaultedRef = useRef(false);
+  useEffect(() => {
+    if (defaultedRef.current) return;
+    if (!panels || panels.length === 0) return;
+    if (selectedSlug) { defaultedRef.current = true; return; }
+    const rich = panels.find((r) => r.maxLoops != null);
+    if (rich) {
+      setSelectedSlug(rich.slug);
+      defaultedRef.current = true;
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [panels]);
 
   const selected = useMemo(
     () => panels.find((p) => p.slug === selectedSlug) ?? null,
@@ -129,6 +145,7 @@ export function PanelTechnicalCard({ value, onChange }: Props = {}) {
         <>
           <div className="relative mb-4">
             <select
+              aria-label="Choose panel"
               value={selectedSlug}
               onChange={(e) => setSelectedSlug(e.target.value)}
               className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg bg-background border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"

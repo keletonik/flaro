@@ -1,34 +1,20 @@
 /**
  * POST /api/fip/defect-analysis
  *
- * Dedicated defect-triage + device-identification endpoint for the FIP
- * Command Centre. Takes an attachment id (uploaded via /api/attachments)
- * and an optional free-text context note. Runs Claude vision with a
- * forced tool-use output so the JSON shape is guaranteed.
+ * Vision-backed defect triage + device identification. Takes an attachment
+ * id (uploaded via /api/attachments) and an optional free-text context note,
+ * runs a vision model with a forced tool-use output so the JSON shape is
+ * guaranteed, and returns a structured result.
  *
- * Design (fip-v2.1 — structured tool-use fix, April 2026):
+ * Dual-mode — the system prompt + tool description covers both
+ *   1. defect diagnosis (what's wrong, how to fix it)
+ *   2. device identification (what panel / detector is pictured)
  *
- * The earlier version asked Claude to emit a JSON object as plain text
- * in the system prompt. That was unreliable: Claude sometimes wrapped
- * the JSON in a code fence, sometimes prefixed with prose, sometimes
- * emitted valid-looking text that wasn't quite parseable. Result: the
- * "Unable to parse model response" screen the operator reported.
- *
- * The fix is Anthropic's recommended pattern for forced JSON output:
- * define a tool with an input_schema matching the desired shape, then
- * pass `tool_choice: { type: "tool", name: "emit_defect_analysis" }`.
- * The model is forced to emit the result as a tool_use block with an
- * input object conforming to the schema — no text parsing, no fences,
- * no prose. We read `block.input` directly.
- *
- * Dual-mode. The system prompt + tool description covers BOTH:
- *   1. "Diagnose this defect" (original purpose)
- *   2. "What is this device / panel / model?" (identification)
- *
- * When the operator types a question like "what panel is this", the
- * model treats the summary as the identification answer and leaves
- * fixOptions empty — severity becomes "low" or "unknown" depending
- * on whether anything visibly abnormal is present.
+ * Gating: honours the FIP_ENABLED flag in line with the rest of the FIP
+ * surface, enforces an image-only attachment kind with a media-type
+ * whitelist and magic-byte sniff, and verifies the attachment was
+ * uploaded for this feature (source = "fip-defect") so callers can't
+ * hand another feature's upload id to this endpoint.
  */
 
 import { Router } from "express";
@@ -36,10 +22,43 @@ import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { db } from "@workspace/db";
 import { attachments } from "@workspace/db";
 import { and, eq, isNull } from "drizzle-orm";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
 const MODEL = "claude-sonnet-4-6";
+const MAX_CONTEXT_CHARS = 1000;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
+function fipEnabled(): boolean {
+  return process.env["FIP_ENABLED"] !== "0";
+}
+
+/**
+ * Peek at the first bytes of the blob to confirm it matches the declared
+ * media type. Stops an attacker swapping a text payload behind an
+ * `image/jpeg` content-type.
+ */
+function sniffMediaType(buf: Buffer): string | null {
+  if (buf.length < 4) return null;
+  // JPEG — FF D8 FF
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
+  // PNG — 89 50 4E 47 0D 0A 1A 0A
+  if (
+    buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47 &&
+    buf[4] === 0x0d && buf[5] === 0x0a && buf[6] === 0x1a && buf[7] === 0x0a
+  ) return "image/png";
+  // GIF — 47 49 46 38
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38) return "image/gif";
+  // WEBP — RIFF....WEBP
+  if (
+    buf.length >= 12 &&
+    buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
+    buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50
+  ) return "image/webp";
+  return null;
+}
 
 const DEFECT_SYSTEM_PROMPT = `You are a master Australian fire-protection service engineer analysing a single photograph for a technician on site. You operate in two modes and choose between them based on the operator's context note:
 
@@ -146,20 +165,20 @@ const EMIT_TOOL: any = {
   },
 };
 
-function normaliseMediaType(ct: string): string {
-  const lower = (ct || "").toLowerCase();
-  if (lower.includes("jpeg") || lower.includes("jpg")) return "image/jpeg";
-  if (lower.includes("png")) return "image/png";
-  if (lower.includes("webp")) return "image/webp";
-  if (lower.includes("gif")) return "image/gif";
-  return "image/jpeg";
-}
-
 router.post("/fip/defect-analysis", async (req, res, next) => {
   try {
+    if (!fipEnabled()) {
+      res.status(503).json({ error: "FIP disabled. Set FIP_ENABLED=1 in Replit Secrets to enable." });
+      return;
+    }
+
     const { attachmentId, context } = req.body ?? {};
     if (!attachmentId) {
       res.status(400).json({ error: "attachmentId required" });
+      return;
+    }
+    if (typeof attachmentId !== "string") {
+      res.status(400).json({ error: "attachmentId must be a string" });
       return;
     }
 
@@ -175,12 +194,35 @@ router.post("/fip/defect-analysis", async (req, res, next) => {
       res.status(400).json({ error: `attachment kind is ${row.kind}, must be image` });
       return;
     }
+    // Only accept uploads that were created for this feature. Anything
+    // else could be a chat attachment or another page's upload id.
+    if (row.source !== "fip-defect") {
+      res.status(403).json({ error: "attachment was not uploaded for defect analysis" });
+      return;
+    }
 
-    const base64 = (row.blob as Buffer).toString("base64");
-    const mediaType = normaliseMediaType(row.contentType);
+    const blob = row.blob as Buffer | null;
+    if (!blob || blob.length === 0) {
+      res.status(400).json({ error: "attachment has no data" });
+      return;
+    }
+    if (blob.length > MAX_IMAGE_BYTES) {
+      res.status(413).json({ error: `image exceeds ${MAX_IMAGE_BYTES / (1024 * 1024)} MB limit` });
+      return;
+    }
+
+    const sniffed = sniffMediaType(blob);
+    if (!sniffed || !ALLOWED_MEDIA_TYPES.has(sniffed)) {
+      res.status(400).json({ error: "image bytes do not match an allowed format (jpeg, png, webp, gif)" });
+      return;
+    }
+    // Trust the sniffed type over the declared content-type — stops the
+    // client lying about what the payload is.
+    const mediaType = sniffed;
+    const base64 = blob.toString("base64");
 
     const userPromptText = context
-      ? `Operator context: ${String(context).slice(0, 1000)}\n\nAnalyse the image and call emit_defect_analysis with the structured result.`
+      ? `Operator context: ${String(context).slice(0, MAX_CONTEXT_CHARS)}\n\nAnalyse the image and call emit_defect_analysis with the structured result.`
       : "Analyse the image and call emit_defect_analysis with the structured result.";
 
     const response = await anthropic.messages.create({
@@ -218,8 +260,7 @@ router.post("/fip/defect-analysis", async (req, res, next) => {
         .filter((b) => b?.type === "text")
         .map((b) => b.text ?? "")
         .join("");
-      // eslint-disable-next-line no-console
-      console.warn("[fip-defect] model did not emit tool_use block", { rawTextLen: rawText.length });
+      logger.warn({ rawTextLen: rawText.length }, "fip-defect: model did not emit tool_use block");
       res.json({
         summary: "Unable to produce a structured analysis for this image",
         severity: "unknown",
@@ -255,8 +296,7 @@ router.post("/fip/defect-analysis", async (req, res, next) => {
       attachmentId,
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error("[fip-defect] error", err);
+    logger.error({ err }, "fip-defect: unhandled error");
     next(err);
   }
 });

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { wipRecords } from "@workspace/db";
+import { wipRecords, changeLogs } from "@workspace/db";
 import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
@@ -100,8 +100,19 @@ router.post("/wip/import", async (req, res, next) => {
         updatedAt: now,
       };
     });
-    const inserted = await db.insert(wipRecords).values(records).returning();
-    res.status(201).json({ imported: inserted.length, batchId, records: inserted.map(serialize) });
+    let totalInserted = 0;
+    for (let i = 0; i < records.length; i += 500) {
+      const chunk = records.slice(i, i + 500);
+      await db.insert(wipRecords).values(chunk);
+      totalInserted += chunk.length;
+    }
+    try {
+      await db.insert(changeLogs).values({
+        id: randomUUID(), action: "import", table: "wip", batchId,
+        rowCount: totalInserted, summary: `Imported ${totalInserted} WIP records from CSV`, createdAt: now,
+      });
+    } catch { /* change_logs table may not exist yet */ }
+    res.status(201).json({ imported: totalInserted, batchId });
   } catch (err) { next(err); }
 });
 

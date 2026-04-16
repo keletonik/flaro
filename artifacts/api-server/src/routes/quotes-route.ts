@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { quotes } from "@workspace/db";
+import { quotes, changeLogs } from "@workspace/db";
 import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { randomUUID } from "crypto";
@@ -79,8 +79,19 @@ router.post("/quotes/import", async (req, res, next) => {
         rawData: row, importBatchId: batchId, createdAt: now, updatedAt: now,
       };
     });
-    const inserted = await db.insert(quotes).values(records).returning();
-    res.status(201).json({ imported: inserted.length, batchId, records: inserted.map(serialize) });
+    let totalInserted = 0;
+    for (let i = 0; i < records.length; i += 500) {
+      const chunk = records.slice(i, i + 500);
+      await db.insert(quotes).values(chunk);
+      totalInserted += chunk.length;
+    }
+    try {
+      await db.insert(changeLogs).values({
+        id: randomUUID(), action: "import", table: "quotes", batchId,
+        rowCount: totalInserted, summary: `Imported ${totalInserted} quotes from CSV`, createdAt: now,
+      });
+    } catch { /* change_logs table may not exist yet */ }
+    res.status(201).json({ imported: totalInserted, batchId });
   } catch (err) { next(err); }
 });
 

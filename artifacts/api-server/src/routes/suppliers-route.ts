@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { suppliers, supplierProducts } from "@workspace/db";
+import { suppliers, supplierProducts, changeLogs } from "@workspace/db";
 import { eq, and, or, ilike, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
@@ -189,8 +189,19 @@ router.post("/suppliers/:supplierId/products/import", async (req, res, next) => 
         createdAt: now, updatedAt: now,
       };
     });
-    const inserted = await db.insert(supplierProducts).values(records).returning();
-    res.status(201).json({ imported: inserted.length, batchId, records: inserted.map(serializeProduct) });
+    let totalInserted = 0;
+    for (let i = 0; i < records.length; i += 500) {
+      const chunk = records.slice(i, i + 500);
+      await db.insert(supplierProducts).values(chunk);
+      totalInserted += chunk.length;
+    }
+    try {
+      await db.insert(changeLogs).values({
+        id: randomUUID(), action: "import", table: "supplier_products", batchId,
+        rowCount: totalInserted, summary: `Imported ${totalInserted} supplier products from CSV`, createdAt: now,
+      });
+    } catch { /* change_logs table may not exist yet */ }
+    res.status(201).json({ imported: totalInserted, batchId });
   } catch (err) { next(err); }
 });
 

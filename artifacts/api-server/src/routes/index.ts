@@ -34,6 +34,7 @@ import paInstructionsRouter from "./pa-instructions";
 import attachmentsRouter from "./attachments";
 import diagRouter from "./diag";
 import purchaseOrdersRouter from "./purchase-orders";
+import changeLogsRouter from "./change-logs";
 
 const router: IRouter = Router();
 
@@ -72,5 +73,6 @@ router.use(paInstructionsRouter);
 router.use(attachmentsRouter);
 router.use(diagRouter);
 router.use(purchaseOrdersRouter);
+router.use(changeLogsRouter);
 
 export default router;

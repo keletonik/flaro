@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { purchaseOrders } from "@workspace/db";
+import { purchaseOrders, changeLogs } from "@workspace/db";
 import type { PurchaseOrderChecklistItem } from "@workspace/db";
 import { eq, and, or, ilike, sql, isNull } from "drizzle-orm";
 import {
@@ -121,7 +121,14 @@ router.post("/purchase-orders/import", async (req, res, next) => {
       }
     }
 
-    res.json({ imported: records.length, records: records.map(serializePO) });
+    try {
+      const batchId = randomUUID();
+      await db.insert(changeLogs).values({
+        id: randomUUID(), action: "import", table: "purchase_orders", batchId,
+        rowCount: records.length, summary: `Imported ${records.length} purchase orders from CSV`, createdAt: now,
+      });
+    } catch { /* change_logs table may not exist yet */ }
+    res.json({ imported: records.length });
   } catch (err) { next(err); }
 });
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { notes } from "@workspace/db";
+import { notes, changeLogs } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { CreateNoteBody, UpdateNoteBody, ListNotesQueryParams, GetNoteParams, UpdateNoteParams, DeleteNoteParams } from "@workspace/api-zod";
 import { randomUUID } from "crypto";
@@ -64,7 +64,14 @@ router.post("/notes/import", async (req, res, next) => {
       }
     }
 
-    res.json({ imported: records.length, records: records.map(serializeNote) });
+    try {
+      const batchId = randomUUID();
+      await db.insert(changeLogs).values({
+        id: randomUUID(), action: "import", table: "notes", batchId,
+        rowCount: records.length, summary: `Imported ${records.length} notes from CSV`, createdAt: now,
+      });
+    } catch { /* change_logs table may not exist yet */ }
+    res.json({ imported: records.length });
   } catch (err) { next(err); }
 });
 

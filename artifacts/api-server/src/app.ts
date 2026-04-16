@@ -75,6 +75,19 @@ const defaultBodyLimit = process.env["DEFAULT_BODY_LIMIT"] || "1mb";
 const chatBodyLimit = process.env["CHAT_BODY_LIMIT"] || "50mb";
 const attachmentBodyLimit = process.env["ATTACHMENT_BODY_LIMIT"] || "25mb";
 
+// Import routes carry large CSV payloads (thousands of rows) — give them 25mb.
+const importBodyLimit = process.env["IMPORT_BODY_LIMIT"] || "25mb";
+const importRoutePattern = /^\/api\/(jobs|todos|quotes|notes|wip|defects|invoices|purchase-orders|suppliers\/[^/]+\/products)\/import$/;
+
+app.use(
+  (req, _res, next) => {
+    if (importRoutePattern.test(req.path)) {
+      express.json({ limit: importBodyLimit })(req, _res, next);
+    } else {
+      next();
+    }
+  },
+);
 app.use(
   /^(?!\/api\/anthropic\/conversations\/[^\/]+\/messages$)(?!\/api\/attachments$).*/,
   express.json({ limit: defaultBodyLimit }),

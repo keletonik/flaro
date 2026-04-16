@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { jobs } from "@workspace/db";
+import { jobs, changeLogs } from "@workspace/db";
 import { eq, and, or, ilike, sql, isNull } from "drizzle-orm";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { CreateJobBody, UpdateJobBody, ListJobsQueryParams, GetJobParams, UpdateJobParams, DeleteJobParams } from "@workspace/api-zod";
@@ -72,34 +72,108 @@ router.post("/jobs/import", async (req, res, next) => {
     const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
     if (!rows?.length) { res.status(400).json({ error: "No data rows provided" }); return; }
     if (rows.length > MAX_IMPORT_ROWS) { res.status(413).json({ error: `Too many rows (${rows.length}). Limit is ${MAX_IMPORT_ROWS}.` }); return; }
+
+    // Helper: resolve a value from the row using the column map + fuzzy fallbacks
+    const resolve = (row: Record<string, string>, ...keys: string[]) => {
+      for (const k of keys) {
+        // Check direct column map first
+        const mapped = columnMap[k];
+        if (mapped && row[mapped]?.trim()) return row[mapped].trim();
+        // Check raw CSV column name
+        if (row[k]?.trim()) return row[k].trim();
+      }
+      return undefined;
+    };
+
+    const VALID_PRIORITIES = ["Critical", "High", "Medium", "Low"];
+    const VALID_STATUSES = ["Open", "In Progress", "Booked", "Blocked", "Waiting", "Done"];
     const now = new Date();
+    const batchId = randomUUID();
+
     const records = rows.map(row => {
+      // Apply column mapping: csvCol -> dbField
       const mapped: Record<string, any> = {};
       for (const [csvCol, dbField] of Object.entries(columnMap)) {
-        if (row[csvCol] !== undefined && row[csvCol] !== "") mapped[dbField] = row[csvCol];
+        if (dbField && dbField !== "skip" && row[csvCol] !== undefined && row[csvCol] !== "") {
+          mapped[dbField] = row[csvCol].trim();
+        }
       }
+
+      // Also try common Uptick CSV column names as fallbacks
+      const site = mapped.site
+        || resolve(row, "Property Name", "property_name", "Site", "site", "Property")
+        || "Unknown";
+      const client = mapped.client
+        || resolve(row, "Property Client Ref", "property_client_ref", "Client", "client", "Customer", "Client Name")
+        || "Unknown";
+      const actionRequired = mapped.actionRequired
+        || mapped.description
+        || resolve(row, "Description", "description", "Scope of works", "scope_of_works", "Action Required", "action_required", "Scope", "Task")
+        || "Imported job";
+      let priority = mapped.priority || resolve(row, "Priority", "priority") || "Medium";
+      if (!VALID_PRIORITIES.includes(priority)) priority = "Medium";
+      let status = mapped.status || resolve(row, "Status", "status") || "Open";
+      if (!VALID_STATUSES.includes(status)) status = "Open";
+      const taskNumber = mapped.taskNumber
+        || resolve(row, "Ref", "ref", "Task Number", "task_number", "Task Ref", "ID")
+        || null;
+      const address = mapped.address
+        || resolve(row, "Address", "address", "Property Address", "Site Address")
+        || null;
+      const contactName = mapped.contactName
+        || resolve(row, "Name", "Contact Name", "contact_name", "Contact")
+        || null;
+      const contactNumber = mapped.contactNumber
+        || resolve(row, "Phone", "contact_number", "Contact Number", "Mobile")
+        || null;
+      const contactEmail = mapped.contactEmail
+        || resolve(row, "Email", "contact_email", "Contact Email")
+        || null;
+      const assignedTech = mapped.assignedTech
+        || resolve(row, "Assigned Tech", "assigned_tech", "Technician", "Tech", "Assigned To")
+        || null;
+      const dueDate = mapped.dueDate
+        || resolve(row, "Due Date", "due_date", "Due", "Scheduled Date")
+        || null;
+      const notes = mapped.notes
+        || resolve(row, "Notes", "notes", "Comments", "Remarks")
+        || null;
+      // Collect unmapped Uptick fields into notes for reference
+      const propertyRef = resolve(row, "Property Ref", "property_ref");
+      const scopeOfWorks = resolve(row, "Scope of works", "scope_of_works");
+      const extraNotes = [notes, propertyRef ? `Property Ref: ${propertyRef}` : null, scopeOfWorks && scopeOfWorks !== actionRequired ? `Scope: ${scopeOfWorks}` : null].filter(Boolean).join(" | ") || null;
+
       return {
         id: randomUUID(),
-        site: mapped.site || "Unknown",
-        client: mapped.client || "Unknown",
-        actionRequired: mapped.actionRequired || mapped.description || "Imported",
-        priority: mapped.priority || "Medium",
-        status: mapped.status || "Open",
-        taskNumber: mapped.taskNumber || null,
-        address: mapped.address || null,
-        contactName: mapped.contactName || null,
-        contactNumber: mapped.contactNumber || null,
-        contactEmail: mapped.contactEmail || null,
-        assignedTech: mapped.assignedTech || null,
-        dueDate: mapped.dueDate || null,
-        notes: mapped.notes || null,
-        uptickNotes: [],
-        createdAt: now,
-        updatedAt: now,
+        site, client, actionRequired, priority, status,
+        taskNumber, address, contactName, contactNumber, contactEmail,
+        assignedTech, dueDate, notes: extraNotes, uptickNotes: [],
+        createdAt: now, updatedAt: now,
       };
     });
-    const inserted = await db.insert(jobs).values(records).returning();
-    res.status(201).json({ imported: inserted.length, records: inserted.map(serializeJob) });
+
+    // Batch insert in chunks of 500 to avoid Postgres parameter limits
+    let totalInserted = 0;
+    for (let i = 0; i < records.length; i += 500) {
+      const chunk = records.slice(i, i + 500);
+      await db.insert(jobs).values(chunk);
+      totalInserted += chunk.length;
+    }
+
+    // Log the import to change_logs
+    try {
+      await db.insert(changeLogs).values({
+        id: randomUUID(),
+        action: "import",
+        table: "jobs",
+        batchId,
+        rowCount: totalInserted,
+        summary: `Imported ${totalInserted} jobs from CSV`,
+        createdAt: now,
+      });
+    } catch { /* change_logs table may not exist yet */ }
+
+    res.status(201).json({ imported: totalInserted, batchId });
   } catch (err) { next(err); }
 });
 

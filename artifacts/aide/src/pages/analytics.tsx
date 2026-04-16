@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
-import { BarChart3, TrendingUp, Target, DollarSign, Clock, CheckCircle2, Settings2, Palette, ChevronDown, AlertTriangle, Users, Activity } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { BarChart3, TrendingUp, Target, DollarSign, Clock, CheckCircle2, Settings2, Palette, ChevronDown, AlertTriangle, Users, Activity, Upload } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { apiFetch, formatCurrency } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
+import LiveToggle from "@/components/LiveToggle";
+import CSVImportModal from "@/components/CSVImportModal";
 import { cn } from "@/lib/utils";
 
 type ChartType = "bar" | "line" | "area" | "pie";
@@ -269,11 +271,14 @@ export default function Analytics() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  const [importOpen, setImportOpen] = useState(false);
   const colors = COLOR_THEMES[colorTheme] || COLOR_THEMES.Default;
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     apiFetch<AnalyticsData>("/analytics/wip").then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const revenueData = useMemo(() => {
     if (!data) return [];
@@ -324,7 +329,8 @@ export default function Analytics() {
     : data.revenue.monthlyTarget;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full flex">
+      <div className="flex-1 min-w-0 min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between">
@@ -335,6 +341,10 @@ export default function Analytics() {
             <p className="text-xs text-muted-foreground mt-0.5">Performance metrics and revenue tracking</p>
           </div>
           <div className="flex items-center gap-2">
+            <LiveToggle onTick={fetchData} interval={10_000} />
+            <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-all">
+              <Upload size={10} /> Import CSV
+            </button>
             <div className="flex gap-0.5 bg-muted/50 rounded-lg p-0.5 mr-2">
               <button onClick={() => setAdvancedMode(false)} className={cn("px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all", !advancedMode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>Simple</button>
               <button onClick={() => setAdvancedMode(true)} className={cn("px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all", advancedMode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>Advanced</button>
@@ -570,6 +580,28 @@ export default function Analytics() {
         </>}
       </div>
 
+      <CSVImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={async (rows, columnMap) => {
+          await apiFetch("/wip/import", { method: "POST", body: JSON.stringify({ rows, columnMap }) });
+          fetchData();
+          window.dispatchEvent(new CustomEvent("aide-analyse", { detail: { message: `I just imported ${rows.length} rows of WIP data. Analyse the import: check for duplicates, missing fields, data quality, and key patterns. Then summarise how the analytics have changed.` } }));
+        }}
+        availableFields={[
+          { key: "taskNumber", label: "Task Number" }, { key: "site", label: "Site", required: true },
+          { key: "address", label: "Address" }, { key: "client", label: "Client", required: true },
+          { key: "jobType", label: "Job Type" }, { key: "description", label: "Description" },
+          { key: "status", label: "Status" }, { key: "priority", label: "Priority" },
+          { key: "assignedTech", label: "Assigned Tech" }, { key: "dueDate", label: "Due Date" },
+          { key: "dateCreated", label: "Date Created" }, { key: "quoteAmount", label: "Quote Amount" },
+          { key: "invoiceAmount", label: "Invoice Amount" }, { key: "poNumber", label: "PO Number" },
+          { key: "notes", label: "Notes" },
+        ]}
+        title="Import WIP Data"
+      />
+
+      </div>
       <AnalyticsPanel section="dashboard" title="Analytics Analyst" />
     </div>
   );

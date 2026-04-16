@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Plus, X, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronsUpDown, Pencil, Download, MoreHorizontal, Trash2, Search, Filter, FilterX, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, X, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronsUpDown, Pencil, Download, Upload, MoreHorizontal, Trash2, Search, Filter, FilterX, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   useListTodos, useCreateTodo, useUpdateTodo, useDeleteTodo,
   getListTodosQueryKey
@@ -7,8 +7,10 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { exportToCSV } from "@/lib/api";
+import { apiFetch, exportToCSV } from "@/lib/api";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
+import LiveToggle from "@/components/LiveToggle";
+import CSVImportModal from "@/components/CSVImportModal";
 import { EditableCell } from "@/components/EditableCell";
 
 const PRIORITIES = ["Critical", "High", "Medium", "Low"] as const;
@@ -162,7 +164,7 @@ function ActionMenu({ todo, onEdit, onToggle, onDelete }: { todo: any; onEdit: (
   );
 }
 
-const PAGE_SIZES = [0, 25, 50, 100];
+const PAGE_SIZES = [0, 25, 50, 100]; // 0 = All
 
 export default function Todos() {
   const [search, setSearch] = useState("");
@@ -171,8 +173,9 @@ export default function Todos() {
   const [showModal, setShowModal] = useState(false);
   const [editingTodo, setEditingTodo] = useState<any>(undefined);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [importOpen, setImportOpen] = useState(false);
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(0);
+  const [pageSize, setPageSize] = useState(0); // 0 = All
 
   const [filterPriority, setFilterPriority] = useState<Set<string>>(new Set());
   const [filterCategory, setFilterCategory] = useState<Set<string>>(new Set());
@@ -372,7 +375,8 @@ export default function Todos() {
   const tdBase = "px-2 py-1.5 border border-neutral-600 dark:border-neutral-500 text-xs";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-full flex">
+      <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
       <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2">
           <h1 className="text-foreground font-bold text-base tracking-tight shrink-0">Tasks</h1>
@@ -399,8 +403,12 @@ export default function Todos() {
                 <FilterX size={11} /> Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
               </button>
             )}
+            <LiveToggle onTick={() => queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() })} interval={10_000} />
             <button onClick={handleExport} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted border border-border">
               <Download size={11} /> Export
+            </button>
+            <button onClick={() => setImportOpen(true)} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted border border-border">
+              <Upload size={11} /> Import
             </button>
             <button onClick={() => { setEditingTodo(undefined); setShowModal(true); }}
               className="flex items-center gap-1 px-2.5 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded hover:opacity-90">
@@ -639,11 +647,11 @@ export default function Todos() {
             <span>Rows per page:</span>
             <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(0); }}
               className="bg-muted border border-border rounded px-1.5 py-0.5 text-[10px] text-foreground focus:outline-none">
-              {PAGE_SIZES.map(s => <option key={s} value={s}>{s === 0 ? 'All' : s}</option>)}
+              {PAGE_SIZES.map(s => <option key={s} value={s}>{s === 0 ? "All" : s}</option>)}
             </select>
           </div>
           <div className="flex items-center gap-3">
-            <span>{pageSize === 0 ? `1–${sorted.length}` : `${page * pageSize + 1}–${Math.min((page + 1) * pageSize, sorted.length)}`} of {sorted.length}</span>
+            <span>{pageSize === 0 ? `${sorted.length} rows` : `${page * pageSize + 1}–${Math.min((page + 1) * pageSize, sorted.length)} of ${sorted.length}`}</span>
             <div className="flex items-center gap-0.5">
               <button onClick={() => setPage(0)} disabled={page === 0} className={cn("px-1 py-0.5 rounded hover:bg-muted", page === 0 && "opacity-30 cursor-not-allowed")}>
                 <ChevronLeft size={12} /><ChevronLeft size={12} className="-ml-2" />
@@ -664,6 +672,26 @@ export default function Todos() {
       )}
 
       {showModal && <TaskModal todo={editingTodo} onClose={() => { setShowModal(false); setEditingTodo(undefined); }} onSave={editingTodo ? handleUpdate : handleAdd} />}
+
+      <CSVImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={async (rows, columnMap) => {
+          await apiFetch("/todos/import", { method: "POST", body: JSON.stringify({ rows, columnMap }) });
+          queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() });
+          toast({ title: `${rows.length} tasks imported` });
+          window.dispatchEvent(new CustomEvent("aide-analyse", { detail: { message: `I just imported ${rows.length} tasks via CSV. Analyse the import: check for duplicates, missing fields, priority distribution, and flag anything overdue or needing attention.` } }));
+        }}
+        availableFields={[
+          { key: "text", label: "Task / Description", required: true },
+          { key: "priority", label: "Priority" }, { key: "category", label: "Category" },
+          { key: "dueDate", label: "Due Date" }, { key: "assignee", label: "Assignee" },
+          { key: "notes", label: "Notes" }, { key: "nextSteps", label: "Next Steps" },
+          { key: "urgencyTag", label: "Urgency Tag" },
+        ]}
+        title="Import Tasks"
+      />
+      </div>
       <AnalyticsPanel section="tasks" title="Task Analyst" />
     </div>
   );

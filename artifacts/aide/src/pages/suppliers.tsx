@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Search, Plus, X, Upload, Download, Phone, Mail, MapPin, Edit2, Trash2, Package, ChevronDown, Calculator, BookOpen } from "lucide-react";
 import { apiFetch, exportToCSV } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import EstimationWorkbench from "@/components/EstimationWorkbench";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -132,6 +131,7 @@ function SupplierCard({ supplier, expanded, onToggle, onEdit, onDelete, products
     await apiFetch(`/suppliers/${supplier.id}/products/import`, { method: "POST", body: JSON.stringify({ rows, columnMap }) });
     toast({ title: `Products imported for ${supplier.name}` });
     onFetchProducts();
+    window.dispatchEvent(new CustomEvent("aide-analyse", { detail: { message: `I just imported ${rows.length} products for supplier "${supplier.name}" via CSV. Analyse the import: check for duplicate product codes, missing prices, category distribution, and flag anything that needs attention.` } }));
   };
 
   return (
@@ -302,8 +302,8 @@ export default function Suppliers() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
+      <div className="flex-1 min-w-0 min-h-screen bg-background">
+        <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h1 className="text-foreground font-bold text-lg tracking-tight flex items-center gap-2">
@@ -375,7 +375,6 @@ export default function Suppliers() {
         )}
       </div>
 
-      <AnalyticsPanel section="suppliers" title="Procurement Analyst" />
-    </div>
+      </div>
   );
 }

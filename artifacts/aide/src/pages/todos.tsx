@@ -8,7 +8,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { apiFetch, exportToCSV } from "@/lib/api";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import LiveToggle from "@/components/LiveToggle";
 import CSVImportModal from "@/components/CSVImportModal";
 import { EditableCell } from "@/components/EditableCell";
@@ -375,7 +374,6 @@ export default function Todos() {
   const tdBase = "px-2 py-1.5 border border-neutral-600 dark:border-neutral-500 text-xs";
 
   return (
-    <div className="h-full flex">
       <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
       <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2">
@@ -692,7 +690,5 @@ export default function Todos() {
         title="Import Tasks"
       />
       </div>
-      <AnalyticsPanel section="tasks" title="Task Analyst" />
-    </div>
   );
 }

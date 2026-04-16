@@ -2,7 +2,7 @@ import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import React, { lazy, Suspense, useState, createContext, useContext } from "react";
+import React, { lazy, Suspense, useState, createContext, useContext, useCallback } from "react";
 import { ThemeProvider, useTheme, THEME_OPTIONS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -24,12 +24,13 @@ const Metrics = lazy(() => import("@/pages/metrics"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const PM = lazy(() => import("@/pages/pm"));
 const FIP = lazy(() => import("@/pages/fip"));
+const PurchaseOrders = lazy(() => import("@/pages/purchase-orders"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 import {
   LayoutDashboard, MessageCircle, Briefcase, FileText, Wrench,
   CalendarDays, Sun, Moon, CheckSquare, FolderKanban, BarChart3,
   Package, ChevronLeft, ChevronRight, PieChart, MoreHorizontal, Settings2,
-  Shield
+  Shield, Mail
 } from "lucide-react";
 import AidePA from "@/components/AidePA";
 import AIDEAssistant from "@/components/AIDEAssistant";
@@ -38,7 +39,16 @@ import { KeyboardCheatSheet } from "@/components/KeyboardCheatSheet";
 import { AideFavicon, AideWordmark } from "@/components/AideLogo";
 
 const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>> }>({ collapsed: false, setCollapsed: () => {} });
-function useSidebar() { return useContext(SidebarContext); }
+export function useSidebar() { return useContext(SidebarContext); }
+
+// AIDE panel state — shared between AIDEAssistant and Layout so the
+// content area adjusts its margins when the panel opens/docks.
+interface AIDEState { open: boolean; dock: "right" | "left" | "bottom"; width: number; height: number; }
+const AIDEContext = createContext<{ aideState: AIDEState; setAideState: (s: AIDEState) => void }>({
+  aideState: { open: false, dock: "right", width: 0, height: 0 },
+  setAideState: () => {},
+});
+export function useAIDE() { return useContext(AIDEContext); }
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,6 +71,7 @@ const navGroups = [
     label: "Manage",
     items: [
       { path: "/jobs", icon: Briefcase, label: "WIPs" },
+      { path: "/purchase-orders", icon: Mail, label: "POs" },
       { path: "/todos", icon: CheckSquare, label: "Tasks" },
       { path: "/projects", icon: FolderKanban, label: "Projects" },
       { path: "/suppliers", icon: Package, label: "Suppliers" },
@@ -278,13 +289,18 @@ function BottomNav() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const { collapsed, setCollapsed } = useSidebar();
+  const { aideState } = useAIDE();
   const [location] = useLocation();
+
+  // Compute content margins based on sidebar + AIDE panel state
+  const sidebarW = collapsed ? 60 : 210;
+  const mlTotal = sidebarW + (aideState.open && aideState.dock === "left" ? aideState.width : 0);
+  const mrTotal = aideState.open && aideState.dock === "right" ? aideState.width : 0;
+  const pbTotal = 16 + (aideState.open && aideState.dock === "bottom" ? aideState.height : 0); // 16 = mobile bottom nav
+
   return (
     <div className="min-h-screen bg-background">
       <SidebarNav />
-      {/* Floating expand affordance on the left edge when the sidebar
-          is collapsed. Desktop-only. Gives the operator a visible way
-          back to the nav without having to hunt for the tiny chevron. */}
       {collapsed && (
         <button
           type="button"
@@ -295,16 +311,21 @@ function Layout({ children }: { children: React.ReactNode }) {
           <ChevronRight size={14} />
         </button>
       )}
-      <div className={cn("pb-16 md:pb-0 min-h-screen transition-all duration-300", collapsed ? "md:ml-[60px]" : "md:ml-[210px]")}>
+      {/* On mobile (<md) sidebar is hidden, so no ml. On desktop, add
+          sidebar width + optional AIDE left-dock width. AIDE right/bottom
+          margins apply on all breakpoints since the panel is always visible. */}
+      <div
+        className="min-h-screen transition-all duration-300 max-md:!ml-0"
+        style={{
+          marginLeft: `${mlTotal}px`,
+          marginRight: `${mrTotal}px`,
+          paddingBottom: `${pbTotal}px`,
+        }}
+      >
         {children}
       </div>
       <BottomNav />
-      {/* Unified tool-use AI surface — replaces AidePA / AnalyticsPanel mounts.
-          Uses /chat/agent under the hood so it can actually take action on
-          every page, not just describe data. See docs/audit/PASS_2_ux.md
-          target 1 and docs/FULL_AUDIT_REBUILD_PROMPT.md Phase 2. */}
       {location !== "/chat" && location !== "/pa" && <AIDEAssistant />}
-      {/* Global Cmd-K command palette. Navigate, create, or ask AIDE. */}
       <CommandPalette />
       <KeyboardCheatSheet />
     </div>
@@ -358,6 +379,7 @@ function Router() {
           <Route path="/schedule"><Schedule /></Route>
           <Route path="/jobs"><Jobs /></Route>
           <Route path="/jobs/:id"><JobDetail /></Route>
+          <Route path="/purchase-orders"><PurchaseOrders /></Route>
           <Route path="/notes"><Notes /></Route>
           <Route path="/todos"><Todos /></Route>
           <Route path="/projects"><PM /></Route>
@@ -412,6 +434,12 @@ function SidebarProvider({ children }: { children: React.ReactNode }) {
   return <SidebarContext.Provider value={{ collapsed, setCollapsed }}>{children}</SidebarContext.Provider>;
 }
 
+function AIDEProvider({ children }: { children: React.ReactNode }) {
+  const [aideState, setAideState] = useState<AIDEState>({ open: false, dock: "right", width: 0, height: 0 });
+  const stableSet = useCallback((s: AIDEState) => setAideState(s), []);
+  return <AIDEContext.Provider value={{ aideState, setAideState: stableSet }}>{children}</AIDEContext.Provider>;
+}
+
 // Auth context
 interface AuthUser { id: string; username: string; displayName: string; role: string; }
 const AuthContext = createContext<{ user: AuthUser | null; token: string | null; logout: () => void }>({ user: null, token: null, logout: () => {} });
@@ -426,6 +454,7 @@ function App() {
     <ThemeProvider>
       <AuthContext.Provider value={{ user: defaultUser, token: null, logout: handleLogout }}>
       <SidebarProvider>
+      <AIDEProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
@@ -434,6 +463,7 @@ function App() {
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
+      </AIDEProvider>
       </SidebarProvider>
       </AuthContext.Provider>
     </ThemeProvider>

@@ -1,6 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Plus, Search, X, LayoutGrid, List, Filter, ChevronUp, ChevronDown, ChevronsUpDown, MoreHorizontal, Pencil, Trash2, ExternalLink, Download, Upload, SlidersHorizontal, ChevronLeft, ChevronRight, FilterX } from "lucide-react";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import LiveToggle from "@/components/LiveToggle";
 import CSVImportModal from "@/components/CSVImportModal";
 import {
@@ -373,7 +372,6 @@ export default function Jobs() {
   const tdBase = "px-2 py-1.5 border border-neutral-600 dark:border-neutral-500 text-xs";
 
   return (
-    <div className="h-full flex">
     <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col overflow-hidden">
       <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2">
@@ -676,8 +674,6 @@ export default function Jobs() {
         ]}
         title="Import Jobs"
       />
-    </div>
-    <AnalyticsPanel section="wip" title="WIPs" />
     </div>
   );
 }

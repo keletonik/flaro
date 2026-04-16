@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Plus, X, Clock, MapPin, User, Briefcase } from "lucide-react";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { useListJobs } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api";
@@ -284,7 +283,7 @@ export default function Schedule() {
   const isCurrentWeek = weekDates.some(d => toDateStr(d) === todayStr);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+      <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between gap-3">
@@ -482,7 +481,6 @@ export default function Schedule() {
         />
       )}
 
-      <AnalyticsPanel section="wip" title="Schedule Analyst" />
-    </div>
+      </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import {
   Plus, X, LayoutGrid, List, ChevronDown, ChevronRight,
   Calendar, MoreHorizontal, Pencil, Trash2, GripVertical,
@@ -549,7 +548,7 @@ export default function Projects() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+      <div className="flex-1 min-w-0 max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -649,7 +648,6 @@ export default function Projects() {
         />
       )}
 
-      <AnalyticsPanel section="tasks" title="Project Analyst" />
-    </div>
+      </div>
   );
 }

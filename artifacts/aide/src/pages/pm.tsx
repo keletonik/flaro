@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Plus, FolderKanban, Trash2, Archive, ChevronRight, LayoutGrid, Table2, BarChart3, Calendar, Columns3, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import PmBoardPage from "@/pages/pm-board";
-import AnalyticsPanel from "@/components/AnalyticsPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -64,24 +63,23 @@ export default function PM() {
   // If a board is selected, show it full-screen
   if (selectedBoardId) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-card shrink-0">
-          <button onClick={() => setSelectedBoardId(null)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <FolderKanban size={13} /> All Boards
-          </button>
-          <ChevronRight size={12} className="text-muted-foreground/30" />
-          <span className="text-xs font-semibold text-foreground">{boards.find(b => b.id === selectedBoardId)?.name}</span>
+        <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-card shrink-0">
+            <button onClick={() => setSelectedBoardId(null)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+              <FolderKanban size={13} /> All Boards
+            </button>
+            <ChevronRight size={12} className="text-muted-foreground/30" />
+            <span className="text-xs font-semibold text-foreground">{boards.find(b => b.id === selectedBoardId)?.name}</span>
+          </div>
+          <div className="flex-1">
+            <PmBoardPage boardId={selectedBoardId} />
+          </div>
         </div>
-        <div className="flex-1">
-          <PmBoardPage boardId={selectedBoardId} />
-        </div>
-        <AnalyticsPanel section="tasks" title="Project Analyst" />
-      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+      <div className="flex-1 min-w-0 min-h-screen bg-background">
       <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
         <div className="flex items-center justify-between">
           <div>
@@ -168,7 +166,6 @@ export default function PM() {
         )}
       </div>
 
-      <AnalyticsPanel section="tasks" title="Project Analyst" />
-    </div>
+      </div>
   );
 }

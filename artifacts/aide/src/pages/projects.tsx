@@ -13,6 +13,10 @@ import type { Project, ProjectTask } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useProjectDetails } from "@/hooks/useProjectDetails";
+import { ProjectMilestonesBar } from "@/components/projects/ProjectMilestonesBar";
+import { ProjectMembersRow } from "@/components/projects/ProjectMembersRow";
+import { ProjectActivityPanel } from "@/components/projects/ProjectActivityPanel";
 
 const PROJECT_STATUSES = ["Active", "On Hold", "Completed", "Archived"] as const;
 const TASK_STATUSES = ["To Do", "In Progress", "Review", "Done"] as const;
@@ -184,10 +188,18 @@ function TaskRow({
   task,
   onUpdate,
   onDelete,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
 }: {
   task: ProjectTask;
   onUpdate: (data: Partial<ProjectTask>) => void;
   onDelete: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
@@ -195,7 +207,27 @@ function TaskRow({
 
   return (
     <div className="group flex items-center gap-2 px-3 py-2 border-b border-border/50 last:border-b-0 hover:bg-muted/30 transition-colors">
-      <GripVertical size={12} className="text-muted-foreground/30 group-hover:text-muted-foreground/60 flex-shrink-0 cursor-grab" />
+      <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <button
+          type="button"
+          onClick={onMoveUp}
+          disabled={!canMoveUp}
+          title="Move up"
+          className="text-[10px] leading-none text-muted-foreground hover:text-foreground disabled:opacity-20"
+        >
+          ^
+        </button>
+        <button
+          type="button"
+          onClick={onMoveDown}
+          disabled={!canMoveDown}
+          title="Move down"
+          className="text-[10px] leading-none text-muted-foreground hover:text-foreground disabled:opacity-20"
+        >
+          v
+        </button>
+      </div>
+      <GripVertical size={12} className="text-muted-foreground/30 group-hover:text-muted-foreground/60 flex-shrink-0" />
 
       <div className="flex-1 min-w-0">
         {editing ? (
@@ -347,6 +379,7 @@ function ProjectCard({
   const createTask = useCreateProjectTask();
   const updateTask = useUpdateProjectTask();
   const deleteTask = useDeleteProjectTask();
+  const details = useProjectDetails(expanded ? project.id : null);
 
   const invalidateTasks = () => qc.invalidateQueries({ queryKey: getListProjectTasksQueryKey(project.id) });
 
@@ -378,6 +411,25 @@ function ProjectCard({
         onError: () => toast({ title: "Failed to delete task", variant: "destructive" }),
       }
     );
+  };
+
+  const handleSwapTaskPositions = async (idxA: number, idxB: number) => {
+    const a = tasks[idxA];
+    const b = tasks[idxB];
+    if (!a || !b) return;
+    const aPos = a.position ?? idxA;
+    const bPos = b.position ?? idxB;
+    await Promise.all([
+      new Promise<void>((resolve) => updateTask.mutate(
+        { projectId: project.id, taskId: a.id, data: { position: bPos } as any },
+        { onSuccess: () => resolve(), onError: () => resolve() },
+      )),
+      new Promise<void>((resolve) => updateTask.mutate(
+        { projectId: project.id, taskId: b.id, data: { position: aPos } as any },
+        { onSuccess: () => resolve(), onError: () => resolve() },
+      )),
+    ]);
+    invalidateTasks();
   };
 
   const tasksByStatus = useMemo(() => {
@@ -436,6 +488,20 @@ function ProjectCard({
 
       {expanded && (
         <div className="border-t border-border">
+          <div className="px-4 py-3 space-y-3 bg-muted/20">
+            <ProjectMilestonesBar
+              milestones={details.milestones}
+              onAdd={details.addMilestone}
+              onToggle={details.toggleMilestone}
+              onDelete={details.deleteMilestone}
+            />
+            <ProjectMembersRow
+              members={details.members}
+              onAdd={details.addMember}
+              onRemove={details.removeMember}
+            />
+            <ProjectActivityPanel activity={details.activity} loading={details.loading} />
+          </div>
           {viewMode === "board" ? (
             <div className="grid grid-cols-4 gap-0 min-h-[200px]">
               {TASK_STATUSES.map(status => {
@@ -466,12 +532,16 @@ function ProjectCard({
               {tasks.length === 0 ? (
                 <p className="text-xs text-muted-foreground px-4 py-3">No tasks yet</p>
               ) : (
-                tasks.map(task => (
+                tasks.map((task, idx) => (
                   <TaskRow
                     key={task.id}
                     task={task}
                     onUpdate={d => handleUpdateTask(task.id, d)}
                     onDelete={() => handleDeleteTask(task.id)}
+                    onMoveUp={() => handleSwapTaskPositions(idx, idx - 1)}
+                    onMoveDown={() => handleSwapTaskPositions(idx, idx + 1)}
+                    canMoveUp={idx > 0}
+                    canMoveDown={idx < tasks.length - 1}
                   />
                 ))
               )}

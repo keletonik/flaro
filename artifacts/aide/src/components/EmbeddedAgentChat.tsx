@@ -28,6 +28,29 @@ export function savePageNotes(section: string, notes: string): void {
   try { if (notes) localStorage.setItem(`${PAGE_NOTES_KEY}:${section}`, notes); else localStorage.removeItem(`${PAGE_NOTES_KEY}:${section}`); } catch {}
 }
 
+const HISTORY_KEY = "aide-chat-history:global";
+const HISTORY_LIMIT = 200;
+function loadHistory(): Message[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((m) => m && (m.role === "user" || m.role === "assistant")) as Message[];
+  } catch {
+    return [];
+  }
+}
+function saveHistory(messages: Message[]): void {
+  try {
+    const trimmed = messages.slice(-HISTORY_LIMIT);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+  } catch {}
+}
+function clearHistoryStorage(): void {
+  try { localStorage.removeItem(HISTORY_KEY); } catch {}
+}
+
 interface ToolRun {
   name: string;
   input?: Record<string, unknown>;
@@ -154,13 +177,26 @@ function emitDataChanged() {
 
 export default function EmbeddedAgentChat({ section, title = "AIDE", suggestions = [], hideHeader = false }: Props) {
   const [, setLocation] = useLocation();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => loadHistory());
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [pending, setPending] = useState<AttachmentMeta[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (streaming) return;
+    saveHistory(messages);
+  }, [messages, streaming]);
+
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key === HISTORY_KEY) setMessages(loadHistory());
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
 
   // Listen for the command palette / CSV import auto-send events
   useEffect(() => {
@@ -201,10 +237,11 @@ export default function EmbeddedAgentChat({ section, title = "AIDE", suggestions
       });
     };
 
+    const recentHistory = messages.slice(-40).map(m => ({ role: m.role, content: m.content }));
     controllerRef.current = streamAgent(
       section,
       msg,
-      messages.map(m => ({ role: m.role, content: m.content })),
+      recentHistory,
       {
         onText: (chunk) => { assistantContent += chunk; patch({ content: assistantContent }); },
         onToolStart: (ev: AgentToolEvent) => {
@@ -262,6 +299,7 @@ export default function EmbeddedAgentChat({ section, title = "AIDE", suggestions
     if (controllerRef.current) controllerRef.current.abort();
     setMessages([]);
     setStreaming(false);
+    clearHistoryStorage();
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {

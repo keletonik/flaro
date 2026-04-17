@@ -10,6 +10,15 @@ import { DashboardConfigPanel } from "@/components/DashboardConfigPanel";
 import { useDashboardConfig, type WidgetId } from "@/hooks/useDashboardConfig";
 import { QuoteQueuePanel } from "@/components/QuoteQueuePanel";
 
+function formatAgo(date: Date): string {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 10) return "just now";
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return date.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+}
+
 interface KpiMetrics {
   overview: {
     activeJobs: number; completedToday: number; completedThisWeek: number;
@@ -30,12 +39,13 @@ interface FocusData {
   points: string[]; generatedAt: string;
 }
 
-function MetricCard({ label, value, icon: _Icon, trend, trendLabel, color, onClick, featured }: {
+function MetricCard({ label, value, icon: _Icon, trend, trendLabel, color, onClick, featured, tooltip }: {
   label: string; value: string | number; icon: any; trend?: "up" | "down" | "neutral";
-  trendLabel?: string; color?: string; onClick?: () => void; featured?: boolean;
+  trendLabel?: string; color?: string; onClick?: () => void; featured?: boolean; tooltip?: string;
 }) {
+  const hintText = tooltip || (onClick ? `${label}: click to drill down` : label);
   return (
-    <button onClick={onClick} className={cn("metric-card text-left w-full h-full group", featured && "metric-card--featured")} disabled={!onClick}>
+    <button onClick={onClick} title={hintText} className={cn("metric-card text-left w-full h-full group", featured && "metric-card--featured")} disabled={!onClick}>
       <div className="flex items-start justify-between mb-2">
         <p className={cn("font-mono text-[10px] uppercase tracking-widest", color?.includes("emerald") ? "text-emerald-500/60" : color?.includes("amber") ? "text-amber-500/60" : color?.includes("red") ? "text-red-500/60" : color?.includes("blue") ? "text-blue-500/60" : "text-primary/60")}>{label}</p>
         {trend && trend !== "neutral" && (
@@ -99,6 +109,7 @@ export default function Dashboard() {
   const [newNote, setNewNote] = useState("");
   const [pipelineGaps, setPipelineGaps] = useState<any>(null);
   const [onCallToday, setOnCallToday] = useState("Loading...");
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const userName = user?.displayName?.split(" ")[0] || "there";
@@ -107,12 +118,18 @@ export default function Dashboard() {
   const fetchAll = () => {
     apiFetch<{ techName: string | null }>("/on-call/today").then(d => setOnCallToday(d.techName || "Check roster")).catch(() => setOnCallToday("Check roster"));
     apiFetch<DashboardSummary>("/dashboard/summary").then(setSummary).catch(e => console.error(e));
-    apiFetch<KpiMetrics>("/kpi/metrics").then(setKpi).catch(e => console.error(e));
+    apiFetch<KpiMetrics>("/kpi/metrics").then((d) => { setKpi(d); setLastUpdated(new Date()); }).catch(e => console.error(e));
     apiFetch("/analytics/pipeline-gaps").then(setPipelineGaps).catch(e => console.error(e));
     apiFetch<FocusData>("/dashboard/focus").then(d => { setFocus(d); setFocusLoading(false); }).catch(() => setFocusLoading(false));
     apiFetch<QuickTodo[]>("/todos").then(t => setTodos(t.filter((x: any) => !x.completed).slice(0, 12))).catch(e => console.error(e));
     apiFetch<QuickNote[]>("/notes?status=Open").then(n => setNotes(n.slice(0, 10))).catch(e => console.error(e));
   };
+
+  const [, setAgoTick] = useState(0);
+  useEffect(() => {
+    const tick = setInterval(() => setAgoTick((n) => n + 1), 30_000);
+    return () => clearInterval(tick);
+  }, []);
 
   useEffect(() => {
     fetchAll();
@@ -209,7 +226,12 @@ export default function Dashboard() {
                 !! {summary.critical} Critical
               </div>
             )}
-            <button onClick={fetchAll} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors font-mono" title="Refresh data">
+            {lastUpdated && (
+              <span className="font-mono text-[10px] text-muted-foreground/70" title={lastUpdated.toLocaleString("en-AU")}>
+                updated {formatAgo(lastUpdated)}
+              </span>
+            )}
+            <button onClick={fetchAll} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors font-mono" title={lastUpdated ? `Last updated ${lastUpdated.toLocaleTimeString("en-AU")}` : "Refresh data"}>
               ↻ Refresh
             </button>
             <DashboardConfigPanel />
@@ -224,28 +246,28 @@ export default function Dashboard() {
           metrics: (
         <div className="bento-grid">
           <div className="bento-featured card-stagger" style={{ '--stagger-index': 0 } as React.CSSProperties}>
-            <MetricCard label="Revenue This Week" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=7d")} featured />
+            <MetricCard label="Revenue This Week" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=7d")} featured tooltip="Paid invoices this week. Click for revenue analytics." />
           </div>
           <div className="bento-featured card-stagger" style={{ '--stagger-index': 1 } as React.CSSProperties}>
-            <MetricCard label="Active Jobs" value={summary?.active ?? "-"} icon={null} color="bg-primary/8" onClick={() => setLocation("/jobs?status=Open")} featured />
+            <MetricCard label="Active Jobs" value={summary?.active ?? "-"} icon={null} color="bg-primary/8" onClick={() => setLocation("/jobs?status=Open")} featured tooltip="Open and in-progress jobs right now. Click to filter Jobs by Open." />
           </div>
           <div className="bento-featured card-stagger" style={{ '--stagger-index': 2 } as React.CSSProperties}>
-            <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={null} color="bg-amber-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Sent")} featured />
+            <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={null} color="bg-amber-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Sent")} featured tooltip="Total AUD on invoices sent but not paid. Click to see the list." />
           </div>
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 3 } as React.CSSProperties}>
-            <MetricCard label="Completed Today" value={summary?.doneToday ?? "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/jobs?status=Done")} trend={summary && summary.doneToday > 0 ? "up" : "neutral"} trendLabel={`${summary?.doneToday ?? 0}`} />
+            <MetricCard label="Completed Today" value={summary?.doneToday ?? "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/jobs?status=Done")} trend={summary && summary.doneToday > 0 ? "up" : "neutral"} trendLabel={`${summary?.doneToday ?? 0}`} tooltip="Jobs marked Done today. Click for all completed jobs." />
           </div>
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 4 } as React.CSSProperties}>
-            <MetricCard label="Open WIP" value={kpi?.wip.active ?? "-"} icon={null} color="bg-blue-500/8" onClick={() => setLocation("/operations?tab=wip&status=Open")} />
+            <MetricCard label="Open WIP" value={kpi?.wip.active ?? "-"} icon={null} color="bg-blue-500/8" onClick={() => setLocation("/operations?tab=wip&status=Open")} tooltip="WIP records still Open (not completed). Click to drill down." />
           </div>
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 5 } as React.CSSProperties}>
-            <MetricCard label="Pending Quotes" value={kpi?.quotes.pending ?? "-"} icon={null} color="bg-primary/8" onClick={() => setLocation("/operations?tab=quotes&status=Sent")} />
+            <MetricCard label="Pending Quotes" value={kpi?.quotes.pending ?? "-"} icon={null} color="bg-primary/8" onClick={() => setLocation("/operations?tab=quotes&status=Sent")} tooltip="Quotes sent, awaiting client decision. Click to follow up." />
           </div>
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 6 } as React.CSSProperties}>
-            <MetricCard label="Revenue (Month)" value={kpi ? fmt(kpi.invoices.revenueThisMonth) : "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=mtd")} />
+            <MetricCard label="Revenue (Month)" value={kpi ? fmt(kpi.invoices.revenueThisMonth) : "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=mtd")} tooltip="Paid revenue month-to-date. Click for month-to-date analytics." />
           </div>
           <div className="bento-compact card-stagger" style={{ '--stagger-index': 7 } as React.CSSProperties}>
-            <MetricCard label="Overdue Invoices" value={kpi?.invoices.overdue ?? "-"} icon={null} color="bg-red-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Overdue")} />
+            <MetricCard label="Overdue Invoices" value={kpi?.invoices.overdue ?? "-"} icon={null} color="bg-red-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Overdue")} tooltip="Invoices past their due date and unpaid. Click to chase." />
           </div>
         </div>
           ),

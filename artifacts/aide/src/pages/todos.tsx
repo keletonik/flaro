@@ -530,7 +530,18 @@ export default function Todos() {
 
       <div className="flex-1 overflow-hidden">
         {isLoading ? (
-          <div className="p-4 space-y-1">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 bg-muted/50 rounded skeleton-pulse" />)}</div>
+          <div className="p-2 space-y-1">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-2 py-2 border-b border-border/40">
+                <div className="h-3 w-3 bg-muted/60 rounded skeleton-pulse" />
+                <div className="h-3 flex-1 max-w-[280px] bg-muted/50 rounded skeleton-pulse" />
+                <div className="h-3 w-16 bg-muted/40 rounded-full skeleton-pulse" />
+                <div className="h-3 w-20 bg-muted/40 rounded skeleton-pulse" />
+                <div className="h-3 w-[90px] bg-muted/40 rounded skeleton-pulse" />
+                <div className="h-3 w-16 bg-muted/50 rounded skeleton-pulse ml-auto" />
+              </div>
+            ))}
+          </div>
         ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <CheckCircle2 size={24} className="text-emerald-500/30 mb-3" />

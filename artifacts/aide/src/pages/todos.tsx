@@ -445,6 +445,37 @@ export default function Todos() {
           </div>
         </div>
 
+        <div className="flex items-center gap-3 px-3 pb-1.5 flex-wrap">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">priority</span>
+          {PRIORITIES.map((p) => {
+            const ps = PRIORITY_STYLES[p];
+            const count = allTodos.filter((t: any) => t.priority === p && !t.completed).length;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => {
+                  setFilterPriority((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(p)) next.delete(p); else next.add(p);
+                    return next;
+                  });
+                  setPage(0);
+                }}
+                title={`${count} open ${p} task${count === 1 ? "" : "s"}. Click to filter.`}
+                className={cn(
+                  "inline-flex items-center gap-1 text-[10px] transition-opacity",
+                  filterPriority.size > 0 && !filterPriority.has(p) ? "opacity-40 hover:opacity-80" : "opacity-100",
+                )}
+              >
+                <span className={cn("w-1.5 h-1.5 rounded-full", ps.dot)} />
+                <span className={cn("font-medium", ps.text)}>{p}</span>
+                <span className="font-mono text-[9px] text-muted-foreground">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {(activeFilterCount > 0 || search) && (
           <div className="flex items-center gap-1.5 px-3 pb-2 flex-wrap">
             {search && (

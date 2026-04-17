@@ -19,6 +19,19 @@ import { useAIDE } from "@/App";
 
 const OPEN_KEY = "aide-assistant-open";
 const WIDE_KEY = "aide-assistant-wide";
+const POS_KEY = "aide-assistant-pos";
+type Corner = "br" | "bl" | "tr" | "tl";
+const CORNER_STYLES: Record<Corner, string> = {
+  br: "bottom-4 right-4",
+  bl: "bottom-4 left-4 md:left-[220px]",
+  tr: "top-16 right-4",
+  tl: "top-16 left-4 md:left-[220px]",
+};
+function loadCorner(): Corner {
+  try { const v = localStorage.getItem(POS_KEY); if (v && v in CORNER_STYLES) return v as Corner; } catch {}
+  return "br";
+}
+function saveCorner(c: Corner) { try { localStorage.setItem(POS_KEY, c); } catch {} }
 
 function sectionFromPath(path: string): { section: string; title: string; suggestions: string[] } {
   if (path === "/" || path.startsWith("/dashboard"))
@@ -64,6 +77,8 @@ export default function AIDEAssistant() {
   const [location] = useLocation();
   const { setAideState } = useAIDE();
 
+  const { section, title, suggestions } = useMemo(() => sectionFromPath(location), [location]);
+
   const [open, setOpen] = useState<boolean>(() => {
     try { return localStorage.getItem(OPEN_KEY) === "1"; } catch { return false; }
   });
@@ -71,6 +86,22 @@ export default function AIDEAssistant() {
     try { return localStorage.getItem(WIDE_KEY) === "1"; } catch { return false; }
   });
   const [minimised, setMinimised] = useState(false);
+  const [corner, setCorner] = useState<Corner>(loadCorner);
+
+  const cycleCorner = useCallback(() => {
+    setCorner((prev) => {
+      const order: Corner[] = ["br", "bl", "tl", "tr"];
+      const next = order[(order.indexOf(prev) + 1) % order.length];
+      saveCorner(next);
+      return next;
+    });
+  }, []);
+
+  const handlePopOut = useCallback(() => {
+    const url = `/aide-popout?section=${encodeURIComponent(section)}&title=${encodeURIComponent(title)}`;
+    window.open(url, "aide-popout", "width=520,height=700,menubar=no,toolbar=no,location=no,status=no");
+    setMinimised(true);
+  }, [section, title]);
 
   // Persist
   useEffect(() => { try { localStorage.setItem(OPEN_KEY, open ? "1" : "0"); } catch {} }, [open]);
@@ -116,8 +147,6 @@ export default function AIDEAssistant() {
     return () => window.removeEventListener("aide-analyse", handler);
   }, []);
 
-  const { section, title, suggestions } = useMemo(() => sectionFromPath(location), [location]);
-
   // Not open at all: show nothing (sidebar button handles the trigger)
   if (!open) return null;
 
@@ -129,7 +158,7 @@ export default function AIDEAssistant() {
     return (
       <button
         onClick={() => setMinimised(false)}
-        className="fixed bottom-4 right-4 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border shadow-2xl hover:shadow-xl transition-all hover:-translate-y-0.5 text-foreground group"
+        className={cn("fixed z-[60] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border shadow-2xl hover:shadow-xl transition-all hover:-translate-y-0.5 text-foreground group", CORNER_STYLES[corner])}
       >
         <span className="font-mono text-[11px] font-bold text-primary">⚡</span>
         <span className="font-mono text-xs font-semibold">AIDE</span>
@@ -141,7 +170,7 @@ export default function AIDEAssistant() {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-[60] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden transition-all duration-200 max-md:inset-4 max-md:!w-auto max-md:!h-auto"
+      className={cn("fixed z-[60] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden transition-all duration-200 max-md:inset-4 max-md:!w-auto max-md:!h-auto", CORNER_STYLES[corner])}
       style={{ width: `${w}px`, height: `${h}px`, maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 32px)" }}
     >
       {/* Header */}
@@ -154,6 +183,14 @@ export default function AIDEAssistant() {
           </div>
         </div>
         <div className="flex items-center gap-0.5">
+          <button onClick={cycleCorner} title={`Position: ${corner.toUpperCase()} (click to cycle)`}
+            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            ◫
+          </button>
+          <button onClick={handlePopOut} title="Pop out to new window"
+            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            ↗
+          </button>
           <button onClick={() => setWide(v => !v)} title={wide ? "Compact" : "Expand"}
             className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             {wide ? "⊟" : "⊞"}

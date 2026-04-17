@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/App";
 import { DashboardConfigPanel } from "@/components/DashboardConfigPanel";
 import { useDashboardConfig, type WidgetId } from "@/hooks/useDashboardConfig";
+import { QuoteQueuePanel } from "@/components/QuoteQueuePanel";
 
 interface KpiMetrics {
   overview: {
@@ -310,6 +311,9 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          ),
+          quotes_queue: (
+          <QuoteQueuePanel maxItems={8} />
           ),
           tasks: (
           <div className="bg-card border border-border rounded-2xl p-5">

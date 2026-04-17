@@ -317,6 +317,33 @@ router.post("/projects/:projectId/members", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.patch("/projects/:projectId/members/:memberId", async (req, res, next) => {
+  try {
+    const { projectId, memberId } = req.params;
+    const [existing] = await db.select().from(projectMembers).where(and(eq(projectMembers.id, memberId), eq(projectMembers.projectId, projectId)));
+    if (!existing) { res.status(404).json({ error: "Member not found" }); return; }
+
+    const { name, role, avatarColor, active } = req.body;
+    const updates: Partial<typeof projectMembers.$inferInsert> = {};
+    if (name !== undefined) {
+      const trimmed = String(name).trim();
+      if (!trimmed) { res.status(400).json({ error: "Name cannot be empty" }); return; }
+      updates.name = trimmed;
+    }
+    if (role !== undefined && VALID_MEMBER_ROLES.includes(role)) updates.role = role;
+    if (avatarColor !== undefined) updates.avatarColor = avatarColor;
+    if (active !== undefined) updates.active = !!active;
+
+    const [updated] = await db.update(projectMembers).set(updates).where(eq(projectMembers.id, memberId)).returning();
+    const changes: string[] = [];
+    if (name !== undefined && name !== existing.name) changes.push(`renamed to ${updated.name}`);
+    if (role !== undefined && role !== existing.role) changes.push(`role changed to ${updated.role}`);
+    if (active !== undefined && active !== existing.active) changes.push(active ? "reactivated" : "deactivated");
+    if (changes.length) await recordActivity(projectId, "member.updated", `${updated.name}: ${changes.join(", ")}`);
+    res.json(serializeMember(updated));
+  } catch (err) { next(err); }
+});
+
 router.delete("/projects/:projectId/members/:memberId", async (req, res, next) => {
   try {
     const { projectId, memberId } = req.params;

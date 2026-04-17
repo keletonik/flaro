@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { quotes } from "@workspace/db";
-import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
+import { eq, and, or, ilike, desc, sql, isNull, inArray } from "drizzle-orm";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { randomUUID } from "crypto";
 import { deleteRow, deleteRows, softDeleteEnabled } from "../lib/soft-delete";
@@ -23,7 +23,11 @@ router.get("/quotes", async (req, res, next) => {
     const { status, search, client } = req.query as Record<string, string>;
     const conditions = [];
     if (softDeleteEnabled()) conditions.push(isNull(quotes.deletedAt));
-    if (status) conditions.push(eq(quotes.status, status as any));
+    if (status) {
+      const statuses = status.split(",").map((s) => s.trim()).filter(Boolean);
+      if (statuses.length === 1) conditions.push(eq(quotes.status, statuses[0] as any));
+      else if (statuses.length > 1) conditions.push(inArray(quotes.status, statuses as any));
+    }
     if (client) conditions.push(ilike(quotes.client, `%${client.replace(/[%_\\]/g, "\\$&")}%`));
     if (search) {
       const s = search.replace(/[%_\\]/g, "\\$&");
@@ -38,13 +42,14 @@ router.get("/quotes", async (req, res, next) => {
 
 router.post("/quotes", async (req, res, next) => {
   try {
-    const { taskNumber, quoteNumber, site, address, client, description, quoteAmount, status, dateCreated, dateSent, dateAccepted, validUntil, assignedTech, contactName, contactEmail, notes } = req.body;
+    const { taskNumber, quoteNumber, site, address, client, description, quoteAmount, status, urgency, dateCreated, dateSent, dateAccepted, validUntil, assignedTech, contactName, contactEmail, notes } = req.body;
     if (!site || !client) { res.status(400).json({ error: "site and client are required" }); return; }
     const id = randomUUID();
     const now = new Date();
     const [record] = await db.insert(quotes).values({
       id, taskNumber: taskNumber || null, quoteNumber: quoteNumber || null, site, address: address || null,
-      client, description: description || null, quoteAmount: quoteAmount || null, status: status || "Draft",
+      client, description: description || null, quoteAmount: quoteAmount || null, status: status || "To Quote",
+      urgency: urgency || "Normal",
       dateCreated: dateCreated || null, dateSent: dateSent || null, dateAccepted: dateAccepted || null,
       validUntil: validUntil || null, assignedTech: assignedTech || null, contactName: contactName || null,
       contactEmail: contactEmail || null, notes: notes || null, createdAt: now, updatedAt: now,
@@ -111,8 +116,9 @@ router.patch("/quotes/:id", async (req, res, next) => {
   try {
     const [existing] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!existing) { res.status(404).json({ error: "Quote not found" }); return; }
-    const { taskNumber, quoteNumber, site, address, client, description, quoteAmount, status, dateCreated, dateSent, dateAccepted, validUntil, assignedTech, contactName, contactEmail, notes } = req.body;
+    const { taskNumber, quoteNumber, site, address, client, description, quoteAmount, status, urgency, dateCreated, dateSent, dateAccepted, validUntil, assignedTech, contactName, contactEmail, notes } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
+    if (urgency !== undefined) updates.urgency = urgency || "Normal";
     if (taskNumber !== undefined) updates.taskNumber = taskNumber || null;
     if (quoteNumber !== undefined) updates.quoteNumber = quoteNumber || null;
     if (site !== undefined) updates.site = site;

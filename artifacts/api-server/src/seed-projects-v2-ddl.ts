@@ -47,4 +47,6 @@ export const PROJECTS_V2_DDL_STATEMENTS: string[] = [
      created_at timestamp with time zone DEFAULT now() NOT NULL
    )`,
   `CREATE INDEX IF NOT EXISTS project_members_project_id_idx ON project_members (project_id)`,
+
+  `ALTER TABLE quotes ADD COLUMN IF NOT EXISTS urgency text DEFAULT 'Normal'`,
 ];

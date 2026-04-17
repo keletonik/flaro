@@ -8,6 +8,7 @@ export type WidgetId =
   | "leakage"
   | "focus"
   | "operations"
+  | "quotes_queue"
   | "tasks"
   | "notes";
 
@@ -22,6 +23,7 @@ const DEFAULT_ORDER: WidgetId[] = [
   "leakage",
   "focus",
   "operations",
+  "quotes_queue",
   "tasks",
   "notes",
 ];
@@ -109,6 +111,7 @@ export const WIDGET_LABELS: Record<WidgetId, string> = {
   leakage: "Revenue Leakage",
   focus: "Today's Focus",
   operations: "Operations",
+  quotes_queue: "Quotes To Do",
   tasks: "Tasks",
   notes: "Notes",
 };

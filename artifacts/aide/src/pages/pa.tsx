@@ -23,6 +23,7 @@ import { PAInput } from "@/components/pa/PAInput";
 import { PAMessage, type PAMessageData, type PAToolCall } from "@/components/pa/PAMessage";
 import { PASidebar } from "@/components/pa/PASidebar";
 import { PATrainingPanel } from "@/components/pa/PATrainingPanel";
+import { QuoteQueuePanel } from "@/components/QuoteQueuePanel";
 import { AlertCircle, Menu, X, Sparkles, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -219,6 +220,9 @@ export default function PAPage() {
         )}
       >
         <PASidebar onNewChat={newChat} />
+        <div className="px-2 pb-3">
+          <QuoteQueuePanel compact maxItems={5} />
+        </div>
       </div>
 
       {/* Main column */}

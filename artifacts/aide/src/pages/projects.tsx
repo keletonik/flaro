@@ -17,6 +17,7 @@ import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { ProjectMilestonesBar } from "@/components/projects/ProjectMilestonesBar";
 import { ProjectMembersRow } from "@/components/projects/ProjectMembersRow";
 import { ProjectActivityPanel } from "@/components/projects/ProjectActivityPanel";
+import { QuoteQueuePanel } from "@/components/QuoteQueuePanel";
 
 const PROJECT_STATUSES = ["Active", "On Hold", "Completed", "Archived"] as const;
 const TASK_STATUSES = ["To Do", "In Progress", "Review", "Done"] as const;
@@ -670,6 +671,8 @@ export default function Projects() {
           </button>
         </div>
       </div>
+
+      <QuoteQueuePanel maxItems={6} className="mb-4" />
 
       {isLoading ? (
         <div className="space-y-3">

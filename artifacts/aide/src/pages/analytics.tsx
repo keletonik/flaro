@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Target, DollarSign, Palette, ChevronDown, AlertTriangle, Upload } from "lucide-react";
+import { SavedFiltersBar } from "@/components/SavedFiltersBar";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { apiFetch, formatCurrency } from "@/lib/api";
 import LiveToggle from "@/components/LiveToggle";
@@ -354,6 +355,17 @@ export default function Analytics() {
       </div>
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
+        <SavedFiltersBar
+          scope="analytics"
+          currentValue={{ dateFrom, dateTo, revenuePeriod, advancedMode }}
+          isEmpty={(v) => !v.dateFrom && !v.dateTo && v.revenuePeriod === "week" && v.advancedMode}
+          onApply={(v) => {
+            setDateFrom(v.dateFrom || "");
+            setDateTo(v.dateTo || "");
+            if (v.revenuePeriod) setRevenuePeriod(v.revenuePeriod);
+            if (typeof v.advancedMode === "boolean") setAdvancedMode(v.advancedMode);
+          }}
+        />
         {/* Pattern Detection — always visible */}
         <PatternInsights data={data} />
 

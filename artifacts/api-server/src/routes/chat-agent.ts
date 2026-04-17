@@ -265,11 +265,19 @@ router.post("/chat/agent", async (req, res, next) => {
     // See docs/aide-master-prompt/MASTER.md §5 for the rationale.
     const isPaMode = section === "pa";
     const isAideMode = section === "aide";
+    const isProjectsMode = section === "projects";
+    const isOpsMode = section === "wip" || section === "jobs" || section === "operations";
     let corePrompt = AGENT_SYSTEM_PROMPT;
     if (isPaMode) corePrompt = PA_SYSTEM_PROMPT;
     else if (isAideMode) {
       const { AIDE_MASTER_PROMPT_V1_0 } = await import("../lib/prompts/aide-master-prompt");
       corePrompt = AIDE_MASTER_PROMPT_V1_0;
+    } else if (isProjectsMode) {
+      const { PROJECTS_MANAGER_SYSTEM_PROMPT } = await import("../lib/prompts/projects-manager-prompt");
+      corePrompt = PROJECTS_MANAGER_SYSTEM_PROMPT;
+    } else if (isOpsMode) {
+      const { OPS_MANAGER_SYSTEM_PROMPT } = await import("../lib/prompts/ops-manager-prompt");
+      corePrompt = OPS_MANAGER_SYSTEM_PROMPT;
     }
     const systemBlocks: any[] = [
       {

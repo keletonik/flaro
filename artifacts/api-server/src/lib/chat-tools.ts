@@ -27,6 +27,9 @@ export const TABLE_ALLOWLIST = [
   "schedule_events",
   "projects",
   "project_tasks",
+  "project_milestones",
+  "project_members",
+  "project_activity",
   // FIP / VESDA technical knowledge base tables — drive the /fip page.
   "fip_manufacturers",
   "fip_product_families",

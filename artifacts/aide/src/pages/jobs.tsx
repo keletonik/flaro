@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Plus, Search, X, LayoutGrid, List, Filter, ChevronUp, ChevronDown, ChevronsUpDown, MoreHorizontal, Pencil, Trash2, ExternalLink, Download, Upload, SlidersHorizontal, ChevronLeft, ChevronRight, FilterX } from "lucide-react";
 import LiveToggle from "@/components/LiveToggle";
 import CSVImportModal from "@/components/CSVImportModal";
+import { SavedFiltersBar } from "@/components/SavedFiltersBar";
 import {
   useListJobs, useCreateJob, useUpdateJob, useDeleteJob,
   getListJobsQueryKey, getGetDashboardSummaryQueryKey
@@ -441,6 +442,41 @@ export default function Jobs() {
             )}
           >Unassigned</button>
           <span className="text-[10px] text-muted-foreground/70 ml-auto hidden sm:inline">Ask AIDE: <span className="italic">"any jobs near Wetherill Park"</span></span>
+        </div>
+
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/10 border-t border-border flex-wrap">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">filters</span>
+          <SavedFiltersBar
+            scope="jobs"
+            currentValue={{
+              search,
+              nearLocation,
+              overdueOnly,
+              unassignedOnly,
+              priority: Array.from(filterPriority),
+              status: Array.from(filterStatus),
+              tech: Array.from(filterTech),
+              client: Array.from(filterClient),
+            }}
+            isEmpty={(v) =>
+              !v.search && !v.nearLocation && !v.overdueOnly && !v.unassignedOnly &&
+              (!v.priority || v.priority.length === 0) &&
+              (!v.status || v.status.length === 0) &&
+              (!v.tech || v.tech.length === 0) &&
+              (!v.client || v.client.length === 0)
+            }
+            onApply={(v) => {
+              setSearch(v.search || "");
+              setNearLocation(v.nearLocation || "");
+              setOverdueOnly(!!v.overdueOnly);
+              setUnassignedOnly(!!v.unassignedOnly);
+              setFilterPriority(new Set(Array.isArray(v.priority) ? v.priority : []));
+              setFilterStatus(new Set(Array.isArray(v.status) ? v.status : []));
+              setFilterTech(new Set(Array.isArray(v.tech) ? v.tech : []));
+              setFilterClient(new Set(Array.isArray(v.client) ? v.client : []));
+              setPage(0);
+            }}
+          />
         </div>
 
         {(activeFilterCount > 0 || search) && (

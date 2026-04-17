@@ -27,3 +27,4 @@ export * from "./task-cycle-times";
 export * from "./fip-material-lists";
 export * from "./purchase-orders";
 export * from "./contacts";
+export * from "./change-logs";

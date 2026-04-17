@@ -68,6 +68,7 @@ const navGroups = [
       { path: "/purchase-orders", prefix: "[]", label: "POs" },
       { path: "/todos", prefix: "++", label: "Tasks" },
       { path: "/projects", prefix: "//", label: "Projects" },
+      { path: "/boards", prefix: "##", label: "Boards" },
       { path: "/suppliers", prefix: "<>", label: "Suppliers" },
     ],
   },
@@ -401,7 +402,9 @@ function Router() {
           <Route path="/purchase-orders"><PurchaseOrders /></Route>
           <Route path="/notes"><Notes /></Route>
           <Route path="/todos"><Todos /></Route>
-          <Route path="/projects"><PM /></Route>
+          <Route path="/projects"><Projects /></Route>
+          <Route path="/boards"><PM /></Route>
+          <Route path="/boards/:id"><PM /></Route>
           <Route path="/toolbox"><Toolbox /></Route>
           <Route path="/suppliers"><Suppliers /></Route>
           <Route path="/fip"><FIP /></Route>

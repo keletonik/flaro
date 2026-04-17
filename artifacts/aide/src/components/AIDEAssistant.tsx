@@ -42,7 +42,9 @@ function sectionFromPath(path: string): { section: string; title: string; sugges
   if (path.startsWith("/notes"))
     return { section: "tasks", title: "Notes", suggestions: ["Summarise open notes", "What needs follow-up?", "Key insights this week", "Create a note"] };
   if (path.startsWith("/projects"))
-    return { section: "tasks", title: "Projects", suggestions: ["Project status summary", "What's blocked?", "Overdue milestones", "Resource allocation"] };
+    return { section: "projects", title: "Projects", suggestions: ["Status across all projects", "What's blocked today?", "Milestones due this week", "Plan the project kickoff"] };
+  if (path.startsWith("/boards"))
+    return { section: "tasks", title: "Boards", suggestions: ["Show active boards", "Template for a new sprint", "Gantt across boards", "Archive stale boards"] };
   if (path.startsWith("/pa") || path.startsWith("/chat"))
     return { section: "dashboard", title: "Personal Assistant", suggestions: ["What's on today?", "Log a job for a site", "Draft a note", "Show my reminders"] };
   if (path.startsWith("/toolbox"))

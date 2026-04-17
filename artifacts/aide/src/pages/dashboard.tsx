@@ -6,6 +6,8 @@ import { InboxPanel } from "@/components/InboxPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/App";
+import { DashboardConfigPanel } from "@/components/DashboardConfigPanel";
+import { useDashboardConfig, type WidgetId } from "@/hooks/useDashboardConfig";
 
 interface KpiMetrics {
   overview: {
@@ -99,6 +101,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { user } = useAuth();
   const userName = user?.displayName?.split(" ")[0] || "there";
+  const { config: dashboardConfig, isHidden } = useDashboardConfig();
 
   const fetchAll = () => {
     apiFetch<{ techName: string | null }>("/on-call/today").then(d => setOnCallToday(d.techName || "Check roster")).catch(() => setOnCallToday("Check roster"));
@@ -208,20 +211,16 @@ export default function Dashboard() {
             <button onClick={fetchAll} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors font-mono" title="Refresh data">
               ↻ Refresh
             </button>
+            <DashboardConfigPanel />
           </div>
         </div>
       </div>
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
-        {/* Pass 7 fix 1 — inbox block. Three columns: critical defects,
-            overdue invoices, top open WIPs. Every row is clickable and
-            drops the user on the filtered operations tab. */}
-        <InboxPanel />
-
-        {/* Bento Grid — featured metrics prominent, secondary compact.
-            Every card now drill-throughs to a filtered destination per
-            Pass 2 target 4. Destinations use query params so the target
-            pages can (eventually) parse and pre-apply filters. */}
+        {(() => {
+          const widgets: Record<WidgetId, React.ReactNode> = {
+          inbox: <InboxPanel />,
+          metrics: (
         <div className="bento-grid">
           <div className="bento-featured card-stagger" style={{ '--stagger-index': 0 } as React.CSSProperties}>
             <MetricCard label="Revenue This Week" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=7d")} featured />
@@ -248,10 +247,9 @@ export default function Dashboard() {
             <MetricCard label="Overdue Invoices" value={kpi?.invoices.overdue ?? "-"} icon={null} color="bg-red-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Overdue")} />
           </div>
         </div>
-
-        {/* Pipeline Gaps + Morning Dispatch */}
+          ),
+          leakage: (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Revenue Leakage */}
           {pipelineGaps && pipelineGaps.totalAtRisk > 0 && (
             <div className="pipeline-gap bg-card border border-border rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
@@ -286,10 +284,11 @@ export default function Dashboard() {
           )}
 
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2"><FocusCard points={focus?.points || []} loading={focusLoading} /></div>
-
+          ),
+          focus: (
+          <FocusCard points={focus?.points || []} loading={focusLoading} />
+          ),
+          operations: (
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <div className="flex items-center gap-2 mb-1"><span className="font-mono text-[11px] text-primary/60">::</span><span className="font-mono text-[10px] font-medium text-foreground uppercase tracking-widest">Operations</span></div>
             <div className="space-y-3">
@@ -311,12 +310,8 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
-
-
-        {/* Quick Tasks & Notes */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Quick Tasks */}
+          ),
+          tasks: (
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -347,8 +342,8 @@ export default function Dashboard() {
               {todos.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No active tasks</p>}
             </div>
           </div>
-
-          {/* Quick Notes */}
+          ),
+          notes: (
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -381,7 +376,12 @@ export default function Dashboard() {
               {notes.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No open notes</p>}
             </div>
           </div>
-        </div>
+          ),
+          };
+          return dashboardConfig.order
+            .filter((id) => !isHidden(id))
+            .map((id) => <div key={id} data-widget={id}>{widgets[id]}</div>);
+        })()}
       </div>
 
       </div>

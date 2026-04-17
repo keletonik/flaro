@@ -25,6 +25,7 @@ const SettingsPage = lazy(() => import("@/pages/settings"));
 const PM = lazy(() => import("@/pages/pm"));
 const FIP = lazy(() => import("@/pages/fip"));
 const PurchaseOrders = lazy(() => import("@/pages/purchase-orders"));
+const AidePopout = lazy(() => import("@/pages/aide-popout"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 // All Lucide nav icons replaced with text-based prefixes
 import AidePA from "@/components/AidePA";
@@ -393,6 +394,7 @@ function Router() {
               historical anthropic_conversations rows. The new PA
               surface lives at /pa. */}
           <Route path="/chat"><Chat /></Route>
+          <Route path="/aide-popout"><AidePopout /></Route>
           <Route path="/operations"><Operations /></Route>
           <Route path="/analytics"><Analytics /></Route>
           <Route path="/metrics"><Metrics /></Route>

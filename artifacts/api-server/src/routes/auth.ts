@@ -112,7 +112,10 @@ function startSessionCleanup() {
 // deploy-day unbrick path — if/when the env is set on every known
 // deploy target, the fallback should be removed.
 const CASPER_USERNAME = "casper";
-const CASPER_PASSWORD = process.env["CASPER_PASSWORD"] ?? "Ramekin881!";
+const CASPER_PASSWORD = process.env["CASPER_PASSWORD"];
+if (!CASPER_PASSWORD) {
+  console.error("[auth] FATAL: CASPER_PASSWORD env var is not set. Set it in Replit Secrets.");
+}
 const CASPER_DISPLAY_NAME = "Casper Tavitian";
 const CASPER_EMAIL = "casper@flamesafe.com.au";
 
@@ -120,6 +123,7 @@ const CASPER_EMAIL = "casper@flamesafe.com.au";
 // the write (or null if the DB can't be reached). Safe to call on every
 // login attempt — it's a single SELECT plus at most one INSERT or UPDATE.
 async function upsertCasperAdmin(): Promise<typeof users.$inferSelect | null> {
+  if (!CASPER_PASSWORD) return null;
   const salt = randomBytes(16).toString("hex");
   const passwordHash = hashScrypt(CASPER_PASSWORD, salt);
   const [existing] = await db.select().from(users).where(eq(users.username, CASPER_USERNAME));
@@ -147,7 +151,7 @@ async function upsertCasperAdmin(): Promise<typeof users.$inferSelect | null> {
   const alreadyValid =
     existing.passwordAlgo === "scrypt" &&
     !!existing.passwordSalt &&
-    verifyScrypt(CASPER_PASSWORD, existing.passwordSalt, existing.passwordHash);
+    verifyScrypt(CASPER_PASSWORD!, existing.passwordSalt, existing.passwordHash);
 
   if (alreadyValid) return existing;
 
@@ -207,9 +211,11 @@ async function seedEnvUsers(): Promise<void> {
     }
 
     if (process.env["ALLOW_LEGACY_SEED"] === "1") {
+      const jadePass = process.env["JADE_PASSWORD"];
+      const killianPass = process.env["KILLIAN_PASSWORD"];
       const legacy = [
-        { username: "jade", displayName: "Jade Ogony", password: "FlameSafe2026!", role: "manager" as const, email: "jade.ogony@flamesafe.com.au" },
-        { username: "killian", displayName: "Killian Jordan", password: "OpsManager2026!", role: "manager" as const, email: "killian@flamesafe.com.au" },
+        ...(jadePass ? [{ username: "jade", displayName: "Jade Ogony", password: jadePass, role: "manager" as const, email: "jade.ogony@flamesafe.com.au" }] : []),
+        ...(killianPass ? [{ username: "killian", displayName: "Killian Jordan", password: killianPass, role: "manager" as const, email: "killian@flamesafe.com.au" }] : []),
       ];
       for (const u of legacy) {
         const [existing] = await db.select().from(users).where(eq(users.username, u.username));
@@ -291,6 +297,11 @@ router.post("/auth/login", async (req, res) => {
   // surface in Replit logs instead of being silently swallowed.
   if (username === CASPER_USERNAME) {
     try {
+      if (!CASPER_PASSWORD) {
+        console.error("[auth] casper login failed — CASPER_PASSWORD env var not set");
+        res.status(500).json({ error: "Admin password not configured. Set CASPER_PASSWORD in Replit Secrets." });
+        return;
+      }
       const casper = await upsertCasperAdmin();
       if (!casper) {
         console.error("[auth] upsertCasperAdmin returned null — DB unreachable?");

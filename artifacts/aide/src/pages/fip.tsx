@@ -76,10 +76,14 @@ export default function FIPKnowledgeBase() {
   const [statusError, setStatusError] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+  const [manufacturersError, setManufacturersError] = useState<string | null>(null);
   const [models, setModels] = useState<FipModel[]>([]);
+  const [modelsError, setModelsError] = useState<string | null>(null);
   const [families, setFamilies] = useState<ProductFamily[]>([]);
   const [standards, setStandards] = useState<FipStandard[]>([]);
+  const [standardsError, setStandardsError] = useState<string | null>(null);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
   const [panels, setPanels] = useState<PanelSpec[]>([]);
   const [panelsLoading, setPanelsLoading] = useState(true);
 
@@ -102,11 +106,11 @@ export default function FIPKnowledgeBase() {
   useEffect(() => {
     void loadStatus();
     void Promise.all([
-      apiFetch<Manufacturer[]>("/fip/manufacturers").then(setManufacturers).catch(() => {}),
-      apiFetch<FipModel[]>("/fip/models").then(setModels).catch(() => {}),
+      apiFetch<Manufacturer[]>("/fip/manufacturers").then(setManufacturers).catch((e: any) => setManufacturersError(e?.message ?? "Failed to load manufacturers")),
+      apiFetch<FipModel[]>("/fip/models").then(setModels).catch((e: any) => setModelsError(e?.message ?? "Failed to load models")),
       apiFetch<ProductFamily[]>("/fip/product-families").then(setFamilies).catch(() => {}),
-      apiFetch<FipStandard[]>("/fip/standards").then(setStandards).catch(() => {}),
-      apiFetch<any[]>("/fip/documents").then(setDocuments).catch(() => {}),
+      apiFetch<FipStandard[]>("/fip/standards").then(setStandards).catch((e: any) => setStandardsError(e?.message ?? "Failed to load standards")),
+      apiFetch<any[]>("/fip/documents").then(setDocuments).catch((e: any) => setDocumentsError(e?.message ?? "Failed to load documents")),
     ]);
     apiFetch<PanelSpec[]>("/fip/panels")
       .then((rows) => setPanels(rows))
@@ -243,17 +247,39 @@ export default function FIPKnowledgeBase() {
           )}
 
           {view === "manufacturers" && (
-            <ManufacturersTab manufacturers={manufacturers} models={models} families={families} />
+            manufacturersError
+              ? <DataError label="manufacturers" message={manufacturersError} />
+              : <ManufacturersTab manufacturers={manufacturers} models={models} families={families} />
           )}
 
           {view === "models" && (
-            <ModelsTab models={models} mfrMap={mfrMap} famMap={famMap} />
+            modelsError
+              ? <DataError label="models" message={modelsError} />
+              : <ModelsTab models={models} mfrMap={mfrMap} famMap={famMap} />
           )}
 
-          {view === "standards" && <StandardsTab standards={standards} />}
-          {view === "documents" && <DocumentsTab documents={documents} mfrMap={mfrMap} />}
+          {view === "standards" && (
+            standardsError
+              ? <DataError label="standards" message={standardsError} />
+              : <StandardsTab standards={standards} />
+          )}
+          {view === "documents" && (
+            documentsError
+              ? <DataError label="documents" message={documentsError} />
+              : <DocumentsTab documents={documents} mfrMap={mfrMap} />
+          )}
         </main>
       </div>
+    </div>
+  );
+}
+
+function DataError({ label, message }: { label: string; message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <AlertTriangle className="w-6 h-6 text-destructive mb-2" />
+      <p className="text-sm font-medium text-foreground">Failed to load {label}</p>
+      <p className="text-xs text-muted-foreground mt-1 max-w-sm">{message}</p>
     </div>
   );
 }

@@ -47,6 +47,10 @@ function fipEnabled(): boolean {
 const MAX_ITERATIONS = 8;
 const MODEL = "claude-sonnet-4-6";
 
+function escapeLike(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
 const SYSTEM_PROMPT = `You are AIDE-FIP (version fip-v2.0) — the master-level fire-protection technical assistant for an Australian fire-protection service technician. You are embedded on the FIP Command Centre page. You have REAL tools for searching detector types, AS standards, manufacturers, models, fault signatures, and for analysing uploaded images.
 
 EXPERTISE: master level on Australian fire protection. You know AS 1670.1 (system design), AS 1670.4 (occupant warning), AS 7240 series (detector product performance), AS 1851 (routine service), AS 3786 (residential alarms), AS 2118.1 (sprinklers), AS 2419.1 (hydrants), AS 1668.1 (HVAC fire control), AS 4428 (panel product standard), AS 4825 (tunnel fire safety), NCC/BCA performance requirements. Australian brands: Apollo, Hochiki, Notifier, System Sensor, Pertronic, Ampac, Simplex, Tyco, Bosch, Honeywell, Xtralis, Fike, Wormald.
@@ -183,14 +187,14 @@ async function execTool(name: string, input: any): Promise<any> {
       return row;
     }
     case "fip_search_manufacturers": {
-      const q = `%${String(input?.query ?? "").toLowerCase()}%`;
+      const q = `%${escapeLike(String(input?.query ?? "").toLowerCase())}%`;
       const rows = await db.select().from(fipManufacturers)
         .where(and(isNull(fipManufacturers.deletedAt), ilike(fipManufacturers.name, q)))
         .limit(15);
       return rows;
     }
     case "fip_search_models": {
-      const q = `%${String(input?.query ?? "").toLowerCase()}%`;
+      const q = `%${escapeLike(String(input?.query ?? "").toLowerCase())}%`;
       const rows = await db.select().from(fipModels)
         .where(and(isNull(fipModels.deletedAt), or(
           ilike(fipModels.name, q),
@@ -207,7 +211,7 @@ async function execTool(name: string, input: any): Promise<any> {
       return withNames;
     }
     case "fip_get_standard": {
-      const q = `%${String(input?.query ?? "").toLowerCase()}%`;
+      const q = `%${escapeLike(String(input?.query ?? "").toLowerCase())}%`;
       const stds = await db.select().from(fipStandards)
         .where(and(isNull(fipStandards.deletedAt), or(
           ilike(fipStandards.code, q),
@@ -224,7 +228,7 @@ async function execTool(name: string, input: any): Promise<any> {
       return withClauses;
     }
     case "fip_search_faults": {
-      const q = `%${String(input?.query ?? "").toLowerCase()}%`;
+      const q = `%${escapeLike(String(input?.query ?? "").toLowerCase())}%`;
       const rows = await db.select().from(fipFaultSignatures)
         .where(and(isNull(fipFaultSignatures.deletedAt), or(
           ilike(fipFaultSignatures.code, q),

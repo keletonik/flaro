@@ -21,13 +21,8 @@ export function loginRateLimiter(): RateLimitRequestHandler | PassthroughMiddlew
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Too many login attempts. Try again later." },
-    // Only throttle login POSTs; everything else in the router is mounted
-    // outside this limiter. We also exempt the canonical casper account so a
-    // locked-out operator can always recover the deployment.
     skip: (req) => {
       if (req.method !== "POST") return true;
-      const u = req.body?.username;
-      if (typeof u === "string" && u.toLowerCase().trim() === "casper") return true;
       return false;
     },
   });

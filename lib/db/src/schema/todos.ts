@@ -15,11 +15,13 @@ export const todos = pgTable("todos", {
   notes: text("notes"),
   nextSteps: text("next_steps"),
   dependencies: text("dependencies").array().notNull().default([]),
+  airtableRecordId: text("airtable_record_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   index("todos_completed_idx").on(table.completed),
   index("todos_created_at_idx").on(table.createdAt),
+  index("todos_airtable_idx").on(table.airtableRecordId),
 ]);
 
 export const insertTodoSchema = createInsertSchema(todos).omit({

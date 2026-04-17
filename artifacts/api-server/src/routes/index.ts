@@ -33,8 +33,8 @@ import remindersRouter from "./reminders";
 import paInstructionsRouter from "./pa-instructions";
 import attachmentsRouter from "./attachments";
 import purchaseOrdersRouter from "./purchase-orders";
-import changeLogsRouter from "./change-logs";
 import changeLogRouter from "./change-log";
+import airtableRouter from "./airtable";
 import diagRouter from "./diag";
 
 const router: IRouter = Router();
@@ -73,8 +73,8 @@ router.use(remindersRouter);
 router.use(paInstructionsRouter);
 router.use(attachmentsRouter);
 router.use(purchaseOrdersRouter);
-router.use(changeLogsRouter);
 router.use(changeLogRouter);
+router.use(airtableRouter);
 router.use(diagRouter);
 
 export default router;

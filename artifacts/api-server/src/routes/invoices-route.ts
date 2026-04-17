@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { invoices, changeLogs } from "@workspace/db";
+import { invoices } from "@workspace/db";
 import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
+import { logDataChange } from "../lib/change-log";
 import { randomUUID } from "crypto";
 import { deleteRow, softDeleteEnabled } from "../lib/soft-delete";
 
@@ -82,19 +83,9 @@ router.post("/invoices/import", async (req, res, next) => {
         createdAt: now, updatedAt: now,
       };
     });
-    let totalInserted = 0;
-    for (let i = 0; i < records.length; i += 500) {
-      const chunk = records.slice(i, i + 500);
-      await db.insert(invoices).values(chunk);
-      totalInserted += chunk.length;
-    }
-    try {
-      await db.insert(changeLogs).values({
-        id: randomUUID(), action: "import", table: "invoices", batchId,
-        rowCount: totalInserted, summary: `Imported ${totalInserted} invoices from CSV`, createdAt: now,
-      });
-    } catch { /* change_logs table may not exist yet */ }
-    res.status(201).json({ imported: totalInserted, batchId });
+    const inserted = await db.insert(invoices).values(records).returning();
+    await logDataChange({ batchId, category: "invoices", action: "csv_import", recordsInserted: inserted.length, sourceRows: rows.length });
+    res.status(201).json({ imported: inserted.length, batchId, records: inserted.map(serialize) });
   } catch (err) { next(err); }
 });
 

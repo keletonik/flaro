@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { defects, changeLogs } from "@workspace/db";
+import { defects } from "@workspace/db";
 import { eq, and, or, ilike, desc, sql, isNull } from "drizzle-orm";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { randomUUID } from "crypto";
@@ -78,19 +78,8 @@ router.post("/defects/import", async (req, res, next) => {
         rawData: row, importBatchId: batchId, createdAt: now, updatedAt: now,
       };
     });
-    let totalInserted = 0;
-    for (let i = 0; i < records.length; i += 500) {
-      const chunk = records.slice(i, i + 500);
-      await db.insert(defects).values(chunk);
-      totalInserted += chunk.length;
-    }
-    try {
-      await db.insert(changeLogs).values({
-        id: randomUUID(), action: "import", table: "defects", batchId,
-        rowCount: totalInserted, summary: `Imported ${totalInserted} defects from CSV`, createdAt: now,
-      });
-    } catch { /* change_logs table may not exist yet */ }
-    res.status(201).json({ imported: totalInserted, batchId });
+    const inserted = await db.insert(defects).values(records).returning();
+    res.status(201).json({ imported: inserted.length, batchId, records: inserted.map(serialize) });
   } catch (err) { next(err); }
 });
 

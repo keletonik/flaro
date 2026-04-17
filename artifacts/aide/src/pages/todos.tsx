@@ -445,6 +445,37 @@ export default function Todos() {
           </div>
         </div>
 
+        <div className="flex items-center gap-3 px-3 pb-1.5 flex-wrap">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">priority</span>
+          {PRIORITIES.map((p) => {
+            const ps = PRIORITY_STYLES[p];
+            const count = allTodos.filter((t: any) => t.priority === p && !t.completed).length;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => {
+                  setFilterPriority((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(p)) next.delete(p); else next.add(p);
+                    return next;
+                  });
+                  setPage(0);
+                }}
+                title={`${count} open ${p} task${count === 1 ? "" : "s"}. Click to filter.`}
+                className={cn(
+                  "inline-flex items-center gap-1 text-[10px] transition-opacity",
+                  filterPriority.size > 0 && !filterPriority.has(p) ? "opacity-40 hover:opacity-80" : "opacity-100",
+                )}
+              >
+                <span className={cn("w-1.5 h-1.5 rounded-full", ps.dot)} />
+                <span className={cn("font-medium", ps.text)}>{p}</span>
+                <span className="font-mono text-[9px] text-muted-foreground">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {(activeFilterCount > 0 || search) && (
           <div className="flex items-center gap-1.5 px-3 pb-2 flex-wrap">
             {search && (
@@ -499,7 +530,18 @@ export default function Todos() {
 
       <div className="flex-1 overflow-hidden">
         {isLoading ? (
-          <div className="p-4 space-y-1">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 bg-muted/50 rounded skeleton-pulse" />)}</div>
+          <div className="p-2 space-y-1">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-2 py-2 border-b border-border/40">
+                <div className="h-3 w-3 bg-muted/60 rounded skeleton-pulse" />
+                <div className="h-3 flex-1 max-w-[280px] bg-muted/50 rounded skeleton-pulse" />
+                <div className="h-3 w-16 bg-muted/40 rounded-full skeleton-pulse" />
+                <div className="h-3 w-20 bg-muted/40 rounded skeleton-pulse" />
+                <div className="h-3 w-[90px] bg-muted/40 rounded skeleton-pulse" />
+                <div className="h-3 w-16 bg-muted/50 rounded skeleton-pulse ml-auto" />
+              </div>
+            ))}
+          </div>
         ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <CheckCircle2 size={24} className="text-emerald-500/30 mb-3" />

@@ -3,6 +3,7 @@ import { useTheme, THEME_OPTIONS, type ThemeVariant } from "@/lib/theme";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
 const TECHS = ["Darren Brailey", "Gordon Jenkins", "Haider Al-Heyoury", "John Minai", "Nu Unasa"];
 
@@ -67,10 +68,36 @@ export default function SettingsPage() {
     }
   }, []);
 
+  const revertTo = (snapshot: string) => {
+    try {
+      const s = JSON.parse(snapshot);
+      if (s.revenueTarget !== undefined) setRevenueTarget(s.revenueTarget);
+      if (s.compactMode !== undefined) setCompactMode(s.compactMode);
+      if (s.showCompleted !== undefined) setShowCompleted(s.showCompleted);
+      if (s.autoRefresh !== undefined) setAutoRefresh(s.autoRefresh);
+      if (s.refreshInterval !== undefined) setRefreshInterval(s.refreshInterval);
+      if (s.defaultOpsTab !== undefined) setDefaultOpsTab(s.defaultOpsTab);
+      if (s.defaultPmView !== undefined) setDefaultPmView(s.defaultPmView);
+      if (s.dateFormat !== undefined) setDateFormat(s.dateFormat);
+      if (s.currencySymbol !== undefined) setCurrencySymbol(s.currencySymbol);
+      localStorage.setItem("ops-settings", snapshot);
+      toast({ title: "Reverted to previous settings" });
+    } catch (e: any) { console.error(e); }
+  };
+
   const saveSettings = () => {
+    const previous = localStorage.getItem("ops-settings");
     const settings = { revenueTarget, compactMode, showCompleted, autoRefresh, refreshInterval, defaultOpsTab, defaultPmView, dateFormat, currencySymbol };
     localStorage.setItem("ops-settings", JSON.stringify(settings));
-    toast({ title: "Settings saved" });
+    if (previous) {
+      toast({
+        title: "Settings saved",
+        description: "Undo available for 5 seconds",
+        action: <ToastAction altText="Undo" onClick={() => revertTo(previous)}>Undo</ToastAction>,
+      });
+    } else {
+      toast({ title: "Settings saved" });
+    }
   };
 
   return (

@@ -101,11 +101,92 @@ function StatusPill({ status }: { status: string; tab?: TabKey }) {
   );
 }
 
-function DataTable({ data, tab, onDelete, onStatusChange, onEdit, selectedIds, onToggleSelect, onToggleAll }: {
+const EMPTY_STATE_COPY: Record<TabKey, { title: string; lead: string; tips: string[]; aidePrompt: string }> = {
+  wip: {
+    title: "No WIP records yet",
+    lead: "Import your in-progress jobs from Uptick or create one manually.",
+    tips: [
+      "Export the Open WIPs view from Uptick as CSV",
+      "Columns auto-map on the Site, Client, Task # and Description fields",
+      "Missing columns are skipped, not blocked",
+    ],
+    aidePrompt: "Walk me through setting up my WIP pipeline from an Uptick export.",
+  },
+  quotes: {
+    title: "No quotes yet",
+    lead: "Log quotes manually or import an Uptick quotes export. Add to the quoting pipeline from anywhere with the Quotes To Do panel.",
+    tips: [
+      "Status defaults to 'To Quote' so new entries land in the quoting queue",
+      "Tag each quote with urgency (Urgent / This Week / Normal / Low)",
+      "The dashboard and PA also expose a Quotes To Do widget for quick-add",
+    ],
+    aidePrompt: "Log a new quote for Site X with Urgent priority.",
+  },
+  defects: {
+    title: "No defects yet",
+    lead: "Defects feed scope and quoting. Import AFSS reports or create individual defect rows.",
+    tips: [
+      "Severity drives priority: Critical is 7-day action, High is 30-day",
+      "Link each defect to the quote that resolves it",
+      "Use 'Draft scope from defect' in AIDE to auto-populate a quote",
+    ],
+    aidePrompt: "Show me how to import an AFSS defect register.",
+  },
+  invoices: {
+    title: "No invoices yet",
+    lead: "Invoices track outstanding and paid amounts against completed WIP.",
+    tips: [
+      "Outstanding = Sent + Overdue + Partial",
+      "Importing here updates Dashboard revenue and cash-flow metrics",
+      "Ask AIDE 'who hasn't paid?' to pull the overdue list",
+    ],
+    aidePrompt: "Summarise overdue invoices by client.",
+  },
+};
+
+function EmptyTabState({ tab, onImport, onCreate }: { tab: TabKey; onImport: () => void; onCreate?: () => void }) {
+  const copy = EMPTY_STATE_COPY[tab];
+  const askAide = () => {
+    window.dispatchEvent(new CustomEvent("aide-open-with-prompt", { detail: { prompt: copy.aidePrompt } }));
+  };
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center max-w-xl mx-auto">
+      <div className="w-12 h-12 rounded-xl bg-muted/40 border border-border flex items-center justify-center mb-4">
+        <Upload size={18} className="text-muted-foreground/60" />
+      </div>
+      <p className="text-sm font-semibold text-foreground">{copy.title}</p>
+      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{copy.lead}</p>
+      <div className="flex items-center gap-2 mt-4">
+        <button onClick={onImport} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+          <Upload size={11} /> Import CSV
+        </button>
+        {onCreate && (
+          <button onClick={onCreate} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold text-muted-foreground hover:text-foreground border border-border hover:bg-muted">
+            + Add manually
+          </button>
+        )}
+        <button onClick={askAide} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold text-muted-foreground hover:text-foreground border border-border hover:bg-muted">
+          ⚡ Ask AIDE
+        </button>
+      </div>
+      <ul className="mt-5 text-left space-y-1">
+        {copy.tips.map((t, i) => (
+          <li key={i} className="flex items-start gap-2 text-[11px] text-muted-foreground">
+            <span className="font-mono text-[10px] text-muted-foreground/60 mt-0.5">•</span>
+            <span>{t}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function DataTable({ data, tab, onDelete, onStatusChange, onEdit, selectedIds, onToggleSelect, onToggleAll, onImport, onCreate }: {
   data: any[]; tab: TabKey; onDelete: (id: string) => void;
   onStatusChange: (id: string, status: string) => void;
   onEdit: (row: any) => void;
   selectedIds: Set<string>; onToggleSelect: (id: string) => void; onToggleAll: () => void;
+  onImport?: () => void; onCreate?: () => void;
 }) {
   const allColumns = getColumns(tab);
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
@@ -145,13 +226,7 @@ function DataTable({ data, tab, onDelete, onStatusChange, onEdit, selectedIds, o
     });
   }, [filtered, sortCol, sortDir]);
 
-  if (!data.length) return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <Upload size={28} className="text-muted-foreground/30 mb-3" />
-      <p className="text-sm font-semibold text-foreground">No records yet</p>
-      <p className="text-xs text-muted-foreground mt-1">Import a CSV from Uptick to get started</p>
-    </div>
-  );
+  if (!data.length) return <EmptyTabState tab={tab} onImport={onImport ?? (() => {})} onCreate={onCreate} />;
 
   return (
     <div>
@@ -577,7 +652,7 @@ export default function Operations() {
                 <button onClick={clearSelection} className="px-2 py-1 rounded-md text-[10px] font-medium text-muted-foreground hover:text-foreground transition-all">Clear</button>
               </div>
             )}
-            <DataTable data={currentData} tab={activeTab} onDelete={handleDelete} onStatusChange={handleStatusChange} onEdit={setEditingRow} selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleAll={toggleSelectAll} />
+            <DataTable data={currentData} tab={activeTab} onDelete={handleDelete} onStatusChange={handleStatusChange} onEdit={setEditingRow} selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleAll={toggleSelectAll} onImport={() => setImportOpen(true)} />
             </>
           )}
         </div>

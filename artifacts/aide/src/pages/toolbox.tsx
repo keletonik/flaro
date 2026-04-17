@@ -63,24 +63,53 @@ export default function Toolbox() {
     }
   };
 
-  const handleExport = () => {
-    const activeNotes = (notes || []).filter(n => n.status === "Active");
-    if (!activeNotes.length) {
-      toast({ title: "No active notes to export" });
-      return;
-    }
-    const text = [
-      "TOOLBOX BRIEFING",
+  const buildExportText = (scope: "active" | "briefed" | "all") => {
+    const source = (notes || []).filter(n => {
+      if (scope === "all") return true;
+      return n.status === (scope === "active" ? "Active" : "Briefed");
+    });
+    if (!source.length) return null;
+    const label = scope === "active" ? "ACTIVE BRIEFING" : scope === "briefed" ? "BRIEFED ARCHIVE" : "FULL TOOLBOX LOG";
+    return [
+      `TOOLBOX — ${label}`,
       new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
       "",
-      ...activeNotes.map(n => `${n.ref}  ${n.text}`),
+      ...source.map(n => {
+        const tag = n.status === "Briefed" ? " [briefed]" : "";
+        return `${n.ref}${tag}  ${n.text}`;
+      }),
     ].join("\n");
+  };
+
+  const handleCopyExport = () => {
+    const scope = filter === "Briefed" ? "briefed" : filter === "All" ? "all" : "active";
+    const text = buildExportText(scope);
+    if (!text) { toast({ title: "Nothing to export for the current filter" }); return; }
     navigator.clipboard?.writeText(text).then(() => {
       toast({ title: "Briefing copied to clipboard" });
     }).catch(() => {
       toast({ title: "Couldn't copy to clipboard" });
     });
   };
+
+  const handleDownloadExport = () => {
+    const scope = filter === "Briefed" ? "briefed" : filter === "All" ? "all" : "active";
+    const text = buildExportText(scope);
+    if (!text) { toast({ title: "Nothing to export for the current filter" }); return; }
+    const today = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `toolbox-${scope}-${today}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: `Downloaded ${a.download}` });
+  };
+
+  const handleExport = handleCopyExport;
 
   return (
       <div className="flex-1 min-w-0 min-h-screen bg-background">
@@ -97,9 +126,18 @@ export default function Toolbox() {
             <button
               data-testid="button-export-briefing"
               onClick={handleExport}
+              title={`Copy ${filter === "Briefed" ? "briefed archive" : filter === "All" ? "full log" : "active briefing"} to clipboard`}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border border-border text-muted-foreground text-sm font-medium rounded-lg hover:text-foreground hover:bg-muted/70 transition-colors"
             >
-              <Clipboard size={14} />Export Briefing
+              <Clipboard size={14} />Copy {filter === "Briefed" ? "Archive" : filter === "All" ? "Log" : "Briefing"}
+            </button>
+            <button
+              data-testid="button-download-briefing"
+              onClick={handleDownloadExport}
+              title={`Download ${filter === "Briefed" ? "briefed archive" : filter === "All" ? "full log" : "active briefing"} as .txt`}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border border-border text-muted-foreground text-sm font-medium rounded-lg hover:text-foreground hover:bg-muted/70 transition-colors"
+            >
+              <Clipboard size={14} /> Download
             </button>
             <button
               data-testid="button-add-toolbox-note"

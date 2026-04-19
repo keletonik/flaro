@@ -315,6 +315,13 @@ function Layout({ children }: { children: React.ReactNode }) {
   const { aideState } = useAIDE();
   const [location] = useLocation();
 
+  // Popout window: render bare — no sidebar, no bottom nav, no floating AIDE.
+  // The popout IS the AIDE surface, and the mobile bottom nav would otherwise
+  // overlap the chat input in the narrow popout window.
+  if (location === "/aide-popout") {
+    return <div className="min-h-screen bg-background">{children}</div>;
+  }
+
   // Compute content margins based on sidebar + AIDE panel state
   const sidebarW = collapsed ? 60 : 210;
   const mlTotal = sidebarW + (aideState.open && aideState.dock === "left" ? aideState.width : 0);

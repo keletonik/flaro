@@ -37,7 +37,7 @@ interface Props {
   className?: string;
 }
 
-export function AttachmentPicker({ pending, onChange, source, disabled, maxFiles = 4, className }: Props) {
+export function AttachmentPicker({ pending, onChange, source, disabled, maxFiles = 20, className }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,13 +78,10 @@ export function AttachmentPicker({ pending, onChange, source, disabled, maxFiles
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      {pending.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {pending.map((p) => (
-            <AttachmentChip key={p.id} meta={p} onRemove={() => remove(p.id)} />
-          ))}
-        </div>
-      )}
+      {/* Note: pending chips are intentionally NOT rendered here.
+          The parent (EmbeddedAgentChat / PAInput) renders its own chip
+          strip above the input — rendering them here as well caused a
+          visible double-up of every attachment. */}
       {error && (
         <p className="text-[10px] text-red-500">{error}</p>
       )}
@@ -148,7 +145,7 @@ export function useAttachmentUpload(
   pending: AttachmentMeta[],
   onChange: (next: AttachmentMeta[]) => void,
   source?: string,
-  maxFiles = 4,
+  maxFiles = 20,
 ) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);

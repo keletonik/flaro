@@ -99,7 +99,16 @@ export default function AIDEAssistant() {
 
   const handlePopOut = useCallback(() => {
     const url = `/aide-popout?section=${encodeURIComponent(section)}&title=${encodeURIComponent(title)}`;
-    window.open(url, "aide-popout", "width=520,height=700,menubar=no,toolbar=no,location=no,status=no");
+    // Open as a tall side-panel anchored to the right edge of the screen.
+    // Use available screen size (excludes taskbar/dock) so we never open off-screen.
+    const screenW = window.screen.availWidth || 1280;
+    const screenH = window.screen.availHeight || 800;
+    const width = Math.min(520, Math.max(380, Math.round(screenW * 0.32)));
+    const height = Math.max(600, screenH - 40);
+    const left = Math.max(0, screenW - width - 8);
+    const top = 8;
+    const features = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=no`;
+    window.open(url, "aide-popout", features);
     setMinimised(true);
   }, [section, title]);
 

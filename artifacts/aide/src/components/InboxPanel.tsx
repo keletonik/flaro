@@ -123,8 +123,13 @@ export function InboxPanel() {
         <span className="text-[10px] text-muted-foreground">What needs you right now</span>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
+      <div className={(() => {
+        const filled = [defects.length > 0, invoices.length > 0, wips.length > 0].filter(Boolean).length;
+        if (filled <= 1) return "grid grid-cols-1 gap-4";
+        if (filled === 2) return "grid grid-cols-1 md:grid-cols-2 gap-4";
+        return "grid grid-cols-1 md:grid-cols-3 gap-4";
+      })()}>
+        {defects.length > 0 && (<div>
           <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-red-500 uppercase tracking-wide">
             <AlertTriangle className="w-3 h-3" /> Critical defects
           </div>
@@ -148,9 +153,9 @@ export function InboxPanel() {
               ))}
             </ul>
           )}
-        </div>
+        </div>)}
 
-        <div>
+        {invoices.length > 0 && (<div>
           <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-amber-500 uppercase tracking-wide">
             <Clock className="w-3 h-3" /> Overdue invoices
           </div>
@@ -177,9 +182,9 @@ export function InboxPanel() {
               })}
             </ul>
           )}
-        </div>
+        </div>)}
 
-        <div>
+        {wips.length > 0 && (<div>
           <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-blue-500 uppercase tracking-wide">
             <DollarSign className="w-3 h-3" /> Top open WIPs
           </div>
@@ -206,7 +211,10 @@ export function InboxPanel() {
               })}
             </ul>
           )}
-        </div>
+        </div>)}
+        {defects.length === 0 && invoices.length === 0 && wips.length === 0 && (
+          <p className="text-xs text-muted-foreground text-center py-4">All clear — nothing critical right now.</p>
+        )}
       </div>
     </section>
   );

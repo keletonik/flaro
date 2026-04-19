@@ -12,6 +12,7 @@ import {
 import type { Project, ProjectTask } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { ProjectMilestonesBar } from "@/components/projects/ProjectMilestonesBar";
@@ -619,23 +620,23 @@ export default function Projects() {
   };
 
   return (
-      <div className="flex-1 min-w-0 max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[13px] text-primary/60">//</span>
-          <div>
-            <h1 className="text-sm font-medium text-foreground tracking-tight">Projects</h1>
-            <p className="text-xs text-muted-foreground">{projects.length} project{projects.length !== 1 ? "s" : ""}</p>
-          </div>
-        </div>
-        <button
-          onClick={() => { setEditingProject(null); setShowModal(true); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity shadow-sm"
-        >
-          <Plus size={14} /> New Project
-        </button>
-      </div>
+      <div className="flex-1 min-w-0">
+      <PageHeader
+        prefix="//"
+        title="Projects"
+        subtitle={`${projects.length} project${projects.length !== 1 ? "s" : ""}`}
+        sticky={false}
+        actions={
+          <button
+            onClick={() => { setEditingProject(null); setShowModal(true); }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity"
+          >
+            <Plus size={12} /> New Project
+          </button>
+        }
+      />
 
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -719,6 +720,7 @@ export default function Projects() {
         />
       )}
 
+      </div>
       </div>
   );
 }

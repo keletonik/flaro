@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import PageSkeleton from "@/components/ui/PageSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
 import type { ToolboxNote } from "@workspace/api-client-react";
 
@@ -114,50 +115,48 @@ export default function Toolbox() {
   return (
       <div className="flex-1 min-w-0 min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2"><span className="font-mono text-[13px] text-primary/60">{"&&"}</span> Toolbox</h1>
-            <p className="text-xs text-muted-foreground">
-              {activeCount} active note{activeCount !== 1 ? "s" : ""} for team briefing
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
+      <PageHeader
+        prefix="&&"
+        title="Toolbox"
+        subtitle={`${activeCount} active note${activeCount !== 1 ? "s" : ""} for team briefing`}
+        actions={
+          <>
             <button
               data-testid="button-export-briefing"
               onClick={handleExport}
               title={`Copy ${filter === "Briefed" ? "briefed archive" : filter === "All" ? "full log" : "active briefing"} to clipboard`}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border border-border text-muted-foreground text-sm font-medium rounded-lg hover:text-foreground hover:bg-muted/70 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-muted border border-border text-muted-foreground text-[11px] font-medium rounded-md hover:text-foreground hover:bg-muted/70 transition-colors"
             >
-              <Clipboard size={14} />Copy {filter === "Briefed" ? "Archive" : filter === "All" ? "Log" : "Briefing"}
+              <Clipboard size={12} />Copy
             </button>
             <button
               data-testid="button-download-briefing"
               onClick={handleDownloadExport}
               title={`Download ${filter === "Briefed" ? "briefed archive" : filter === "All" ? "full log" : "active briefing"} as .txt`}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border border-border text-muted-foreground text-sm font-medium rounded-lg hover:text-foreground hover:bg-muted/70 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-muted border border-border text-muted-foreground text-[11px] font-medium rounded-md hover:text-foreground hover:bg-muted/70 transition-colors"
             >
-              <Clipboard size={14} /> Download
+              <Clipboard size={12} /> Download
             </button>
             <button
               data-testid="button-add-toolbox-note"
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-primary text-primary-foreground text-[11px] font-semibold rounded-md hover:opacity-90 transition-opacity"
             >
-              <Plus size={14} />Add Note
+              <Plus size={12} />Add Note
             </button>
-          </div>
-        </div>
+          </>
+        }
+      />
 
-        {/* Filter */}
-        <div className="flex gap-1.5 mt-3">
+      <div className="sticky top-[60px] z-10 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 py-2">
+        <div className="flex gap-1.5">
           {FILTERS.map(f => (
             <button
               key={f}
               data-testid={`filter-toolbox-${f.toLowerCase()}`}
               onClick={() => setFilter(f)}
               className={cn(
-                "px-3 py-1 rounded-lg text-xs font-medium transition-all",
+                "px-2.5 py-1 rounded-md text-[11px] font-medium transition-all",
                 filter === f
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:text-foreground border border-transparent"
@@ -174,7 +173,7 @@ export default function Toolbox() {
         </div>
       </div>
 
-      <div className="max-w-2xl px-4 sm:px-6 py-4 space-y-3">
+      <div className="px-4 sm:px-6 py-4 space-y-3">
         {/* Inline add */}
         {showAdd && (
           <div className="bg-card border border-primary/40 rounded-xl p-4 space-y-3 slide-up">
@@ -223,7 +222,7 @@ export default function Toolbox() {
             tip="Tip: press Cmd-K, type 'new note', press enter."
           />
         ) : (
-          <div className="space-y-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
             {displayedNotes.map((note, i) => (
               <ToolboxNoteCard
                 key={note.id}

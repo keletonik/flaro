@@ -6,6 +6,7 @@ import { apiFetch, formatCurrency } from "@/lib/api";
 import LiveToggle from "@/components/LiveToggle";
 import CSVImportModal from "@/components/CSVImportModal";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 type ChartType = "bar" | "line" | "area" | "pie";
 type TimePeriod = "day" | "week" | "month";
@@ -326,33 +327,30 @@ export default function Analytics() {
   return (
       <div className="flex-1 min-w-0 min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2">
-              <span className="font-mono text-[13px] text-primary/60">&gt;&gt;</span> Analytics
-            </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Performance metrics and revenue tracking</p>
-          </div>
-          <div className="flex items-center gap-2">
+      <PageHeader
+        prefix=">>"
+        title="Analytics"
+        subtitle="Performance metrics and revenue tracking"
+        actions={
+          <>
             <LiveToggle onTick={fetchData} interval={10_000} />
-            <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-all">
-              <Upload size={10} /> Import CSV
-            </button>
-            <div className="flex gap-0.5 bg-muted/50 rounded-lg p-0.5 mr-2">
-              <button onClick={() => setAdvancedMode(false)} className={cn("px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all", !advancedMode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>Simple</button>
-              <button onClick={() => setAdvancedMode(true)} className={cn("px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all", advancedMode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>Advanced</button>
+            <div className="flex gap-0.5 bg-muted/50 rounded-md p-0.5">
+              <button onClick={() => setAdvancedMode(false)} className={cn("px-2 py-0.5 rounded-sm text-[10px] font-semibold transition-all", !advancedMode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>Simple</button>
+              <button onClick={() => setAdvancedMode(true)} className={cn("px-2 py-0.5 rounded-sm text-[10px] font-semibold transition-all", advancedMode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>Advanced</button>
             </div>
-            <div className="flex items-center gap-2">
-              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="bg-card border border-border rounded-lg px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/20" title="From date" />
-              <span className="text-[10px] text-muted-foreground">to</span>
-              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="bg-card border border-border rounded-lg px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/20" title="To date" />
-              {(dateFrom || dateTo) && <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-[10px] text-muted-foreground hover:text-foreground">Clear</button>}
+            <div className="hidden md:flex items-center gap-1.5 bg-muted/40 border border-border rounded-md px-2 py-1">
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="bg-transparent text-[10px] text-foreground focus:outline-none w-[88px]" title="From date" />
+              <span className="text-[9px] text-muted-foreground/60">→</span>
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="bg-transparent text-[10px] text-foreground focus:outline-none w-[88px]" title="To date" />
+              {(dateFrom || dateTo) && <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-[10px] text-muted-foreground hover:text-foreground ml-0.5">×</button>}
             </div>
             <ColorThemeSelector value={colorTheme} onChange={setColorTheme} />
-          </div>
-        </div>
-      </div>
+            <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-all">
+              <Upload size={10} /> Import
+            </button>
+          </>
+        }
+      />
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
         <SavedFiltersBar

@@ -9,6 +9,7 @@ import { useAuth } from "@/App";
 import { DashboardConfigPanel } from "@/components/DashboardConfigPanel";
 import { useDashboardConfig, type WidgetId } from "@/hooks/useDashboardConfig";
 import { QuoteQueuePanel } from "@/components/QuoteQueuePanel";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 function formatAgo(date: Date): string {
   const diff = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -211,33 +212,32 @@ export default function Dashboard() {
 
   return (
       <div className="flex-1 min-w-0 min-h-screen bg-background">
-      <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2"><span className="font-mono text-[13px] text-primary/60">~</span> {greeting}, {userName}</h1>
-            <p className="font-mono text-[10px] text-muted-foreground mt-0.5">{new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold">
+      <PageHeader
+        prefix="~"
+        title={`${greeting}, ${userName}`}
+        subtitle={new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
+        actions={
+          <>
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[11px] font-semibold">
               On Call: {onCallToday.split(" ")[0]}
             </div>
             {summary && summary.critical > 0 && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/10 text-red-500 font-mono text-[10px] font-medium">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-500/10 text-red-500 font-mono text-[10px] font-medium">
                 !! {summary.critical} Critical
               </div>
             )}
             {lastUpdated && (
-              <span className="font-mono text-[10px] text-muted-foreground/70" title={lastUpdated.toLocaleString("en-AU")}>
-                updated {formatAgo(lastUpdated)}
+              <span className="hidden md:inline font-mono text-[10px] text-muted-foreground/60" title={lastUpdated.toLocaleString("en-AU")}>
+                {formatAgo(lastUpdated)}
               </span>
             )}
-            <button onClick={fetchAll} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors font-mono" title={lastUpdated ? `Last updated ${lastUpdated.toLocaleTimeString("en-AU")}` : "Refresh data"}>
+            <button onClick={fetchAll} className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors font-mono" title={lastUpdated ? `Last updated ${lastUpdated.toLocaleTimeString("en-AU")}` : "Refresh data"}>
               ↻ Refresh
             </button>
             <DashboardConfigPanel />
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
         {(() => {

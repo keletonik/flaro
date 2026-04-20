@@ -28,7 +28,7 @@ import { logAgentError } from "../lib/agent-error-log";
 
 const router = Router();
 
-const MAX_ITERATIONS = 8;
+const MAX_ITERATIONS = 24;
 
 const AGENT_SYSTEM_PROMPT = `You are AIDE, the in-app operations assistant for a fire protection service business. You are embedded inside the running web app, not a standalone chatbot.
 
@@ -419,11 +419,24 @@ router.post("/chat/agent", async (req, res, next) => {
       }
     }
 
-    // Ran out of iterations — tell the client we bailed cleanly
+    // Ran out of iterations — close the stream silently and log it
+    // server-side so we can see if the limit needs tuning. The user
+    // doesn't get a noisy "tool limit hit" line in the chat.
     if (!clientGone) {
-      send("text", { content: "\n\n(stopped — hit the 8-step tool limit, ask me to continue if needed)" });
       send("done");
       res.end();
+      void logAgentError({
+        surface: "chat-agent",
+        route: "POST /api/chat/agent",
+        errorType: "MaxIterationsReached",
+        err: new Error(`Hit MAX_ITERATIONS=${MAX_ITERATIONS} without end_turn`),
+        severity: "warn",
+        context: {
+          section: (req.body as any)?.section ?? null,
+          conversationId: (req.body as any)?.conversationId ?? null,
+          maxIterations: MAX_ITERATIONS,
+        },
+      });
     }
   } catch (err) {
     try {

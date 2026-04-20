@@ -19,7 +19,7 @@ import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
   Shield, FileText, BookOpen, Building2, Cpu, Loader2, AlertTriangle,
-  Search, ExternalLink, LayoutDashboard,
+  Search, ExternalLink, LayoutDashboard, Network, FileCog,
 } from "lucide-react";
 import { FipAssistantChat } from "@/components/FipAssistantChat";
 import {
@@ -34,6 +34,8 @@ import {
 import { CommonProductsCard } from "@/components/fip/CommonProductsCard";
 import { BatteryCalculatorCard } from "@/components/fip/BatteryCalculatorCard";
 import { DefectImageAnalysisCard } from "@/components/fip/DefectImageAnalysisCard";
+import { FipNetworkingGuide } from "@/components/fip/FipNetworkingGuide";
+import { FipConfigAnalysisCard } from "@/components/fip/FipConfigAnalysisCard";
 
 interface Manufacturer {
   id: string; name: string; slug: string; country?: string;
@@ -64,7 +66,15 @@ interface FipStatus {
   };
 }
 
-type View = "command" | "detectors" | "manufacturers" | "models" | "standards" | "documents";
+type View =
+  | "command"
+  | "detectors"
+  | "manufacturers"
+  | "models"
+  | "networking"
+  | "config-analysis"
+  | "standards"
+  | "documents";
 
 export default function FIPKnowledgeBase() {
   const [view, setView] = useState<View>("command");
@@ -157,6 +167,8 @@ export default function FIPKnowledgeBase() {
     { key: "detectors", label: "Detector Library", icon: Shield },
     { key: "manufacturers", label: "Manufacturers", icon: Building2, count: manufacturers.length },
     { key: "models", label: "Panel Models", icon: Cpu, count: models.length },
+    { key: "networking", label: "Networking", icon: Network },
+    { key: "config-analysis", label: "Config Analysis", icon: FileCog },
     { key: "standards", label: "AS Standards", icon: BookOpen, count: standards.length },
     { key: "documents", label: "Documents", icon: FileText, count: documents.length },
   ];
@@ -249,6 +261,10 @@ export default function FIPKnowledgeBase() {
           {view === "models" && (
             <ModelsTab models={models} mfrMap={mfrMap} famMap={famMap} />
           )}
+
+          {view === "networking" && <FipNetworkingGuide />}
+
+          {view === "config-analysis" && <FipConfigAnalysisCard />}
 
           {view === "standards" && <StandardsTab standards={standards} />}
           {view === "documents" && <DocumentsTab documents={documents} mfrMap={mfrMap} />}

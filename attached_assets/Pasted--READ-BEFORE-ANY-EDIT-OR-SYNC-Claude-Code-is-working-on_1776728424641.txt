@@ -1,0 +1,84 @@
+# 🛑 READ BEFORE ANY EDIT OR SYNC
+
+Claude Code is working on this repo concurrently. `main` is at commit `e5d231d`
+with three commits Replit must NOT overwrite:
+
+    e5d231d  ui(themes): add Terminal theme — CLI register with signal-green cursor
+    3c4fbe9  ui(analytics): drop unused Reveal import and icon prop from MetricTile
+    a70cfe1  ui(motion): add spring motion layer, CountUp, streaming AIDE PA
+
+These commits add a motion/token layer, the AIDE PA spring drawer + stream
+cursor, CountUp numbers, a shimmer skeleton, and the Terminal theme. They
+must remain intact.
+
+## Mandatory sync protocol (run before ANY push)
+
+```bash
+# 1. Fetch the latest remote main.
+git fetch origin main
+
+# 2. Rebase your local work on top — never reset, never force.
+git pull --rebase origin main
+
+# 3. If the rebase pauses on a conflict, STOP and hand control back to the
+#    user. Do NOT auto-resolve by keeping only "ours" — you will delete the
+#    motion + terminal layers. Conflicts mean both sides touched the same lines.
+
+# 4. Verify these files exist on disk BEFORE you push:
+test -f artifacts/aide/src/lib/motion.ts                   || { echo "MISSING motion.ts — ABORT"; exit 1; }
+test -f artifacts/aide/src/components/ui/CountUp.tsx       || { echo "MISSING CountUp.tsx — ABORT"; exit 1; }
+test -f artifacts/aide/src/components/ui/StreamCursor.tsx  || { echo "MISSING StreamCursor.tsx — ABORT"; exit 1; }
+test -f artifacts/aide/src/components/ui/Reveal.tsx        || { echo "MISSING Reveal.tsx — ABORT"; exit 1; }
+
+# 5. Verify the CSS + theme edits are still present:
+grep -q "aide-stream-cursor"           artifacts/aide/src/index.css        || { echo "motion layer missing — ABORT"; exit 1; }
+grep -q "data-theme=\"terminal\""      artifacts/aide/src/index.css        || { echo "terminal theme missing — ABORT"; exit 1; }
+grep -q "terminal-block-blink"         artifacts/aide/src/index.css        || { echo "terminal cursor missing — ABORT"; exit 1; }
+grep -q "JetBrains+Mono"               artifacts/aide/index.html           || { echo "JetBrains Mono font missing — ABORT"; exit 1; }
+grep -q "\"terminal\""                 artifacts/aide/src/lib/theme.tsx    || { echo "terminal theme not registered — ABORT"; exit 1; }
+grep -q "CountUp"                      artifacts/aide/src/pages/dashboard.tsx || { echo "dashboard.tsx reverted — ABORT"; exit 1; }
+grep -q "drawerRight"                  artifacts/aide/src/components/AidePA.tsx || { echo "AidePA.tsx reverted — ABORT"; exit 1; }
+
+# 6. Typecheck + build.
+pnpm --filter @workspace/aide run typecheck
+pnpm --filter @workspace/aide run build
+
+# 7. Only now push.
+git push origin main
+```
+
+## Hard rules
+
+1. **Never** `git reset --hard` to a commit earlier than `a70cfe1`.
+2. **Never** `git push --force` to `main`.
+3. **Never** regenerate or reflow these files from a template — edit them surgically:
+   - `artifacts/aide/src/index.css`
+   - `artifacts/aide/index.html`
+   - `artifacts/aide/src/lib/theme.tsx`
+   - `artifacts/aide/src/components/AidePA.tsx`
+   - `artifacts/aide/src/components/ui/PageHeader.tsx`
+   - `artifacts/aide/src/components/ui/card.tsx`
+   - `artifacts/aide/src/pages/dashboard.tsx`
+   - `artifacts/aide/src/pages/analytics.tsx`
+4. **Never** replace or delete any of these files — if new primitives are needed, add new files:
+   - `artifacts/aide/src/lib/motion.ts`
+   - `artifacts/aide/src/components/ui/CountUp.tsx`
+   - `artifacts/aide/src/components/ui/StreamCursor.tsx`
+   - `artifacts/aide/src/components/ui/Reveal.tsx`
+5. If you add a new theme, add it **alongside** `terminal` in `theme.tsx` and
+   `index.css`. Do not remove the `terminal` variant from either file.
+6. If you remove the `JetBrains+Mono` font import from `index.html` the
+   Terminal theme will fall back to Geist Mono — leave the font link intact.
+7. If you see merge conflict markers, stop and ask. Do not pick "ours".
+
+## If you broke it already
+
+```bash
+# Restore the three commits without losing your own work:
+git fetch origin main
+git log --oneline origin/main | head -20      # find a70cfe1, 3c4fbe9, e5d231d
+git cherry-pick a70cfe1 3c4fbe9 e5d231d       # replay them onto your branch
+# then re-run the verification block from step 4–5 above.
+```
+
+When in doubt: pull first, run the verification `grep` block, then push.

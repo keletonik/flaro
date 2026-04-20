@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AIDE · Service Ops — Palette Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Archivo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<!-- Alternative type pairings worth testing:
+     Editorial / premium  : Söhne + JetBrains Mono
+     Technical / precise  : Inter + IBM Plex Mono
+     Brutalist / loud     : Neue Haas Grotesk Display Black + JetBrains Mono
+     Warm / humanist      : Söhne Buch + Söhne Mono
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sans: 'Archivo', system-ui, sans-serif;
+  }
+  html, body {
+    background: #000;
+    color: #fff;
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ═══ PAGE HEADER ═══ */
+  .page-header {
+    padding: 80px 32px 40px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: #000;
+  }
+  .page-eyebrow {
+    font-family: var(--mono); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 12px;
+  }
+  .page-title {
+    font-size: clamp(32px, 4vw, 56px);
+    font-weight: 300; line-height: 1.05; letter-spacing: -0.03em;
+    max-width: 940px;
+  }
+  .page-title em { font-style: normal; font-weight: 500; }
+  .page-sub {
+    font-family: var(--mono); font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    max-width: 720px; line-height: 1.7;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-top: 24px;
+  }
+
+  /* ═══ THEME BLOCK ═══ */
+  .theme {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .theme-meta {
+    grid-column: span 3;
+    padding: 48px 32px;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    background: #000;
+    position: sticky; top: 0; align-self: start;
+  }
+  .theme-num {
+    font-family: var(--mono); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.4); margin-bottom: 12px;
+  }
+  .theme-name {
+    font-size: 32px; font-weight: 500; letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .theme-desc {
+    font-family: var(--mono); font-size: 12px;
+    color: rgba(255,255,255,0.6); line-height: 1.7;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 28px;
+  }
+  .theme-swatches {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: rgba(255,255,255,0.08);
+    margin-bottom: 24px;
+  }
+  .theme-swatch {
+    aspect-ratio: 1;
+    padding: 10px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    font-family: var(--mono); font-size: 9px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .theme-swatch .label { opacity: 0.7; }
+  .theme-swatch .hex { font-weight: 500; }
+  .theme-vibes {
+    font-family: var(--mono); font-size: 11px;
+    line-height: 1.8; color: rgba(255,255,255,0.5);
+  }
+  .theme-vibes span {
+    display: inline-block;
+    padding: 3px 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    margin: 0 4px 4px 0;
+    text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px;
+  }
+  .theme-vs {
+    margin-top: 20px;
+    font-family: var(--mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.4); line-height: 1.6;
+  }
+  .theme-vs strong {
+    color: #fff; font-weight: 500; display: block;
+    margin-top: 8px; font-size: 11px;
+  }
+
+  /* ═══ CANVAS ═══ */
+  .theme-canvas {
+    grid-column: span 9;
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 0;
+  }
+  .hero-cell {
+    grid-column: span 6;
+    padding: 72px 48px;
+    min-height: 380px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    position: relative; overflow: hidden;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .hero-cell .cell-label {
+    font-family: var(--mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    opacity: 0.5;
+  }
+  .hero-cell .cell-label .dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    margin-right: 8px; vertical-align: middle;
+    animation: pulse 2s infinite;
+  }
+  .hero-cell .wordmark {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 24px 0;
+  }
+  .hero-cell .wordmark svg { width: 100%; max-width: 580px; height: auto; }
+  .hero-cell .cell-footer {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    opacity: 0.5;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .sample-cell {
+    grid-column: span 2;
+    padding: 32px 24px;
+    min-height: 200px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    position: relative;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .sample-cell:last-child { border-right: none; }
+  .sample-cell .sample-label {
+    font-family: var(--mono); font-size: 9px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    opacity: 0.4;
+  }
+  .sample-cell .sample-content {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 16px 0;
+  }
+
+  .context-cell {
+    grid-column: span 3;
+    padding: 32px;
+    min-height: 340px;
+    border-right: 1px solid rgba(255,255,255,0.08);
+  }
+  .context-cell:last-child { border-right: none; }
+  .context-cell .ctx-label {
+    font-family: var(--mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    opacity: 0.5; margin-bottom: 16px;
+  }
+
+  /* ═══ WORK ORDER TICKET ═══ */
+  .wo-ticket {
+    font-family: var(--mono);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 16px;
+  }
+  .wo-ticket .wo-brand {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+  }
+  .wo-ticket .wo-brand svg { flex-shrink: 0; }
+  .wo-ticket .wo-brand .wo-name {
+    font-family: var(--sans); font-weight: 800; font-size: 14px;
+    letter-spacing: -0.02em;
+  }
+  .wo-ticket .wo-brand .wo-id {
+    margin-left: auto; font-size: 10px; opacity: 0.5;
+    letter-spacing: 0.08em;
+  }
+  .wo-ticket .wo-site {
+    font-family: var(--sans); font-size: 13px; font-weight: 500;
+    letter-spacing: -0.01em; margin-bottom: 3px;
+  }
+  .wo-ticket .wo-scope {
+    font-size: 10px; opacity: 0.55;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 14px;
+  }
+  .wo-ticket .wo-row {
+    display: flex; justify-content: space-between;
+    padding: 6px 0; font-size: 11px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .wo-ticket .wo-row:last-of-type { border-bottom: none; padding-bottom: 12px; }
+  .wo-ticket .wo-row .k {
+    opacity: 0.5; text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .wo-ticket .wo-row .v { font-weight: 500; }
+  .wo-ticket .wo-cta {
+    width: 100%; padding: 10px; margin-top: 12px;
+    border: none; font-family: var(--mono); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.12em; cursor: pointer;
+  }
+
+  /* ═══ SLA / METRIC CARD ═══ */
+  .sla-card {
+    font-family: var(--mono);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 16px;
+  }
+  .sla-card .sla-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .sla-card .sla-label {
+    font-family: var(--sans); font-weight: 700; font-size: 13px;
+    letter-spacing: -0.01em; text-transform: uppercase;
+  }
+  .sla-card .sla-value {
+    font-size: 28px; font-weight: 500; letter-spacing: -0.03em;
+    font-family: var(--sans); margin-top: 4px;
+  }
+  .sla-card .sla-change {
+    font-size: 11px; margin-top: 2px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .sla-card .sla-viz { height: 72px; margin-top: 14px; }
+  .sla-card .sla-viz svg { width: 100%; height: 100%; }
+  .sla-card .sla-brand {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 12px;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    opacity: 0.5;
+  }
+
+  /* ═══ THEME 01 · OPERATOR ═══ */
+  .theme-operator .hero-cell,
+  .theme-operator .sample-cell,
+  .theme-operator .context-cell { background: #0B0E14; color: #E8E8EA; }
+  .theme-operator .accent { color: #00B4E6; }
+  .theme-operator .accent-bg { background: #00B4E6; color: #0B0E14; }
+  .theme-operator .up { color: #00B4E6; }
+  .theme-operator .down { color: #8B95A0; }
+
+  /* ═══ THEME 02 · FIELDKIT ═══ */
+  .theme-fieldkit .hero-cell,
+  .theme-fieldkit .sample-cell,
+  .theme-fieldkit .context-cell { background: #1A1815; color: #F2EDE3; }
+  .theme-fieldkit .accent { color: #FF9500; }
+  .theme-fieldkit .accent-bg { background: #FF9500; color: #1A1815; }
+  .theme-fieldkit .up { color: #FF9500; }
+  .theme-fieldkit .down { color: #8A7F6E; }
+
+  /* ═══ THEME 03 · ATELIER ═══ */
+  .theme-atelier .hero-cell,
+  .theme-atelier .sample-cell,
+  .theme-atelier .context-cell { background: #141210; color: #EDE6D8; }
+  .theme-atelier .accent { color: #B87333; }
+  .theme-atelier .accent-bg { background: #B87333; color: #EDE6D8; }
+  .theme-atelier .up { color: #B87333; }
+  .theme-atelier .down { color: #7A6F5E; }
+
+  /* ═══ THEME 04 · CIRCUIT ═══ */
+  .theme-circuit .hero-cell,
+  .theme-circuit .sample-cell,
+  .theme-circuit .context-cell { background: #000000; color: #FFFFFF; }
+  .theme-circuit .accent { color: #00FF88; }
+  .theme-circuit .accent-bg { background: #00FF88; color: #000; }
+  .theme-circuit .up { color: #00FF88; }
+  .theme-circuit .down { color: #6F6F6F; }
+
+  /* ═══ FOOTER ═══ */
+  footer {
+    padding: 64px 32px 40px;
+    background: #000;
+    font-family: var(--mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.4);
+    display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px;
+  }
+  footer .col-a { grid-column: span 4; }
+  footer .col-b { grid-column: 5 / 9; text-align: center; }
+  footer .col-c { grid-column: 9 / 13; text-align: right; }
+
+  /* ═══ RESPONSIVE ═══ */
+  @media (max-width: 1024px) {
+    .theme-meta {
+      grid-column: span 12;
+      border-right: none;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: static;
+    }
+    .theme-canvas { grid-column: span 12; }
+    .hero-cell { padding: 48px 24px; min-height: 300px; }
+    .sample-cell { min-height: 160px; }
+    .context-cell { min-height: 280px; padding: 24px; }
+  }
+  @media (max-width: 700px) {
+    .theme-canvas { grid-template-columns: repeat(2, 1fr); }
+    .hero-cell { grid-column: span 2; }
+    .sample-cell { grid-column: span 1; }
+    .sample-cell:nth-child(3) { border-right: 1px solid rgba(255,255,255,0.08); }
+    .context-cell { grid-column: span 2; border-right: none; }
+    footer .col-a, footer .col-b, footer .col-c { grid-column: span 12; text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="page-header">
+  <div class="page-eyebrow">AIDE · Service Ops · Palette study · 01 → 04</div>
+  <h1 class="page-title">
+    Four directions for an AI dispatch layer. <em>One should feel inevitable.</em>
+  </h1>
+  <div class="page-sub">
+    AIDE sits in the service-ops trenches. Dispatch, work orders, SLA pressure, tradies in utes, facilities managers in boardrooms. The question isn't whether the brand looks 'tech'. It's which operator looks credible to both audiences at once. Below, four different answers.
+  </div>
+</div>
+
+<!-- ═══ 01 · OPERATOR ═══ -->
+<div class="theme theme-operator">
+  <div class="theme-meta">
+    <div class="theme-num">01 / Direction</div>
+    <div class="theme-name">Operator</div>
+    <div class="theme-desc">
+      Deep steel + bone white + a cold institutional cyan. Measured, precise, built for the NOC and the boardroom.
+    </div>
+    <div class="theme-swatches">
+      <div class="theme-swatch" style="background: #0B0E14; color: #E8E8EA;">
+        <span class="label">Base</span><span class="hex">#0B0E14</span>
+      </div>
+      <div class="theme-swatch" style="background: #E8E8EA; color: #0B0E14;">
+        <span class="label">Mark</span><span class="hex">#E8E8EA</span>
+      </div>
+      <div class="theme-swatch" style="background: #00B4E6; color: #0B0E14;">
+        <span class="label">Signal</span><span class="hex">#00B4E6</span>
+      </div>
+    </div>
+    <div class="theme-vibes">
+      <span>Institutional</span><span>Precise</span><span>Enterprise</span><span>ServiceNow</span>
+    </div>
+    <div class="theme-vs">
+      Feels like
+      <strong>ServiceNow rebuilt as an AI-first product for the trades</strong>
+    </div>
+  </div>
+
+  <div class="theme-canvas">
+    <!-- Hero -->
+    <div class="hero-cell">
+      <div class="cell-label">
+        <span class="dot" style="background: #00B4E6;"></span>
+        AIDE · Hero · Primary lockup
+      </div>
+      <div class="wordmark">
+        <svg viewBox="0 0 900 200">
+          <!-- Constructed A monogram -->
+          <g transform="translate(60, 30)">
+            <path d="M 0 140 L 70 0" fill="none" stroke="#E8E8EA" stroke-width="22" stroke-linecap="square"/>
+            <path d="M 70 0 L 140 140" fill="none" stroke="#E8E8EA" stroke-width="22" stroke-linecap="square"/>
+            <path d="M 30 100 L 110 100" fill="none" stroke="#E8E8EA" stroke-width="14" stroke-linecap="square"/>
+          </g>
+          <!-- Typeset IDE -->
+          <g fill="#E8E8EA" font-family="Archivo, sans-serif" font-weight="900" font-size="180" letter-spacing="-8">
+            <text x="260" y="170">IDE</text>
+          </g>
+          <!-- Apex signal dot -->
+          <circle cx="130" cy="30" r="5" fill="#00B4E6"/>
+        </svg>
+      </div>
+      <div class="cell-footer">
+        <span>Service Ops · Dispatch</span>
+        <span style="color: #00B4E6;">Live</span>
+      </div>
+    </div>
+
+    <!-- Monogram -->
+    <div class="sample-cell">
+      <div class="sample-label">Monogram</div>
+      <div class="sample-content">
+        <svg viewBox="0 0 100 100" width="72">
+          <path d="M 12 88 L 50 12" fill="none" stroke="#E8E8EA" stroke-width="14" stroke-linecap="square"/>
+          <path d="M 50 12 L 88 88" fill="none" stroke="#E8E8EA" stroke-width="14" stroke-linecap="square"/>
+          <path d="M 28 62 L 72 62" fill="none" stroke="#E8E8EA" stroke-width="9" stroke-linecap="square"/>
+        </svg>
+      </div>
+      <div></div>
+    </div>
+
+    <!-- App icon -->
+    <div class="sample-cell">
+      <div class="sample-label">App icon · iOS</div>
+      <div class="sample-content">
+        <div style="width: 72px; height: 72px; background: #00B4E6; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+          <svg viewBox="0 0 100 100" width="60%">
+            <path d="M 12 88 L 50 12" fill="none" stroke="#0B0E14" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 50 12 L 88 88" fill="none" stroke="#0B0E14" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 28 62 L 72 62" fill="none" stroke="#0B0E14" stroke-width="9" stroke-linecap="square"/>
+          </svg>
+        </div>
+      </div>
+      <div></div>
+    </div>
+
+    <!-- Compact nav -->
+    <div class="sample-cell">
+      <div class="sample-label">Compact nav</div>
+      <div class="sample-content">
+        <svg viewBox="0 0 400 100" style="width: 100%;">
+          <g transform="translate(14, 20)">
+            <path d="M 0 60 L 30 0" fill="none" stroke="#E8E8EA" stroke-width="10" stroke-linecap="square"/>
+            <path d="M 30 0 L 60 60" fill="none" stroke="#E8E8EA" stroke-width="10" stroke-linecap="square"/>
+            <path d="M 12 42 L 48 42" fill="none" stroke="#E8E8EA" stroke-width="6" stroke-linecap="square"/>
+          </g>
+          <g fill="#E8E8EA" font-family="Archivo, sans-serif" font-weight="900" font-size="72" letter-spacing="-3">
+            <text x="110" y="80">IDE</text>
+          </g>
+          <circle cx="44" cy="20" r="2.5" fill="#00B4E6"/>
+        </svg>
+      </div>
+      <div></div>
+    </div>
+
+    <!-- Work order ticket -->
+    <div class="context-cell">
+      <div class="ctx-label">Work order · Dispatch</div>
+      <div class="wo-ticket">
+        <div class="wo-brand">
+          <svg viewBox="0 0 100 100" width="20" height="20">
+            <path d="M 12 88 L 50 12" fill="none" stroke="#E8E8EA" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 50 12 L 88 88" fill="none" stroke="#E8E8EA" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 28 62 L 72 62" fill="none" stroke="#E8E8EA" stroke-width="9" stroke-linecap="square"/>
+          </svg>
+          <span class="wo-name">AIDE</span>
+          <span class="wo-id">WO-2874</span>
+        </div>
+        <div class="wo-site">123 George St, Sydney CBD</div>
+        <div class="wo-scope">AFSS annual · Class 5 office</div>
+        <div class="wo-row"><span class="k">Tech</span><span class="v">J. Mendoza</span></div>
+        <div class="wo-row"><span class="k">Priority</span><span class="v accent">High</span></div>
+        <div class="wo-row"><span class="k">SLA</span><span class="v">2h 14m</span></div>
+        <div class="wo-row"><span class="k">Status</span><span class="v">En route</span></div>
+        <button class="wo-cta accent-bg">Dispatch</button>
+      </div>
+    </div>
+
+    <!-- SLA metric -->
+    <div class="context-cell">
+      <div class="ctx-label">Response · 7d trend</div>
+      <div class="sla-card">
+        <div class="sla-header">
+          <span class="sla-label">Response time</span>
+        </div>
+        <div class="sla-value">47<span style="font-size: 16px; opacity: 0.6;">m avg</span></div>
+        <div class="sla-change up">↓ -12% vs prior week</div>
+        <div class="sla-viz">
+          <svg viewBox="0 0 300 80" preserveAspectRatio="none">
+            <path d="M 0 30 L 30 38 L 60 28 L 90 42 L 120 34 L 150 48 L 180 40 L 210 52 L 240 46 L 270 58 L 300 54 L 300 80 L 0 80 Z" fill="#00B4E6" opacity="0.1"/>
+            <path d="M 0 30 L 30 38 L 60 28 L 90 42 L 120 34 L 150 48 L 180 40 L 210 52 L 240 46 L 270 58 L 300 54" fill="none" stroke="#00B4E6" stroke-width="1.5"/>
+            <circle cx="300" cy="54" r="3" fill="#00B4E6"/>
+          </svg>
+        </div>
+        <div class="sla-brand">
+          <span>AIDE · Ops</span>
+          <span class="accent">Live</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 02 · FIELDKIT ═══ -->
+<div class="theme theme-fieldkit">
+  <div class="theme-meta">
+    <div class="theme-num">02 / Direction</div>
+    <div class="theme-name">Fieldkit</div>
+    <div class="theme-desc">
+      Warm charcoal + high-vis cream + safety amber. Toolbox-ready, built for a tradie's phone in a ute before it lives in a boardroom.
+    </div>
+    <div class="theme-swatches">
+      <div class="theme-swatch" style="background: #1A1815; color: #F2EDE3;">
+        <span class="label">Base</span><span class="hex">#1A1815</span>
+      </div>
+      <div class="theme-swatch" style="background: #F2EDE3; color: #1A1815;">
+        <span class="label">Mark</span><span class="hex">#F2EDE3</span>
+      </div>
+      <div class="theme-swatch" style="background: #FF9500; color: #1A1815;">
+        <span class="label">Alert</span><span class="hex">#FF9500</span>
+      </div>
+    </div>
+    <div class="theme-vibes">
+      <span>Field-ready</span><span>Utility</span><span>Trades</span><span>Klein × Linear</span>
+    </div>
+    <div class="theme-vs">
+      Feels like
+      <strong>A dispatch console built by tradies for tradies</strong>
+    </div>
+  </div>
+
+  <div class="theme-canvas">
+    <div class="hero-cell">
+      <div class="cell-label">
+        <span class="dot" style="background: #FF9500;"></span>
+        AIDE · Hero · Primary lockup
+      </div>
+      <div class="wordmark">
+        <svg viewBox="0 0 900 200">
+          <g transform="translate(60, 30)">
+            <path d="M 0 140 L 70 0" fill="none" stroke="#F2EDE3" stroke-width="22" stroke-linecap="square"/>
+            <path d="M 70 0 L 140 140" fill="none" stroke="#F2EDE3" stroke-width="22" stroke-linecap="square"/>
+            <path d="M 30 100 L 110 100" fill="none" stroke="#F2EDE3" stroke-width="14" stroke-linecap="square"/>
+          </g>
+          <g fill="#F2EDE3" font-family="Archivo, sans-serif" font-weight="900" font-size="180" letter-spacing="-8">
+            <text x="260" y="170">IDE</text>
+          </g>
+          <circle cx="130" cy="30" r="5" fill="#FF9500"/>
+        </svg>
+      </div>
+      <div class="cell-footer">
+        <span>Service Ops · Dispatch</span>
+        <span style="color: #FF9500;">Active</span>
+      </div>
+    </div>
+
+    <div class="sample-cell">
+      <div class="sample-label">Monogram</div>
+      <div class="sample-content">
+        <svg viewBox="0 0 100 100" width="72">
+          <path d="M 12 88 L 50 12" fill="none" stroke="#F2EDE3" stroke-width="14" stroke-linecap="square"/>
+          <path d="M 50 12 L 88 88" fill="none" stroke="#F2EDE3" stroke-width="14" stroke-linecap="square"/>
+          <path d="M 28 62 L 72 62" fill="none" stroke="#F2EDE3" stroke-width="9" stroke-linecap="square"/>
+        </svg>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="sample-cell">
+      <div class="sample-label">App icon · iOS</div>
+      <div class="sample-content">
+        <div style="width: 72px; height: 72px; background: #FF9500; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+          <svg viewBox="0 0 100 100" width="60%">
+            <path d="M 12 88 L 50 12" fill="none" stroke="#1A1815" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 50 12 L 88 88" fill="none" stroke="#1A1815" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 28 62 L 72 62" fill="none" stroke="#1A1815" stroke-width="9" stroke-linecap="square"/>
+          </svg>
+        </div>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="sample-cell">
+      <div class="sample-label">Compact nav</div>
+      <div class="sample-content">
+        <svg viewBox="0 0 400 100" style="width: 100%;">
+          <g transform="translate(14, 20)">
+            <path d="M 0 60 L 30 0" fill="none" stroke="#F2EDE3" stroke-width="10" stroke-linecap="square"/>
+            <path d="M 30 0 L 60 60" fill="none" stroke="#F2EDE3" stroke-width="10" stroke-linecap="square"/>
+            <path d="M 12 42 L 48 42" fill="none" stroke="#F2EDE3" stroke-width="6" stroke-linecap="square"/>
+          </g>
+          <g fill="#F2EDE3" font-family="Archivo, sans-serif" font-weight="900" font-size="72" letter-spacing="-3">
+            <text x="110" y="80">IDE</text>
+          </g>
+          <circle cx="44" cy="20" r="2.5" fill="#FF9500"/>
+        </svg>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="context-cell">
+      <div class="ctx-label">Work order · Dispatch</div>
+      <div class="wo-ticket">
+        <div class="wo-brand">
+          <svg viewBox="0 0 100 100" width="20" height="20">
+            <path d="M 12 88 L 50 12" fill="none" stroke="#F2EDE3" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 50 12 L 88 88" fill="none" stroke="#F2EDE3" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 28 62 L 72 62" fill="none" stroke="#F2EDE3" stroke-width="9" stroke-linecap="square"/>
+          </svg>
+          <span class="wo-name">AIDE</span>
+          <span class="wo-id">WO-3102</span>
+        </div>
+        <div class="wo-site">Westfield Parramatta, L3 plant</div>
+        <div class="wo-scope">Emergency lighting · 6-mthly</div>
+        <div class="wo-row"><span class="k">Tech</span><span class="v">K. Nguyen</span></div>
+        <div class="wo-row"><span class="k">Priority</span><span class="v accent">Medium</span></div>
+        <div class="wo-row"><span class="k">SLA</span><span class="v">4h 02m</span></div>
+        <div class="wo-row"><span class="k">Status</span><span class="v">On site</span></div>
+        <button class="wo-cta accent-bg">Dispatch</button>
+      </div>
+    </div>
+
+    <div class="context-cell">
+      <div class="ctx-label">Open jobs · Today</div>
+      <div class="sla-card">
+        <div class="sla-header">
+          <span class="sla-label">Open jobs</span>
+        </div>
+        <div class="sla-value">34<span style="font-size: 16px; opacity: 0.6;"> active</span></div>
+        <div class="sla-change up">↑ +6 in last hour</div>
+        <div class="sla-viz">
+          <svg viewBox="0 0 300 80" preserveAspectRatio="none">
+            <path d="M 0 62 L 30 58 L 60 60 L 90 48 L 120 50 L 150 38 L 180 42 L 210 30 L 240 34 L 270 22 L 300 18 L 300 80 L 0 80 Z" fill="#FF9500" opacity="0.1"/>
+            <path d="M 0 62 L 30 58 L 60 60 L 90 48 L 120 50 L 150 38 L 180 42 L 210 30 L 240 34 L 270 22 L 300 18" fill="none" stroke="#FF9500" stroke-width="1.5"/>
+            <circle cx="300" cy="18" r="3" fill="#FF9500"/>
+          </svg>
+        </div>
+        <div class="sla-brand">
+          <span>AIDE · Ops</span>
+          <span class="accent">Active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 03 · ATELIER ═══ -->
+<div class="theme theme-atelier">
+  <div class="theme-meta">
+    <div class="theme-num">03 / Direction</div>
+    <div class="theme-name">Atelier</div>
+    <div class="theme-desc">
+      Warm black + cream paper + muted copper. Editorial, premium, priced like it knows what it's worth.
+    </div>
+    <div class="theme-swatches">
+      <div class="theme-swatch" style="background: #141210; color: #EDE6D8;">
+        <span class="label">Base</span><span class="hex">#141210</span>
+      </div>
+      <div class="theme-swatch" style="background: #EDE6D8; color: #141210;">
+        <span class="label">Mark</span><span class="hex">#EDE6D8</span>
+      </div>
+      <div class="theme-swatch" style="background: #B87333; color: #EDE6D8;">
+        <span class="label">Ember</span><span class="hex">#B87333</span>
+      </div>
+    </div>
+    <div class="theme-vibes">
+      <span>Premium</span><span>Editorial</span><span>Old-money</span><span>Stripe × Bloomberg</span>
+    </div>
+    <div class="theme-vs">
+      Feels like
+      <strong>An ops-intelligence platform for private portfolios</strong>
+    </div>
+  </div>
+
+  <div class="theme-canvas">
+    <div class="hero-cell">
+      <div class="cell-label">
+        <span class="dot" style="background: #B87333;"></span>
+        AIDE · Hero · Primary lockup
+      </div>
+      <div class="wordmark">
+        <svg viewBox="0 0 900 200">
+          <g transform="translate(60, 30)">
+            <path d="M 0 140 L 70 0" fill="none" stroke="#EDE6D8" stroke-width="22" stroke-linecap="square"/>
+            <path d="M 70 0 L 140 140" fill="none" stroke="#EDE6D8" stroke-width="22" stroke-linecap="square"/>
+            <path d="M 30 100 L 110 100" fill="none" stroke="#EDE6D8" stroke-width="14" stroke-linecap="square"/>
+          </g>
+          <g fill="#EDE6D8" font-family="Archivo, sans-serif" font-weight="900" font-size="180" letter-spacing="-8">
+            <text x="260" y="170">IDE</text>
+          </g>
+          <circle cx="130" cy="30" r="5" fill="#B87333"/>
+        </svg>
+      </div>
+      <div class="cell-footer">
+        <span>Service Ops · Dispatch</span>
+        <span style="color: #B87333;">Online</span>
+      </div>
+    </div>
+
+    <div class="sample-cell">
+      <div class="sample-label">Monogram</div>
+      <div class="sample-content">
+        <svg viewBox="0 0 100 100" width="72">
+          <path d="M 12 88 L 50 12" fill="none" stroke="#EDE6D8" stroke-width="14" stroke-linecap="square"/>
+          <path d="M 50 12 L 88 88" fill="none" stroke="#EDE6D8" stroke-width="14" stroke-linecap="square"/>
+          <path d="M 28 62 L 72 62" fill="none" stroke="#EDE6D8" stroke-width="9" stroke-linecap="square"/>
+        </svg>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="sample-cell">
+      <div class="sample-label">App icon · iOS</div>
+      <div class="sample-content">
+        <div style="width: 72px; height: 72px; background: #B87333; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+          <svg viewBox="0 0 100 100" width="60%">
+            <path d="M 12 88 L 50 12" fill="none" stroke="#141210" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 50 12 L 88 88" fill="none" stroke="#141210" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 28 62 L 72 62" fill="none" stroke="#141210" stroke-width="9" stroke-linecap="square"/>
+          </svg>
+        </div>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="sample-cell">
+      <div class="sample-label">Compact nav</div>
+      <div class="sample-content">
+        <svg viewBox="0 0 400 100" style="width: 100%;">
+          <g transform="translate(14, 20)">
+            <path d="M 0 60 L 30 0" fill="none" stroke="#EDE6D8" stroke-width="10" stroke-linecap="square"/>
+            <path d="M 30 0 L 60 60" fill="none" stroke="#EDE6D8" stroke-width="10" stroke-linecap="square"/>
+            <path d="M 12 42 L 48 42" fill="none" stroke="#EDE6D8" stroke-width="6" stroke-linecap="square"/>
+          </g>
+          <g fill="#EDE6D8" font-family="Archivo, sans-serif" font-weight="900" font-size="72" letter-spacing="-3">
+            <text x="110" y="80">IDE</text>
+          </g>
+          <circle cx="44" cy="20" r="2.5" fill="#B87333"/>
+        </svg>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="context-cell">
+      <div class="ctx-label">Work order · Dispatch</div>
+      <div class="wo-ticket">
+        <div class="wo-brand">
+          <svg viewBox="0 0 100 100" width="20" height="20">
+            <path d="M 12 88 L 50 12" fill="none" stroke="#EDE6D8" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 50 12 L 88 88" fill="none" stroke="#EDE6D8" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 28 62 L 72 62" fill="none" stroke="#EDE6D8" stroke-width="9" stroke-linecap="square"/>
+          </svg>
+          <span class="wo-name">AIDE</span>
+          <span class="wo-id">WO-2916</span>
+        </div>
+        <div class="wo-site">32 Chandos St, St Leonards</div>
+        <div class="wo-scope">FIP Pertronic F120 · Fault isolate</div>
+        <div class="wo-row"><span class="k">Tech</span><span class="v">M. Ryan</span></div>
+        <div class="wo-row"><span class="k">Priority</span><span class="v accent">High</span></div>
+        <div class="wo-row"><span class="k">SLA</span><span class="v">1h 08m</span></div>
+        <div class="wo-row"><span class="k">Status</span><span class="v">Scheduled</span></div>
+        <button class="wo-cta accent-bg">Dispatch</button>
+      </div>
+    </div>
+
+    <div class="context-cell">
+      <div class="ctx-label">Portfolio · SLA compliance</div>
+      <div class="sla-card">
+        <div class="sla-header">
+          <span class="sla-label">SLA compliance</span>
+        </div>
+        <div class="sla-value">97.4<span style="font-size: 16px; opacity: 0.6;">%</span></div>
+        <div class="sla-change up">↑ +1.2pts MoM</div>
+        <div class="sla-viz">
+          <svg viewBox="0 0 300 80" preserveAspectRatio="none">
+            <path d="M 0 40 L 30 35 L 60 42 L 90 30 L 120 34 L 150 24 L 180 28 L 210 20 L 240 24 L 270 16 L 300 18 L 300 80 L 0 80 Z" fill="#B87333" opacity="0.1"/>
+            <path d="M 0 40 L 30 35 L 60 42 L 90 30 L 120 34 L 150 24 L 180 28 L 210 20 L 240 24 L 270 16 L 300 18" fill="none" stroke="#B87333" stroke-width="1.5"/>
+            <circle cx="300" cy="18" r="3" fill="#B87333"/>
+          </svg>
+        </div>
+        <div class="sla-brand">
+          <span>AIDE · Portfolio</span>
+          <span class="accent">Online</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 04 · CIRCUIT ═══ -->
+<div class="theme theme-circuit">
+  <div class="theme-meta">
+    <div class="theme-num">04 / Direction</div>
+    <div class="theme-name">Circuit</div>
+    <div class="theme-desc">
+      True black + pure white + electric terminal green. Brutalist, AI-native, reads like a CLI that made good.
+    </div>
+    <div class="theme-swatches">
+      <div class="theme-swatch" style="background: #000000; color: #FFFFFF;">
+        <span class="label">Base</span><span class="hex">#000000</span>
+      </div>
+      <div class="theme-swatch" style="background: #FFFFFF; color: #000;">
+        <span class="label">Mark</span><span class="hex">#FFFFFF</span>
+      </div>
+      <div class="theme-swatch" style="background: #00FF88; color: #000;">
+        <span class="label">Pulse</span><span class="hex">#00FF88</span>
+      </div>
+    </div>
+    <div class="theme-vibes">
+      <span>Brutalist</span><span>AI-native</span><span>Terminal</span><span>Vercel × Linear</span>
+    </div>
+    <div class="theme-vs">
+      Feels like
+      <strong>Linear for field service, built by a team that ships</strong>
+    </div>
+  </div>
+
+  <div class="theme-canvas">
+    <div class="hero-cell">
+      <div class="cell-label">
+        <span class="dot" style="background: #00FF88;"></span>
+        AIDE · Hero · Primary lockup
+      </div>
+      <div class="wordmark">
+        <svg viewBox="0 0 900 200">
+          <g transform="translate(60, 30)">
+            <path d="M 0 140 L 70 0" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="square"/>
+            <path d="M 70 0 L 140 140" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="square"/>
+            <path d="M 30 100 L 110 100" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="square"/>
+          </g>
+          <g fill="#FFFFFF" font-family="Archivo, sans-serif" font-weight="900" font-size="180" letter-spacing="-8">
+            <text x="260" y="170">IDE</text>
+          </g>
+          <circle cx="130" cy="30" r="5" fill="#00FF88"/>
+        </svg>
+      </div>
+      <div class="cell-footer">
+        <span>Service Ops · Dispatch</span>
+        <span style="color: #00FF88;">Running</span>
+      </div>
+    </div>
+
+    <div class="sample-cell">
+      <div class="sample-label">Monogram</div>
+      <div class="sample-content">
+        <svg viewBox="0 0 100 100" width="72">
+          <path d="M 12 88 L 50 12" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="square"/>
+          <path d="M 50 12 L 88 88" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="square"/>
+          <path d="M 28 62 L 72 62" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="square"/>
+        </svg>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="sample-cell">
+      <div class="sample-label">App icon · iOS</div>
+      <div class="sample-content">
+        <div style="width: 72px; height: 72px; background: #00FF88; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+          <svg viewBox="0 0 100 100" width="60%">
+            <path d="M 12 88 L 50 12" fill="none" stroke="#000" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 50 12 L 88 88" fill="none" stroke="#000" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 28 62 L 72 62" fill="none" stroke="#000" stroke-width="9" stroke-linecap="square"/>
+          </svg>
+        </div>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="sample-cell">
+      <div class="sample-label">Compact nav</div>
+      <div class="sample-content">
+        <svg viewBox="0 0 400 100" style="width: 100%;">
+          <g transform="translate(14, 20)">
+            <path d="M 0 60 L 30 0" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="square"/>
+            <path d="M 30 0 L 60 60" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="square"/>
+            <path d="M 12 42 L 48 42" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="square"/>
+          </g>
+          <g fill="#FFFFFF" font-family="Archivo, sans-serif" font-weight="900" font-size="72" letter-spacing="-3">
+            <text x="110" y="80">IDE</text>
+          </g>
+          <circle cx="44" cy="20" r="2.5" fill="#00FF88"/>
+        </svg>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="context-cell">
+      <div class="ctx-label">AI agent · Dispatch prompt</div>
+      <div class="wo-ticket" style="font-family: var(--mono);">
+        <div class="wo-brand">
+          <svg viewBox="0 0 100 100" width="20" height="20">
+            <path d="M 12 88 L 50 12" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 50 12 L 88 88" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="square"/>
+            <path d="M 28 62 L 72 62" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="square"/>
+          </svg>
+          <span class="wo-name">AIDE</span>
+          <span class="wo-id">WO-3045</span>
+        </div>
+        <div style="font-size: 11px; line-height: 1.6; margin-bottom: 10px;">
+          <span class="accent">&gt;</span> Sprinkler 5-yearly overdue · Sydney CBD.<br/>
+          <span class="accent">&gt;</span> Nearest qualified tech: <strong>A. Singh</strong> · 4.1km.<br/>
+          <span class="accent">&gt;</span> Estimated dispatch: <strong>12 min</strong>.
+        </div>
+        <div class="wo-row"><span class="k">Priority</span><span class="v accent">Critical</span></div>
+        <div class="wo-row"><span class="k">SLA</span><span class="v">0h 30m</span></div>
+        <div class="wo-row"><span class="k">Confidence</span><span class="v">0.94</span></div>
+        <button class="wo-cta accent-bg">Accept &amp; dispatch</button>
+      </div>
+    </div>
+
+    <div class="context-cell">
+      <div class="ctx-label">Agent · Run status</div>
+      <div class="sla-card">
+        <div class="sla-header">
+          <span class="sla-label">Jobs routed · 24h</span>
+        </div>
+        <div class="sla-value">218<span style="font-size: 16px; opacity: 0.6;"> routed</span></div>
+        <div class="sla-change up">↑ 98.6% acceptance</div>
+        <div class="sla-viz">
+          <svg viewBox="0 0 300 80" preserveAspectRatio="none">
+            <path d="M 0 50 L 20 42 L 40 48 L 60 36 L 80 40 L 100 28 L 120 32 L 140 22 L 160 26 L 180 18 L 200 22 L 220 14 L 240 18 L 260 10 L 280 14 L 300 8 L 300 80 L 0 80 Z" fill="#00FF88" opacity="0.12"/>
+            <path d="M 0 50 L 20 42 L 40 48 L 60 36 L 80 40 L 100 28 L 120 32 L 140 22 L 160 26 L 180 18 L 200 22 L 220 14 L 240 18 L 260 10 L 280 14 L 300 8" fill="none" stroke="#00FF88" stroke-width="1.5"/>
+            <circle cx="300" cy="8" r="3" fill="#00FF88"/>
+          </svg>
+        </div>
+        <div class="sla-brand">
+          <span>AIDE · Agent</span>
+          <span class="accent">Running</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="col-a">AIDE · Service Ops · Palette study · v1.0</div>
+  <div class="col-b">Four directions · One winner</div>
+  <div class="col-c">Pick one to develop</div>
+</footer>
+
+</body>
+</html>

@@ -182,6 +182,142 @@
   --chart-2: 199 89% 48%;
 }
 
+/* Theme G — Operator (deep steel + cold cyan) */
+[data-theme="operator"] {
+  --background: 220 27% 6%;
+  --foreground: 240 4% 91%;
+  --card: 220 24% 9%;
+  --card-foreground: 240 4% 91%;
+  --popover: 220 24% 9%;
+  --popover-foreground: 240 4% 91%;
+  --border: 220 16% 14%;
+  --input: 220 16% 16%;
+  --secondary: 220 16% 12%;
+  --secondary-foreground: 240 4% 88%;
+  --muted: 220 16% 11%;
+  --muted-foreground: 213 9% 58%;
+  --primary: 193 100% 45%;
+  --primary-foreground: 220 27% 6%;
+  --accent: 193 60% 14%;
+  --accent-foreground: 193 100% 75%;
+  --ring: 193 100% 45%;
+  --sidebar: 220 30% 4%;
+  --sidebar-foreground: 213 9% 70%;
+  --sidebar-border: 220 16% 12%;
+  --sidebar-primary: 193 100% 45%;
+  --sidebar-primary-foreground: 220 27% 6%;
+  --sidebar-accent: 220 16% 10%;
+  --sidebar-accent-foreground: 240 4% 88%;
+  --sidebar-ring: 193 100% 45%;
+  --chart-1: 193 100% 45%;
+  --chart-2: 213 9% 58%;
+  --chart-3: 38 92% 50%;
+  --user-bubble: 193 60% 18%;
+  --user-bubble-fg: 240 4% 91%;
+}
+
+/* Theme H — Fieldkit (warm earth + safety orange) */
+[data-theme="fieldkit"] {
+  --background: 36 12% 9%;
+  --foreground: 36 36% 92%;
+  --card: 36 12% 12%;
+  --card-foreground: 36 36% 92%;
+  --popover: 36 12% 12%;
+  --popover-foreground: 36 36% 92%;
+  --border: 36 10% 18%;
+  --input: 36 10% 20%;
+  --secondary: 36 10% 14%;
+  --secondary-foreground: 36 36% 88%;
+  --muted: 36 10% 13%;
+  --muted-foreground: 32 10% 55%;
+  --primary: 35 100% 50%;
+  --primary-foreground: 36 12% 9%;
+  --accent: 35 60% 16%;
+  --accent-foreground: 35 100% 75%;
+  --ring: 35 100% 50%;
+  --sidebar: 36 14% 6%;
+  --sidebar-foreground: 32 14% 70%;
+  --sidebar-border: 36 10% 14%;
+  --sidebar-primary: 35 100% 50%;
+  --sidebar-primary-foreground: 36 12% 9%;
+  --sidebar-accent: 36 10% 12%;
+  --sidebar-accent-foreground: 36 36% 88%;
+  --sidebar-ring: 35 100% 50%;
+  --chart-1: 35 100% 50%;
+  --chart-2: 32 10% 55%;
+  --chart-3: 0 65% 55%;
+  --user-bubble: 35 60% 20%;
+  --user-bubble-fg: 36 36% 92%;
+}
+
+/* Theme I — Atelier (warm dark + copper) */
+[data-theme="atelier"] {
+  --background: 30 9% 7%;
+  --foreground: 38 32% 89%;
+  --card: 30 9% 10%;
+  --card-foreground: 38 32% 89%;
+  --popover: 30 9% 10%;
+  --popover-foreground: 38 32% 89%;
+  --border: 30 8% 16%;
+  --input: 30 8% 18%;
+  --secondary: 30 8% 12%;
+  --secondary-foreground: 38 32% 86%;
+  --muted: 30 8% 11%;
+  --muted-foreground: 36 8% 52%;
+  --primary: 28 56% 46%;
+  --primary-foreground: 38 32% 95%;
+  --accent: 28 40% 14%;
+  --accent-foreground: 28 70% 70%;
+  --ring: 28 56% 46%;
+  --sidebar: 30 12% 5%;
+  --sidebar-foreground: 36 14% 68%;
+  --sidebar-border: 30 8% 12%;
+  --sidebar-primary: 28 56% 46%;
+  --sidebar-primary-foreground: 38 32% 95%;
+  --sidebar-accent: 30 8% 11%;
+  --sidebar-accent-foreground: 38 32% 86%;
+  --sidebar-ring: 28 56% 46%;
+  --chart-1: 28 56% 46%;
+  --chart-2: 36 8% 52%;
+  --chart-3: 0 55% 55%;
+  --user-bubble: 28 40% 18%;
+  --user-bubble-fg: 38 32% 89%;
+}
+
+/* Theme J — Circuit (pure black + neon green) */
+[data-theme="circuit"] {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 100%;
+  --popover: 0 0% 4%;
+  --popover-foreground: 0 0% 100%;
+  --border: 0 0% 12%;
+  --input: 0 0% 14%;
+  --secondary: 0 0% 8%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 0 0% 6%;
+  --muted-foreground: 0 0% 50%;
+  --primary: 151 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --accent: 151 60% 12%;
+  --accent-foreground: 151 100% 70%;
+  --ring: 151 100% 50%;
+  --sidebar: 0 0% 0%;
+  --sidebar-foreground: 0 0% 70%;
+  --sidebar-border: 0 0% 10%;
+  --sidebar-primary: 151 100% 50%;
+  --sidebar-primary-foreground: 0 0% 0%;
+  --sidebar-accent: 0 0% 8%;
+  --sidebar-accent-foreground: 0 0% 96%;
+  --sidebar-ring: 151 100% 50%;
+  --chart-1: 151 100% 50%;
+  --chart-2: 0 0% 50%;
+  --chart-3: 0 100% 60%;
+  --user-bubble: 151 50% 15%;
+  --user-bubble-fg: 0 0% 100%;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    BASE LAYER
    ═══════════════════════════════════════════════════════════════════════════ */

@@ -1,10 +1,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-export type ThemeVariant = "blue-white" | "blue-orange" | "blue-green" | "deep-navy" | "slate-dark" | "graphite-green";
+export type ThemeVariant =
+  | "blue-white" | "blue-orange" | "blue-green"
+  | "deep-navy" | "slate-dark" | "graphite-green"
+  | "operator" | "fieldkit" | "atelier" | "circuit";
 type Mode = "light" | "dark";
 
 const LIGHT_THEMES: ThemeVariant[] = ["blue-white", "blue-orange", "blue-green"];
-const DARK_THEMES: ThemeVariant[] = ["deep-navy", "slate-dark", "graphite-green"];
+const DARK_THEMES: ThemeVariant[] = ["deep-navy", "slate-dark", "graphite-green", "operator", "fieldkit", "atelier", "circuit"];
 
 export const THEME_OPTIONS: { key: ThemeVariant; label: string; mode: Mode; accent: string }[] = [
   { key: "blue-white", label: "Enterprise", mode: "light", accent: "#2563EB" },
@@ -13,6 +16,10 @@ export const THEME_OPTIONS: { key: ThemeVariant; label: string; mode: Mode; acce
   { key: "deep-navy", label: "Navy", mode: "dark", accent: "#3B82F6" },
   { key: "slate-dark", label: "Slate", mode: "dark", accent: "#38BDF8" },
   { key: "graphite-green", label: "Graphite", mode: "dark", accent: "#22C55E" },
+  { key: "operator", label: "Operator", mode: "dark", accent: "#00B4E6" },
+  { key: "fieldkit", label: "Fieldkit", mode: "dark", accent: "#FF9500" },
+  { key: "atelier", label: "Atelier", mode: "dark", accent: "#B87333" },
+  { key: "circuit", label: "Circuit", mode: "dark", accent: "#00FF88" },
 ];
 
 interface ThemeContextType {

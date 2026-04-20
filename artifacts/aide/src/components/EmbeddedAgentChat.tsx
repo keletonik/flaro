@@ -433,9 +433,9 @@ export default function EmbeddedAgentChat({ section, title = "AIDE", suggestions
             onChange={e => setInput(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Ask anything, paste emails, or upload docs..."
-            rows={2}
-            className="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none min-h-[40px] max-h-[180px]"
-            onInput={e => { const t = e.target as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 180) + 'px'; }}
+            rows={1}
+            className="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none min-h-[20px] max-h-[80px]"
+            onInput={e => { const t = e.target as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 80) + 'px'; }}
           />
           <button
             onClick={() => send()}

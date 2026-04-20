@@ -54,17 +54,6 @@
       "created_at": "2026-04-13T11:00:00+00:00",
       "updated_at": "2026-04-13T11:00:00+00:00",
       "deleted_at": null
-    },
-    {
-      "id": "c4d7e8a2-1b9f-4c5e-9a3d-7f8b2e6a4d10",
-      "name": "Notifier (Honeywell)",
-      "slug": "notifier",
-      "country": "Australia",
-      "website": "https://www.notifier.com.au",
-      "notes": "Manufactured by Honeywell Limited, 7 Columbia Court, Norwest Business Park, Baulkham Hills NSW 2153. Inertia is a long-standing Australian conventional/addressable FIP brand under the Notifier umbrella.",
-      "created_at": "2026-04-19T00:00:00+00:00",
-      "updated_at": "2026-04-19T00:00:00+00:00",
-      "deleted_at": null
     }
   ],
   "product_families": [
@@ -88,17 +77,6 @@
       "description": null,
       "created_at": "2026-04-13T11:00:00+00:00",
       "updated_at": "2026-04-13T11:00:00+00:00",
-      "deleted_at": null
-    },
-    {
-      "id": "b2e5f9c1-3a8d-4e6f-9c7b-1d4a5e8f2b30",
-      "manufacturer_id": "c4d7e8a2-1b9f-4c5e-9a3d-7f8b2e6a4d10",
-      "name": "Inertia",
-      "slug": "inertia",
-      "category": "Conventional Fire Indicator Panel",
-      "description": "Notifier Inertia conventional FIP family — Australian-designed, AS 1603.4 / AS 1670 compliant. Includes IFS-2400, IFS-2600, IFS-008, INERTIA-2464/64, and the AFP-2800 analogue addressable variant.",
-      "created_at": "2026-04-19T00:00:00+00:00",
-      "updated_at": "2026-04-19T00:00:00+00:00",
       "deleted_at": null
     },
     {
@@ -916,21 +894,6 @@
       "image_checksum": null,
       "created_at": "2026-04-13T11:00:00+00:00",
       "updated_at": "2026-04-13T11:00:00+00:00",
-      "deleted_at": null
-    },
-    {
-      "id": "d8f3a1b4-5c2e-4f9a-8b7d-3e6f1a9c5b40",
-      "family_id": "b2e5f9c1-3a8d-4e6f-9c7b-1d4a5e8f2b30",
-      "manufacturer_id": "c4d7e8a2-1b9f-4c5e-9a3d-7f8b2e6a4d10",
-      "name": "Inertia 2400 (IFS-2400)",
-      "model_number": "IFS-2400",
-      "slug": "notifier-inertia-2400",
-      "description": "Notifier Inertia IFS-2400 conventional Fire Indicator Panel — 24-zone Australian-designed FIP supplied 2003–2005 by Honeywell Limited (ABN 74 000 646 882). Approved to AS 1603.4 (1987) under Australian SSL Approval No. 215. Subject to ACCC product recall PRA 2005/8072 (audible-warning fault on certain hardware revisions); replaced in many sites by the INERTIA-2464 and AFP-2800 platforms but still encountered in service across NSW commercial buildings.",
-      "years_active": "2003-2005 (supply); installed base still active",
-      "status": "legacy",
-      "image_checksum": null,
-      "created_at": "2026-04-19T00:00:00+00:00",
-      "updated_at": "2026-04-19T00:00:00+00:00",
       "deleted_at": null
     }
   ],

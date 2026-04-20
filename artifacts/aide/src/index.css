@@ -283,11 +283,11 @@
 .metric-card--featured .metric-value { font-size: 32px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; }
 
 /* Bento Grid */
-.bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
-.bento-featured { grid-column: span 3; }
-.bento-compact { grid-column: span 3; }
-@media (max-width: 1024px) { .bento-featured { grid-column: span 4; } .bento-compact { grid-column: span 4; } }
-@media (max-width: 640px) { .bento-featured { grid-column: span 6; } .bento-compact { grid-column: span 6; } }
+.bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.bento-featured { grid-column: span 4; }
+.bento-compact { grid-column: span 2; }
+@media (max-width: 1024px) { .bento-featured { grid-column: span 6; } .bento-compact { grid-column: span 3; } }
+@media (max-width: 640px) { .bento-featured { grid-column: span 12; } .bento-compact { grid-column: span 6; } }
 
 /* Data Tables — dense but readable */
 .data-table { border-collapse: separate; border-spacing: 0; }

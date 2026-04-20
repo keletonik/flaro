@@ -767,57 +767,5 @@ export const PANEL_DEEP_SPEC_SEED: PanelDeepSpecSeed[] = [
     datasheetUrl: "https://www.notifier.com/en-us/Pages/NFS-3030.aspx",
     sourceNotes: "Notifier NFS-3030 installation + operation manual (Notifier.com, accessed May 2025)",
   },
-  // ─── Notifier Inertia (Australia, Honeywell Limited) ──────────────
-  {
-    slug: "notifier-inertia-2400",
-    maxLoops: 0, // conventional panel — no addressable loops, uses zone circuits
-    devicesPerLoop: null,
-    loopProtocol: "Conventional (Class B AZF) — Apollo Series 60 compatible (Thermal A/B/C/D, Smoke Ionisation)",
-    networkCapable: false,
-    maxNetworkedPanels: null,
-    batteryStandbyAh: 17,
-    batteryAlarmAh: 17,
-    recommendedBatterySize: "2 × 12V 17Ah SLA (sized per AS 1670.1 standby + alarm load calc; typical 24 hr standby + 30 min alarm)",
-    configOptions: [
-      { label: "Zone capacity", value: "24 conventional alarm zones (Class B)" },
-      { label: "End-of-line resistor", value: "4.7 kΩ (4K7) per AZF" },
-      { label: "MCP loop", value: "Manual Call Points loop into nominated zone for indication" },
-      { label: "Programming", value: "Front-panel keypad + JP3/JP4 jumpers (no PC tool required)" },
-      { label: "JP3 (Memory Reset)", value: "Short for 5 sec at startup → 4 beeps confirm factory default" },
-      { label: "JP4 (Program Disable)", value: "Fitted = lockout, prevents inadvertent program changes" },
-      { label: "Charger trim (VR4)", value: "27.6 V ±1% target (acceptable 27.32–27.87 V)" },
-      { label: "Network", value: "Standalone only — no panel-to-panel networking" },
-    ],
-    approvals: [
-      "AS 1603.4 (1987) — Control & Indicating Equipment",
-      "Australian SSL Approval No. 215",
-      "SSL Quality Accredited",
-      "Hong Kong Fire Services Department approved",
-    ],
-    commissioningNotes:
-      "Conventional 24-zone Notifier Inertia FIP (Honeywell, AU). At commissioning verify: (1) AC supply 200/220/240 VAC ±10%; (2) charger output 27.6 V DC with batteries disconnected, trim VR4 if outside 27.32–27.87 V; (3) battery test loads batteries for 60 sec — BATT FAULT (yellow) latches if test fails, batteries disconnected >30 sec, or short-circuit >30 sec; (4) walk-test mode beeps 3× and shows 'WALK TEST MODE' on LCD (cannot enter if any zone in alarm); (5) verify each zone EOLR (4K7) reads correctly — supervisory current flows AZF+ → field cable → EOLR → AZF−; (6) confirm fault/isolate mapping if relay output used (max 5 zones OR'd to single relay); (7) print configuration via printer port for site records. CRITICAL: Units supplied Sept 2003 – Feb 2005 are subject to ACCC recall PRA 2005/8072 — may not sound audible warning or activate local outputs in alarm/fault. Check serial label and contact Honeywell for remedy if affected. Replacement path is INERTIA-2464 (24-zone expandable to 64) or AFP-2800 analogue addressable.",
-    typicalPriceBand: "$$",
-    dimensionsMm: null,
-    weightKg: null,
-    ipRating: "IP30 (typical for indoor wall-mount FIP cabinet)",
-    operatingTempC: "0 to +40 (typical AS 1603.4 operating range)",
-    operatingHumidityPct: "10-95 non-condensing",
-    mainsSupply: "200 / 220 / 240 VAC ±10%, 50 Hz",
-    psuOutputA: null,
-    auxCurrentBudgetMa: null,
-    maxZones: 24,
-    relayOutputs: 1, // single fault/isolate mapping relay (up to 5 zones OR'd)
-    supervisedNacs: null,
-    ledMimicChannels: 24, // one zone alarm LED per zone, plus MAINS ON / BATT FAULT globals
-    lcdLines: 2,
-    eventLogCapacity: null,
-    causeEffectSupport: false, // conventional panel — no cause-and-effect engine, only fault/isolate mapping
-    warrantyYears: null,
-    remoteAccess: "Local printer port for commissioning/walk-test/event history; no remote access",
-    loopCableSpec: "2-core fire-rated (typically 1.5 mm² WS5X or equivalent), terminated with 4.7 kΩ EOLR per zone",
-    datasheetUrl: "https://www.productsafety.gov.au/recalls/honeywell-limited—notifier-inertia-ifs-2600-ifs-2400-and-ifs-008-fire-indicator-panels",
-    sourceNotes:
-      "Compiled from: ACCC Product Recall PRA 2005/8072 (productsafety.gov.au); Notifier INERTIA-2464/64 Technical & Programming Manual (ManualsLib, the 2464 shares the IFS architecture and operator interface); Honeywell/Notifier Australia product listings (notifier.com.au); FireSense AU distributor catalogue. Where IFS-2400-specific values were not publicly indexed, conservative AS 1603.4-compliant defaults are recorded and noted as such; verify on-site against the unit's installation manual before quoting battery sizing or commissioning works.",
-  },
 ];
 

@@ -5,7 +5,6 @@ import CSVImportModal from "@/components/CSVImportModal";
 import LiveToggle from "@/components/LiveToggle";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { PageHeader } from "@/components/ui/PageHeader";
 
 type TabKey = "wip" | "quotes" | "defects" | "invoices";
 
@@ -581,31 +580,32 @@ export default function Operations() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <PageHeader
-        prefix="::"
-        title="Operations"
-        subtitle="Uptick data management and analytics"
-        actions={
-          <>
+      <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2">
+              <span className="font-mono text-[13px] text-primary/60">::</span> Operations
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Uptick data management and analytics</p>
+          </div>
+          <div className="flex items-center gap-2">
             <LiveToggle onTick={() => fetchData(activeTab)} interval={10_000} />
-            <button onClick={() => setChatOpen(v => !v)} className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border transition-all", chatOpen ? "bg-primary text-white border-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted border-border")} title="Toggle analyst panel">
-              {chatOpen ? <PanelRightClose size={12} /> : <PanelRightOpen size={12} />} Analyst
+            <button onClick={() => setChatOpen(v => !v)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all", chatOpen ? "bg-primary text-white border-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted border-border")} title="Toggle analyst panel">
+              {chatOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />} Analyst
             </button>
-            <button onClick={handleExport} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors" title="Export CSV">
-              <Download size={12} /> Export
+            <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors" title="Export CSV">
+              <Download size={13} /> Export
             </button>
-            <button onClick={() => setImportOpen(true)} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-all">
-              <Upload size={12} /> Import CSV
+            <button onClick={() => setImportOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-all">
+              <Upload size={13} /> Import CSV
             </button>
-          </>
-        }
-      />
+          </div>
+        </div>
 
-      <div className="sticky top-[60px] z-10 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 py-2">
         <div className="flex gap-1">
           {TABS.map(tab => (
             <button key={tab.key} onClick={() => { setActiveTab(tab.key); setStatusFilter(""); setSearch(""); clearSelection(); }}
-              className={cn("px-3 py-1 rounded-md text-[11px] font-semibold transition-all",
+              className={cn("px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
                 activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}>
               {tab.label}

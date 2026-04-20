@@ -3,11 +3,11 @@ import { createContext, useContext, useEffect, useState } from "react";
 export type ThemeVariant =
   | "blue-white" | "blue-orange" | "blue-green"
   | "deep-navy" | "slate-dark" | "graphite-green"
-  | "operator" | "fieldkit" | "atelier" | "circuit";
+  | "operator" | "fieldkit" | "atelier" | "circuit" | "terminal";
 type Mode = "light" | "dark";
 
 const LIGHT_THEMES: ThemeVariant[] = ["blue-white", "blue-orange", "blue-green"];
-const DARK_THEMES: ThemeVariant[] = ["deep-navy", "slate-dark", "graphite-green", "operator", "fieldkit", "atelier", "circuit"];
+const DARK_THEMES: ThemeVariant[] = ["deep-navy", "slate-dark", "graphite-green", "operator", "fieldkit", "atelier", "circuit", "terminal"];
 
 export const THEME_OPTIONS: { key: ThemeVariant; label: string; mode: Mode; accent: string }[] = [
   { key: "blue-white", label: "Enterprise", mode: "light", accent: "#2563EB" },
@@ -20,6 +20,7 @@ export const THEME_OPTIONS: { key: ThemeVariant; label: string; mode: Mode; acce
   { key: "fieldkit", label: "Fieldkit", mode: "dark", accent: "#FF9500" },
   { key: "atelier", label: "Atelier", mode: "dark", accent: "#B87333" },
   { key: "circuit", label: "Circuit", mode: "dark", accent: "#00FF88" },
+  { key: "terminal", label: "Terminal", mode: "dark", accent: "#00FF66" },
 ];
 
 interface ThemeContextType {

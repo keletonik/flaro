@@ -284,6 +284,48 @@
   --user-bubble-fg: 38 32% 89%;
 }
 
+/* Theme K — Terminal (void black + bone + signal green — CLI register) */
+[data-theme="terminal"] {
+  --background: 0 0% 4%;
+  --foreground: 0 0% 96%;
+  --card: 0 0% 6%;
+  --card-foreground: 0 0% 96%;
+  --popover: 0 0% 6%;
+  --popover-foreground: 0 0% 96%;
+  --border: 0 0% 12%;
+  --input: 0 0% 14%;
+  --secondary: 0 0% 8%;
+  --secondary-foreground: 0 0% 92%;
+  --muted: 0 0% 7%;
+  --muted-foreground: 0 0% 55%;
+  --primary: 135 100% 50%;          /* #00FF66 equivalent */
+  --primary-foreground: 0 0% 4%;
+  --accent: 135 60% 10%;
+  --accent-foreground: 135 100% 75%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 135 100% 50%;
+  --sidebar: 0 0% 2%;
+  --sidebar-foreground: 0 0% 70%;
+  --sidebar-border: 0 0% 10%;
+  --sidebar-primary: 135 100% 50%;
+  --sidebar-primary-foreground: 0 0% 4%;
+  --sidebar-accent: 0 0% 8%;
+  --sidebar-accent-foreground: 0 0% 92%;
+  --sidebar-ring: 135 100% 50%;
+  --chart-1: 135 100% 50%;
+  --chart-2: 0 0% 55%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 210 0% 85%;
+  --chart-5: 0 72% 51%;
+  --user-bubble: 135 50% 14%;
+  --user-bubble-fg: 0 0% 96%;
+  /* Terminal register swaps the UI font for a mono. JetBrains Mono 700
+     reads like a CLI prompt — lowercase, tight, steady. */
+  --app-font-sans: 'JetBrains Mono', 'Geist Mono', ui-monospace, monospace;
+  --app-font-mono: 'JetBrains Mono', 'Geist Mono', ui-monospace, monospace;
+}
+
 /* Theme J — Circuit (pure black + neon green) */
 [data-theme="circuit"] {
   --background: 0 0% 0%;
@@ -1020,6 +1062,105 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 .data-table tbody tr:hover { background: hsl(var(--muted) / 0.45); box-shadow: inset 2px 0 0 hsl(var(--primary) / 0.5); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TERMINAL REGISTER — only applies when [data-theme="terminal"]
+   CLI type, signal-green cursor, `$` prompts, tight tracking. Everything
+   here is scoped so other themes are untouched.
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="terminal"] {
+  letter-spacing: -0.02em;
+}
+
+/* Lowercase display headings (H1/H2) for the CLI register. Keeps semantic
+   markup but renders in a terminal voice. Data/values stay uppercase where
+   tabular numerals matter. */
+[data-theme="terminal"] h1,
+[data-theme="terminal"] h2,
+[data-theme="terminal"] .page-reveal h1,
+[data-theme="terminal"] .page-reveal h2 {
+  text-transform: lowercase;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+/* Page header prefix swap: hide the theme-agnostic sigil (~/>>/::) and
+   render a `$` in its place. Reads as a shell prompt. */
+[data-theme="terminal"] .glass-1 h1 > .font-mono:first-child {
+  font-size: 0;
+  letter-spacing: 0;
+}
+[data-theme="terminal"] .glass-1 h1 > .font-mono:first-child::before {
+  content: "$";
+  font-size: 13px;
+  font-family: var(--app-font-mono);
+  color: hsl(var(--primary));
+  opacity: 0.85;
+}
+
+/* Typographic cursor — hard square block that pulses after H1/title.
+   Reads as "prompt waiting for input", which is the whole point of the
+   theme. */
+@keyframes terminal-block-blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+[data-theme="terminal"] .glass-1 h1::after {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.9em;
+  margin-left: 0.3em;
+  vertical-align: -0.08em;
+  background: hsl(var(--primary));
+  animation: terminal-block-blink 1.1s steps(2) infinite;
+  box-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+}
+
+/* Sidebar sigil — swap the `⚡` AIDE label font-family so it reads mono. */
+[data-theme="terminal"] aside {
+  font-family: var(--app-font-mono);
+}
+
+/* Data-table headers — already uppercase; tighten and colour-shift. */
+[data-theme="terminal"] .data-table th {
+  color: hsl(var(--primary) / 0.65);
+  border-bottom-color: hsl(var(--primary) / 0.15);
+}
+
+/* Status-bar cards in the terminal feel — subtle green scanline edge. */
+[data-theme="terminal"] .metric-card {
+  background-image: linear-gradient(180deg, hsl(var(--primary) / 0.03) 0%, transparent 40%);
+}
+[data-theme="terminal"] .metric-card::after {
+  background: hsl(var(--primary));
+  height: 1px;
+  box-shadow: 0 0 8px hsl(var(--primary) / 0.6);
+}
+
+/* Focus ring in the terminal register uses the signal green directly. */
+[data-theme="terminal"] :focus-visible {
+  box-shadow: 0 0 0 2px hsl(var(--background)),
+              0 0 0 3px hsl(var(--primary) / 0.65);
+}
+
+/* Selection — signal green on void, reads as a shell highlight. */
+[data-theme="terminal"] ::selection {
+  background: hsl(var(--primary) / 0.35);
+  color: hsl(0 0% 100%);
+}
+
+/* Checkbox / radio / input glow on focus */
+[data-theme="terminal"] input:focus,
+[data-theme="terminal"] textarea:focus {
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.4),
+              0 0 12px hsl(var(--primary) / 0.15);
+}
+
+/* Ensures the stream cursor in AIDE PA reads extra bright in this theme. */
+[data-theme="terminal"] .aide-stream-cursor {
+  box-shadow: 0 0 10px hsl(var(--primary) / 0.6);
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    GLASS TIERS — heavier blur for modals, lighter for headers

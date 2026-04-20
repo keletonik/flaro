@@ -8,7 +8,6 @@ import CSVImportModal from "@/components/CSVImportModal";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CountUp } from "@/components/ui/CountUp";
-import { Reveal } from "@/components/ui/Reveal";
 
 type ChartType = "bar" | "line" | "area" | "pie";
 type TimePeriod = "day" | "week" | "month";
@@ -136,7 +135,6 @@ interface MetricTileProps {
   numericValue?: number;
   format?: (n: number) => string;
   sub?: string;
-  icon?: any;
   color: string;
 }
 

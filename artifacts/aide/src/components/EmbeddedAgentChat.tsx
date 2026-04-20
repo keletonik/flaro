@@ -308,7 +308,7 @@ export default function EmbeddedAgentChat({ section, title = "AIDE", suggestions
   };
 
   return (
-    <div className="h-full w-full flex flex-col bg-card">
+    <div className="h-full w-full flex flex-col bg-black">
       {/* Header (only shown when not embedded in AIDEAssistant popout) */}
       {!hideHeader && (
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0">

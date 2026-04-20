@@ -6,7 +6,7 @@ export default function AidePopout() {
   const title = params.get("title") || "AIDE";
 
   return (
-    <div className="h-screen w-screen bg-background flex flex-col">
+    <div className="h-screen w-screen bg-black flex flex-col">
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-2">
           <span className="font-mono text-[12px] font-bold text-primary">AIDE</span>

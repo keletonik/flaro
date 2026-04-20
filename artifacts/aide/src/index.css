@@ -319,6 +319,53 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   MOTION + DEPTH TOKENS — shared across every theme
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Easing curves — named by feel, not by math. */
+  --ease-spring:    cubic-bezier(0.32, 0.72, 0.00, 1.00);   /* iOS-style overshoot */
+  --ease-out-quart: cubic-bezier(0.25, 1.00, 0.50, 1.00);   /* Snap without bounce */
+  --ease-smooth:    cubic-bezier(0.22, 1.00, 0.36, 1.00);   /* Exponential out */
+  --ease-enter:     cubic-bezier(0.16, 1.00, 0.30, 1.00);   /* Default enter */
+  --ease-exit:      cubic-bezier(0.50, 0.00, 0.75, 0.00);   /* Snappy exit */
+
+  /* Durations */
+  --dur-1:  80ms;
+  --dur-2:  140ms;
+  --dur-3:  220ms;
+  --dur-4:  360ms;
+  --dur-5:  560ms;
+
+  /* Depth — four tiers. Inset highlight + bottom shadow. */
+  --depth-0: 0 0 0 1px hsl(var(--border));
+  --depth-1: 0 1px 0 0 hsl(0 0% 100% / 0.04) inset,
+             0 1px 2px hsl(0 0% 0% / 0.18),
+             0 0 0 1px hsl(var(--border));
+  --depth-2: 0 1px 0 0 hsl(0 0% 100% / 0.05) inset,
+             0 4px 16px -4px hsl(0 0% 0% / 0.28),
+             0 0 0 1px hsl(var(--border));
+  --depth-3: 0 1px 0 0 hsl(0 0% 100% / 0.06) inset,
+             0 12px 32px -8px hsl(0 0% 0% / 0.34),
+             0 0 0 1px hsl(var(--border));
+  --depth-4: 0 1px 0 0 hsl(0 0% 100% / 0.07) inset,
+             0 24px 56px -16px hsl(0 0% 0% / 0.48),
+             0 0 0 1px hsl(var(--border));
+
+  /* Focus ring — coherent across components */
+  --focus-ring: 0 0 0 2px hsl(var(--background)),
+                0 0 0 4px hsl(var(--ring) / 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    BASE LAYER
    ═══════════════════════════════════════════════════════════════════════════ */
 @layer base {
@@ -338,6 +385,12 @@
   h2 { font-size: 20px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.3; }
   h3 { font-size: 16px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.4; }
   h4 { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+
+  /* Selection — themed rather than browser default */
+  ::selection { background: hsl(var(--primary) / 0.25); color: hsl(var(--foreground)); }
+
+  /* Focus visibility — use ring variable so every theme matches */
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: inherit; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -731,4 +784,261 @@
     transform: none !important;
     stroke-dashoffset: 0 !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AIDE AI SURFACE — stream cursor, message morph, tool-call card, thinking
+   Functional, not decorative. Each element has a reason.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Stream cursor — pulsing block, follows the last token */
+.aide-stream-cursor {
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  vertical-align: -0.15em;
+  margin-left: 2px;
+  background: hsl(var(--primary));
+  border-radius: 1px;
+  animation: aide-stream-cursor-pulse 1s steps(2) infinite;
+  box-shadow: 0 0 8px hsl(var(--primary) / 0.45);
+}
+@keyframes aide-stream-cursor-pulse {
+  0%, 40% { opacity: 1; }
+  50%, 90% { opacity: 0.25; }
+  100% { opacity: 1; }
+}
+
+/* Message bubble morph — scale + translate in, physics-feeling */
+@keyframes aide-message-in {
+  0%   { opacity: 0; transform: translateY(6px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+.aide-message {
+  animation: aide-message-in var(--dur-3) var(--ease-smooth) both;
+}
+.aide-message--user   { transform-origin: bottom right; }
+.aide-message--assist { transform-origin: bottom left; }
+
+/* Thinking shimmer — moves across muted bar while tool runs */
+@keyframes aide-shimmer-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.aide-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.aide-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--primary) / 0.12) 50%,
+    transparent 100%
+  );
+  animation: aide-shimmer-sweep 1.6s linear infinite;
+}
+
+/* Tool-call card — collapsed pill expanding to reveal detail */
+.aide-tool-card {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted) / 0.4);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-family: var(--app-font-mono);
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  transition: border-color var(--dur-2) var(--ease-smooth),
+              background var(--dur-2) var(--ease-smooth);
+}
+.aide-tool-card:hover {
+  border-color: hsl(var(--primary) / 0.35);
+  background: hsl(var(--muted) / 0.7);
+}
+.aide-tool-card[data-state="running"] { color: hsl(var(--foreground)); }
+.aide-tool-card[data-state="done"]    { color: hsl(var(--muted-foreground)); }
+
+/* Thinking dots — three dots breathing in phase */
+@keyframes aide-thinking-breath {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40%           { opacity: 1;    transform: translateY(-2px); }
+}
+.aide-thinking-dots { display: inline-flex; gap: 3px; align-items: center; }
+.aide-thinking-dots > span {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: hsl(var(--primary));
+  animation: aide-thinking-breath 1.2s var(--ease-smooth) infinite;
+}
+.aide-thinking-dots > span:nth-child(2) { animation-delay: 0.15s; }
+.aide-thinking-dots > span:nth-child(3) { animation-delay: 0.30s; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DEPTH CARDS — four tiers, spring-y hover lift
+   Use via .depth-1 / .depth-2 / .depth-3 / .depth-4, or .card-depth for auto.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.depth-1 { box-shadow: var(--depth-1); }
+.depth-2 { box-shadow: var(--depth-2); }
+.depth-3 { box-shadow: var(--depth-3); }
+.depth-4 { box-shadow: var(--depth-4); }
+
+.card-depth {
+  background: hsl(var(--card));
+  border-radius: 12px;
+  box-shadow: var(--depth-1);
+  transition:
+    box-shadow var(--dur-3) var(--ease-smooth),
+    transform  var(--dur-3) var(--ease-spring),
+    border-color var(--dur-2) var(--ease-smooth);
+}
+.card-depth:hover  { box-shadow: var(--depth-2); transform: translateY(-1px); }
+.card-depth:active { box-shadow: var(--depth-1); transform: translateY(0); transition-duration: var(--dur-1); }
+
+.card-interactive {
+  cursor: pointer;
+  will-change: transform, box-shadow;
+}
+
+/* Gradient wash for featured metric — subtle sheen behind value */
+.metric-wash {
+  position: relative;
+  isolation: isolate;
+}
+.metric-wash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 60% at 100% 0%,
+    hsl(var(--primary) / 0.10) 0%,
+    transparent 55%
+  );
+  z-index: -1;
+  opacity: 0;
+  transition: opacity var(--dur-3) var(--ease-smooth);
+}
+.metric-wash:hover::before { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SKELETON SHIMMER — mask-based sweep, not opacity pulse
+   ═══════════════════════════════════════════════════════════════════════════ */
+.skeleton-shimmer {
+  position: relative;
+  background: hsl(var(--muted) / 0.55);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(var(--foreground) / 0.06) 40%,
+    hsl(var(--foreground) / 0.10) 50%,
+    hsl(var(--foreground) / 0.06) 60%,
+    transparent
+  );
+  animation: skeleton-shimmer-sweep 1.6s linear infinite;
+}
+@keyframes skeleton-shimmer-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE REVEAL — entire page fades + slides up on route change
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes page-reveal {
+  0%   { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.page-reveal { animation: page-reveal var(--dur-4) var(--ease-smooth) both; }
+
+/* Stagger reveal — children fade in with index delay */
+.reveal-stagger > * {
+  animation: page-reveal var(--dur-4) var(--ease-smooth) both;
+  animation-delay: calc(var(--stagger-delay, 40ms) * var(--i, 0));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INTERACTIVE ELEMENTS — spring button, pill ring
+   ═══════════════════════════════════════════════════════════════════════════ */
+.btn-spring {
+  transition:
+    transform var(--dur-2) var(--ease-spring),
+    filter    var(--dur-1) linear,
+    box-shadow var(--dur-2) var(--ease-smooth);
+}
+.btn-spring:hover  { filter: brightness(1.05); }
+.btn-spring:active { transform: translateY(0.5px) scale(0.985); filter: brightness(0.95); }
+
+.pill-ring {
+  position: relative;
+  transition: box-shadow var(--dur-2) var(--ease-smooth);
+}
+.pill-ring:hover { box-shadow: 0 0 0 3px hsl(var(--primary) / 0.10); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COUNT-UP — tabular numerals with slight flash on change
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes count-flash {
+  0%   { color: hsl(var(--primary)); transform: translateY(-1px); }
+  100% { color: inherit; transform: translateY(0); }
+}
+.count-up { font-variant-numeric: tabular-nums; }
+.count-up[data-changed="true"] { animation: count-flash 420ms var(--ease-smooth); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TAB UNDERLINE — animated underline slides between tabs
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tab-underline-group { position: relative; }
+.tab-underline-group::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: var(--tab-x, 0);
+  width: var(--tab-w, 0);
+  height: 2px;
+  background: hsl(var(--primary));
+  border-radius: 2px;
+  transition:
+    left  var(--dur-3) var(--ease-spring),
+    width var(--dur-3) var(--ease-spring);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATA TABLE — row enter, hover lift, cell morph
+   ═══════════════════════════════════════════════════════════════════════════ */
+.data-table tbody tr { animation: table-row-in var(--dur-3) var(--ease-smooth) both; }
+.data-table tbody tr:nth-child(n) { animation-delay: calc(20ms * var(--row-i, 0)); }
+@keyframes table-row-in {
+  0%   { opacity: 0; transform: translateY(2px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.data-table tbody tr:hover { background: hsl(var(--muted) / 0.45); box-shadow: inset 2px 0 0 hsl(var(--primary) / 0.5); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLASS TIERS — heavier blur for modals, lighter for headers
+   ═══════════════════════════════════════════════════════════════════════════ */
+.glass-1 {
+  background: hsl(var(--background) / 0.72);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border-bottom: 1px solid hsl(var(--border) / 0.6);
+}
+.glass-2 {
+  background: hsl(var(--card) / 0.78);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid hsl(var(--border));
+}
+.glass-3 {
+  background: hsl(var(--card) / 0.92);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid hsl(var(--border));
 }

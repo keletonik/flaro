@@ -2,19 +2,38 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-const Card = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "rounded-xl border bg-card text-card-foreground shadow",
-      className
-    )}
-    {...props}
-  />
-))
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Depth tier — higher = more elevated. 0 uses existing shadow utility. */
+  depth?: 0 | 1 | 2 | 3 | 4
+  /** When true, adds a spring-y hover lift + active squash. */
+  interactive?: boolean
+  /** When true, adds a radial primary wash on hover. */
+  wash?: boolean
+}
+
+const depthClass: Record<NonNullable<CardProps["depth"]>, string> = {
+  0: "shadow",
+  1: "depth-1",
+  2: "depth-2",
+  3: "depth-3",
+  4: "depth-4",
+}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, depth = 0, interactive, wash, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        "rounded-xl border bg-card text-card-foreground",
+        depthClass[depth],
+        interactive && "card-depth card-interactive",
+        wash && "metric-wash",
+        className
+      )}
+      {...props}
+    />
+  )
+)
 Card.displayName = "Card"
 
 const CardHeader = React.forwardRef<

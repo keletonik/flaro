@@ -30,7 +30,7 @@ export function PageHeader({
     <div
       className={cn(
         sticky && "sticky top-0 z-20",
-        "glass border-b border-border/50 px-4 sm:px-6 py-3.5",
+        "glass-1 px-4 sm:px-6 py-3.5 page-reveal",
         className,
       )}
     >

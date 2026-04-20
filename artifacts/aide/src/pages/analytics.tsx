@@ -7,6 +7,8 @@ import LiveToggle from "@/components/LiveToggle";
 import CSVImportModal from "@/components/CSVImportModal";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { CountUp } from "@/components/ui/CountUp";
+import { Reveal } from "@/components/ui/Reveal";
 
 type ChartType = "bar" | "line" | "area" | "pie";
 type TimePeriod = "day" | "week" | "month";
@@ -128,11 +130,28 @@ function TargetGauge({ current, target, label }: { current: number; target: numb
   );
 }
 
-function MetricTile({ label, value, sub, icon: _Icon, color }: { label: string; value: string; sub?: string; icon: any; color: string }) {
+interface MetricTileProps {
+  label: string;
+  value?: string;
+  numericValue?: number;
+  format?: (n: number) => string;
+  sub?: string;
+  icon?: any;
+  color: string;
+}
+
+function MetricTile({ label, value, numericValue, format, sub, color }: MetricTileProps) {
+  const accent = color.includes("emerald") ? "text-emerald-500/70"
+    : color.includes("blue") ? "text-blue-500/70"
+    : color.includes("amber") ? "text-amber-500/70"
+    : color.includes("red") ? "text-red-500/70"
+    : "text-primary/70";
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
-      <p className={cn("font-mono text-[10px] uppercase tracking-widest mb-1", color.includes("emerald") ? "text-emerald-500/60" : color.includes("blue") ? "text-blue-500/60" : color.includes("amber") ? "text-amber-500/60" : color.includes("red") ? "text-red-500/60" : "text-primary/60")}>{label}</p>
-      <p className="font-mono text-xl font-bold text-foreground tracking-tight tabular-nums">{value}</p>
+    <div className="bg-card border border-border rounded-xl p-4 metric-wash">
+      <p className={cn("font-mono text-[10px] uppercase tracking-widest mb-1", accent)}>{label}</p>
+      {numericValue !== undefined
+        ? <CountUp value={numericValue} format={format} className="font-mono text-xl font-bold text-foreground tracking-tight tabular-nums" />
+        : <p className="font-mono text-xl font-bold text-foreground tracking-tight tabular-nums">{value}</p>}
       {sub && <p className="font-mono text-[10px] text-muted-foreground/60 mt-0.5">{sub}</p>}
     </div>
   );
@@ -309,8 +328,26 @@ export default function Analytics() {
   }, [data]);
 
   if (loading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-background">
+      <PageHeader title="Analytics" subtitle="Loading metrics…" />
+      <div className="px-4 sm:px-6 py-5 space-y-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="bg-card border border-border rounded-xl p-4 space-y-2">
+              <div className="skeleton-shimmer h-3 w-1/2" />
+              <div className="skeleton-shimmer h-6 w-3/4" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-card border border-border rounded-2xl p-5 space-y-3">
+              <div className="skeleton-shimmer h-3 w-1/3" />
+              <div className="skeleton-shimmer h-[200px] w-full" />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 
@@ -376,10 +413,10 @@ export default function Analytics() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
             <TargetGauge current={data.revenue.thisMonth} target={data.revenue.monthlyTarget} label="This Month" />
             <div className="md:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <MetricTile label="Revenue Today" value={fmt(data.revenue.today)} icon={null} color="bg-emerald-500/8" />
-              <MetricTile label="Revenue This Week" value={fmt(data.revenue.thisWeek)} icon={null} color="bg-blue-500/8" />
-              <MetricTile label="Revenue This Month" value={fmt(data.revenue.thisMonth)} sub={`${data.revenue.progressPercent}% of target`} icon={null} color="bg-primary/8" />
-              <MetricTile label="Pro-Rata Target" value={fmt(data.revenue.proRataTarget)} sub={`Day ${new Date().getDate()} of month`} icon={null} color="bg-amber-500/8" />
+              <MetricTile label="Revenue Today" numericValue={data.revenue.today} format={fmt} color="bg-emerald-500/8" />
+              <MetricTile label="Revenue This Week" numericValue={data.revenue.thisWeek} format={fmt} color="bg-blue-500/8" />
+              <MetricTile label="Revenue This Month" numericValue={data.revenue.thisMonth} format={fmt} sub={`${data.revenue.progressPercent}% of target`} color="bg-primary/8" />
+              <MetricTile label="Pro-Rata Target" numericValue={data.revenue.proRataTarget} format={fmt} sub={`Day ${new Date().getDate()} of month`} color="bg-amber-500/8" />
             </div>
           </div>
         </div>
@@ -408,12 +445,12 @@ export default function Analytics() {
               <h2 className="text-sm font-bold text-foreground uppercase tracking-wide">Financial Summary — WIP Portfolio</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              <MetricTile label="Revised Sell (Pipeline)" value={fmt(data.financials.totalRevisedSell)} icon={null} color="bg-emerald-500/8" />
-              <MetricTile label="Actual Cost" value={fmt(data.financials.totalActualCost)} icon={null} color="bg-red-500/8" />
-              <MetricTile label="Actual Profit" value={fmt(data.financials.totalActualProfit)} sub={`${data.financials.avgMargin}% margin`} icon={null} color="bg-blue-500/8" />
-              <MetricTile label="Net Invoiced" value={fmt(data.financials.totalNetInvoiced)} icon={null} color="bg-emerald-500/8" />
-              <MetricTile label="Uninvoiced WIP" value={fmt(data.financials.totalUninvoiced)} icon={null} color="bg-amber-500/8" />
-              <MetricTile label="Total Hours" value={`${data.financials.totalActualHours.toFixed(0)}h`} sub={`Cash: ${fmt(data.financials.totalCashPosition)}`} icon={null} color="bg-primary/8" />
+              <MetricTile label="Revised Sell (Pipeline)" numericValue={data.financials.totalRevisedSell} format={fmt} color="bg-emerald-500/8" />
+              <MetricTile label="Actual Cost" numericValue={data.financials.totalActualCost} format={fmt} color="bg-red-500/8" />
+              <MetricTile label="Actual Profit" numericValue={data.financials.totalActualProfit} format={fmt} sub={`${data.financials.avgMargin}% margin`} color="bg-blue-500/8" />
+              <MetricTile label="Net Invoiced" numericValue={data.financials.totalNetInvoiced} format={fmt} color="bg-emerald-500/8" />
+              <MetricTile label="Uninvoiced WIP" numericValue={data.financials.totalUninvoiced} format={fmt} color="bg-amber-500/8" />
+              <MetricTile label="Total Hours" numericValue={data.financials.totalActualHours} format={(n) => `${n.toFixed(0)}h`} sub={`Cash: ${fmt(data.financials.totalCashPosition)}`} color="bg-primary/8" />
             </div>
           </div>
         )}

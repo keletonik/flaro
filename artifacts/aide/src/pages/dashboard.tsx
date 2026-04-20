@@ -10,6 +10,8 @@ import { useAuth } from "@/App";
 import { DashboardConfigPanel } from "@/components/DashboardConfigPanel";
 import { useDashboardConfig, type WidgetId } from "@/hooks/useDashboardConfig";
 import { QuoteQueuePanel } from "@/components/QuoteQueuePanel";
+import { CountUp } from "@/components/ui/CountUp";
+import { Reveal } from "@/components/ui/Reveal";
 
 function formatAgo(date: Date): string {
   const diff = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -40,24 +42,62 @@ interface FocusData {
   points: string[]; generatedAt: string;
 }
 
-function MetricCard({ label, value, icon: _Icon, trend, trendLabel, color, onClick, featured, tooltip }: {
-  label: string; value: string | number; icon: any; trend?: "up" | "down" | "neutral";
-  trendLabel?: string; color?: string; onClick?: () => void; featured?: boolean; tooltip?: string;
-}) {
+interface MetricCardProps {
+  label: string;
+  /** Numeric value to animate with CountUp. Pass undefined to show placeholder. */
+  numericValue?: number;
+  /** Display override — used for currency / pre-formatted strings. */
+  value?: string | number;
+  /** Formatter for the animated number (e.g. currency). */
+  format?: (n: number) => string;
+  trend?: "up" | "down" | "neutral";
+  trendLabel?: string;
+  color?: string;
+  onClick?: () => void;
+  featured?: boolean;
+  tooltip?: string;
+}
+
+function MetricCard({ label, numericValue, value, format, trend, trendLabel, color, onClick, featured, tooltip }: MetricCardProps) {
   const hintText = tooltip || (onClick ? `${label}: click to drill down` : label);
+  const accent = color?.includes("emerald") ? "text-emerald-500/70"
+    : color?.includes("amber") ? "text-amber-500/70"
+    : color?.includes("red") ? "text-red-500/70"
+    : color?.includes("blue") ? "text-blue-500/70"
+    : "text-primary/70";
+
+  const display = numericValue !== undefined
+    ? <CountUp value={numericValue} format={format} className={cn(
+        "font-mono font-bold text-foreground tracking-tight tabular-nums",
+        featured ? "text-[32px] leading-none" : "text-xl")} />
+    : <span className={cn(
+        "font-mono font-bold text-foreground tracking-tight tabular-nums",
+        featured ? "text-[32px] leading-none" : "text-xl")}>{value ?? "-"}</span>;
+
   return (
-    <button onClick={onClick} title={hintText} className={cn("metric-card text-left w-full h-full group", featured && "metric-card--featured")} disabled={!onClick}>
+    <button
+      onClick={onClick}
+      title={hintText}
+      disabled={!onClick}
+      className={cn(
+        "metric-card metric-wash text-left w-full h-full group btn-spring",
+        featured && "metric-card--featured"
+      )}
+    >
       <div className="flex items-start justify-between mb-2">
-        <p className={cn("font-mono text-[10px] uppercase tracking-widest", color?.includes("emerald") ? "text-emerald-500/60" : color?.includes("amber") ? "text-amber-500/60" : color?.includes("red") ? "text-red-500/60" : color?.includes("blue") ? "text-blue-500/60" : "text-primary/60")}>{label}</p>
+        <p className={cn("font-mono text-[10px] uppercase tracking-widest", accent)}>
+          {label}
+        </p>
         {trend && trend !== "neutral" && (
-          <span className={cn("font-mono text-[10px] font-medium",
+          <span className={cn(
+            "font-mono text-[10px] font-semibold flex items-center gap-0.5",
             trend === "up" ? "text-emerald-500" : "text-red-500"
           )}>
             {trend === "up" ? "↑" : "↓"} {trendLabel}
           </span>
         )}
       </div>
-      <p className={cn("font-mono font-bold text-foreground tracking-tight tabular-nums", featured ? "text-[32px] leading-none" : "text-xl")}>{value}</p>
+      {display}
     </button>
   );
 }
@@ -245,30 +285,14 @@ export default function Dashboard() {
           inbox: <InboxPanel />,
           metrics: (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          <div className="card-stagger" style={{ '--stagger-index': 0 } as React.CSSProperties}>
-            <MetricCard label="Revenue This Week" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=7d")} tooltip="Paid invoices this week. Click for revenue analytics." />
-          </div>
-          <div className="card-stagger" style={{ '--stagger-index': 1 } as React.CSSProperties}>
-            <MetricCard label="Active Jobs" value={summary?.active ?? "-"} icon={null} color="bg-primary/8" onClick={() => setLocation("/jobs?status=Open")} tooltip="Open and in-progress jobs right now. Click to filter Jobs by Open." />
-          </div>
-          <div className="card-stagger" style={{ '--stagger-index': 2 } as React.CSSProperties}>
-            <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={null} color="bg-amber-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Sent")} tooltip="Total AUD on invoices sent but not paid. Click to see the list." />
-          </div>
-          <div className="card-stagger" style={{ '--stagger-index': 3 } as React.CSSProperties}>
-            <MetricCard label="Completed Today" value={summary?.doneToday ?? "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/jobs?status=Done")} trend={summary && summary.doneToday > 0 ? "up" : "neutral"} trendLabel={`${summary?.doneToday ?? 0}`} tooltip="Jobs marked Done today. Click for all completed jobs." />
-          </div>
-          <div className="card-stagger" style={{ '--stagger-index': 4 } as React.CSSProperties}>
-            <MetricCard label="Open WIP" value={kpi?.wip.active ?? "-"} icon={null} color="bg-blue-500/8" onClick={() => setLocation("/operations?tab=wip&status=Open")} tooltip="WIP records still Open (not completed). Click to drill down." />
-          </div>
-          <div className="card-stagger" style={{ '--stagger-index': 5 } as React.CSSProperties}>
-            <MetricCard label="Pending Quotes" value={kpi?.quotes.pending ?? "-"} icon={null} color="bg-primary/8" onClick={() => setLocation("/operations?tab=quotes&status=Sent")} tooltip="Quotes sent, awaiting client decision. Click to follow up." />
-          </div>
-          <div className="card-stagger" style={{ '--stagger-index': 6 } as React.CSSProperties}>
-            <MetricCard label="Revenue (Month)" value={kpi ? fmt(kpi.invoices.revenueThisMonth) : "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=mtd")} tooltip="Paid revenue month-to-date. Click for month-to-date analytics." />
-          </div>
-          <div className="card-stagger" style={{ '--stagger-index': 7 } as React.CSSProperties}>
-            <MetricCard label="Overdue Invoices" value={kpi?.invoices.overdue ?? "-"} icon={null} color="bg-red-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Overdue")} tooltip="Invoices past their due date and unpaid. Click to chase." />
-          </div>
+          <Reveal index={0}><MetricCard label="Revenue This Week" numericValue={kpi?.invoices.revenueThisWeek} format={fmt} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=7d")} tooltip="Paid invoices this week. Click for revenue analytics." /></Reveal>
+          <Reveal index={1}><MetricCard label="Active Jobs" numericValue={summary?.active} color="bg-primary/8" onClick={() => setLocation("/jobs?status=Open")} tooltip="Open and in-progress jobs right now. Click to filter Jobs by Open." /></Reveal>
+          <Reveal index={2}><MetricCard label="Outstanding" numericValue={kpi?.invoices.outstandingTotal} format={fmt} color="bg-amber-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Sent")} tooltip="Total AUD on invoices sent but not paid. Click to see the list." /></Reveal>
+          <Reveal index={3}><MetricCard label="Completed Today" numericValue={summary?.doneToday} color="bg-emerald-500/8" onClick={() => setLocation("/jobs?status=Done")} trend={summary && summary.doneToday > 0 ? "up" : "neutral"} trendLabel={`${summary?.doneToday ?? 0}`} tooltip="Jobs marked Done today. Click for all completed jobs." /></Reveal>
+          <Reveal index={4}><MetricCard label="Open WIP" numericValue={kpi?.wip.active} color="bg-blue-500/8" onClick={() => setLocation("/operations?tab=wip&status=Open")} tooltip="WIP records still Open (not completed). Click to drill down." /></Reveal>
+          <Reveal index={5}><MetricCard label="Pending Quotes" numericValue={kpi?.quotes.pending} color="bg-primary/8" onClick={() => setLocation("/operations?tab=quotes&status=Sent")} tooltip="Quotes sent, awaiting client decision. Click to follow up." /></Reveal>
+          <Reveal index={6}><MetricCard label="Revenue (Month)" numericValue={kpi?.invoices.revenueThisMonth} format={fmt} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=mtd")} tooltip="Paid revenue month-to-date. Click for month-to-date analytics." /></Reveal>
+          <Reveal index={7}><MetricCard label="Overdue Invoices" numericValue={kpi?.invoices.overdue} color="bg-red-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Overdue")} tooltip="Invoices past their due date and unpaid. Click to chase." /></Reveal>
         </div>
           ),
           leakage: (

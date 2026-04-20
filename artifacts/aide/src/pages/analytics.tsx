@@ -6,6 +6,7 @@ import { apiFetch, formatCurrency } from "@/lib/api";
 import LiveToggle from "@/components/LiveToggle";
 import CSVImportModal from "@/components/CSVImportModal";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 type ChartType = "bar" | "line" | "area" | "pie";
 type TimePeriod = "day" | "week" | "month";
@@ -325,16 +326,13 @@ export default function Analytics() {
 
   return (
       <div className="flex-1 min-w-0 min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2">
-              <span className="font-mono text-[13px] text-primary/60">&gt;&gt;</span> Analytics
-            </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Performance metrics and revenue tracking</p>
-          </div>
-          <div className="flex items-center gap-2">
+      <PageHeader
+        prefix=">>"
+        title="Analytics"
+        subtitle="Performance metrics and revenue tracking"
+        wrap
+        actions={
+          <>
             <LiveToggle onTick={fetchData} interval={10_000} />
             <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-all">
               <Upload size={10} /> Import CSV
@@ -350,9 +348,9 @@ export default function Analytics() {
               {(dateFrom || dateTo) && <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-[10px] text-muted-foreground hover:text-foreground">Clear</button>}
             </div>
             <ColorThemeSelector value={colorTheme} onChange={setColorTheme} />
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
         <SavedFiltersBar

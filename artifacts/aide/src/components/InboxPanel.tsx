@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { AlertTriangle, Clock, DollarSign } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 interface DefectRow {
   id: string;
@@ -114,6 +115,117 @@ export function InboxPanel() {
     void load();
   }, []);
 
+  const columns: Array<{ key: string; node: React.ReactNode; hasData: boolean }> = [
+    {
+      key: "defects",
+      hasData: defects.length > 0,
+      node: (
+        <div>
+          <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-red-500 uppercase tracking-wide">
+            <AlertTriangle className="w-3 h-3" /> Critical defects
+          </div>
+          <ul className="space-y-1 text-xs">
+            {defects.map((d) => (
+              <li key={d.id}>
+                <button
+                  onClick={() => setLocation(`/operations?tab=defects&id=${d.id}`)}
+                  className="w-full text-left py-1 px-2 rounded-md hover:bg-muted"
+                >
+                  <div className="flex justify-between gap-2">
+                    <span className="truncate font-medium">{pick(d.task_number, d.taskNumber) ?? d.id.slice(0, 6)} · {d.site}</span>
+                    <span className="text-muted-foreground shrink-0">{daysSince(pick(d.created_at, d.createdAt))}d</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground truncate">{d.client}</div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ),
+    },
+    {
+      key: "invoices",
+      hasData: invoices.length > 0,
+      node: (
+        <div>
+          <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-amber-500 uppercase tracking-wide">
+            <Clock className="w-3 h-3" /> Overdue invoices
+          </div>
+          <ul className="space-y-1 text-xs">
+            {invoices.map((inv) => {
+              const v = Number(pick(inv.total_amount, inv.totalAmount, inv.amount) ?? 0);
+              return (
+                <li key={inv.id}>
+                  <button
+                    onClick={() => setLocation(`/operations?tab=invoices&id=${inv.id}`)}
+                    className="w-full text-left py-1 px-2 rounded-md hover:bg-muted"
+                  >
+                    <div className="flex justify-between gap-2">
+                      <span className="truncate font-medium">{pick(inv.invoice_number, inv.invoiceNumber) ?? inv.id.slice(0, 6)}</span>
+                      <span className="shrink-0 tabular-nums">{fmtAud(v)}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground truncate">{inv.client}</div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ),
+    },
+    {
+      key: "wips",
+      hasData: wips.length > 0,
+      node: (
+        <div>
+          <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-blue-500 uppercase tracking-wide">
+            <DollarSign className="w-3 h-3" /> Top open WIPs
+          </div>
+          <ul className="space-y-1 text-xs">
+            {wips.map((w) => {
+              const v = Number(pick(w.quote_amount, w.quoteAmount) ?? 0);
+              return (
+                <li key={w.id}>
+                  <button
+                    onClick={() => setLocation(`/operations?tab=wip&id=${w.id}`)}
+                    className="w-full text-left py-1 px-2 rounded-md hover:bg-muted"
+                  >
+                    <div className="flex justify-between gap-2">
+                      <span className="truncate font-medium">{pick(w.task_number, w.taskNumber) ?? w.id.slice(0, 6)}</span>
+                      <span className="shrink-0 tabular-nums">{fmtAud(v)}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground truncate">{w.client}</div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ),
+    },
+  ];
+
+  const visibleColumns = columns.filter((c) => c.hasData);
+
+  if (visibleColumns.length === 0) {
+    return (
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <header className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Today's inbox</h2>
+          <span className="text-[10px] text-emerald-500">All clear</span>
+        </header>
+        <p className="text-xs text-muted-foreground">Nothing critical, overdue, or open right now. Nice work.</p>
+      </section>
+    );
+  }
+
+  const colsClass =
+    visibleColumns.length === 1
+      ? "grid-cols-1"
+      : visibleColumns.length === 2
+        ? "grid-cols-1 md:grid-cols-2"
+        : "grid-cols-1 md:grid-cols-3";
+
   return (
     <section className="rounded-2xl border border-border bg-card p-5">
       <header className="flex items-center justify-between mb-4">
@@ -123,90 +235,10 @@ export function InboxPanel() {
         <span className="text-[10px] text-muted-foreground">What needs you right now</span>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-red-500 uppercase tracking-wide">
-            <AlertTriangle className="w-3 h-3" /> Critical defects
-          </div>
-          {defects.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No open critical defects.</p>
-          ) : (
-            <ul className="space-y-1 text-xs">
-              {defects.map((d) => (
-                <li key={d.id}>
-                  <button
-                    onClick={() => setLocation(`/operations?tab=defects&id=${d.id}`)}
-                    className="w-full text-left py-1 px-2 rounded-md hover:bg-muted"
-                  >
-                    <div className="flex justify-between gap-2">
-                      <span className="truncate font-medium">{pick(d.task_number, d.taskNumber) ?? d.id.slice(0, 6)} · {d.site}</span>
-                      <span className="text-muted-foreground shrink-0">{daysSince(pick(d.created_at, d.createdAt))}d</span>
-                    </div>
-                    <div className="text-[10px] text-muted-foreground truncate">{d.client}</div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div>
-          <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-amber-500 uppercase tracking-wide">
-            <Clock className="w-3 h-3" /> Overdue invoices
-          </div>
-          {invoices.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Nothing overdue.</p>
-          ) : (
-            <ul className="space-y-1 text-xs">
-              {invoices.map((inv) => {
-                const v = Number(pick(inv.total_amount, inv.totalAmount, inv.amount) ?? 0);
-                return (
-                  <li key={inv.id}>
-                    <button
-                      onClick={() => setLocation(`/operations?tab=invoices&id=${inv.id}`)}
-                      className="w-full text-left py-1 px-2 rounded-md hover:bg-muted"
-                    >
-                      <div className="flex justify-between gap-2">
-                        <span className="truncate font-medium">{pick(inv.invoice_number, inv.invoiceNumber) ?? inv.id.slice(0, 6)}</span>
-                        <span className="shrink-0 tabular-nums">{fmtAud(v)}</span>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground truncate">{inv.client}</div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
-        <div>
-          <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-blue-500 uppercase tracking-wide">
-            <DollarSign className="w-3 h-3" /> Top open WIPs
-          </div>
-          {wips.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No open WIPs.</p>
-          ) : (
-            <ul className="space-y-1 text-xs">
-              {wips.map((w) => {
-                const v = Number(pick(w.quote_amount, w.quoteAmount) ?? 0);
-                return (
-                  <li key={w.id}>
-                    <button
-                      onClick={() => setLocation(`/operations?tab=wip&id=${w.id}`)}
-                      className="w-full text-left py-1 px-2 rounded-md hover:bg-muted"
-                    >
-                      <div className="flex justify-between gap-2">
-                        <span className="truncate font-medium">{pick(w.task_number, w.taskNumber) ?? w.id.slice(0, 6)}</span>
-                        <span className="shrink-0 tabular-nums">{fmtAud(v)}</span>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground truncate">{w.client}</div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+      <div className={cn("grid gap-4", colsClass)}>
+        {visibleColumns.map((c) => (
+          <div key={c.key}>{c.node}</div>
+        ))}
       </div>
     </section>
   );

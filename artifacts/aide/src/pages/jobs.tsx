@@ -3,6 +3,7 @@ import { Plus, Search, X, LayoutGrid, List, Filter, ChevronUp, ChevronDown, Chev
 import LiveToggle from "@/components/LiveToggle";
 import CSVImportModal from "@/components/CSVImportModal";
 import { SavedFiltersBar } from "@/components/SavedFiltersBar";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
   useListJobs, useCreateJob, useUpdateJob, useDeleteJob,
   getListJobsQueryKey, getGetDashboardSummaryQueryKey
@@ -374,22 +375,12 @@ export default function Jobs() {
 
   return (
     <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col overflow-hidden">
-      <div className="sticky top-0 z-20 bg-background border-b border-border">
-        <div className="flex items-center gap-2 px-3 py-2">
-          <h1 className="text-foreground font-medium text-sm tracking-tight shrink-0 flex items-center gap-1.5"><span className="font-mono text-[12px] text-primary/60">--</span> WIPs</h1>
-          <div className="flex-1 max-w-sm">
-            <div className="relative">
-              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(0); }}
-                placeholder="Search all fields..."
-                className="w-full bg-muted/50 border border-border rounded pl-7 pr-7 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:bg-background transition-all"
-              />
-              {search && <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X size={10} /></button>}
-            </div>
-          </div>
-          <div className="flex items-center gap-1 ml-auto">
+      <PageHeader
+        prefix="--"
+        title="WIPs"
+        subtitle={`${allJobs.length} job${allJobs.length === 1 ? "" : "s"} · day-planning view`}
+        actions={
+          <>
             {activeFilterCount > 0 && (
               <button onClick={clearAllFilters} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors">
                 <FilterX size={11} /> Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
@@ -408,11 +399,21 @@ export default function Jobs() {
             >
               <Plus size={12} />Add WIP
             </button>
-          </div>
-        </div>
-
-        {/* Ops-manager quick-filter bar — day-planning verbs */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/20 border-t border-border flex-wrap">
+          </>
+        }
+        below={
+          <div className="space-y-2">
+            <div className="relative max-w-sm">
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(0); }}
+                placeholder="Search all fields..."
+                className="w-full bg-muted/50 border border-border rounded pl-7 pr-7 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:bg-background transition-all"
+              />
+              {search && <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X size={10} /></button>}
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
           <div className="relative flex-1 max-w-[200px]">
             <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -531,7 +532,9 @@ export default function Jobs() {
           {stats.overdue > 0 && <span className="text-red-500 font-semibold">{stats.overdue} overdue</span>}
           {stats.unassigned > 0 && <span>{stats.unassigned} unassigned</span>}
         </div>
-      </div>
+          </div>
+        }
+      />
 
       {selectedRows.size > 0 && (
         <div className="sticky top-[88px] z-10 bg-primary/10 border-b border-primary/20 px-3 py-1.5 flex items-center gap-2">

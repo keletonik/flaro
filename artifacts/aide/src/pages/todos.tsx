@@ -6,6 +6,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
 import { apiFetch, exportToCSV } from "@/lib/api";
 import LiveToggle from "@/components/LiveToggle";
@@ -405,21 +406,14 @@ export default function Todos() {
 
   return (
       <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
-      <div className="sticky top-0 z-20 bg-background border-b border-border">
-        <div className="flex items-center gap-2 px-3 py-2">
-          <h1 className="text-foreground font-medium text-sm tracking-tight shrink-0 flex items-center gap-1.5"><span className="font-mono text-[12px] text-primary/60">++</span> Tasks</h1>
-          <div className="flex-1 max-w-sm">
-            <div className="relative">
-              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
-                placeholder="Search all fields..."
-                className="w-full bg-muted/50 border border-border rounded pl-7 pr-7 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:bg-background transition-all" />
-              {search && <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X size={10} /></button>}
-            </div>
-          </div>
-          <div className="flex items-center gap-1 ml-auto">
+      <PageHeader
+        prefix="++"
+        title="Tasks"
+        subtitle={`${allTodos.length} total · ${completionPct}% complete`}
+        actions={
+          <>
             {allTodos.length > 0 && (
-              <div className="flex items-center gap-2 mr-2 hidden sm:flex">
+              <div className="hidden sm:flex items-center gap-2 mr-1">
                 <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${completionPct}%` }} />
                 </div>
@@ -442,10 +436,18 @@ export default function Todos() {
               className="flex items-center gap-1 px-2.5 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded hover:opacity-90">
               <Plus size={12} />Add Task
             </button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 px-3 pb-1.5 flex-wrap">
+          </>
+        }
+        below={
+          <div className="space-y-2">
+            <div className="relative max-w-sm">
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
+                placeholder="Search all fields..."
+                className="w-full bg-muted/50 border border-border rounded pl-7 pr-7 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:bg-background transition-all" />
+              {search && <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X size={10} /></button>}
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
           <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">priority</span>
           {PRIORITIES.map((p) => {
             const ps = PRIORITY_STYLES[p];
@@ -506,14 +508,16 @@ export default function Todos() {
           </div>
         )}
 
-        <div className="flex items-center gap-3 px-3 py-1.5 bg-muted/30 border-t border-border text-[10px] text-muted-foreground">
-          <span className="font-medium text-foreground">{filtered.length}</span> of {allTodos.length} tasks
-          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{doneTodos.length} done</span>
-          <span className="flex items-center gap-1">{activeTodos.length} active</span>
-          {stats.critical > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />{stats.critical} critical</span>}
-          {stats.overdue > 0 && <span className="text-red-500 font-semibold">{stats.overdue} overdue</span>}
-        </div>
-      </div>
+            <div className="flex items-center gap-3 px-2 py-1 -mx-2 bg-muted/30 border-t border-border text-[10px] text-muted-foreground">
+              <span className="font-medium text-foreground">{filtered.length}</span> of {allTodos.length} tasks
+              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{doneTodos.length} done</span>
+              <span className="flex items-center gap-1">{activeTodos.length} active</span>
+              {stats.critical > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />{stats.critical} critical</span>}
+              {stats.overdue > 0 && <span className="text-red-500 font-semibold">{stats.overdue} overdue</span>}
+            </div>
+          </div>
+        }
+      />
 
       {selectedRows.size > 0 && (
         <div className="sticky top-[88px] z-10 bg-primary/10 border-b border-primary/20 px-3 py-1.5 flex items-center gap-2">

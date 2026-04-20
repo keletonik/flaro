@@ -3,11 +3,15 @@ import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
   prefix?: string;
-  title: string;
+  title: ReactNode;
   subtitle?: ReactNode;
   meta?: ReactNode;
   actions?: ReactNode;
+  /** Optional sub-row rendered inside the same sticky container (tabs, filter pills, etc.) */
+  below?: ReactNode;
   sticky?: boolean;
+  /** When true, allow the title row to wrap so wide actions don't crowd the title. */
+  wrap?: boolean;
   className?: string;
 }
 
@@ -17,7 +21,9 @@ export function PageHeader({
   subtitle,
   meta,
   actions,
+  below,
   sticky = true,
+  wrap = false,
   className,
 }: PageHeaderProps) {
   return (
@@ -28,7 +34,12 @@ export function PageHeader({
         className,
       )}
     >
-      <div className="flex items-center justify-between gap-4 min-h-[36px]">
+      <div
+        className={cn(
+          "flex items-center justify-between gap-4 min-h-[36px]",
+          wrap && "flex-wrap",
+        )}
+      >
         <div className="min-w-0 flex-1">
           <h1 className="text-foreground font-semibold text-[15px] tracking-tight flex items-center gap-2 leading-none">
             {prefix && (
@@ -49,6 +60,7 @@ export function PageHeader({
           <div className="flex items-center gap-1.5 shrink-0">{actions}</div>
         )}
       </div>
+      {below && <div className="mt-3">{below}</div>}
     </div>
   );
 }

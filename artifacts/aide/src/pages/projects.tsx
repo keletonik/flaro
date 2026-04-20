@@ -4,6 +4,7 @@ import {
   Calendar, MoreHorizontal, Pencil, Trash2, GripVertical,
   FolderKanban, Search, Flag, Users, Clock
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
   useListProjects, useCreateProject, useUpdateProject, useDeleteProject,
   useListProjectTasks, useCreateProjectTask, useUpdateProjectTask, useDeleteProjectTask,
@@ -620,21 +621,21 @@ export default function Projects() {
 
   return (
       <div className="flex-1 min-w-0 max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[13px] text-primary/60">//</span>
-          <div>
-            <h1 className="text-sm font-medium text-foreground tracking-tight">Projects</h1>
-            <p className="text-xs text-muted-foreground">{projects.length} project{projects.length !== 1 ? "s" : ""}</p>
-          </div>
-        </div>
-        <button
-          onClick={() => { setEditingProject(null); setShowModal(true); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity shadow-sm"
-        >
-          <Plus size={14} /> New Project
-        </button>
-      </div>
+      <PageHeader
+        prefix="//"
+        title="Projects"
+        subtitle={`${projects.length} project${projects.length !== 1 ? "s" : ""}`}
+        sticky={false}
+        className="-mx-4 sm:-mx-6 -mt-6 mb-2"
+        actions={
+          <button
+            onClick={() => { setEditingProject(null); setShowModal(true); }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity shadow-sm"
+          >
+            <Plus size={14} /> New Project
+          </button>
+        }
+      />
 
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">

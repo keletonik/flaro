@@ -217,47 +217,46 @@ function SidebarNav() {
         ))}
       </nav>
 
-      {/* AIDE AI Button — text-based */}
+      {/* AIDE AI Button — minimal text link */}
       <div className={cn("px-2 mb-1")}>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("aide-toggle"))}
-          title={collapsed ? "Open AIDE" : undefined}
+          title={collapsed ? "Open AIDE" : "Open AIDE intelligence"}
           className={cn(
-            "w-full flex items-center rounded-md transition-all duration-200 border border-primary/20 hover:border-primary/40 hover:bg-primary/5 group",
-            collapsed ? "justify-center px-0 py-2" : "gap-2 px-2 py-2"
+            "w-full flex items-center rounded-md transition-colors text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+            collapsed ? "justify-center w-9 h-9" : "gap-2 px-2 py-1.5"
           )}
         >
-          <span className="font-mono text-[11px] font-bold text-primary shrink-0 w-5 text-center">⚡</span>
+          <span className="font-mono text-[11px] text-primary shrink-0 w-4 text-center">⚡</span>
           {!collapsed && (
-            <div className="flex-1 text-left">
-              <p className="font-mono text-[11px] font-semibold text-foreground tracking-wide">AIDE</p>
-              <p className="font-mono text-[8px] text-muted-foreground tracking-wider uppercase">intelligence</p>
-            </div>
+            <span className="font-mono text-[11px] font-medium tracking-wide">AIDE</span>
           )}
         </button>
       </div>
 
-      {/* Footer */}
-      <div className={cn("border-t border-sidebar-border pt-2 pb-3 space-y-1", collapsed ? "px-2" : "px-2")}>
+      {/* Footer — compact single block */}
+      <div className={cn("border-t border-sidebar-border pt-1.5 pb-2 space-y-0.5", collapsed ? "px-2" : "px-2")}>
         <UserBadge collapsed={collapsed} />
-        <ThemeToggle collapsed={collapsed} />
-        <button
-          onClick={() => setCollapsed(v => !v)}
-          className={cn(
-            "flex items-center rounded-md transition-all duration-200 text-sidebar-foreground/30 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
-            collapsed ? "w-9 h-9 justify-center" : "gap-2 px-2 py-1.5 w-full text-xs"
-          )}
-          title={collapsed ? "Expand (Cmd+\\)" : "Collapse (Cmd+\\)"}
-        >
-          {collapsed
-            ? <span className="font-mono text-[11px]">&raquo;</span>
-            : <>
-                <span className="font-mono text-[11px]">&laquo;</span>
-                <span className="text-[11px] font-medium">Collapse</span>
-                <span className="ml-auto font-mono text-[9px] opacity-50">⌘\</span>
-              </>
-          }
-        </button>
+        <div className={cn("flex items-center", collapsed ? "flex-col gap-0.5" : "gap-0.5")}>
+          <ThemeToggle collapsed={collapsed} />
+          <button
+            onClick={() => setCollapsed(v => !v)}
+            className={cn(
+              "flex items-center rounded-md transition-all duration-200 text-sidebar-foreground/30 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+              collapsed ? "w-9 h-9 justify-center" : "gap-1.5 px-2 py-1 flex-1 text-xs"
+            )}
+            title={collapsed ? "Expand (Cmd+\\)" : "Collapse (Cmd+\\)"}
+          >
+            {collapsed
+              ? <span className="font-mono text-[11px]">&raquo;</span>
+              : <>
+                  <span className="font-mono text-[10px]">&laquo;</span>
+                  <span className="text-[10px] font-medium">Collapse</span>
+                  <span className="ml-auto font-mono text-[9px] opacity-50">⌘\</span>
+                </>
+            }
+          </button>
+        </div>
       </div>
     </aside>
   );

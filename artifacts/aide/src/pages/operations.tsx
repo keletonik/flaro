@@ -5,6 +5,7 @@ import CSVImportModal from "@/components/CSVImportModal";
 import LiveToggle from "@/components/LiveToggle";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 type TabKey = "wip" | "quotes" | "defects" | "invoices";
 
@@ -580,15 +581,12 @@ export default function Operations() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-3.5">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2">
-              <span className="font-mono text-[13px] text-primary/60">::</span> Operations
-            </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Uptick data management and analytics</p>
-          </div>
-          <div className="flex items-center gap-2">
+      <PageHeader
+        prefix="::"
+        title="Operations"
+        subtitle="Uptick data management and analytics"
+        actions={
+          <>
             <LiveToggle onTick={() => fetchData(activeTab)} interval={10_000} />
             <button onClick={() => setChatOpen(v => !v)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all", chatOpen ? "bg-primary text-white border-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted border-border")} title="Toggle analyst panel">
               {chatOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />} Analyst
@@ -599,21 +597,22 @@ export default function Operations() {
             <button onClick={() => setImportOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-all">
               <Upload size={13} /> Import CSV
             </button>
+          </>
+        }
+        below={
+          <div className="flex gap-1">
+            {TABS.map(tab => (
+              <button key={tab.key} onClick={() => { setActiveTab(tab.key); setStatusFilter(""); setSearch(""); clearSelection(); }}
+                className={cn("px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                  activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}>
+                {tab.label}
+                <span className={cn("ml-1 text-[10px]", activeTab === tab.key ? "opacity-70" : "opacity-50")}>{data[tab.key].length}</span>
+              </button>
+            ))}
           </div>
-        </div>
-
-        <div className="flex gap-1">
-          {TABS.map(tab => (
-            <button key={tab.key} onClick={() => { setActiveTab(tab.key); setStatusFilter(""); setSearch(""); clearSelection(); }}
-              className={cn("px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
-                activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}>
-              {tab.label}
-              <span className={cn("ml-1 text-[10px]", activeTab === tab.key ? "opacity-70" : "opacity-50")}>{data[tab.key].length}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Main content */}

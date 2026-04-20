@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import PageSkeleton from "@/components/ui/PageSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/PageHeader";
 import type { ToolboxNote } from "@workspace/api-client-react";
 
 const FILTERS = ["All", "Active", "Briefed"] as const;
@@ -113,16 +114,12 @@ export default function Toolbox() {
 
   return (
       <div className="flex-1 min-w-0 min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-3.5">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2"><span className="font-mono text-[13px] text-primary/60">{"&&"}</span> Toolbox</h1>
-            <p className="text-xs text-muted-foreground">
-              {activeCount} active note{activeCount !== 1 ? "s" : ""} for team briefing
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
+      <PageHeader
+        prefix="&&"
+        title="Toolbox"
+        subtitle={`${activeCount} active note${activeCount !== 1 ? "s" : ""} for team briefing`}
+        actions={
+          <>
             <button
               data-testid="button-export-briefing"
               onClick={handleExport}
@@ -146,11 +143,10 @@ export default function Toolbox() {
             >
               <Plus size={14} />Add Note
             </button>
-          </div>
-        </div>
-
-        {/* Filter */}
-        <div className="flex gap-1.5 mt-3">
+          </>
+        }
+        below={
+          <div className="flex gap-1.5">
           {FILTERS.map(f => (
             <button
               key={f}
@@ -171,10 +167,11 @@ export default function Toolbox() {
               )}
             </button>
           ))}
-        </div>
-      </div>
+          </div>
+        }
+      />
 
-      <div className="max-w-2xl px-4 sm:px-6 py-4 space-y-3">
+      <div className="max-w-6xl px-4 sm:px-6 py-4 space-y-3">
         {/* Inline add */}
         {showAdd && (
           <div className="bg-card border border-primary/40 rounded-xl p-4 space-y-3 slide-up">
@@ -223,7 +220,7 @@ export default function Toolbox() {
             tip="Tip: press Cmd-K, type 'new note', press enter."
           />
         ) : (
-          <div className="space-y-2.5">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {displayedNotes.map((note, i) => (
               <ToolboxNoteCard
                 key={note.id}

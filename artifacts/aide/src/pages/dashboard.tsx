@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 // Lucide icons removed — typographic prefixes used throughout
 import { apiFetch, formatCurrency } from "@/lib/api";
 import { InboxPanel } from "@/components/InboxPanel";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/App";
@@ -211,13 +212,12 @@ export default function Dashboard() {
 
   return (
       <div className="flex-1 min-w-0 min-h-screen bg-background">
-      <div className="sticky top-0 z-20 glass border-b border-border/50 px-4 sm:px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-foreground font-medium text-sm tracking-tight flex items-center gap-2"><span className="font-mono text-[13px] text-primary/60">~</span> {greeting}, {userName}</h1>
-            <p className="font-mono text-[10px] text-muted-foreground mt-0.5">{new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}</p>
-          </div>
-          <div className="flex items-center gap-2">
+      <PageHeader
+        prefix="~"
+        title={`${greeting}, ${userName}`}
+        subtitle={new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
+        actions={
+          <>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold">
               On Call: {onCallToday.split(" ")[0]}
             </div>
@@ -235,45 +235,44 @@ export default function Dashboard() {
               ↻ Refresh
             </button>
             <DashboardConfigPanel />
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
         {(() => {
           const widgets: Record<WidgetId, React.ReactNode> = {
           inbox: <InboxPanel />,
           metrics: (
-        <div className="bento-grid">
-          <div className="bento-featured card-stagger" style={{ '--stagger-index': 0 } as React.CSSProperties}>
-            <MetricCard label="Revenue This Week" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=7d")} featured tooltip="Paid invoices this week. Click for revenue analytics." />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="card-stagger" style={{ '--stagger-index': 0 } as React.CSSProperties}>
+            <MetricCard label="Revenue This Week" value={kpi ? fmt(kpi.invoices.revenueThisWeek) : "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=7d")} tooltip="Paid invoices this week. Click for revenue analytics." />
           </div>
-          <div className="bento-featured card-stagger" style={{ '--stagger-index': 1 } as React.CSSProperties}>
-            <MetricCard label="Active Jobs" value={summary?.active ?? "-"} icon={null} color="bg-primary/8" onClick={() => setLocation("/jobs?status=Open")} featured tooltip="Open and in-progress jobs right now. Click to filter Jobs by Open." />
+          <div className="card-stagger" style={{ '--stagger-index': 1 } as React.CSSProperties}>
+            <MetricCard label="Active Jobs" value={summary?.active ?? "-"} icon={null} color="bg-primary/8" onClick={() => setLocation("/jobs?status=Open")} tooltip="Open and in-progress jobs right now. Click to filter Jobs by Open." />
           </div>
-          <div className="bento-featured card-stagger" style={{ '--stagger-index': 2 } as React.CSSProperties}>
-            <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={null} color="bg-amber-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Sent")} featured tooltip="Total AUD on invoices sent but not paid. Click to see the list." />
+          <div className="card-stagger" style={{ '--stagger-index': 2 } as React.CSSProperties}>
+            <MetricCard label="Outstanding" value={kpi ? fmt(kpi.invoices.outstandingTotal) : "-"} icon={null} color="bg-amber-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Sent")} tooltip="Total AUD on invoices sent but not paid. Click to see the list." />
           </div>
-          <div className="bento-compact card-stagger" style={{ '--stagger-index': 3 } as React.CSSProperties}>
+          <div className="card-stagger" style={{ '--stagger-index': 3 } as React.CSSProperties}>
             <MetricCard label="Completed Today" value={summary?.doneToday ?? "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/jobs?status=Done")} trend={summary && summary.doneToday > 0 ? "up" : "neutral"} trendLabel={`${summary?.doneToday ?? 0}`} tooltip="Jobs marked Done today. Click for all completed jobs." />
           </div>
-          <div className="bento-compact card-stagger" style={{ '--stagger-index': 4 } as React.CSSProperties}>
+          <div className="card-stagger" style={{ '--stagger-index': 4 } as React.CSSProperties}>
             <MetricCard label="Open WIP" value={kpi?.wip.active ?? "-"} icon={null} color="bg-blue-500/8" onClick={() => setLocation("/operations?tab=wip&status=Open")} tooltip="WIP records still Open (not completed). Click to drill down." />
           </div>
-          <div className="bento-compact card-stagger" style={{ '--stagger-index': 5 } as React.CSSProperties}>
+          <div className="card-stagger" style={{ '--stagger-index': 5 } as React.CSSProperties}>
             <MetricCard label="Pending Quotes" value={kpi?.quotes.pending ?? "-"} icon={null} color="bg-primary/8" onClick={() => setLocation("/operations?tab=quotes&status=Sent")} tooltip="Quotes sent, awaiting client decision. Click to follow up." />
           </div>
-          <div className="bento-compact card-stagger" style={{ '--stagger-index': 6 } as React.CSSProperties}>
+          <div className="card-stagger" style={{ '--stagger-index': 6 } as React.CSSProperties}>
             <MetricCard label="Revenue (Month)" value={kpi ? fmt(kpi.invoices.revenueThisMonth) : "-"} icon={null} color="bg-emerald-500/8" onClick={() => setLocation("/analytics?view=revenue&period=mtd")} tooltip="Paid revenue month-to-date. Click for month-to-date analytics." />
           </div>
-          <div className="bento-compact card-stagger" style={{ '--stagger-index': 7 } as React.CSSProperties}>
+          <div className="card-stagger" style={{ '--stagger-index': 7 } as React.CSSProperties}>
             <MetricCard label="Overdue Invoices" value={kpi?.invoices.overdue ?? "-"} icon={null} color="bg-red-500/8" onClick={() => setLocation("/operations?tab=invoices&status=Overdue")} tooltip="Invoices past their due date and unpaid. Click to chase." />
           </div>
         </div>
           ),
           leakage: (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {pipelineGaps && pipelineGaps.totalAtRisk > 0 && (
+        pipelineGaps && pipelineGaps.totalAtRisk > 0 ? (
             <div className="pipeline-gap bg-card border border-border rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -304,9 +303,7 @@ export default function Dashboard() {
               </div>
               <button onClick={() => setLocation("/operations")} className="mt-3 text-xs text-primary font-medium hover:underline">View details in Operations →</button>
             </div>
-          )}
-
-        </div>
+        ) : null
           ),
           focus: (
           <FocusCard points={focus?.points || []} loading={focusLoading} />

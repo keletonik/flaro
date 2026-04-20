@@ -111,7 +111,7 @@ function startSessionCleanup() {
 // literal fallback is kept ONLY to preserve the operator's current
 // deploy-day unbrick path — if/when the env is set on every known
 // deploy target, the fallback should be removed.
-const CASPER_USERNAME = "casper";
+const CASPER_USERNAME = "ctavitian";
 const CASPER_PASSWORD = process.env["CASPER_PASSWORD"] ?? "Ramekin881!";
 const CASPER_DISPLAY_NAME = "Casper Tavitian";
 const CASPER_EMAIL = "casper@flamesafe.com.au";

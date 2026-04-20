@@ -1,0 +1,61 @@
+# 🛑 READ BEFORE ANY EDIT OR SYNC
+
+Claude Code (CLI) is working on this repo concurrently. It is on branch `main`
+with two new commits that Replit must NOT overwrite:
+
+    cf64a2c  ui(motion): add spring motion layer, CountUp, streaming AIDE PA
+    5ec424f  ui(analytics): drop unused Reveal import and icon prop from MetricTile
+
+These commits add a motion/token layer, the AIDE PA spring drawer + stream
+cursor, CountUp numbers, and a shimmer skeleton. They must remain intact.
+
+## Mandatory sync protocol (run before ANY push)
+
+```bash
+# 1. Fetch the latest remote main.
+git fetch origin main
+
+# 2. Rebase your local work on top — never reset, never force.
+git pull --rebase origin main
+
+# 3. If the rebase pauses on a conflict, STOP and hand control back to the
+#    user. Do NOT auto-resolve by keeping only "ours" — you will delete the
+#    motion layer. Conflicts usually mean both sides touched the same lines.
+
+# 4. Verify these files exist on disk BEFORE you push:
+test -f artifacts/aide/src/lib/motion.ts                   || { echo "MISSING motion.ts — ABORT"; exit 1; }
+test -f artifacts/aide/src/components/ui/CountUp.tsx       || { echo "MISSING CountUp.tsx — ABORT"; exit 1; }
+test -f artifacts/aide/src/components/ui/StreamCursor.tsx  || { echo "MISSING StreamCursor.tsx — ABORT"; exit 1; }
+test -f artifacts/aide/src/components/ui/Reveal.tsx        || { echo "MISSING Reveal.tsx — ABORT"; exit 1; }
+grep -q "aide-stream-cursor" artifacts/aide/src/index.css  || { echo "MOTION LAYER MISSING FROM index.css — ABORT"; exit 1; }
+grep -q "CountUp"       artifacts/aide/src/pages/dashboard.tsx || { echo "dashboard.tsx reverted — ABORT"; exit 1; }
+grep -q "drawerRight"   artifacts/aide/src/components/AidePA.tsx || { echo "AidePA.tsx reverted — ABORT"; exit 1; }
+
+# 5. Typecheck + build.
+pnpm --filter @workspace/aide run typecheck
+pnpm --filter @workspace/aide run build
+
+# 6. Only now push.
+git push origin main
+```
+
+## Hard rules
+
+1. **Never** `git reset --hard` to a commit earlier than `5ec424f`.
+2. **Never** `git push --force` to `main`.
+3. **Never** regenerate `index.css`, `AidePA.tsx`, `dashboard.tsx` or
+   `analytics.tsx` from a template. Edit them surgically.
+4. If you need new UI primitives, add new files — do not replace
+   `CountUp.tsx`, `StreamCursor.tsx`, `Reveal.tsx`, `lib/motion.ts`.
+5. If you see merge conflict markers, stop and ask. Do not pick "ours".
+
+## If you broke it already
+
+```bash
+# Restore the motion commits without losing your own work:
+git fetch origin main
+git log --oneline origin/main | head -20      # find cf64a2c and 5ec424f
+git cherry-pick cf64a2c 5ec424f               # replay them onto your branch
+```
+
+When in doubt: pull first, verify with the checks above, then push.

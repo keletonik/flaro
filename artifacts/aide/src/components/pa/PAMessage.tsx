@@ -22,6 +22,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThinkingIndicator } from "@/components/ui/ThinkingIndicator";
 
 export interface PAToolCall {
   name: string;
@@ -94,10 +95,7 @@ export function PAMessage({ message, streaming, onFollowUpClick, onRetry, onReac
         )}
         <div className="bg-card border border-border rounded-2xl rounded-tl-md px-4 py-3 text-sm">
           {isEmpty && streaming ? (
-            <div className="flex items-center gap-2 text-muted-foreground text-[13px]">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Thinking…</span>
-            </div>
+            <ThinkingIndicator />
           ) : (
             <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-ul:my-1.5 prose-li:my-0.5 prose-code:text-xs prose-code:before:content-none prose-code:after:content-none prose-pre:bg-muted prose-pre:text-foreground">
               <ReactMarkdown

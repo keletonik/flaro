@@ -24,6 +24,7 @@ import { AGENT_TOOLS } from "../lib/chat-tools";
 import { executeAgentTool } from "../lib/chat-tool-exec";
 import { recordToolCall } from "../lib/agent-observability";
 import { logger } from "../lib/logger";
+import { logAgentError } from "../lib/agent-error-log";
 
 const router = Router();
 
@@ -393,6 +394,19 @@ router.post("/chat/agent", async (req, res, next) => {
             error: msg,
           }).catch((logErr) => logger.warn({ err: logErr }, "[agent] recordToolCall failed"));
           logger.warn({ tool: tu.name, durationMs, error: msg }, "[agent] tool error");
+          void logAgentError({
+            surface: "chat-agent",
+            route: "tool-exec",
+            errorType: "ToolExecError",
+            err,
+            severity: "warn",
+            context: {
+              tool: tu.name,
+              section: section ?? null,
+              durationMs,
+              inputKeys: tu.input && typeof tu.input === "object" ? Object.keys(tu.input) : [],
+            },
+          });
         }
       }
 
@@ -420,6 +434,15 @@ router.post("/chat/agent", async (req, res, next) => {
     } catch {
       // ignore
     }
+    void logAgentError({
+      surface: "chat-agent",
+      route: "POST /api/chat/agent",
+      err,
+      context: {
+        section: (req.body as any)?.section ?? null,
+        conversationId: (req.body as any)?.conversationId ?? null,
+      },
+    });
     next(err);
   }
 });

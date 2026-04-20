@@ -14,7 +14,8 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Loader2, Wrench, Check, AlertCircle, Trash2, Sparkles } from "lucide-react";
+import { Send, Loader2, Trash2, Sparkles } from "lucide-react";
+import { ThinkingIndicator } from "@/components/ui/ThinkingIndicator";
 import { useLocation } from "wouter";
 import { streamAgent, type AgentToolEvent, type AttachmentMeta } from "@/lib/api";
 import { AttachmentPicker, AttachmentPreviewChip } from "@/components/AttachmentPicker";
@@ -381,37 +382,10 @@ export default function EmbeddedAgentChat({ section, title = "AIDE", suggestions
               )}>
                 {msg.role === "assistant" ? (
                   <>
-                    {msg.tools && msg.tools.length > 0 && (
-                      <div className="mb-2 space-y-1">
-                        {msg.tools.map((t, tk) => (
-                          <div key={tk} className="flex items-center gap-1.5 text-[10.5px]">
-                            {t.status === "running" ? (
-                              <Loader2 size={10} className="animate-spin text-primary shrink-0" />
-                            ) : t.status === "ok" ? (
-                              <Check size={10} className="text-emerald-500 shrink-0" />
-                            ) : (
-                              <AlertCircle size={10} className="text-destructive shrink-0" />
-                            )}
-                            <Wrench size={9} className="text-muted-foreground/50 shrink-0" />
-                            <span className="font-mono text-muted-foreground truncate">
-                              {t.name}
-                              {t.input?.table ? `(${String(t.input.table)})` : ""}
-                              {t.input?.estimate_id ? ` [#${String(t.input.estimate_id).slice(0, 8)}]` : ""}
-                            </span>
-                            {t.status === "error" && t.error && (
-                              <span className="text-destructive truncate" title={t.error}>{t.error}</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
                     {msg.content ? (
                       <div>{renderMarkdown(msg.content)}</div>
                     ) : (streaming && i === messages.length - 1 ? (
-                      <span className="flex items-center gap-1.5">
-                        <Loader2 size={11} className="animate-spin text-primary" />
-                        <span className="text-muted-foreground text-[11px]">Working...</span>
-                      </span>
+                      <ThinkingIndicator size="sm" />
                     ) : "")}
                   </>
                 ) : msg.content}

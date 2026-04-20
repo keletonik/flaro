@@ -23,6 +23,7 @@ import { db } from "@workspace/db";
 import { attachments } from "@workspace/db";
 import { and, eq, isNull } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { logAgentError } from "../lib/agent-error-log";
 
 const router = Router();
 
@@ -297,6 +298,15 @@ router.post("/fip/defect-analysis", async (req, res, next) => {
     });
   } catch (err) {
     logger.error({ err }, "fip-defect: unhandled error");
+    void logAgentError({
+      surface: "fip-defect",
+      route: "POST /api/fip/defect-analysis",
+      err,
+      context: {
+        attachmentId: (req.body as any)?.attachmentId ?? null,
+        mode: (req.body as any)?.mode ?? null,
+      },
+    });
     next(err);
   }
 });

@@ -37,6 +37,7 @@ import purchaseOrdersRouter from "./purchase-orders";
 import changeLogRouter from "./change-log";
 import airtableRouter from "./airtable";
 import diagRouter from "./diag";
+import agentErrorLogRouter from "./agent-error-log";
 
 const router: IRouter = Router();
 
@@ -78,5 +79,6 @@ router.use(purchaseOrdersRouter);
 router.use(changeLogRouter);
 router.use(airtableRouter);
 router.use(diagRouter);
+router.use(agentErrorLogRouter);
 
 export default router;

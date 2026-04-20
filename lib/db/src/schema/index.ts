@@ -28,3 +28,4 @@ export * from "./fip-material-lists";
 export * from "./purchase-orders";
 export * from "./contacts";
 export * from "./change-logs";
+export * from "./agent-error-log";

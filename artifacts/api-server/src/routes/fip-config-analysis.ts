@@ -27,6 +27,7 @@ import { db } from "@workspace/db";
 import { attachments } from "@workspace/db";
 import { and, eq, isNull } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { logAgentError } from "../lib/agent-error-log";
 
 const router = Router();
 
@@ -403,6 +404,14 @@ router.post("/fip/config-analysis", async (req, res, next) => {
     });
   } catch (err) {
     logger.error({ err }, "fip-config: unhandled error");
+    void logAgentError({
+      surface: "fip-config",
+      route: "POST /api/fip/config-analysis",
+      err,
+      context: {
+        attachmentId: (req.body as any)?.attachmentId ?? null,
+      },
+    });
     next(err);
   }
 });

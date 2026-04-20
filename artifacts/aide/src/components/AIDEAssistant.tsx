@@ -1,37 +1,38 @@
 /**
- * Global AIDE popout — the single AI surface for the entire app.
+ * Global AIDE assistant — single AI surface for the entire app.
  *
- * Mounted once in <Layout> (App.tsx). Renders as a floating popout
- * window that can be repositioned, resized, and persists across
- * page navigation. One unified conversation across the whole site.
+ * Mounted once in <Layout> (App.tsx). Renders as an edge-docked panel
+ * that snaps to the bottom, right, or left of the viewport. Each dock
+ * fills its edge (full height for left/right, full width for bottom)
+ * so it never floats mid-screen. Collapses to a small dock-edge pill.
  *
- * Also triggered from the sidebar AI button.
- *
- * Persists open/collapsed state and size to localStorage.
+ * Persists open / dock-side / size / collapsed state to localStorage.
  */
 
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocation } from "wouter";
-// Lucide icons replaced with text-based typography
 import EmbeddedAgentChat from "@/components/EmbeddedAgentChat";
 import { cn } from "@/lib/utils";
 import { useAIDE } from "@/App";
 
 const OPEN_KEY = "aide-assistant-open";
 const WIDE_KEY = "aide-assistant-wide";
-const POS_KEY = "aide-assistant-pos";
-type Corner = "br" | "bl" | "tr" | "tl";
-const CORNER_STYLES: Record<Corner, string> = {
-  br: "bottom-4 right-4",
-  bl: "bottom-4 left-4 md:left-[220px]",
-  tr: "top-16 right-4",
-  tl: "top-16 left-4 md:left-[220px]",
-};
-function loadCorner(): Corner {
-  try { const v = localStorage.getItem(POS_KEY); if (v && v in CORNER_STYLES) return v as Corner; } catch {}
-  return "br";
+const DOCK_KEY = "aide-assistant-dock";
+const COLLAPSED_KEY = "aide-assistant-collapsed";
+
+type Dock = "right" | "left" | "bottom";
+
+// Sidebar offset on md+ so left/bottom docks don't sit underneath it.
+const SIDEBAR_OFFSET = "md:left-[220px]";
+
+function loadDock(): Dock {
+  try {
+    const v = localStorage.getItem(DOCK_KEY);
+    if (v === "right" || v === "left" || v === "bottom") return v;
+  } catch {}
+  return "right";
 }
-function saveCorner(c: Corner) { try { localStorage.setItem(POS_KEY, c); } catch {} }
+function saveDock(d: Dock) { try { localStorage.setItem(DOCK_KEY, d); } catch {} }
 
 function sectionFromPath(path: string): { section: string; title: string; suggestions: string[] } {
   if (path === "/" || path.startsWith("/dashboard"))
@@ -67,11 +68,11 @@ function sectionFromPath(path: string): { section: string; title: string; sugges
   return { section: "dashboard", title: "AIDE", suggestions: ["What needs attention today?", "Full KPI snapshot", "Create a todo", "Show me the dashboard"] };
 }
 
-// Popout dimensions
-const POP_W = 420;
-const POP_W_WIDE = 580;
-const POP_H = 520;
-const POP_H_WIDE = 680;
+// Panel sizes per dock side
+const SIDE_W = 420;       // right/left compact
+const SIDE_W_WIDE = 580;  // right/left wide
+const BOTTOM_H = 380;     // bottom compact
+const BOTTOM_H_WIDE = 560;// bottom wide
 
 export default function AIDEAssistant() {
   const [location] = useLocation();
@@ -85,22 +86,18 @@ export default function AIDEAssistant() {
   const [wide, setWide] = useState<boolean>(() => {
     try { return localStorage.getItem(WIDE_KEY) === "1"; } catch { return false; }
   });
-  const [minimised, setMinimised] = useState(false);
-  const [corner, setCorner] = useState<Corner>(loadCorner);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem(COLLAPSED_KEY) === "1"; } catch { return false; }
+  });
+  const [dock, setDock] = useState<Dock>(loadDock);
 
-  const cycleCorner = useCallback(() => {
-    setCorner((prev) => {
-      const order: Corner[] = ["br", "bl", "tl", "tr"];
-      const next = order[(order.indexOf(prev) + 1) % order.length];
-      saveCorner(next);
-      return next;
-    });
+  const setDockSide = useCallback((d: Dock) => {
+    setDock(d);
+    saveDock(d);
   }, []);
 
   const handlePopOut = useCallback(() => {
     const url = `/aide-popout?section=${encodeURIComponent(section)}&title=${encodeURIComponent(title)}`;
-    // Open as a tall side-panel anchored to the right edge of the screen.
-    // Use available screen size (excludes taskbar/dock) so we never open off-screen.
     const screenW = window.screen.availWidth || 1280;
     const screenH = window.screen.availHeight || 800;
     const width = Math.min(520, Math.max(380, Math.round(screenW * 0.32)));
@@ -109,21 +106,22 @@ export default function AIDEAssistant() {
     const top = 8;
     const features = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=no`;
     window.open(url, "aide-popout", features);
-    setMinimised(true);
+    setCollapsed(true);
   }, [section, title]);
 
   // Persist
   useEffect(() => { try { localStorage.setItem(OPEN_KEY, open ? "1" : "0"); } catch {} }, [open]);
   useEffect(() => { try { localStorage.setItem(WIDE_KEY, wide ? "1" : "0"); } catch {} }, [wide]);
+  useEffect(() => { try { localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0"); } catch {} }, [collapsed]);
 
-  // Popout doesn't push content, so always report zero to layout
+  // Overlay panel — does not reflow page content.
   useEffect(() => {
     setAideState({ open: false, dock: "right", width: 0, height: 0 });
   }, [setAideState]);
 
   // Listen for aide-open-with-prompt (from CommandPalette or sidebar button)
   useEffect(() => {
-    const handler = () => { setOpen(true); setMinimised(false); };
+    const handler = () => { setOpen(true); setCollapsed(false); };
     window.addEventListener("aide-open-with-prompt", handler);
     return () => window.removeEventListener("aide-open-with-prompt", handler);
   }, []);
@@ -131,8 +129,8 @@ export default function AIDEAssistant() {
   // Listen for aide-toggle (from sidebar button)
   useEffect(() => {
     const handler = () => {
-      setOpen(prev => {
-        if (prev) { setMinimised(false); return false; }
+      setOpen((prev) => {
+        if (prev) { setCollapsed(false); return false; }
         return true;
       });
     };
@@ -145,7 +143,7 @@ export default function AIDEAssistant() {
     const handler = (e: Event) => {
       const msg = (e as CustomEvent).detail?.message;
       setOpen(true);
-      setMinimised(false);
+      setCollapsed(false);
       if (msg) {
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent("aide-open-with-prompt", { detail: { prompt: msg } }));
@@ -156,31 +154,69 @@ export default function AIDEAssistant() {
     return () => window.removeEventListener("aide-analyse", handler);
   }, []);
 
-  // Not open at all: show nothing (sidebar button handles the trigger)
   if (!open) return null;
 
-  const w = wide ? POP_W_WIDE : POP_W;
-  const h = wide ? POP_H_WIDE : POP_H;
-
-  // Minimised: small pill at bottom right
-  if (minimised) {
+  // ─── Collapsed pill — anchored to the dock edge ────────────────────
+  if (collapsed) {
+    const pillPos =
+      dock === "right" ? "bottom-4 right-4" :
+      dock === "left"  ? `bottom-4 left-4 ${SIDEBAR_OFFSET}` :
+                         `bottom-0 left-0 right-0 ${SIDEBAR_OFFSET} flex justify-center pb-2`;
     return (
-      <button
-        onClick={() => setMinimised(false)}
-        className={cn("fixed z-[60] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border shadow-2xl hover:shadow-xl transition-all hover:-translate-y-0.5 text-foreground group", CORNER_STYLES[corner])}
-      >
-        <span className="font-mono text-[11px] font-bold text-primary">⚡</span>
-        <span className="font-mono text-xs font-semibold">AIDE</span>
-        <span className="font-mono text-[10px] text-muted-foreground">{title}</span>
-        <span className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground transition-colors">↑</span>
-      </button>
+      <div className={cn("fixed z-[60]", pillPos)}>
+        <button
+          onClick={() => setCollapsed(false)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border shadow-2xl hover:shadow-xl transition-all hover:-translate-y-0.5 text-foreground group"
+        >
+          <span className="font-mono text-[11px] font-bold text-primary">⚡</span>
+          <span className="font-mono text-xs font-semibold">AIDE</span>
+          <span className="font-mono text-[10px] text-muted-foreground">{title}</span>
+          <span className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground transition-colors">
+            {dock === "bottom" ? "↑" : dock === "right" ? "←" : "→"}
+          </span>
+        </button>
+      </div>
     );
   }
 
+  // ─── Edge-docked panel ─────────────────────────────────────────────
+  const sideW = wide ? SIDE_W_WIDE : SIDE_W;
+  const bottomH = wide ? BOTTOM_H_WIDE : BOTTOM_H;
+
+  const dockClasses =
+    dock === "right"
+      ? "top-0 bottom-0 right-0 border-l rounded-l-2xl"
+      : dock === "left"
+      ? `top-0 bottom-0 left-0 ${SIDEBAR_OFFSET} border-r rounded-r-2xl`
+      : `bottom-0 left-0 right-0 ${SIDEBAR_OFFSET} border-t rounded-t-2xl`;
+
+  const dockStyle: React.CSSProperties =
+    dock === "bottom"
+      ? { height: `${bottomH}px`, maxHeight: "calc(100vh - 32px)" }
+      : { width: `${sideW}px`, maxWidth: "calc(100vw - 32px)" };
+
+  const DockBtn = ({ d, label, glyph }: { d: Dock; label: string; glyph: string }) => (
+    <button
+      onClick={() => setDockSide(d)}
+      title={`Dock ${label}`}
+      className={cn(
+        "p-1.5 rounded-md font-mono text-[11px] transition-colors",
+        dock === d
+          ? "text-primary bg-primary/10"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted",
+      )}
+    >
+      {glyph}
+    </button>
+  );
+
   return (
     <div
-      className={cn("fixed z-[60] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden transition-all duration-200 max-md:inset-4 max-md:!w-auto max-md:!h-auto", CORNER_STYLES[corner])}
-      style={{ width: `${w}px`, height: `${h}px`, maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 32px)" }}
+      className={cn(
+        "fixed z-[60] flex flex-col bg-card border-border shadow-2xl overflow-hidden transition-all duration-200",
+        dockClasses,
+      )}
+      style={dockStyle}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0 bg-card/95 backdrop-blur-sm">
@@ -192,19 +228,20 @@ export default function AIDEAssistant() {
           </div>
         </div>
         <div className="flex items-center gap-0.5">
-          <button onClick={cycleCorner} title={`Position: ${corner.toUpperCase()} (click to cycle)`}
-            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            ◫
-          </button>
+          <div className="flex items-center gap-0.5 mr-1 pr-1 border-r border-border">
+            <DockBtn d="left" label="left" glyph="⇤" />
+            <DockBtn d="bottom" label="bottom" glyph="⇩" />
+            <DockBtn d="right" label="right" glyph="⇥" />
+          </div>
           <button onClick={handlePopOut} title="Pop out to new window"
             className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             ↗
           </button>
-          <button onClick={() => setWide(v => !v)} title={wide ? "Compact" : "Expand"}
+          <button onClick={() => setWide((v) => !v)} title={wide ? "Compact" : "Expand"}
             className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             {wide ? "⊟" : "⊞"}
           </button>
-          <button onClick={() => setMinimised(true)} title="Minimise"
+          <button onClick={() => setCollapsed(true)} title="Collapse"
             className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             ─
           </button>

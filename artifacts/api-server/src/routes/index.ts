@@ -36,6 +36,7 @@ import attachmentsRouter from "./attachments";
 import purchaseOrdersRouter from "./purchase-orders";
 import changeLogRouter from "./change-log";
 import airtableRouter from "./airtable";
+import paCommandRouter from "./pa-command";
 import diagRouter from "./diag";
 import agentErrorLogRouter from "./agent-error-log";
 
@@ -78,6 +79,7 @@ router.use(attachmentsRouter);
 router.use(purchaseOrdersRouter);
 router.use(changeLogRouter);
 router.use(airtableRouter);
+router.use(paCommandRouter);
 router.use(diagRouter);
 router.use(agentErrorLogRouter);
 

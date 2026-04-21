@@ -184,12 +184,29 @@ export default function AIDEAssistant() {
   const sidebarW = sidebarCollapsed ? 60 : 210;
   const effectiveHeight = open ? height : COLLAPSED_HEIGHT;
 
+  const openPopout = useCallback(() => {
+    const w = 720;
+    const h = 800;
+    const sx = window.screenX + (window.outerWidth - w) / 2;
+    const sy = window.screenY + (window.outerHeight - h) / 2;
+    window.open(
+      `/aide-popout?section=${encodeURIComponent(section)}&title=${encodeURIComponent(title)}`,
+      "aide-command-centre",
+      `width=${w},height=${h},left=${sx},top=${sy},menubar=no,toolbar=no,location=no,status=no`,
+    );
+    // Collapse the tray so the popout has the focus, not two competing surfaces.
+    setOpen(false);
+  }, [section, title]);
+
   return (
     <>
-      {/* Bottom tray — fixed position; respects sidebar width on md+ */}
+      {/* Bottom tray — fixed position; respects sidebar width on md+.
+          Solid opaque surface (no glass) so the chrome reads clearly
+          against any background, with a theme-primary accent stripe on
+          the top edge to identify the command centre. */}
       <div
         className={cn(
-          "fixed bottom-0 right-0 z-[60] flex flex-col glass-2 border-t border-border shadow-[0_-12px_32px_-12px_rgba(0,0,0,0.35)]",
+          "fixed bottom-0 right-0 z-[60] flex flex-col bg-card shadow-[0_-16px_40px_-12px_rgba(0,0,0,0.45)]",
           "transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
           dragging && "transition-none select-none",
           fileHover && "ring-2 ring-primary/60 ring-offset-0",
@@ -197,6 +214,7 @@ export default function AIDEAssistant() {
         style={{
           left: `min(${sidebarW}px, 100vw)`,
           height: `${effectiveHeight}px`,
+          borderTop: "2px solid hsl(var(--primary))",
         }}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
@@ -217,39 +235,50 @@ export default function AIDEAssistant() {
         >
           <span className={cn(
             "block h-[3px] w-12 rounded-full transition-colors",
-            dragging ? "bg-primary" : "bg-muted-foreground/30 group-hover:bg-muted-foreground/60",
+            dragging ? "bg-primary" : "bg-muted-foreground/40 group-hover:bg-muted-foreground/70",
           )} />
         </div>
 
-        {/* Header bar — always visible; acts as toggle when collapsed */}
-        <button
-          onClick={() => setOpen(v => !v)}
-          className="flex items-center justify-between px-4 py-2 border-b border-border/60 shrink-0 hover:bg-muted/40 transition-colors text-left"
-        >
-          <div className="flex items-center gap-2.5">
+        {/* Header bar — always visible; clicking the title area toggles */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-border shrink-0 bg-card">
+          <button
+            onClick={() => setOpen(v => !v)}
+            className="flex items-center gap-2.5 flex-1 hover:opacity-80 transition-opacity text-left"
+          >
             <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-primary">
               <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-60" />
             </span>
-            <span className="font-mono text-[11px] font-bold text-foreground tracking-tight">AIDE</span>
+            <span className="font-mono text-[11px] font-bold text-foreground tracking-tight">PA · Command Centre</span>
             <span className="font-mono text-[10px] text-muted-foreground">· {title}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:inline font-mono text-[9px] text-muted-foreground/60 tracking-wider uppercase">
-              {open ? "⌘ · to collapse · drop files here" : "⌘ · to expand"}
+          </button>
+          <div className="flex items-center gap-1.5">
+            <span className="hidden md:inline font-mono text-[9px] text-muted-foreground/60 tracking-wider uppercase mr-2">
+              ⌘ · tray · ⌥↗ pop-out
             </span>
-            <span className="font-mono text-[12px] text-muted-foreground">
+            <button
+              onClick={openPopout}
+              title="Pop out to a separate window"
+              className="px-2 py-1 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              ↗
+            </button>
+            <button
+              onClick={() => setOpen(v => !v)}
+              title={open ? "Collapse tray" : "Expand tray"}
+              className="px-2 py-1 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
               {open ? "▾" : "▴"}
-            </span>
+            </button>
           </div>
-        </button>
+        </div>
 
         {/* Chat body — only rendered when open (saves layout work when collapsed) */}
         {open && (
-          <div className="flex-1 min-h-0 relative">
+          <div className="flex-1 min-h-0 relative bg-card">
             <EmbeddedAgentChat section={section} title={title} suggestions={suggestions} hideHeader />
             {fileHover && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/85 pointer-events-none">
-                <div className="flex flex-col items-center gap-2 px-8 py-6 rounded-2xl border-2 border-dashed border-primary/70 bg-card/90">
+                <div className="flex flex-col items-center gap-2 px-8 py-6 rounded-2xl border-2 border-dashed border-primary/70 bg-card">
                   <span className="text-2xl">⬇</span>
                   <span className="font-mono text-xs font-semibold text-foreground">Drop to upload</span>
                   <span className="font-mono text-[10px] text-muted-foreground">CSV · XLSX · PDF · image</span>

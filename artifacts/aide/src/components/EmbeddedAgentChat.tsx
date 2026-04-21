@@ -17,7 +17,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader2, Trash2, Sparkles } from "lucide-react";
 import { ThinkingIndicator } from "@/components/ui/ThinkingIndicator";
 import { useLocation } from "wouter";
-import { streamAgent, type AgentToolEvent, type AttachmentMeta } from "@/lib/api";
+import { streamAgent, apiFetch, type AgentToolEvent, type AttachmentMeta } from "@/lib/api";
 import { AttachmentPicker, AttachmentPreviewChip } from "@/components/AttachmentPicker";
 import { cn } from "@/lib/utils";
 
@@ -217,10 +217,37 @@ export default function EmbeddedAgentChat({ section, title = "AIDE", suggestions
   }, []);
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
+  // Slash commands bypass the streaming LLM and hit the deterministic PA
+  // command dispatcher. Faster, cheaper, auditable. Everything else keeps
+  // its existing chat path.
+  const runCommand = async (raw: string) => {
+    setInput("");
+    const userLine = raw;
+    setMessages(prev => [...prev, { role: "user", content: userLine }]);
+    const stripped = raw.replace(/^\//, "").trim();
+    try {
+      const r: any = await apiFetch("/pa/command", {
+        method: "POST",
+        body: JSON.stringify({ text: stripped }),
+      });
+      const prefix = r?.ok ? "✓" : "✗";
+      const body = r?.ok
+        ? `${r.summary}${r.data && Array.isArray(r.data) ? "\n\n" + r.data.map((x: any) => typeof x === "string" ? `· ${x}` : `· ${x.taskNumber || x.text || x.site || JSON.stringify(x)}`).join("\n") : ""}`
+        : (r?.reason || "command failed");
+      setMessages(prev => [...prev, { role: "assistant", content: `${prefix} \`${r?.verb || "command"}\` — ${body}` }]);
+    } catch (err: any) {
+      setMessages(prev => [...prev, { role: "assistant", content: `✗ command failed — ${err?.message || err}` }]);
+    }
+  };
+
   const send = (text?: string) => {
     const msg = (text || input).trim();
     const attachmentIds = pending.length > 0 ? pending.map((p) => p.id) : undefined;
     if ((!msg && !attachmentIds) || streaming) return;
+
+    // Route slash-prefixed messages to the command centre.
+    if (msg.startsWith("/")) { void runCommand(msg); return; }
+
     setInput("");
     setPending([]);
     setMessages(prev => [...prev, { role: "user", content: msg || (attachmentIds ? `(${attachmentIds.length} file attached)` : "") }]);

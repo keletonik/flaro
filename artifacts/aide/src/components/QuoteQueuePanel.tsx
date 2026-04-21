@@ -63,7 +63,17 @@ export function QuoteQueuePanel({ compact = false, maxItems = 10, className }: P
   const fetchQueue = useCallback(async () => {
     try {
       const all = await apiFetch<QueueQuote[]>("/quotes?status=To Quote,Draft");
-      const sorted = all.sort((a, b) => {
+      // Filter out ghost rows from a past failed CSV import where every field
+      // fell back to "Unknown" with no description. They can't be deleted per
+      // the data-safety rule, so hide them so the queue stays useful.
+      const real = all.filter(q => {
+        const siteValid = q.site && q.site !== "Unknown";
+        const clientValid = q.client && q.client !== "Unknown";
+        const hasDescription = !!q.description?.trim();
+        const hasRef = !!q.quoteNumber?.trim();
+        return siteValid || clientValid || hasDescription || hasRef;
+      });
+      const sorted = real.sort((a, b) => {
         const order: Record<string, number> = { Urgent: 0, "This Week": 1, Normal: 2, Low: 3 };
         return (order[a.urgency || "Normal"] ?? 2) - (order[b.urgency || "Normal"] ?? 2);
       });

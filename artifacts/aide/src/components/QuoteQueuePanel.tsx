@@ -8,6 +8,7 @@ interface QueueQuote {
   site: string;
   client: string;
   description: string | null;
+  quoteNumber: string | null;
   urgency: string | null;
   status: string;
   quoteAmount: string | null;
@@ -15,6 +16,22 @@ interface QueueQuote {
   validUntil: string | null;
   notes: string | null;
   createdAt: string;
+}
+
+/**
+ * Historical imports with unmapped columns wrote the literal "Unknown" into
+ * site/client. Render a readable fallback instead of repeating "Unknown".
+ */
+function displayTitle(q: QueueQuote): string {
+  if (q.site && q.site !== "Unknown") return q.site;
+  if (q.description) return q.description.slice(0, 80);
+  if (q.quoteNumber) return q.quoteNumber;
+  return "(untitled quote)";
+}
+function displaySub(q: QueueQuote): string | null {
+  if (q.client && q.client !== "Unknown") return q.client;
+  if (q.quoteNumber && q.site !== q.quoteNumber) return q.quoteNumber;
+  return null;
 }
 
 const URGENCY_STYLES: Record<string, { bg: string; text: string; label: string }> = {
@@ -216,10 +233,12 @@ export function QuoteQueuePanel({ compact = false, maxItems = 10, className }: P
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[12px] font-semibold text-foreground truncate">{q.site}</span>
-                    <span className="text-[10px] text-muted-foreground">/ {q.client}</span>
+                    <span className="text-[12px] font-semibold text-foreground truncate">{displayTitle(q)}</span>
+                    {displaySub(q) && (
+                      <span className="text-[10px] text-muted-foreground">/ {displaySub(q)}</span>
+                    )}
                   </div>
-                  {q.description && !compact && (
+                  {q.description && !compact && q.site !== "Unknown" && (
                     <p className="text-[11px] text-muted-foreground truncate mt-0.5">{q.description}</p>
                   )}
                 </div>

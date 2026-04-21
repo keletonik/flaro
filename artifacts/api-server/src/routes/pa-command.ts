@@ -15,7 +15,7 @@
 
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { jobs, todos } from "@workspace/db";
+import { jobs, notes, todos } from "@workspace/db";
 import { eq, or, ilike, desc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { broadcastEvent } from "../lib/events";
@@ -114,35 +114,30 @@ router.post("/pa/command", async (req, res, next) => {
 
     switch (parsed.verb) {
       case "create_todo": {
-        const row = {
+        const [inserted] = await db.insert(todos).values({
           id: randomUUID(),
           text: parsed.args.text,
           completed: false,
           priority: "Medium" as const,
-          category: "Work",
+          category: "Work" as const,
           dependencies: [],
           createdAt: now,
           updatedAt: now,
-        };
-        const [inserted] = await db.insert(todos).values(row).returning();
+        }).returning();
         broadcastEvent("data_change", { source: "pa-command", verb: parsed.verb });
         result = { ok: true, verb: parsed.verb, summary: `todo added · "${inserted.text}"`, data: inserted };
         break;
       }
 
       case "create_note": {
-        // Notes table is managed elsewhere; surface a soft "todo" fallback.
-        const row = {
+        // Use the dedicated notes table rather than masquerading as a todo.
+        const [inserted] = await db.insert(notes).values({
           id: randomUUID(),
           text: parsed.args.text,
-          completed: false,
-          priority: "Low" as const,
-          category: "Notes",
-          dependencies: [],
+          category: "To Do" as const,
+          status: "Open" as const,
           createdAt: now,
-          updatedAt: now,
-        };
-        const [inserted] = await db.insert(todos).values(row).returning();
+        }).returning();
         broadcastEvent("data_change", { source: "pa-command", verb: parsed.verb });
         result = { ok: true, verb: parsed.verb, summary: `note saved · "${inserted.text}"`, data: inserted };
         break;

@@ -13,6 +13,7 @@
     "agent-eval": "tsx ./src/agent-evals/run.ts"
   },
   "dependencies": {
+    "@kenjiuno/msgreader": "^1.28.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/integrations-anthropic-ai": "workspace:*",

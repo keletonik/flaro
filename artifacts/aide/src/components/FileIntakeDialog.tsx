@@ -120,8 +120,39 @@ export function FileIntakeDialog() {
       if (!files || files.length === 0) return;
       // Take the first file; multi-file intake deferred.
       const file = files[0];
-      if (!file.name.toLowerCase().endsWith(".csv")) {
-        toast({ title: "Only CSV is supported right now", description: file.name, variant: "destructive" });
+      const lower = file.name.toLowerCase();
+
+      // .msg → email intake. Bypass the CSV dialog entirely; ship straight to
+      // /msg/intake which parses, categorises, and creates a Job + Airtable row.
+      if (lower.endsWith(".msg")) {
+        const rdr = new FileReader();
+        rdr.onload = async (ev) => {
+          const result = ev.target?.result as string | null;
+          if (!result) {
+            toast({ title: "Could not read .msg", description: file.name, variant: "destructive" });
+            return;
+          }
+          // FileReader.readAsDataURL returns "data:<mime>;base64,<payload>".
+          const data = result.includes(",") ? result.split(",", 2)[1] : result;
+          try {
+            const r: any = await apiFetch("/msg/intake", {
+              method: "POST",
+              body: JSON.stringify({ filename: file.name, data }),
+            });
+            toast({
+              title: `Email imported · ${r?.priority || "Medium"}`,
+              description: `${r?.category || "General"}${r?.taskNumber ? ` · ${r.taskNumber}` : ""}`,
+            });
+          } catch (err: any) {
+            toast({ title: "Email import failed", description: String(err?.message || err), variant: "destructive" });
+          }
+        };
+        rdr.readAsDataURL(file);
+        return;
+      }
+
+      if (!lower.endsWith(".csv")) {
+        toast({ title: "Only CSV and .msg are supported right now", description: file.name, variant: "destructive" });
         return;
       }
       const reader = new FileReader();

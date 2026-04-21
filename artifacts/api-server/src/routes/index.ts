@@ -39,6 +39,7 @@ import airtableRouter from "./airtable";
 import paCommandRouter from "./pa-command";
 import diagRouter from "./diag";
 import agentErrorLogRouter from "./agent-error-log";
+import msgIntakeRouter from "./msg-intake";
 
 const router: IRouter = Router();
 
@@ -82,5 +83,6 @@ router.use(airtableRouter);
 router.use(paCommandRouter);
 router.use(diagRouter);
 router.use(agentErrorLogRouter);
+router.use(msgIntakeRouter);
 
 export default router;

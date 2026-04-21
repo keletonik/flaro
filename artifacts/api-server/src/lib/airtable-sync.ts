@@ -1,5 +1,5 @@
 import { db } from "@workspace/db";
-import { todos, jobs, quotes, contacts } from "@workspace/db";
+import { todos, jobs, quotes, contacts, meetings } from "@workspace/db";
 import { eq, isNotNull } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { broadcastEvent } from "./events";
@@ -15,6 +15,7 @@ const TABLES = {
   jobs: "tblfX6SQYVJJmkdeK",
   quotes: "tbl6k5nXbDVGE4Pnd",
   contacts: "tblzyaBUUZTF8fn6J",
+  meetings: "tblyqxK2iKXtWxYY1",
 };
 
 interface AirtableRecord {
@@ -54,6 +55,7 @@ const status: SyncStatus = {
     jobs: { tableId: TABLES.jobs, inserted: 0, updated: 0, orphaned: 0, total: 0, error: null },
     quotes: { tableId: TABLES.quotes, inserted: 0, updated: 0, orphaned: 0, total: 0, error: null },
     contacts: { tableId: TABLES.contacts, inserted: 0, updated: 0, orphaned: 0, total: 0, error: null },
+    meetings: { tableId: TABLES.meetings, inserted: 0, updated: 0, orphaned: 0, total: 0, error: null },
   },
 };
 
@@ -352,6 +354,56 @@ async function syncContacts(records: AirtableRecord[]): Promise<TableSyncResult>
   return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
 }
 
+async function syncMeetings(records: AirtableRecord[]): Promise<TableSyncResult> {
+  const airtableIds = new Set(records.map((r) => r.id));
+  let inserted = 0;
+  let updated = 0;
+  const now = new Date();
+
+  for (const rec of records) {
+    const f = rec.fields;
+    const title: string = (f["Name"] || f["Title"] || f["Meeting"] || f["Subject"] || "").toString().trim();
+    if (!title) continue;
+    const startAt = (f["Start"] || f["Start Date"] || f["Date"] || f["When"] || null) as any;
+    const endAt = (f["End"] || f["End Date"] || null) as any;
+    const location = (f["Location"] || f["Where"] || null) as any;
+    const attendees = Array.isArray(f["Attendees"]) ? f["Attendees"].join(", ") : (f["Attendees"] || null);
+    const notes = (f["Notes"] || f["Agenda"] || null) as any;
+
+    const values = {
+      title,
+      startAt: startAt ? String(startAt) : null,
+      endAt: endAt ? String(endAt) : null,
+      location: location ? String(location) : null,
+      attendees: attendees ? String(attendees) : null,
+      notes: notes ? String(notes) : null,
+      rawData: f,
+      updatedAt: now,
+    };
+
+    const [existing] = await db.select().from(meetings).where(eq(meetings.airtableRecordId, rec.id));
+    if (existing) {
+      await db.update(meetings).set(values).where(eq(meetings.id, existing.id));
+      updated++;
+    } else {
+      await db.insert(meetings).values({
+        id: randomUUID(),
+        ...values,
+        airtableRecordId: rec.id,
+        createdAt: now,
+      });
+      inserted++;
+    }
+  }
+
+  const synced = await db.select().from(meetings).where(isNotNull(meetings.airtableRecordId));
+  const orphans = synced.filter((m: { airtableRecordId: string | null }) => m.airtableRecordId && !airtableIds.has(m.airtableRecordId));
+  if (orphans.length > 0) {
+    console.warn(`[airtable-sync] ${orphans.length} meetings no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: { airtableRecordId: string | null }) => o.airtableRecordId).join(", ")}`);
+  }
+  return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
+}
+
 export async function syncAirtableAll(): Promise<SyncStatus["tables"]> {
   const startedAt = Date.now();
   const results = status.tables;
@@ -367,6 +419,8 @@ export async function syncAirtableAll(): Promise<SyncStatus["tables"]> {
         r = await syncJobs(records);
       } else if (key === "quotes") {
         r = await syncQuotes(records);
+      } else if (key === "meetings") {
+        r = await syncMeetings(records);
       } else {
         r = await syncContacts(records);
       }

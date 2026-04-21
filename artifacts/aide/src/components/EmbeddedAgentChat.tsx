@@ -240,13 +240,27 @@ export default function EmbeddedAgentChat({ section, title = "AIDE", suggestions
     }
   };
 
+  // Terminal-theme sugar: in the terminal register users shouldn't have to
+  // type a leading slash — the same imperatives used for the CLI also get
+  // routed to /api/pa/command. This regex mirrors the verbs supported by
+  // the server so misses fall through to the LLM chat path unchanged.
+  const CLI_VERB_RE = /^\s*(add|create|new|mark|set|assign|find|search|show|list|status|summary|brief|help)\b/i;
+  const isTerminalTheme = () =>
+    typeof document !== "undefined"
+      && document.documentElement.getAttribute("data-theme") === "terminal";
+
   const send = (text?: string) => {
     const msg = (text || input).trim();
     const attachmentIds = pending.length > 0 ? pending.map((p) => p.id) : undefined;
     if ((!msg && !attachmentIds) || streaming) return;
 
-    // Route slash-prefixed messages to the command centre.
-    if (msg.startsWith("/")) { void runCommand(msg); return; }
+    // Route slash-prefixed messages to the command centre. In the terminal
+    // theme, also route known verbs even without the leading slash — feels
+    // like a real CLI where you just type `status` or `help`.
+    if (msg.startsWith("/") || (isTerminalTheme() && CLI_VERB_RE.test(msg))) {
+      void runCommand(msg);
+      return;
+    }
 
     setInput("");
     setPending([]);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   useDashboardConfig,
@@ -9,9 +9,27 @@ import {
 export function DashboardConfigPanel() {
   const [open, setOpen] = useState(false);
   const { config, moveUp, moveDown, toggle, isHidden, reset } = useDashboardConfig();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click and on Escape. Do NOT close on mouse-leave —
+  // the user needs to cross a small gap to reach the ^/v arrows, and
+  // auto-dismiss on leave makes the reorder impossible.
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -28,7 +46,6 @@ export function DashboardConfigPanel() {
       {open && (
         <div
           className="absolute right-0 top-full mt-2 z-30 w-64 rounded-lg border border-border bg-card shadow-xl overflow-hidden"
-          onMouseLeave={() => setOpen(false)}
         >
           <div className="px-3 py-2 border-b border-border flex items-center justify-between">
             <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">

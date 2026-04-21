@@ -181,20 +181,41 @@ function UserBadge({ collapsed }: { collapsed: boolean }) {
 function SidebarNav() {
   const [location, setLocation] = useLocation();
   const { collapsed, setCollapsed } = useSidebar();
+  const { theme } = useTheme();
+  const isTerminal = theme === "terminal";
 
   return (
     <aside className={cn(
       "hidden md:flex fixed left-0 top-0 bottom-0 flex-col z-50 bg-sidebar sidebar-shadow transition-all duration-300",
       collapsed ? "w-[60px]" : "w-[210px]"
     )}>
-      {/* Logo — typographic wordmark */}
+      {/* Logo — typographic wordmark. Terminal theme shows the chevron +
+          lowercase `aide` + signal-green cursor block from the brand mockup. */}
       <div className={cn("flex items-center pt-5 pb-4", collapsed ? "px-3 justify-center" : "px-4")}>
         <button onClick={() => setLocation("/")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <span className="font-mono text-[15px] font-bold tracking-tighter text-primary shrink-0">A</span>
+          {isTerminal ? (
+            // Chevron monogram — > shape in foreground colour.
+            <svg viewBox="0 0 100 100" width={collapsed ? 20 : 18} height={collapsed ? 20 : 18} className="shrink-0">
+              <path d="M 28 22 L 60 50 L 28 78" fill="none" stroke="currentColor" strokeWidth="14" strokeLinecap="square" strokeLinejoin="miter" className="text-sidebar-foreground" />
+            </svg>
+          ) : (
+            <span className="font-mono text-[15px] font-bold tracking-tighter text-primary shrink-0">A</span>
+          )}
           {!collapsed && (
-            <div className="flex flex-col">
-              <span className="font-mono text-[13px] font-bold tracking-tight text-sidebar-foreground">AIDE</span>
-              <span className="font-mono text-[9px] text-sidebar-foreground/30 tracking-widest uppercase">service ops</span>
+            <div className="flex items-center gap-1.5">
+              <span className={cn(
+                "font-mono text-[14px] font-bold tracking-tight text-sidebar-foreground leading-none",
+                isTerminal && "lowercase",
+              )}>
+                {isTerminal ? "aide" : "AIDE"}
+              </span>
+              {isTerminal && (
+                <span className="inline-block w-[8px] h-[14px] bg-primary"
+                      style={{ animation: "terminal-block-blink 1.1s steps(2) infinite" }} />
+              )}
+              {!isTerminal && (
+                <span className="font-mono text-[9px] text-sidebar-foreground/30 tracking-widest uppercase ml-1">service ops</span>
+              )}
             </div>
           )}
         </button>

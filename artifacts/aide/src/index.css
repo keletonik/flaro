@@ -1162,6 +1162,146 @@
   box-shadow: 0 0 10px hsl(var(--primary) / 0.6);
 }
 
+/* ─── CLI register patterns (Terminal theme only) ───────────────────────────
+   Opt-in via `data-cli` attribute or by entering the .terminal-cli context.
+   Doesn't affect icon-only buttons (they don't use data-cli). */
+
+/* `$` prefix on any element marked data-cli="prompt". Reads as a shell. */
+[data-theme="terminal"] [data-cli="prompt"]::before {
+  content: "$ ";
+  color: hsl(var(--primary));
+  font-family: var(--app-font-mono);
+  opacity: 0.9;
+  font-weight: 700;
+}
+
+/* `>` prefix for agent/chat markdown rows inside the terminal theme.
+   Scoped so it only fires in the PA chat surfaces, never on random lists. */
+[data-theme="terminal"] .chat-markdown ul > li::marker,
+[data-theme="terminal"] .chat-markdown ol > li::marker {
+  color: hsl(var(--primary));
+  content: ">  ";
+}
+[data-theme="terminal"] .chat-markdown ul > li,
+[data-theme="terminal"] .chat-markdown ol > li {
+  list-style-position: outside;
+}
+
+/* Pulsing "$ running" status pill. Mark any element with data-cli="status" to
+   get the dot + mono voice; the content before sets the label via ::before. */
+@keyframes terminal-status-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+[data-theme="terminal"] [data-cli="status"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--app-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+}
+[data-theme="terminal"] [data-cli="status"]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  box-shadow: 0 0 6px hsl(var(--primary) / 0.6);
+  animation: terminal-status-pulse 1.6s ease-in-out infinite;
+}
+
+/* CLI agent card — decorative container that pins a > next to each line. */
+[data-theme="terminal"] .cli-line {
+  position: relative;
+  padding-left: 1.2em;
+}
+[data-theme="terminal"] .cli-line::before {
+  content: ">";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: hsl(var(--primary));
+  font-family: var(--app-font-mono);
+  font-weight: 700;
+}
+
+/* Metric card in terminal theme: tighten label typography, tint values. */
+[data-theme="terminal"] .metric-card p.font-mono {
+  color: hsl(var(--primary) / 0.75) !important;
+  letter-spacing: 0.12em;
+}
+
+/* ─── Terminal chat surface ─────────────────────────────────────────────────
+   When the theme is terminal, the PA tray becomes a literal terminal: no
+   bubbles, mono everything, green `$` prompt prefix on the user line, flat
+   background. The existing EmbeddedAgentChat markup is unchanged; these
+   rules simply re-style the classes it already emits. */
+[data-theme="terminal"] .chat-user-bubble {
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+  color: hsl(var(--foreground));
+  font-family: var(--app-font-mono);
+  position: relative;
+  padding-left: 1.5em !important;
+}
+[data-theme="terminal"] .chat-user-bubble::before {
+  content: "$";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: hsl(var(--primary));
+  font-weight: 700;
+  font-family: var(--app-font-mono);
+}
+
+/* Assistant message: no bubble, tight mono body, left-aligned. */
+[data-theme="terminal"] .chat-assistant {
+  max-width: 100%;
+  font-family: var(--app-font-mono);
+}
+[data-theme="terminal"] .chat-markdown {
+  font-family: var(--app-font-mono);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+/* Input bar — full-width flat line with a green $ prompt. */
+[data-theme="terminal"] .chat-input-bar {
+  border-radius: 0 !important;
+  border-color: hsl(var(--primary) / 0.3) !important;
+  border-left-width: 2px !important;
+  background: transparent !important;
+  position: relative;
+}
+[data-theme="terminal"] .chat-input-bar::before {
+  content: "$";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: hsl(var(--primary));
+  font-weight: 700;
+  font-family: var(--app-font-mono);
+  font-size: 13px;
+  pointer-events: none;
+}
+[data-theme="terminal"] .chat-input-bar textarea,
+[data-theme="terminal"] .chat-input-bar input {
+  padding-left: 26px !important;
+  font-family: var(--app-font-mono) !important;
+}
+
+/* Ping dot in the tray header is a block cursor in terminal theme. */
+[data-theme="terminal"] [data-cli="live-dot"] {
+  border-radius: 2px !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    GLASS TIERS — heavier blur for modals, lighter for headers
    ═══════════════════════════════════════════════════════════════════════════ */

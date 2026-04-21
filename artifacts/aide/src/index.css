@@ -1303,6 +1303,39 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   FORM CONTROLS — native select/option popups were rendering with the
+   browser's default white chrome on dark themes (unreadable light-grey
+   option text on white). color-scheme tells the UA to use the dark
+   chrome for its built-in widgets.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root.dark,
+:root[data-theme="terminal"],
+:root[data-theme="operator"],
+:root[data-theme="fieldkit"],
+:root[data-theme="atelier"],
+:root[data-theme="circuit"],
+:root[data-theme="deep-navy"],
+:root[data-theme="slate-dark"],
+:root[data-theme="graphite-green"] {
+  color-scheme: dark;
+}
+:root[data-theme="blue-white"],
+:root[data-theme="blue-orange"],
+:root[data-theme="blue-green"] {
+  color-scheme: light;
+}
+
+/* Also force the select itself to be legible regardless of inheritance. */
+select {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+select option {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    GLASS TIERS — heavier blur for modals, lighter for headers
    ═══════════════════════════════════════════════════════════════════════════ */
 .glass-1 {

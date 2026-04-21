@@ -54,10 +54,10 @@ export default function AideSplash({ durationMs = 10000, onDone }: AideSplashPro
       <div className="aide-splash-grid" />
       <div className="aide-splash-center">
         <div className="aide-splash-mark">
-          <AideFavicon color="#22d3ee" size={56} className="aide-splash-favicon" />
+          <AideFavicon size={56} className="aide-splash-favicon" />
         </div>
         <div className="aide-splash-wordmark-wrap">
-          <AideWordmarkAnimated color="#22d3ee" height={72} />
+          <AideWordmarkAnimated height={72} />
         </div>
         <p className="aide-splash-caption">{captions[captionIdx]}</p>
         <div className="aide-splash-progress">

@@ -28,7 +28,6 @@ const PurchaseOrders = lazy(() => import("@/pages/purchase-orders"));
 const AidePopout = lazy(() => import("@/pages/aide-popout"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 // All Lucide nav icons replaced with text-based prefixes
-import AidePA from "@/components/AidePA";
 import AIDEAssistant from "@/components/AIDEAssistant";
 import CommandPalette from "@/components/CommandPalette";
 import { KeyboardCheatSheet } from "@/components/KeyboardCheatSheet";

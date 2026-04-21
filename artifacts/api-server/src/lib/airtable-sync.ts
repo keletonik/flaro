@@ -191,9 +191,9 @@ async function syncTodos(records: AirtableRecord[]): Promise<TableSyncResult> {
 
   // Non-destructive: count orphans but never delete. Replit data-safety rule.
   const synced = await db.select().from(todos).where(isNotNull(todos.airtableRecordId));
-  const orphans = synced.filter((t) => t.airtableRecordId && !airtableIds.has(t.airtableRecordId));
+  const orphans = synced.filter((t: { airtableRecordId: string | null }) => t.airtableRecordId && !airtableIds.has(t.airtableRecordId));
   if (orphans.length > 0) {
-    console.warn(`[airtable-sync] ${orphans.length} todos no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map(o => o.airtableRecordId).join(", ")}`);
+    console.warn(`[airtable-sync] ${orphans.length} todos no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: { airtableRecordId: string | null }) => o.airtableRecordId).join(", ")}`);
   }
   return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
 }
@@ -249,9 +249,9 @@ async function syncJobs(records: AirtableRecord[]): Promise<TableSyncResult> {
   }
 
   const synced = await db.select().from(jobs).where(isNotNull(jobs.airtableRecordId));
-  const orphans = synced.filter((j) => j.airtableRecordId && !airtableIds.has(j.airtableRecordId));
+  const orphans = synced.filter((j: { airtableRecordId: string | null }) => j.airtableRecordId && !airtableIds.has(j.airtableRecordId));
   if (orphans.length > 0) {
-    console.warn(`[airtable-sync] ${orphans.length} jobs no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map(o => o.airtableRecordId).join(", ")}`);
+    console.warn(`[airtable-sync] ${orphans.length} jobs no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: { airtableRecordId: string | null }) => o.airtableRecordId).join(", ")}`);
   }
   return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
 }
@@ -297,9 +297,9 @@ async function syncQuotes(records: AirtableRecord[]): Promise<TableSyncResult> {
   }
 
   const synced = await db.select().from(quotes).where(isNotNull(quotes.airtableRecordId));
-  const orphans = synced.filter((q) => q.airtableRecordId && !airtableIds.has(q.airtableRecordId));
+  const orphans = synced.filter((q: { airtableRecordId: string | null }) => q.airtableRecordId && !airtableIds.has(q.airtableRecordId));
   if (orphans.length > 0) {
-    console.warn(`[airtable-sync] ${orphans.length} quotes no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map(o => o.airtableRecordId).join(", ")}`);
+    console.warn(`[airtable-sync] ${orphans.length} quotes no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: { airtableRecordId: string | null }) => o.airtableRecordId).join(", ")}`);
   }
   return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
 }
@@ -342,9 +342,9 @@ async function syncContacts(records: AirtableRecord[]): Promise<TableSyncResult>
   }
 
   const synced = await db.select().from(contacts).where(isNotNull(contacts.airtableRecordId));
-  const orphans = synced.filter((c) => c.airtableRecordId && !airtableIds.has(c.airtableRecordId));
+  const orphans = synced.filter((c: { airtableRecordId: string | null }) => c.airtableRecordId && !airtableIds.has(c.airtableRecordId));
   if (orphans.length > 0) {
-    console.warn(`[airtable-sync] ${orphans.length} contacts no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map(o => o.airtableRecordId).join(", ")}`);
+    console.warn(`[airtable-sync] ${orphans.length} contacts no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: { airtableRecordId: string | null }) => o.airtableRecordId).join(", ")}`);
   }
   return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
 }
@@ -393,6 +393,36 @@ export async function syncAirtableAll(): Promise<SyncStatus["tables"]> {
 // Site mutations push to Airtable so Airtable stays the source of truth.
 // Fire-and-forget from the route handlers; errors log but don't break the API.
 
+// Known Airtable Tech Assigned choices. Anything else falls back to TBC so
+// the write-back never 422s on an unknown singleSelect value.
+const AIRTABLE_TECHS = new Set([
+  "Gordon Jenkins",
+  "Darren Brailey",
+  "Haider Al-Heyoury",
+  "John Minai",
+  "Nu Unasa",
+  "TBC",
+]);
+function techToAirtable(tech: string | null | undefined): string {
+  if (!tech) return "TBC";
+  return AIRTABLE_TECHS.has(tech) ? tech : "TBC";
+}
+
+// Normalise any date-ish input into YYYY-MM-DD. Airtable's date field rejects
+// malformed values unless typecast=true does something sensible.
+function toAirtableDate(v: any): string | null {
+  if (!v) return null;
+  if (typeof v === "string") {
+    // Already ISO? Return the date part.
+    const m = /^(\d{4}-\d{2}-\d{2})/.exec(v);
+    if (m) return m[1];
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+  }
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  return null;
+}
+
 /** Map a DB job row → Airtable field payload. */
 function jobToAirtableFields(job: any): Record<string, any> {
   const out: Record<string, any> = {};
@@ -405,16 +435,20 @@ function jobToAirtableFields(job: any): Record<string, any> {
   if (job.actionRequired) out["Scope"] = job.actionRequired;
   if (job.priority) out["Priority"] = priorityToAirtable(job.priority);
   if (job.status) out["Status"] = jobStatusToAirtable(job.status);
-  if (job.assignedTech) out["Tech Assigned"] = job.assignedTech;
-  if (job.dueDate) out["Scheduled Date"] = job.dueDate;
+  // Tech Assigned is a singleSelect — only send a known value or TBC.
+  out["Tech Assigned"] = techToAirtable(job.assignedTech);
+  const scheduled = toAirtableDate(job.dueDate);
+  if (scheduled) out["Scheduled Date"] = scheduled;
   if (job.notes) out["Notes"] = job.notes;
-  if (job.site) out["Name"] = job.site.slice(0, 100);
+  // Name is the primary field — always send something, truncated to 100 chars.
+  // Prefer site; fall back to task number, then action, then a sentinel.
+  const nameSource = job.site || job.taskNumber || job.actionRequired || `Job ${job.id}`;
+  out["Name"] = String(nameSource).slice(0, 100);
   return out;
 }
 
 function quoteToAirtableFields(q: any): Record<string, any> {
   const out: Record<string, any> = {};
-  if (q.quoteNumber) out["Quote Reference"] = q.quoteNumber;
   if (q.site) out["Site"] = q.site;
   if (q.client) out["Client"] = q.client;
   if (q.contactName) out["Contact"] = q.contactName;
@@ -423,6 +457,9 @@ function quoteToAirtableFields(q: any): Record<string, any> {
   if (q.validUntil) out["Deadline"] = String(q.validUntil);
   if (q.status) out["Status"] = quoteStatusToAirtable(q.status);
   if (q.notes) out["Notes"] = q.notes;
+  // Quote Reference is the primary field — always populate it.
+  const refSource = q.quoteNumber || q.site || `Quote ${q.id}`;
+  out["Quote Reference"] = String(refSource).slice(0, 100);
   return out;
 }
 

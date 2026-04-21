@@ -229,7 +229,7 @@ function SidebarNav() {
                       style={{ animation: "terminal-block-blink 1.1s steps(2) infinite" }} />
               )}
               {!isTerminal && (
-                <span className="font-mono text-[9px] text-sidebar-foreground/30 tracking-widest uppercase ml-1">service ops</span>
+                <span className="font-mono text-[9px] text-sidebar-foreground/55 tracking-widest uppercase ml-1">service ops</span>
               )}
             </div>
           )}

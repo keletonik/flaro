@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useDashboardConfig,
@@ -34,14 +35,13 @@ export function DashboardConfigPanel() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors",
+          "inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors",
           open && "text-foreground border-primary/40 bg-primary/5",
         )}
         title="Configure dashboard widgets"
       >
-        <span className="opacity-60">{"{"}</span>
-        layout
-        <span className="opacity-60">{"}"}</span>
+        <SlidersHorizontal size={11} className="opacity-75" />
+        <span>Layout</span>
       </button>
       {open && (
         <div

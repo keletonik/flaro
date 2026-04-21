@@ -3,6 +3,7 @@ import { Search, Upload, Download, Filter, X, ChevronDown, MessageCircle, Send, 
 import { apiFetch, exportToCSV, streamChat } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
 import LiveToggle from "@/components/LiveToggle";
+import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -514,6 +515,7 @@ export default function Operations() {
   };
 
   useEffect(() => { fetchData(activeTab); }, [activeTab, search, statusFilter]);
+  useLiveUpdates(() => { fetchData(activeTab); });
 
   const handleImport = async (rows: Record<string, string>[], columnMap: Record<string, string>) => {
     await apiFetch(`${ENDPOINTS[activeTab]}/import`, { method: "POST", body: JSON.stringify({ rows, columnMap }) });

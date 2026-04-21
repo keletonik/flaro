@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -227,6 +228,9 @@ export default function Jobs() {
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
+
+  // Refetch on any server-side data change so Airtable edits land live.
+  useLiveUpdates(() => { void queryClient.invalidateQueries(); });
 
   const allJobs: Job[] = jobs || [];
 

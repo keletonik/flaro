@@ -13,6 +13,7 @@ import {
 import type { PurchaseOrder, PurchaseOrderChecklistItem } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import { cn } from "@/lib/utils";
 import LiveToggle from "@/components/LiveToggle";
 import CSVImportModal from "@/components/CSVImportModal";
@@ -87,6 +88,7 @@ export default function PurchaseOrdersPage() {
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  useLiveUpdates(() => { void queryClient.invalidateQueries(); });
 
   const listQuery = useListPurchaseOrders({
     ...(statusFilter ? { status: statusFilter } : {}),

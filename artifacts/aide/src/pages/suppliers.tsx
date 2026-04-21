@@ -5,6 +5,7 @@ import CSVImportModal from "@/components/CSVImportModal";
 import EstimationWorkbench from "@/components/EstimationWorkbench";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 
 interface Supplier {
   id: string; name: string; category: string; contactName: string | null; phone: string | null;
@@ -237,6 +238,7 @@ export default function Suppliers() {
   };
 
   useEffect(() => { fetchSuppliers(); }, [search, categoryFilter]);
+  useLiveUpdates(() => { fetchSuppliers(); });
 
   const handleCreate = async (data: any) => {
     await apiFetch("/suppliers", { method: "POST", body: JSON.stringify(data) });

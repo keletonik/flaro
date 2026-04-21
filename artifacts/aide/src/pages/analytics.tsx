@@ -8,6 +8,7 @@ import CSVImportModal from "@/components/CSVImportModal";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CountUp } from "@/components/ui/CountUp";
+import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 
 type ChartType = "bar" | "line" | "area" | "pie";
 type TimePeriod = "day" | "week" | "month";
@@ -292,6 +293,7 @@ export default function Analytics() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useLiveUpdates(() => { fetchData(); });
 
   const revenueData = useMemo(() => {
     if (!data) return [];

@@ -6,6 +6,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
 import { apiFetch, exportToCSV } from "@/lib/api";
@@ -219,6 +220,8 @@ export default function Todos() {
   const createTodo = useCreateTodo();
   const updateTodo = useUpdateTodo();
   const deleteTodo = useDeleteTodo();
+
+  useLiveUpdates(() => { void queryClient.invalidateQueries(); });
 
   const allTodos: any[] = todos || [];
   const activeTodos = allTodos.filter((t: any) => !t.completed);

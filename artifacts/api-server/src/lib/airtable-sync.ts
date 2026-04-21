@@ -4,7 +4,10 @@ import { eq, isNotNull } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { broadcastEvent } from "./events";
 
-const AIRTABLE_PAT = process.env.AIRTABLE_PAT;
+// Accept either env name. AIRTABLE_PAT is the canonical; AIRTABLE_API_KEY is
+// the alias used by the sibling Python email-ingest service on the same
+// Replit deployment, so only one secret needs to be set.
+const AIRTABLE_PAT = process.env.AIRTABLE_PAT || process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID || "appuKqojpI3bmO79D";
 const POLL_INTERVAL_MS = parseInt(process.env.AIRTABLE_POLL_MS || "30000", 10);
 

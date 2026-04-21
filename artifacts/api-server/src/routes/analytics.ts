@@ -2,17 +2,25 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { jobs, wipRecords, quotes, defects, invoices } from "@workspace/db";
 import { sql } from "drizzle-orm";
+import {
+  isMyDivision,
+  isMyTech,
+  isUnfiltered,
+  isRevenueInvoice,
+  revenueDate,
+  invoiceAmount,
+} from "../lib/division-filter";
 
 const router = Router();
 
-// Simple in-memory cache with 60-second TTL
+// Cache scoped per-filter so the unfiltered view doesn't poison the divisional one.
 const cache = new Map<string, { data: any; expires: number }>();
 function getCached(key: string): any | null {
   const entry = cache.get(key);
   if (entry && Date.now() < entry.expires) return entry.data;
   return null;
 }
-function setCache(key: string, data: any, ttlMs = 60000) {
+function setCache(key: string, data: any, ttlMs = 30000) {
   cache.set(key, { data, expires: Date.now() + ttlMs });
 }
 
@@ -22,13 +30,32 @@ export function invalidateAnalyticsCache() {
 }
 
 router.get("/analytics/wip", async (req, res, next) => {
-  const cached = getCached("analytics-wip");
+  const unfiltered = isUnfiltered(req);
+  const cacheKey = unfiltered ? "analytics-wip-all" : "analytics-wip-mine";
+  const cached = getCached(cacheKey);
   if (cached) { res.json(cached); return; }
   try {
-    const allWip = await db.select().from(wipRecords);
-    const allJobs = await db.select().from(jobs);
+    const allWipRaw = await db.select().from(wipRecords);
+    const allJobsRaw = await db.select().from(jobs);
     const allQuotes = await db.select().from(quotes);
     const allInvoices = await db.select().from(invoices);
+
+    // Scope WIP + jobs to my division + my techs unless ?division=all.
+    const allWip = unfiltered
+      ? allWipRaw
+      : allWipRaw.filter(w => isMyDivision(w) && isMyTech(w.assignedTech));
+    const allJobs = unfiltered ? allJobsRaw : allJobsRaw.filter(j => isMyTech(j.assignedTech));
+
+    // Restrict invoices/quotes to task numbers that survived the WIP filter, so
+    // revenue tracks the same scope as the WIP/jobs counts. (Invoice rows have
+    // no service group of their own — task_number is the join key.)
+    const myTaskNumbers = new Set(allWip.map(w => w.taskNumber).filter(Boolean) as string[]);
+    const scopedInvoices = unfiltered
+      ? allInvoices
+      : allInvoices.filter(i => !i.taskNumber || myTaskNumbers.has(i.taskNumber));
+    const scopedQuotes = unfiltered
+      ? allQuotes
+      : allQuotes.filter(q => !q.taskNumber || myTaskNumbers.has(q.taskNumber));
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -40,8 +67,13 @@ router.get("/analytics/wip", async (req, res, next) => {
     const dailyTarget = MONTHLY_TARGET / daysInMonth;
     const proRataTarget = dailyTarget * dayOfMonth;
 
-    // Calculate revenue by period
-    const paidInvoices = allInvoices.filter(i => i.status === "Paid" && i.datePaid);
+    // Revenue: count any AUTHORISED/PAID/PARTIAL invoice (case-insensitive) attributed
+    // to date_paid if known else date_issued. Anything draft/void is ignored.
+    // Date is the invoice's revenue-recognition date — see division-filter.revenueDate.
+    const revenueInvoices = scopedInvoices
+      .filter(isRevenueInvoice)
+      .map(inv => ({ inv, date: revenueDate(inv) }))
+      .filter(x => x.date);
 
     function getWeekStart(d: Date): Date {
       const day = d.getDay();
@@ -55,9 +87,9 @@ router.get("/analytics/wip", async (req, res, next) => {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split("T")[0];
-      const dayRevenue = paidInvoices
-        .filter(inv => inv.datePaid && inv.datePaid.startsWith(dateStr))
-        .reduce((sum, inv) => sum + (inv.totalAmount ? Number(inv.totalAmount) : (inv.amount ? Number(inv.amount) : 0)), 0);
+      const dayRevenue = revenueInvoices
+        .filter(x => x.date!.startsWith(dateStr))
+        .reduce((sum, x) => sum + invoiceAmount(x.inv), 0);
       revenueByDay.push({ date: dateStr, revenue: dayRevenue, target: dailyTarget });
     }
 
@@ -72,9 +104,9 @@ router.get("/analytics/wip", async (req, res, next) => {
       we.setDate(we.getDate() + 6);
       const wsStr = ws.toISOString().split("T")[0];
       const weStr = we.toISOString().split("T")[0];
-      const weekRevenue = paidInvoices
-        .filter(inv => inv.datePaid && inv.datePaid >= wsStr && inv.datePaid <= weStr)
-        .reduce((sum, inv) => sum + (inv.totalAmount ? Number(inv.totalAmount) : (inv.amount ? Number(inv.amount) : 0)), 0);
+      const weekRevenue = revenueInvoices
+        .filter(x => x.date! >= wsStr && x.date! <= weStr)
+        .reduce((sum, x) => sum + invoiceAmount(x.inv), 0);
       revenueByWeek.push({ week: `W${12 - i} (${ws.getDate()}/${ws.getMonth() + 1})`, revenue: weekRevenue, target: weeklyTarget });
     }
 
@@ -85,9 +117,9 @@ router.get("/analytics/wip", async (req, res, next) => {
       const mEnd = new Date(m.getFullYear(), m.getMonth() + 1, 0);
       const mStr = m.toISOString().split("T")[0];
       const mEndStr = mEnd.toISOString().split("T")[0];
-      const monthRevenue = paidInvoices
-        .filter(inv => inv.datePaid && inv.datePaid >= mStr && inv.datePaid <= mEndStr)
-        .reduce((sum, inv) => sum + (inv.totalAmount ? Number(inv.totalAmount) : (inv.amount ? Number(inv.amount) : 0)), 0);
+      const monthRevenue = revenueInvoices
+        .filter(x => x.date! >= mStr && x.date! <= mEndStr)
+        .reduce((sum, x) => sum + invoiceAmount(x.inv), 0);
       const monthName = m.toLocaleDateString("en-AU", { month: "short", year: "2-digit" });
       revenueByMonth.push({ month: monthName, revenue: monthRevenue, target: MONTHLY_TARGET });
     }
@@ -200,13 +232,13 @@ router.get("/analytics/wip", async (req, res, next) => {
 
     // Quote conversion funnel
     const quoteFunnel = {
-      total: allQuotes.length,
-      sent: allQuotes.filter(q => q.status === "Sent").length,
-      accepted: allQuotes.filter(q => q.status === "Accepted").length,
-      declined: allQuotes.filter(q => q.status === "Declined").length,
-      expired: allQuotes.filter(q => q.status === "Expired").length,
-      totalValue: allQuotes.reduce((s, q) => s + (q.quoteAmount ? Number(q.quoteAmount) : 0), 0),
-      acceptedValue: allQuotes.filter(q => q.status === "Accepted").reduce((s, q) => s + (q.quoteAmount ? Number(q.quoteAmount) : 0), 0),
+      total: scopedQuotes.length,
+      sent: scopedQuotes.filter(q => q.status === "Sent").length,
+      accepted: scopedQuotes.filter(q => q.status === "Accepted").length,
+      declined: scopedQuotes.filter(q => q.status === "Declined").length,
+      expired: scopedQuotes.filter(q => q.status === "Expired").length,
+      totalValue: scopedQuotes.reduce((s, q) => s + (q.quoteAmount ? Number(q.quoteAmount) : 0), 0),
+      acceptedValue: scopedQuotes.filter(q => q.status === "Accepted").reduce((s, q) => s + (q.quoteAmount ? Number(q.quoteAmount) : 0), 0),
     };
 
     // Revenue summary
@@ -215,17 +247,24 @@ router.get("/analytics/wip", async (req, res, next) => {
     const thisWeekStart = getWeekStart(today).toISOString().split("T")[0];
     const thisWeekEnd = (() => { const d = getWeekStart(today); d.setDate(d.getDate() + 6); return d.toISOString().split("T")[0]; })();
 
-    const revenueThisMonth = paidInvoices.filter(i => i.datePaid && i.datePaid >= thisMonthStart && i.datePaid <= thisMonthEnd)
-      .reduce((s, i) => s + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
-    const revenueThisWeek = paidInvoices.filter(i => i.datePaid && i.datePaid >= thisWeekStart && i.datePaid <= thisWeekEnd)
-      .reduce((s, i) => s + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
-    const revenueToday = paidInvoices.filter(i => i.datePaid && i.datePaid.startsWith(today.toISOString().split("T")[0]))
-      .reduce((s, i) => s + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
+    const todayStr = today.toISOString().split("T")[0];
+    const revenueThisMonth = revenueInvoices.filter(x => x.date! >= thisMonthStart && x.date! <= thisMonthEnd)
+      .reduce((s, x) => s + invoiceAmount(x.inv), 0);
+    const revenueThisWeek = revenueInvoices.filter(x => x.date! >= thisWeekStart && x.date! <= thisWeekEnd)
+      .reduce((s, x) => s + invoiceAmount(x.inv), 0);
+    const revenueToday = revenueInvoices.filter(x => x.date!.startsWith(todayStr))
+      .reduce((s, x) => s + invoiceAmount(x.inv), 0);
 
-    // Outstanding pipeline
-    const outstandingInvoices = allInvoices.filter(i => i.status === "Sent" || i.status === "Overdue");
-    const outstandingTotal = outstandingInvoices.reduce((s, i) => s + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
-    const overdueTotal = allInvoices.filter(i => i.status === "Overdue").reduce((s, i) => s + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
+    // Outstanding pipeline (case-insensitive on Xero status names)
+    const isOutstanding = (i: typeof scopedInvoices[number]) => {
+      const s = String(i.status || "").toUpperCase();
+      return s === "AUTHORISED" || s === "SENT" || s === "OVERDUE" || s === "PARTIAL";
+    };
+    const outstandingInvoices = scopedInvoices.filter(isOutstanding);
+    const outstandingTotal = outstandingInvoices.reduce((s, i) => s + invoiceAmount(i), 0);
+    const overdueTotal = scopedInvoices
+      .filter(i => String(i.status || "").toUpperCase() === "OVERDUE")
+      .reduce((s, i) => s + invoiceAmount(i), 0);
 
     // WIP pipeline total
     const wipPipelineTotal = allWip.filter(w => w.status !== "Completed").reduce((s, w) => s + (w.quoteAmount ? Number(w.quoteAmount) : 0), 0);
@@ -280,11 +319,17 @@ router.get("/analytics/wip", async (req, res, next) => {
       invoices: {
         outstanding: outstandingTotal,
         overdue: overdueTotal,
-        total: allInvoices.length,
+        total: scopedInvoices.length,
+      },
+      filter: {
+        unfiltered,
+        scope: unfiltered ? "all" : "my-division",
+        wipCount: allWip.length,
+        invoiceCount: scopedInvoices.length,
       },
       generatedAt: new Date().toISOString(),
     };
-    setCache("analytics-wip", result);
+    setCache(cacheKey, result);
     res.json(result);
   } catch (err) { next(err); }
 });

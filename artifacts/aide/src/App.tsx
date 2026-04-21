@@ -52,7 +52,17 @@ export function useAIDE() { return useContext(AIDEContext); }
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 30000, retry: 1 },
+    queries: {
+      // Live data: refetch every 20s in the background, refetch on tab focus,
+      // and treat data as stale immediately on focus changes. Keeps the
+      // dashboard, todos, jobs, and analytics within ~20s of Airtable truth
+      // (Airtable poll itself is 30s).
+      staleTime: 10000,
+      refetchInterval: 20000,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      retry: 1,
+    },
   },
 });
 

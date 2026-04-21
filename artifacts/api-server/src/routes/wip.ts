@@ -6,6 +6,7 @@ import { randomUUID } from "crypto";
 import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { deleteRow, deleteRows, softDeleteEnabled } from "../lib/soft-delete";
 import { logDataChange } from "../lib/change-log";
+import { isMyDivision, isMyTech, isUnfiltered } from "../lib/division-filter";
 
 const MAX_IMPORT_ROWS = Number(process.env["MAX_IMPORT_ROWS"]) || 10000;
 
@@ -22,6 +23,7 @@ const serialize = (r: typeof wipRecords.$inferSelect) => ({
 router.get("/wip", async (req, res, next) => {
   try {
     const { status, priority, search, client, assignedTech, jobType } = req.query as Record<string, string>;
+    const unfiltered = isUnfiltered(req);
     const conditions = [];
     if (softDeleteEnabled()) conditions.push(isNull(wipRecords.deletedAt));
     if (status) conditions.push(eq(wipRecords.status, status as any));
@@ -33,16 +35,31 @@ router.get("/wip", async (req, res, next) => {
       const s = search.replace(/[%_\\]/g, "\\$&");
       conditions.push(or(ilike(wipRecords.site, `%${s}%`), ilike(wipRecords.client, `%${s}%`), ilike(wipRecords.taskNumber!, `%${s}%`), ilike(wipRecords.description!, `%${s}%`)));
     }
-    // Count total for pagination
-    let countQuery = db.select({ count: sql<number>`count(*)` }).from(wipRecords).$dynamic();
-    if (conditions.length) countQuery = countQuery.where(and(...conditions));
-    const [{ count: total }] = await countQuery;
 
-    const pg = parsePagination(req);
+    // Division/tech filter is JSONB-based (raw_data->>serviceGroup), so we
+    // post-filter in JS rather than push it into the SQL WHERE clause. The
+    // resulting page sizes are small enough that this is fine.
+    if (unfiltered) {
+      let countQuery = db.select({ count: sql<number>`count(*)` }).from(wipRecords).$dynamic();
+      if (conditions.length) countQuery = countQuery.where(and(...conditions));
+      const [{ count: total }] = await countQuery;
+
+      const pg = parsePagination(req);
+      let query = db.select().from(wipRecords).$dynamic();
+      if (conditions.length) query = query.where(and(...conditions));
+      const result = await query.orderBy(desc(wipRecords.createdAt)).limit(pg.limit).offset(pg.offset);
+      res.json(paginatedResponse(result.map(serialize), Number(total), pg));
+      return;
+    }
+
+    // Filtered path: pull all matching rows, post-filter, then paginate.
     let query = db.select().from(wipRecords).$dynamic();
     if (conditions.length) query = query.where(and(...conditions));
-    const result = await query.orderBy(desc(wipRecords.createdAt)).limit(pg.limit).offset(pg.offset);
-    res.json(paginatedResponse(result.map(serialize), Number(total), pg));
+    const all = await query.orderBy(desc(wipRecords.createdAt));
+    const filtered = all.filter(w => isMyDivision(w) && isMyTech(w.assignedTech));
+    const pg = parsePagination(req);
+    const page = filtered.slice(pg.offset, pg.offset + pg.limit);
+    res.json(paginatedResponse(page.map(serialize), filtered.length, pg));
   } catch (err) { next(err); }
 });
 

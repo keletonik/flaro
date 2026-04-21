@@ -15,12 +15,21 @@ import { Router } from "express";
 import { db, pool } from "@workspace/db";
 import { jobs, wipRecords, quotes, defects, invoices, todos } from "@workspace/db";
 import { computeMetric } from "../lib/metrics/registry";
+import {
+  isMyDivision,
+  isMyTech,
+  isUnfiltered,
+  isRevenueInvoice,
+  revenueDate,
+  invoiceAmount as invAmt,
+} from "../lib/division-filter";
 
 const router = Router();
 
 router.get("/kpi/metrics", async (req, res, next) => {
   try {
-    const [allJobs, allWip, allQuotes, allDefects, allInvoices, allTodos] = await Promise.all([
+    const unfiltered = isUnfiltered(req);
+    const [allJobsRaw, allWipRaw, allQuotesRaw, allDefects, allInvoicesRaw, allTodos] = await Promise.all([
       db.select().from(jobs),
       db.select().from(wipRecords),
       db.select().from(quotes),
@@ -28,6 +37,16 @@ router.get("/kpi/metrics", async (req, res, next) => {
       db.select().from(invoices),
       db.select().from(todos),
     ]);
+
+    const allWip = unfiltered ? allWipRaw : allWipRaw.filter(w => isMyDivision(w) && isMyTech(w.assignedTech));
+    const allJobs = unfiltered ? allJobsRaw : allJobsRaw.filter(j => isMyTech(j.assignedTech));
+    const myTaskNumbers = new Set(allWip.map(w => w.taskNumber).filter(Boolean) as string[]);
+    const allInvoices = unfiltered
+      ? allInvoicesRaw
+      : allInvoicesRaw.filter(i => !i.taskNumber || myTaskNumbers.has(i.taskNumber));
+    const allQuotes = unfiltered
+      ? allQuotesRaw
+      : allQuotesRaw.filter(q => !q.taskNumber || myTaskNumbers.has(q.taskNumber));
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -58,16 +77,32 @@ router.get("/kpi/metrics", async (req, res, next) => {
     // Falls back to the legacy hand-rolled sum only if the registry
     // call errors — should never happen, but keeps the dashboard
     // resilient while we migrate the other fields across.
+    // Revenue: AUTHORISED/PAID/PARTIAL (case-insensitive), attributed to date_paid
+    // if known else date_issued. Aligns with /api/analytics/wip — single source.
+    // The metric-registry path is bypassed when divisional filtering is active
+    // (the registry doesn't know about divisions yet).
+    const revenueRows = allInvoices
+      .filter(isRevenueInvoice)
+      .map(i => ({ i, d: revenueDate(i) }))
+      .filter(x => x.d) as { i: typeof allInvoices[number]; d: string }[];
     let revenueThisMonth = 0;
-    try {
-      const mtdMetric = await computeMetric(pool as any, "revenue_vs_target_mtd", { period: "mtd" });
-      revenueThisMonth = mtdMetric.headline ?? 0;
-    } catch (e) {
-      const paidThisMonth = allInvoices.filter(i => i.status === "Paid" && i.datePaid && new Date(i.datePaid) >= monthStart);
-      revenueThisMonth = paidThisMonth.reduce((sum, i) => sum + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
+    if (unfiltered) {
+      try {
+        const mtdMetric = await computeMetric(pool as any, "revenue_vs_target_mtd", { period: "mtd" });
+        revenueThisMonth = mtdMetric.headline ?? 0;
+      } catch (e) {
+        revenueThisMonth = revenueRows
+          .filter(x => new Date(x.d) >= monthStart)
+          .reduce((sum, x) => sum + invAmt(x.i), 0);
+      }
+    } else {
+      revenueThisMonth = revenueRows
+        .filter(x => new Date(x.d) >= monthStart)
+        .reduce((sum, x) => sum + invAmt(x.i), 0);
     }
-    const revenueThisWeek = allInvoices.filter(i => i.status === "Paid" && i.datePaid && new Date(i.datePaid) >= weekStart)
-      .reduce((sum, i) => sum + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
+    const revenueThisWeek = revenueRows
+      .filter(x => new Date(x.d) >= weekStart)
+      .reduce((sum, x) => sum + invAmt(x.i), 0);
 
     const activeTodos = allTodos.filter(t => !t.completed);
     const overdueTodos = allTodos.filter(t => !t.completed && t.dueDate && new Date(t.dueDate) < today);

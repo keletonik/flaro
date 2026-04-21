@@ -7,6 +7,7 @@ import { CreateJobBody, UpdateJobBody, ListJobsQueryParams, GetJobParams, Update
 import { randomUUID } from "crypto";
 import { deleteRow, softDeleteEnabled } from "../lib/soft-delete";
 import { pushJobToAirtable } from "../lib/airtable-sync";
+import { isMyTech, isUnfiltered } from "../lib/division-filter";
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.get("/jobs", async (req, res, next) => {
     if (!parsed.success) { res.status(400).json({ error: "Invalid query params" }); return; }
 
     const { status, priority, search } = parsed.data;
+    const unfiltered = isUnfiltered(req);
     let query = db.select().from(jobs).$dynamic();
     const conditions = [];
 
@@ -51,17 +53,18 @@ router.get("/jobs", async (req, res, next) => {
     }
 
     if (conditions.length > 0) query = query.where(and(...conditions));
-    // Support both flat array (for generated hooks) and paginated response
+
+    // Tech allowlist applied in JS (cheap — jobs table has hundreds of rows, not tens of thousands)
+    const all = await query.orderBy(jobs.createdAt);
+    const filtered = unfiltered ? all : all.filter(j => isMyTech(j.assignedTech));
+    const serialized = filtered.map(serializeJob);
+
     if (req.query.page) {
-      let countQuery = db.select({ count: sql<number>`count(*)` }).from(jobs).$dynamic();
-      if (conditions.length > 0) countQuery = countQuery.where(and(...conditions));
-      const [{ count: total }] = await countQuery;
       const pg = parsePagination(req);
-      const result = await query.orderBy(jobs.createdAt).limit(pg.limit).offset(pg.offset);
-      res.json(paginatedResponse(result.map(serializeJob), Number(total), pg));
+      const page = serialized.slice(pg.offset, pg.offset + pg.limit);
+      res.json(paginatedResponse(page, filtered.length, pg));
     } else {
-      const result = await query.orderBy(jobs.createdAt);
-      res.json(result.map(serializeJob));
+      res.json(serialized);
     }
   } catch (err) { next(err); }
 });

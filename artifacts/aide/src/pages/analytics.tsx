@@ -104,7 +104,7 @@ function ColorThemeSelector({ value, onChange }: { value: string; onChange: (t: 
   );
 }
 
-function TargetGauge({ current, target, label }: { current: number; target: number; label: string }) {
+function TargetGauge({ current, target, label }: { current: number; target: number; label?: string }) {
   const pct = Math.min(Math.round((current / target) * 100), 100);
   const circumference = 2 * Math.PI * 45;
   const offset = circumference - (pct / 100) * circumference;
@@ -112,20 +112,19 @@ function TargetGauge({ current, target, label }: { current: number; target: numb
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative w-28 h-28">
-        <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" fill="none" stroke="hsl(var(--border))" strokeWidth="6" />
-          <circle cx="50" cy="50" r="45" fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
+      <div className="relative w-[120px] h-[120px]">
+        <svg className="w-[120px] h-[120px] -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="hsl(var(--border))" strokeWidth="4" />
+          <circle cx="50" cy="50" r="45" fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
             strokeDasharray={circumference} strokeDashoffset={offset}
             style={{ transition: "stroke-dashoffset 1s ease-out" }} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-foreground tracking-tight">{pct}%</span>
-          <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider">of target</span>
+          <span className="font-mono text-[26px] font-bold text-foreground tracking-tight leading-none tabular-nums">{pct}%</span>
+          <span className="font-mono text-[8px] text-muted-foreground uppercase tracking-[0.15em] mt-1">of target</span>
         </div>
       </div>
-      <p className="text-xs font-semibold text-foreground mt-2">{label}</p>
-      <p className="text-[10px] text-muted-foreground">{fmt(current)} / {fmt(target)}</p>
+      {label && <p className="font-mono text-[10px] text-muted-foreground mt-2 uppercase tracking-[0.1em]">{label}</p>}
     </div>
   );
 }
@@ -140,18 +139,20 @@ interface MetricTileProps {
 }
 
 function MetricTile({ label, value, numericValue, format, sub, color }: MetricTileProps) {
-  const accent = color.includes("emerald") ? "text-emerald-500/70"
-    : color.includes("blue") ? "text-blue-500/70"
-    : color.includes("amber") ? "text-amber-500/70"
-    : color.includes("red") ? "text-red-500/70"
-    : "text-primary/70";
+  // Flat stat cell — no card wrapper. Used inside the dense KPI grids.
+  // The accent variable stays for the label tint; value uses foreground.
+  const accent = color.includes("emerald") ? "text-emerald-500"
+    : color.includes("blue") ? "text-blue-500"
+    : color.includes("amber") ? "text-amber-500"
+    : color.includes("red") ? "text-red-500"
+    : "text-primary";
   return (
-    <div className="bg-card border border-border rounded-xl p-4 metric-wash">
-      <p className={cn("font-mono text-[10px] uppercase tracking-widest mb-1", accent)}>{label}</p>
+    <div className="px-3 py-2">
+      <p className={cn("font-mono text-[9px] uppercase tracking-[0.15em] opacity-70 mb-0.5", accent)}>{label}</p>
       {numericValue !== undefined
-        ? <CountUp value={numericValue} format={format} className="font-mono text-xl font-bold text-foreground tracking-tight tabular-nums" />
-        : <p className="font-mono text-xl font-bold text-foreground tracking-tight tabular-nums">{value}</p>}
-      {sub && <p className="font-mono text-[10px] text-muted-foreground/60 mt-0.5">{sub}</p>}
+        ? <CountUp value={numericValue} format={format} className="block font-mono text-[20px] font-bold text-foreground tracking-tight tabular-nums leading-none" />
+        : <p className="font-mono text-[20px] font-bold text-foreground tracking-tight tabular-nums leading-none">{value}</p>}
+      {sub && <p className="font-mono text-[10px] text-muted-foreground/60 mt-1 truncate">{sub}</p>}
     </div>
   );
 }
@@ -160,12 +161,12 @@ function ChartCard({ title, children, chartType, onChartTypeChange, className }:
   title: string; children: React.ReactNode; chartType?: ChartType; onChartTypeChange?: (t: ChartType) => void; className?: string;
 }) {
   return (
-    <div className={cn("bg-card border border-border rounded-2xl p-5", className)}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">{title}</h3>
+    <div className={cn("border border-border rounded-lg overflow-hidden", className)}>
+      <header className="flex items-center justify-between px-3 py-2 border-b border-border">
+        <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted-foreground">{title}</span>
         {chartType && onChartTypeChange && <ChartTypeSelector value={chartType} onChange={onChartTypeChange} />}
-      </div>
-      {children}
+      </header>
+      <div className="px-3 py-3">{children}</div>
     </div>
   );
 }
@@ -252,22 +253,34 @@ function PatternInsights({ data }: { data: AnalyticsData }) {
   else if (data.tasks.avgCompletionDays > 0 && data.tasks.avgCompletionDays <= 7) insights.push({ type: "positive", text: `Fast turnaround: ${data.tasks.avgCompletionDays} day average completion` });
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
-      <h3 className="text-[11px] font-bold text-foreground uppercase tracking-wide mb-3">Pattern Detection</h3>
-      <div className="space-y-1.5">
+    <section className="border border-border rounded-lg">
+      <header className="px-3 py-2 border-b border-border flex items-center justify-between">
+        <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted-foreground">briefing</span>
+        <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted-foreground tabular-nums">
+          {insights.filter(i => i.type === "negative").length} alerts
+        </span>
+      </header>
+      <div className="divide-y divide-border/60">
         {insights.map((ins, i) => (
-          <div key={i} className={cn("flex items-start gap-2 text-[12px] leading-relaxed px-2 py-1.5 rounded-md",
-            ins.type === "positive" ? "bg-emerald-500/5 text-emerald-700 dark:text-emerald-400" :
-            ins.type === "negative" ? "bg-red-500/5 text-red-700 dark:text-red-400" :
-            "bg-muted/50 text-muted-foreground"
+          <div key={i} className={cn(
+            "flex items-center gap-3 px-3 py-2 text-[12px] leading-tight font-mono",
+            ins.type === "positive" ? "text-emerald-500" :
+            ins.type === "negative" ? "text-red-500" :
+            "text-muted-foreground",
           )}>
-            <span className="shrink-0 mt-0.5">{ins.type === "positive" ? "↑" : ins.type === "negative" ? "↓" : "→"}</span>
-            {ins.text}
+            <span className="shrink-0 w-3 text-center font-bold">
+              {ins.type === "positive" ? "↑" : ins.type === "negative" ? "!" : ">"}
+            </span>
+            <span className="flex-1">{ins.text}</span>
           </div>
         ))}
-        {insights.length === 0 && <p className="text-[11px] text-muted-foreground">No patterns detected yet. Import more data to enable analysis.</p>}
+        {insights.length === 0 && (
+          <p className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
+            Everything quiet. Import an Uptick CSV to populate the briefing.
+          </p>
+        )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -389,7 +402,7 @@ export default function Analytics() {
         }
       />
 
-      <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1400px]">
+      <div className="px-4 py-4 space-y-4 max-w-[1400px]">
         <SavedFiltersBar
           scope="analytics"
           currentValue={{ dateFrom, dateTo, revenuePeriod, advancedMode }}
@@ -401,25 +414,34 @@ export default function Analytics() {
             if (typeof v.advancedMode === "boolean") setAdvancedMode(v.advancedMode);
           }}
         />
-        {/* Pattern Detection — always visible */}
+
+        {/* Briefing — pattern detection as a dense hairline-separated list */}
         <PatternInsights data={data} />
 
-        {/* Revenue Target Section */}
-        <div className="bg-card border border-border rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <Target size={15} className="text-primary" />
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wide">Monthly Revenue Target — {fmt(data.revenue.monthlyTarget)}</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
-            <TargetGauge current={data.revenue.thisMonth} target={data.revenue.monthlyTarget} label="This Month" />
-            <div className="md:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <MetricTile label="Revenue Today" numericValue={data.revenue.today} format={fmt} color="bg-emerald-500/8" />
-              <MetricTile label="Revenue This Week" numericValue={data.revenue.thisWeek} format={fmt} color="bg-blue-500/8" />
-              <MetricTile label="Revenue This Month" numericValue={data.revenue.thisMonth} format={fmt} sub={`${data.revenue.progressPercent}% of target`} color="bg-primary/8" />
-              <MetricTile label="Pro-Rata Target" numericValue={data.revenue.proRataTarget} format={fmt} sub={`Day ${new Date().getDate()} of month`} color="bg-amber-500/8" />
+        {/* Revenue target — compact strip. Donut at left, 4 KPI cells in a
+            divided row to its right. One bordered section, no inner cards. */}
+        <section className="border border-border rounded-lg overflow-hidden">
+          <header className="px-3 py-2 border-b border-border flex items-center justify-between">
+            <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-2">
+              <Target size={10} className="text-primary" />
+              monthly revenue target · {fmt(data.revenue.monthlyTarget)}
+            </span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted-foreground tabular-nums">
+              day {new Date().getDate()} of month
+            </span>
+          </header>
+          <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center">
+            <div className="flex items-center justify-center p-4 md:border-r border-border">
+              <TargetGauge current={data.revenue.thisMonth} target={data.revenue.monthlyTarget} label="" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-border/60">
+              <MetricTile label="today" numericValue={data.revenue.today} format={fmt} color="bg-emerald-500/8" />
+              <MetricTile label="this week" numericValue={data.revenue.thisWeek} format={fmt} color="bg-blue-500/8" />
+              <MetricTile label="this month" numericValue={data.revenue.thisMonth} format={fmt} sub={`${data.revenue.progressPercent}% of target`} color="bg-primary/8" />
+              <MetricTile label="pro-rata" numericValue={data.revenue.proRataTarget} format={fmt} sub={`expected by today`} color="bg-amber-500/8" />
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Revenue Chart */}
         <ChartCard title="Revenue Over Time" chartType={revenueChartType} onChartTypeChange={setRevenueChartType}>
@@ -439,20 +461,22 @@ export default function Analytics() {
 
         {/* Financial KPIs — only when financials data present */}
         {data.financials && (
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <DollarSign size={15} className="text-emerald-500" />
-              <h2 className="text-sm font-bold text-foreground uppercase tracking-wide">Financial Summary — WIP Portfolio</h2>
+          <section className="border border-border rounded-lg overflow-hidden">
+            <header className="px-3 py-2 border-b border-border flex items-center gap-2">
+              <DollarSign size={10} className="text-emerald-500" />
+              <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted-foreground">
+                financial summary · wip portfolio
+              </span>
+            </header>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-border/60">
+              <MetricTile label="revised sell" numericValue={data.financials.totalRevisedSell} format={fmt} color="bg-emerald-500/8" />
+              <MetricTile label="actual cost" numericValue={data.financials.totalActualCost} format={fmt} color="bg-red-500/8" />
+              <MetricTile label="actual profit" numericValue={data.financials.totalActualProfit} format={fmt} sub={`${data.financials.avgMargin}% margin`} color="bg-blue-500/8" />
+              <MetricTile label="net invoiced" numericValue={data.financials.totalNetInvoiced} format={fmt} color="bg-emerald-500/8" />
+              <MetricTile label="uninvoiced wip" numericValue={data.financials.totalUninvoiced} format={fmt} color="bg-amber-500/8" />
+              <MetricTile label="total hours" numericValue={data.financials.totalActualHours} format={(n) => `${n.toFixed(0)}h`} sub={`cash: ${fmt(data.financials.totalCashPosition)}`} color="bg-primary/8" />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              <MetricTile label="Revised Sell (Pipeline)" numericValue={data.financials.totalRevisedSell} format={fmt} color="bg-emerald-500/8" />
-              <MetricTile label="Actual Cost" numericValue={data.financials.totalActualCost} format={fmt} color="bg-red-500/8" />
-              <MetricTile label="Actual Profit" numericValue={data.financials.totalActualProfit} format={fmt} sub={`${data.financials.avgMargin}% margin`} color="bg-blue-500/8" />
-              <MetricTile label="Net Invoiced" numericValue={data.financials.totalNetInvoiced} format={fmt} color="bg-emerald-500/8" />
-              <MetricTile label="Uninvoiced WIP" numericValue={data.financials.totalUninvoiced} format={fmt} color="bg-amber-500/8" />
-              <MetricTile label="Total Hours" numericValue={data.financials.totalActualHours} format={(n) => `${n.toFixed(0)}h`} sub={`Cash: ${fmt(data.financials.totalCashPosition)}`} color="bg-primary/8" />
-            </div>
-          </div>
+          </section>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

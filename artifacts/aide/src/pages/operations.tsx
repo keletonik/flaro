@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Search, Upload, Download, Filter, X, ChevronDown, MessageCircle, Send, Trash2, PanelRightClose, PanelRightOpen, Loader2, Pencil, Eye, ArrowUpDown } from "lucide-react";
+import { Search, Upload, Download, Filter, X, ChevronDown, MessageCircle, Send, Trash2, PanelRightClose, PanelRightOpen, Loader2, Pencil, ArrowUpDown } from "lucide-react";
 import { apiFetch, exportToCSV, streamChat } from "@/lib/api";
 import CSVImportModal from "@/components/CSVImportModal";
 import LiveToggle from "@/components/LiveToggle";
 import { useLiveUpdates } from "@/hooks/useLiveUpdates";
+import { useTableColumns } from "@/hooks/useTableColumns";
+import { TableColumnPicker } from "@/components/TableColumnPicker";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -103,6 +105,47 @@ function StatusPill({ status }: { status: string; tab?: TabKey }) {
   );
 }
 
+/**
+ * Narrow drag-handle on the right edge of a <th>. Adjusts the column width
+ * live while dragging, persists on release via setWidth. Stops propagation
+ * so the click doesn't trigger the header's sort toggle.
+ */
+function ColumnResizeHandle({
+  columnKey, currentWidth, setWidth,
+}: { columnKey: string; currentWidth: number; setWidth: (key: string, px: number) => void }) {
+  const startRef = useRef<{ x: number; w: number } | null>(null);
+
+  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const th = (e.currentTarget.parentElement as HTMLTableCellElement | null);
+    const startW = currentWidth || (th?.getBoundingClientRect().width ?? 120);
+    startRef.current = { x: e.clientX, w: startW };
+    (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
+  };
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!startRef.current) return;
+    const delta = e.clientX - startRef.current.x;
+    setWidth(columnKey, startRef.current.w + delta);
+  };
+  const onUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    startRef.current = null;
+    try { (e.target as HTMLDivElement).releasePointerCapture(e.pointerId); } catch {}
+  };
+
+  return (
+    <div
+      onPointerDown={onDown}
+      onPointerMove={onMove}
+      onPointerUp={onUp}
+      onPointerCancel={onUp}
+      onClick={e => e.stopPropagation()}
+      className="absolute top-0 right-0 h-full w-[6px] cursor-col-resize hover:bg-primary/40 active:bg-primary"
+      title="Drag to resize column"
+    />
+  );
+}
+
 const EMPTY_STATE_COPY: Record<TabKey, { title: string; lead: string; tips: string[]; aidePrompt: string }> = {
   wip: {
     title: "No WIP records yet",
@@ -191,15 +234,19 @@ function DataTable({ data, tab, onDelete, onStatusChange, onEdit, selectedIds, o
   onImport?: () => void; onCreate?: () => void;
 }) {
   const allColumns = getColumns(tab);
-  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
+  const {
+    visibleColumns,
+    orderedColumns,
+    widthOf,
+    toggle: toggleCol,
+    reorder: reorderCols,
+    setWidth,
+    reset: resetCols,
+    customised,
+  } = useTableColumns(`ops-${tab}`, allColumns);
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
-  const [showColMenu, setShowColMenu] = useState(false);
-
-  const visibleColumns = allColumns.filter(c => !hiddenCols.has(c.key));
-
-  const toggleCol = (key: string) => setHiddenCols(prev => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
 
   const handleSort = (key: string) => {
     if (sortCol === key) { setSortDir(d => d === "asc" ? "desc" : "asc"); }
@@ -232,24 +279,17 @@ function DataTable({ data, tab, onDelete, onStatusChange, onEdit, selectedIds, o
 
   return (
     <div>
-      {/* Column visibility toggle */}
+      {/* Column controls: hide/show, drag-reorder, reset. Widths are adjusted
+          by dragging the right edge of each header cell. */}
       <div className="flex items-center gap-2 mb-2">
-        <div className="relative">
-          <button onClick={() => setShowColMenu(v => !v)} className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-muted-foreground hover:text-foreground border border-border hover:bg-muted/50 transition-all">
-            <Eye size={10} /> Columns ({visibleColumns.length}/{allColumns.length})
-          </button>
-          {showColMenu && (
-            <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-md p-2 z-50 min-w-[160px]">
-              {allColumns.map(col => (
-                <label key={col.key} className="flex items-center gap-2 px-2 py-1 rounded text-[11px] text-foreground hover:bg-muted/50 cursor-pointer">
-                  <input type="checkbox" checked={!hiddenCols.has(col.key)} onChange={() => toggleCol(col.key)} className="rounded border-border" />
-                  {col.label}
-                </label>
-              ))}
-              <button onClick={() => setHiddenCols(new Set())} className="w-full text-left px-2 py-1 mt-1 text-[10px] text-primary hover:underline">Show all</button>
-            </div>
-          )}
-        </div>
+        <TableColumnPicker
+          orderedColumns={orderedColumns}
+          visibleColumns={visibleColumns}
+          toggle={toggleCol}
+          reorder={reorderCols}
+          reset={resetCols}
+          customised={customised}
+        />
         {sortCol && (
           <span className="text-[10px] text-muted-foreground">Sorted by {allColumns.find(c => c.key === sortCol)?.label} {sortDir === "asc" ? "↑" : "↓"}</span>
         )}
@@ -265,17 +305,22 @@ function DataTable({ data, tab, onDelete, onStatusChange, onEdit, selectedIds, o
               <th className="w-8 px-2 py-2 text-left border-b border-r border-border sticky top-0 bg-muted/30 z-10">
                 <input type="checkbox" checked={selectedIds.size === sorted.length && sorted.length > 0} onChange={onToggleAll} className="rounded border-border" />
               </th>
-              {visibleColumns.map(col => (
-                <th key={col.key} onClick={() => handleSort(col.key)}
-                  className={cn("px-2 py-2 text-left font-semibold uppercase tracking-wider text-[10px] text-muted-foreground border-b border-r border-border sticky top-0 bg-muted/30 z-10 cursor-pointer hover:text-foreground hover:bg-muted/60 select-none whitespace-nowrap",
-                    sortCol === col.key && "text-primary"
-                  )}>
-                  <div className="flex items-center gap-1">
-                    {col.label}
-                    {sortCol === col.key && <ArrowUpDown size={9} className="text-primary" />}
-                  </div>
-                </th>
-              ))}
+              {visibleColumns.map(col => {
+                const w = widthOf(col.key);
+                return (
+                  <th key={col.key} onClick={() => handleSort(col.key)}
+                    style={w ? { width: w, minWidth: w, maxWidth: w } : undefined}
+                    className={cn("relative px-2 py-2 text-left font-semibold uppercase tracking-wider text-[10px] text-muted-foreground border-b border-r border-border sticky top-0 bg-muted/30 z-10 cursor-pointer hover:text-foreground hover:bg-muted/60 select-none whitespace-nowrap",
+                      sortCol === col.key && "text-primary"
+                    )}>
+                    <div className="flex items-center gap-1 truncate">
+                      {col.label}
+                      {sortCol === col.key && <ArrowUpDown size={9} className="text-primary" />}
+                    </div>
+                    <ColumnResizeHandle columnKey={col.key} currentWidth={w} setWidth={setWidth} />
+                  </th>
+                );
+              })}
               <th className="w-12 px-1 py-2 border-b border-border sticky top-0 bg-muted/30 z-10"></th>
             </tr>
             {/* Filter row */}

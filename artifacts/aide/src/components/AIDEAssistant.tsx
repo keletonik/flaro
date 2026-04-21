@@ -1,37 +1,25 @@
 /**
- * Global AIDE popout — the single AI surface for the entire app.
+ * AIDE bottom-tray — the single AI surface for the entire app.
  *
- * Mounted once in <Layout> (App.tsx). Renders as a floating popout
- * window that can be repositioned, resized, and persists across
- * page navigation. One unified conversation across the whole site.
+ * Slides up from the bottom of the viewport, honours the sidebar width, can
+ * be dragged to resize, collapses to a 44px strip, and accepts file drops
+ * anywhere inside. Mounted once in <Layout> (App.tsx).
  *
- * Also triggered from the sidebar AI button.
- *
- * Persists open/collapsed state and size to localStorage.
+ * Keyboard: Cmd/Ctrl+. toggles, Esc collapses.
  */
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
-// Lucide icons replaced with text-based typography
 import EmbeddedAgentChat from "@/components/EmbeddedAgentChat";
 import { cn } from "@/lib/utils";
-import { useAIDE } from "@/App";
+import { useAIDE, useSidebar } from "@/App";
 
-const OPEN_KEY = "aide-assistant-open";
-const WIDE_KEY = "aide-assistant-wide";
-const POS_KEY = "aide-assistant-pos";
-type Corner = "br" | "bl" | "tr" | "tl";
-const CORNER_STYLES: Record<Corner, string> = {
-  br: "bottom-4 right-4",
-  bl: "bottom-4 left-4 md:left-[220px]",
-  tr: "top-16 right-4",
-  tl: "top-16 left-4 md:left-[220px]",
-};
-function loadCorner(): Corner {
-  try { const v = localStorage.getItem(POS_KEY); if (v && v in CORNER_STYLES) return v as Corner; } catch {}
-  return "br";
-}
-function saveCorner(c: Corner) { try { localStorage.setItem(POS_KEY, c); } catch {} }
+const OPEN_KEY = "aide-tray-open";
+const HEIGHT_KEY = "aide-tray-height";
+const DEFAULT_HEIGHT = 420;
+const MIN_HEIGHT = 260;
+const MAX_HEIGHT_RATIO = 0.85;
+const COLLAPSED_HEIGHT = 44;
 
 function sectionFromPath(path: string): { section: string; title: string; suggestions: string[] } {
   if (path === "/" || path.startsWith("/dashboard"))
@@ -67,76 +55,82 @@ function sectionFromPath(path: string): { section: string; title: string; sugges
   return { section: "dashboard", title: "AIDE", suggestions: ["What needs attention today?", "Full KPI snapshot", "Create a todo", "Show me the dashboard"] };
 }
 
-// Popout dimensions
-const POP_W = 420;
-const POP_W_WIDE = 580;
-const POP_H = 520;
-const POP_H_WIDE = 680;
+function loadHeight(): number {
+  try {
+    const v = parseInt(localStorage.getItem(HEIGHT_KEY) || "", 10);
+    if (Number.isFinite(v) && v >= MIN_HEIGHT) return v;
+  } catch {}
+  return DEFAULT_HEIGHT;
+}
 
 export default function AIDEAssistant() {
   const [location] = useLocation();
   const { setAideState } = useAIDE();
+  const { collapsed: sidebarCollapsed } = useSidebar();
 
   const { section, title, suggestions } = useMemo(() => sectionFromPath(location), [location]);
 
   const [open, setOpen] = useState<boolean>(() => {
     try { return localStorage.getItem(OPEN_KEY) === "1"; } catch { return false; }
   });
-  const [wide, setWide] = useState<boolean>(() => {
-    try { return localStorage.getItem(WIDE_KEY) === "1"; } catch { return false; }
-  });
-  const [minimised, setMinimised] = useState(false);
-  const [corner, setCorner] = useState<Corner>(loadCorner);
+  const [height, setHeight] = useState<number>(loadHeight);
+  const [dragging, setDragging] = useState(false);
+  const [fileHover, setFileHover] = useState(false);
+  const dragStartRef = useRef<{ y: number; h: number } | null>(null);
 
-  const cycleCorner = useCallback(() => {
-    setCorner((prev) => {
-      const order: Corner[] = ["br", "bl", "tl", "tr"];
-      const next = order[(order.indexOf(prev) + 1) % order.length];
-      saveCorner(next);
-      return next;
-    });
-  }, []);
-
-  const handlePopOut = useCallback(() => {
-    const url = `/aide-popout?section=${encodeURIComponent(section)}&title=${encodeURIComponent(title)}`;
-    window.open(url, "aide-popout", "width=520,height=700,menubar=no,toolbar=no,location=no,status=no");
-    setMinimised(true);
-  }, [section, title]);
-
-  // Persist
+  // Persist open state.
   useEffect(() => { try { localStorage.setItem(OPEN_KEY, open ? "1" : "0"); } catch {} }, [open]);
-  useEffect(() => { try { localStorage.setItem(WIDE_KEY, wide ? "1" : "0"); } catch {} }, [wide]);
 
-  // Popout doesn't push content, so always report zero to layout
+  // Persist height (debounced — save on drag end).
   useEffect(() => {
-    setAideState({ open: false, dock: "right", width: 0, height: 0 });
-  }, [setAideState]);
+    if (dragging) return;
+    try { localStorage.setItem(HEIGHT_KEY, String(height)); } catch {}
+  }, [height, dragging]);
 
-  // Listen for aide-open-with-prompt (from CommandPalette or sidebar button)
+  // Broadcast size to the Layout so the main content reserves vertical space.
+  // Mobile (<768px): tray overlays, no reserved space, matching desktop-less UX.
   useEffect(() => {
-    const handler = () => { setOpen(true); setMinimised(false); };
-    window.addEventListener("aide-open-with-prompt", handler);
-    return () => window.removeEventListener("aide-open-with-prompt", handler);
-  }, []);
+    const reported = open ? height : COLLAPSED_HEIGHT;
+    setAideState({ open, dock: "bottom", width: 0, height: reported });
+  }, [open, height, setAideState]);
 
-  // Listen for aide-toggle (from sidebar button)
+  // Cmd/Ctrl+. toggles tray; Esc collapses from expanded to bar.
   useEffect(() => {
-    const handler = () => {
-      setOpen(prev => {
-        if (prev) { setMinimised(false); return false; }
-        return true;
-      });
+    const onKey = (e: KeyboardEvent) => {
+      const isToggle = (e.metaKey || e.ctrlKey) && e.key === ".";
+      if (isToggle) {
+        e.preventDefault();
+        setOpen(v => !v);
+        return;
+      }
+      if (e.key === "Escape" && open) {
+        // Allow Esc to close only if focus isn't inside a form input — let
+        // native behaviour take over for Escape-to-blur in inputs.
+        const el = e.target as HTMLElement | null;
+        if (el && /^(INPUT|TEXTAREA|SELECT)$/i.test(el.tagName)) return;
+        setOpen(false);
+      }
     };
-    window.addEventListener("aide-toggle", handler);
-    return () => window.removeEventListener("aide-toggle", handler);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  // External triggers kept for backwards compat with CommandPalette / sidebar.
+  useEffect(() => {
+    const openAndFocus = () => setOpen(true);
+    const toggle = () => setOpen(v => !v);
+    window.addEventListener("aide-open-with-prompt", openAndFocus);
+    window.addEventListener("aide-toggle", toggle);
+    return () => {
+      window.removeEventListener("aide-open-with-prompt", openAndFocus);
+      window.removeEventListener("aide-toggle", toggle);
+    };
   }, []);
 
-  // Listen for aide-analyse (from CSV import)
   useEffect(() => {
     const handler = (e: Event) => {
       const msg = (e as CustomEvent).detail?.message;
       setOpen(true);
-      setMinimised(false);
       if (msg) {
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent("aide-open-with-prompt", { detail: { prompt: msg } }));
@@ -147,69 +141,124 @@ export default function AIDEAssistant() {
     return () => window.removeEventListener("aide-analyse", handler);
   }, []);
 
-  // Not open at all: show nothing (sidebar button handles the trigger)
-  if (!open) return null;
+  // Drag-to-resize — handle on the top border of the tray.
+  const onDragStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!open) return;
+    setDragging(true);
+    dragStartRef.current = { y: e.clientY, h: height };
+    (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
+  }, [open, height]);
 
-  const w = wide ? POP_W_WIDE : POP_W;
-  const h = wide ? POP_H_WIDE : POP_H;
+  const onDragMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging || !dragStartRef.current) return;
+    const delta = dragStartRef.current.y - e.clientY;
+    const maxH = Math.floor(window.innerHeight * MAX_HEIGHT_RATIO);
+    const next = Math.max(MIN_HEIGHT, Math.min(maxH, dragStartRef.current.h + delta));
+    setHeight(next);
+  }, [dragging]);
 
-  // Minimised: small pill at bottom right
-  if (minimised) {
-    return (
-      <button
-        onClick={() => setMinimised(false)}
-        className={cn("fixed z-[60] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border shadow-2xl hover:shadow-xl transition-all hover:-translate-y-0.5 text-foreground group", CORNER_STYLES[corner])}
-      >
-        <span className="font-mono text-[11px] font-bold text-primary">⚡</span>
-        <span className="font-mono text-xs font-semibold">AIDE</span>
-        <span className="font-mono text-[10px] text-muted-foreground">{title}</span>
-        <span className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground transition-colors">↑</span>
-      </button>
-    );
-  }
+  const onDragEnd = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    setDragging(false);
+    dragStartRef.current = null;
+    try { (e.target as HTMLDivElement).releasePointerCapture(e.pointerId); } catch {}
+  }, []);
+
+  // File drop — publishes a CustomEvent the chat composer listens for.
+  const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (e.dataTransfer?.types.includes("Files")) {
+      e.preventDefault();
+      setFileHover(true);
+    }
+  }, []);
+  const onDragLeave = useCallback(() => setFileHover(false), []);
+  const onDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setFileHover(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length === 0) return;
+    setOpen(true);
+    // Hand off to the chat composer. EmbeddedAgentChat listens for this event.
+    window.dispatchEvent(new CustomEvent("aide-files-dropped", { detail: { files } }));
+  }, []);
+
+  const sidebarW = sidebarCollapsed ? 60 : 210;
+  const effectiveHeight = open ? height : COLLAPSED_HEIGHT;
 
   return (
-    <div
-      className={cn("fixed z-[60] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden transition-all duration-200 max-md:inset-4 max-md:!w-auto max-md:!h-auto", CORNER_STYLES[corner])}
-      style={{ width: `${w}px`, height: `${h}px`, maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 32px)" }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0 bg-card/95 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[12px] font-bold text-primary">⚡</span>
-          <div>
-            <p className="font-mono text-[12px] font-semibold text-foreground tracking-tight">AIDE</p>
-            <p className="font-mono text-[9px] text-muted-foreground">{title}</p>
-          </div>
+    <>
+      {/* Bottom tray — fixed position; respects sidebar width on md+ */}
+      <div
+        className={cn(
+          "fixed bottom-0 right-0 z-[60] flex flex-col glass-2 border-t border-border shadow-[0_-12px_32px_-12px_rgba(0,0,0,0.35)]",
+          "transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          dragging && "transition-none select-none",
+          fileHover && "ring-2 ring-primary/60 ring-offset-0",
+        )}
+        style={{
+          left: `min(${sidebarW}px, 100vw)`,
+          height: `${effectiveHeight}px`,
+        }}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+      >
+        {/* Drag handle — spans the top; only active when expanded */}
+        <div
+          onPointerDown={onDragStart}
+          onPointerMove={onDragMove}
+          onPointerUp={onDragEnd}
+          onPointerCancel={onDragEnd}
+          className={cn(
+            "relative h-2 w-full shrink-0 flex items-center justify-center group",
+            open ? "cursor-ns-resize" : "cursor-pointer",
+          )}
+          onDoubleClick={() => open && setHeight(DEFAULT_HEIGHT)}
+          title={open ? "Drag to resize — double-click to reset" : "Click to expand"}
+        >
+          <span className={cn(
+            "block h-[3px] w-12 rounded-full transition-colors",
+            dragging ? "bg-primary" : "bg-muted-foreground/30 group-hover:bg-muted-foreground/60",
+          )} />
         </div>
-        <div className="flex items-center gap-0.5">
-          <button onClick={cycleCorner} title={`Position: ${corner.toUpperCase()} (click to cycle)`}
-            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            ◫
-          </button>
-          <button onClick={handlePopOut} title="Pop out to new window"
-            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            ↗
-          </button>
-          <button onClick={() => setWide(v => !v)} title={wide ? "Compact" : "Expand"}
-            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            {wide ? "⊟" : "⊞"}
-          </button>
-          <button onClick={() => setMinimised(true)} title="Minimise"
-            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            ─
-          </button>
-          <button onClick={() => setOpen(false)} title="Close AIDE"
-            className="p-1.5 rounded-md font-mono text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            ×
-          </button>
-        </div>
-      </div>
 
-      {/* Chat body */}
-      <div className="flex-1 overflow-hidden">
-        <EmbeddedAgentChat section={section} title={title} suggestions={suggestions} hideHeader />
+        {/* Header bar — always visible; acts as toggle when collapsed */}
+        <button
+          onClick={() => setOpen(v => !v)}
+          className="flex items-center justify-between px-4 py-2 border-b border-border/60 shrink-0 hover:bg-muted/40 transition-colors text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-primary">
+              <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-60" />
+            </span>
+            <span className="font-mono text-[11px] font-bold text-foreground tracking-tight">AIDE</span>
+            <span className="font-mono text-[10px] text-muted-foreground">· {title}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline font-mono text-[9px] text-muted-foreground/60 tracking-wider uppercase">
+              {open ? "⌘ · to collapse · drop files here" : "⌘ · to expand"}
+            </span>
+            <span className="font-mono text-[12px] text-muted-foreground">
+              {open ? "▾" : "▴"}
+            </span>
+          </div>
+        </button>
+
+        {/* Chat body — only rendered when open (saves layout work when collapsed) */}
+        {open && (
+          <div className="flex-1 min-h-0 relative">
+            <EmbeddedAgentChat section={section} title={title} suggestions={suggestions} hideHeader />
+            {fileHover && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/85 pointer-events-none">
+                <div className="flex flex-col items-center gap-2 px-8 py-6 rounded-2xl border-2 border-dashed border-primary/70 bg-card/90">
+                  <span className="text-2xl">⬇</span>
+                  <span className="font-mono text-xs font-semibold text-foreground">Drop to upload</span>
+                  <span className="font-mono text-[10px] text-muted-foreground">CSV · XLSX · PDF · image</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }

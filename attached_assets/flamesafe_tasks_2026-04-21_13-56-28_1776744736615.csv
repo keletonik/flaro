@@ -1,0 +1,294 @@
+"ID","Ref","Created","Updated","Name","Description","Scope of works","Status","Priority","Property Ref","Property Client Ref","Property Name","Property Account Manager","Property Certification Date","Client Ref","Client","Primary Contact Name","Primary Contact Email","Contractor","Task Value","Category","Tags","Address","Site Suburb","Postal code","Assigned Technician","Supporting Technicians","Assigned Office","Technician","Salesperson","Round","Due","Due After","Scheduled Date","Performed Date","Completed Date","On-site Date","SLA","Due (on site)","Due (performed)","Time to Site (SLA)","Time to Performed (SLA)","Authorisation Ref","Authorisation Amount","Contractor Authorisation Limit","Workorder URL","Internal Note","Invoice Note","Technician Note","Latitude","Longitude","Access Procedure","Access Note","Access Code","Access Schedule","Access Window","Is Active","Deleted","Invoiced","Inactive Date","Billing Card Ref","Billing Card Name","Branch","Cost Centre","Service Group","Zone","Est. Duration","Author","Updated By","Parent Task","Minor Job"
+41362,"T-41362","2026-04-21 08:39:08","2026-04-21 13:23:19","QD-2614 - FI... Works","FIP Annual defect repairs","Dear Customer,
+
+We hope you're doing well. Following our routine annual testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below: 
+
+
+If you have any questions or need further clarification, feel free to reach out.
+Thank you for your understanding and continued support.","PERFORMED",5,"39413 AU543","","Goodman AU543 - 33-38 Quarry Road (Bld B, Bld C & Bld D), Erskine Park, NSW 2759","","2021-03-24","","Goodman Property Services (Aust) Pty Limited SC01822","Michael Berger","Michael.Berger@goodman.com","",0.0000,"Repair","","33-38 Quarry Road Building B,&C & D, Erskine Park, NSW, 2759, Australia","Erskine Park","2759","Gordon Jenkins","","","Gordon Jenkins","","","","","2026-04-21 06:00:00","2026-04-21 13:23:19","","2026-04-21 13:07:56","","","","","","","657.43","","","","As per accepted defect quote QD-2614 - FIP (Ann) dated 27-03-2026.","Replace batteries in building D as per report photos and documents",-33.8183471,150.7818211,"","","","NR","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","00:00:00","Casper Tavitian","Gordon Jenkins"," ",""
+41354,"T-41354","2026-04-21 07:46:14","2026-04-21 12:43:35","SQ-0796 Works","Survey Quote - Dry Fire - Fire Trip Cabling","**Scope of Works**
+
+Attend site at WP CFC to assess and provide a quotation for the installation of fire trip cabling required for a proposed rapid door, replacing the existing swing doors.","PERFORMED",5,"39A537","","Coles CFC - 154 Cowpasture Road, Wetherill Park, NSW 2164","","","","The Trustee for Charter Hall Prime Industrial Fund C/- CBRE Pty Ltd CBRE","Alistair McKie","alistair.mckie@charterhallaccess.com.au","",0.0000,"Repair","","154 Cowpasture Road, Wetherill Park, NSW, 2164, Australia","Wetherill Park","2164","Gordon Jenkins","","Casper Tavitian","Gordon Jenkins","","","","","2026-04-21 10:00:00","2026-04-21 12:43:35","","2026-04-21 12:43:15","","","","","","Wo No 2564807, Job No 30217408","450.00","","","","","Checked location of rapid door will need two days to men may have to do it out of hours we need to check if we need to hire a small scissor lift or will there be one on site?
+Two bundles of 20 mm conduit box of elbows
+A box of plastic saddles
+200 m of twisted cable
+Program fire system and test",-33.8419842,150.8766088,"","**Inductions**
+- CM3 and SinePro
+Sign in on Sine-Pro Ipad 
+- Stephen Barks - 0482934104
+
+ASE alarm: 86990 - ADT
+Techs required to Sign in & OUT
+
+Access requirement:
+Notify designated contract manager
+
+Your name
+Company name
+Purpose of the visit
+Date and time of arrival
+Expected duration of stay
+Names of all individuals attending","","NR","",True,"",False,"","CO-031","Charter Hall Holdings Pty Ltd","","[] ","R DETECTION","","","Casper Tavitian","Gordon Jenkins"," ",""
+40096,"T-40096","2026-04-14 10:39:10","2026-04-16 13:29:14"," carry out a one off test to the sprinkler systems x 2 and carry out monthly FIP test. Complete AS1…"," carry out a one off test to the sprinkler systems x 2 and carry out monthly FIP test. Complete AS1851 TEST SHEET.","Automatic Fire Sprinkler SystemOne off monthly test to AS1851.2-2012 as per clause 2.3 A, B, C including 
+2 x 100mm Tyco Sprinkler Control Valve Sets 
+Manual Electric Pressure Jacking Pump
+Anti-tamper valve monitoring system
+Tyco Fire Alarms Monitoring Facility Testing only
+Fire Detection & Alarms System/Building Occupant Warning System
+
+One off monthly test to AS1851.6-2012 as per clause 6.3 - A, B, and C including ..
+Ampac Model FireFinder Plus Fire Indicator Panel 
+","PERFORMED",5,"P1094 Cranebrook Village","","80 Borrowdale Way, Cranebrook","","","210","C/- Savills (NSW) Pty Ltd","Alister Wishart","awishart@savills.com.au","",0.0000,"Callout","","80 Borrowdale Way, Cranebrook NSW 2749, Australia","Cranebrook","2749","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-04-16 13:00:00","2026-04-16 13:29:14","","2026-04-16 13:09:17","","","","","","","","","","","","Monthly tested installation one and three also Fire panel all operational photos and documents",-33.7199645,150.7101569,"CA","Call Alister Wishart of Savills for access 
+0473 522 175","","BH","",True,"",False,"","CO-1729","Savills ( NSW) Pty Ltd","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+39187,"T-39187","2026-04-09 11:54:11","2026-04-20 16:01:35","","Callout - FIP False Alarm - Scope for detector replacement","The FIP has gone into alarm for Zone 1 (Warehouse – North West Corner).
+
+A technician is required to attend site to investigate the cause of the alarm and carry out rectification where applicable.
+
+It is noted that the detectors may have exceeded their service life. The client has requested that we assess and scope the replacement of the detectors and, if necessary, the panel.
+
+Please conduct a detailed investigation to determine the cause of the alarms, and provide a clear scope of works outlining required materials, labour, and any recommended upgrades.","PERFORMED",5,"39056","","Bronson & Jacobs - 70 Marple Avenue, Villawood, NSW 2163","","2019-05-15","","George Vasili & Nick Vasili C/- CBRE","Wayne Zhang","wayne.zhang@cbre.com","",460.0000,"Callout","","70 Marple Avenue, Villawood, NSW, 2163, Australia","Villawood","2163","Gordon Jenkins","","Casper Tavitian","Gordon Jenkins","","","2026-04-09","","2026-04-09 12:30:00","2026-04-09 13:25:51","","2026-04-09 12:50:54","","","","","","Email received 9.04.2026 (docs) ","","","","","","Attended site on 20/04/2026. The fire brigade had reset the panel prior to arrival, preventing determination of the cause of alarm activation. The alarm was recorded in Zone 1.",-33.8851792,150.9809441,"","Site Contact: Bonnie or Anware. NB: Long Sleeved Flamesafe Shirts Required
+Marco Jung (CBRE) 0408 107 504
+CBRE Rapid Inductions & Sign in Required","","NR","",True,"",False,"","CO-038","C.B Richard Ellis Pty Ltd","","[] ","R DETECTION","","01:00:00","Casper Tavitian","Casper Tavitian"," ",""
+39012,"T-39012","2026-04-08 12:11:16","2026-04-10 13:17:19","Callout - Failed OWS ","Callout - Failed OWS ","","PERFORMED",5,"39A116 AU106","","Goodman AU106 - M5 Industry Park - Building 1 -  1 Moorebank Avenue, Moorebank, NSW 2170","","2021-04-06","","Goodman Property Services (Aust) Pty Limited  SC01822","Lisa Harmer","Lisa.Harmer@goodman.com","",460.0000,"Callout","","1 Moorebank Avenue, MOOREBANK, NSW, 2170, Australia","Moorebank","2170","Gordon Jenkins","","Casper Tavitian","Gordon Jenkins","","","","","2026-04-08 12:00:00","2026-04-08 13:28:49","","2026-04-08 13:26:57","","","","","","","","","","","","Checked fire system. OWS not operational due to failed power supply. Power supply replacement required before further diagnostics can proceed.",-33.9296217,150.9300115,"CA","Andy 0416559771 - Recall Library Key for Aircon Room Eugene 0419257081
+Testing of Bldg 2B fire services to be reinstated as from April 1, 2022
+Goodman: Lisa Harmer 0482 919 973","","OA","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","","Casper Tavitian","Casper Tavitian"," ",""
+38249,"T-38249","2026-04-02 11:37:57","2026-04-10 09:10:08","Call-Out - Mech Fire Trip ","Call-Out - Mech Fire Trip ","Dry Fire Tech required to attend and assist T&M Air conditioning with trip test.
+
+","PERFORMED",10,"39A449","","223-225 Liverpool Street, Darlinghurst, NSW 2010","","2026-07-08","","Forza Capital Pty Ltd ATF Forza Liverpool Street Fund C/- CBRE Pty Ltd NSW Rents Trust","Jordan Ghali","jordan.ghali@cbre.com","",460.0000,"Callout","","223-225 Liverpool Street, Darlinghurst, NSW, 2010, Australia","Darlinghurst","2010","Gordon Jenkins","","Casper Tavitian","Gordon Jenkins","","","2026-04-10","","2026-04-10 07:00:00","2026-04-10 09:10:08","","2026-04-02 12:00:54","","","","","","","","","","","","Alarm tested Fire system for trip test
+All working
+Car park exhaust fan has no indication when in order
+The pump room exhaust fan doesn’t start on pump run",-33.8775295,151.2140507,"","**1 weeks notice required** - Jordan Ghali - 
+myBuildings Checkin App - Contractor ID: 2472 and PIN: 209.
+Please ensure to have the app on your device and check in on arrival to site as a contractor obligation. 7am Starts preferred and 1 weeks notice","5213 key box","NR","",True,"",False,"","CO-2740","Forza Capital Pty Ltd ATF Forza Liverpool Street F","","[] ","R DETECTION","","02:00:00","Casper Tavitian","Gordon Jenkins"," ",""
+37324,"T-37324","2026-03-31 07:11:57","2026-03-31 10:52:56","2 industrial fans inspection","2 industrial fans inspection","As discussed, we currently have 2 industrial fans (is that right, Brian?) that are tagged out and are not connected to the fire trip.
+
+Could you please arrange for someone to be onsite tomorrow to re-connect and get the fans running.
+
+Owners are requesting the fans be operational ASAP.
+
+Site contact is Brian Castle - 0466 764 962
+
+Appreciate your assistance.
+
+Let me know what information you require
+Damien Luksic
+
+
+Senior Facilities Manager
+
+
+","PERFORMED",5,"39A679","","Jacfin Ricoh - 4  Telopea Place, Eastern Creek, NSW 2766","","","","FlameSafe Warranty (Contracts)","Jack Santangelo","","",460.0000,"Callout","","4 Telopea Pl, Eastern Creek NSW 2766, Australia","Eastern Creek","2766","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-03-31 11:00:00","2026-03-31 10:52:56","","2026-03-31 09:14:21","","","","","","Damien Luksic","","","","","","Check the ass fans turned off checked fire trip seems to be connected back to the Fire panel. Need to find out the connections in the big ass fan itself so we can connect the panel correctly.",-33.8114484,150.8327009,"CA","Damien Luksic - 0436 016 268  (Knight Frank)
+Brian Castle - 0466 764 962 (Ricoh - tenant)","","OA","",True,"",False,"","","FlameSafe Warranty (Contracts)","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+37226,"T-37226","2026-03-30 14:59:20","2026-03-31 09:14:11","Wagner Fault Investigation","Wagner Fault Investigation","Zone 223, Wagner in Fault requires investigation","PERFORMED",5,"39A382","","ASICS - 6 Darling Street, Marsden Park - NSW 2765","","2020-08-10","1046","Ganian Pty Ltd ATF Blacktown Waste & Quarrying Land Unit Trust","Ned Supanimitsiri","ned.supanimitsiri@sydneybusinesspark.com.au","",460.0000,"Callout","","6 Darling Street, Marsden Park, NSW, 2765, Australia","Marsden Park","2765","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-03-31 09:00:00","2026-03-31 09:14:11","","2026-03-31 08:48:26","","","","","","Thomas Cupitt","","","","","","Call out to asics due to fault on Wagner adjusted airflow on all Wagners fault now clear photos in documents",-33.715051499999994,150.8403444,"CA","Thomas Cupitt 04 3819 5700
+Strictly call only Ned Supanimitsiri  (SBP) 0499 816 529 for access 
+All technicians are required to sign in using the Sine application. They must download the app, set up their profiles, and, for their first sign-in, register as a VISITOR. They will then be added to the CONTRACTOR list and receive a notification.
+Please note that signing is separate from site-specific sign-ins, which must still be completed as required.
+If you have any questions or concerns about the Sine sign-in process, please address them now.
+Going forward, this procedure must be strictly followed. Anyone found on-site without signing in will be asked to leave.
+
+Sydney Business Park signing in on Sine will come up on proximity under “Ganian Pty Limited – Astoria St, Marsden Park, NSW” with Sydney Business Park logo on it.
+
+It will not be the exact address they are carry out their scheduled work.","","OA","",True,"",False,"","CO-2314","Ganian Pty Ltd","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+37159,"T-37159","2026-03-30 11:39:40","2026-04-13 12:28:41","QD-2520 Works","AFSS Inspection Report Feb 2026","Dear Customer,
+
+We hope you're doing well. Following our routine annual testing, we have identified the following defect(s) that we wanted to bring to your attention, please see below:
+
+Section 2 – Assessment results and observations
+1.  Automatic Fire Suppression System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  There are two big ass fans in the warehouse that do not trip on the fire alarm. The fans need to shut off when the fire alarm is activated as they will obstruct the flow of water from the sprinklers.
+-  The automation section requires a fire trip installed to shut down on the fire alarm. The details of the fire trip need to be updated on the zone block plan.
+
+**Kindly note further quote may be required after initial investigation.** If you have any questions or need further clarification, feel free to reach out.
+
+Thank you for your understanding and continued support.","PERFORMED",5,"39A679","","Jacfin Ricoh - 4  Telopea Place, Eastern Creek, NSW 2766","","","","FlameSafe Warranty (Contracts)","Jack Santangelo","","",0.0000,"Repair","","4 Telopea Pl, Eastern Creek NSW 2766, Australia","Eastern Creek","2766","Gordon Jenkins","","","Gordon Jenkins","","","","","2026-04-13 06:00:00","2026-04-13 11:45:52","","2026-04-13 05:51:00","","","","","","Damien Luksic - approved AFSS","1325.00","","","","As per accepted defect quote QD-2520 dated 13-03-2026.","Site Attendance 13th of April 2026 
+
+FlameSafe Technician attended.
+
+Mechanical Contractors did not attend to conduct Trip Test. 
+
+Technician left site. Re-quotation and Re-attendance required.",-33.8114484,150.8327009,"CA","Damien Luksic - 0436 016 268  (Knight Frank)
+Brian Castle - 0466 764 962 (Ricoh - tenant)","","OA","",True,"",False,"","","FlameSafe Warranty (Contracts)","","[] ","R DETECTION","","00:00:00","Jamie Wright","Casper Tavitian"," ",""
+36796,"T-36796","2026-03-27 12:49:59","2026-04-08 12:46:11","Fault notice FIP investigate","Fault notice FIP investigate","Brief Description: WO#339115:Fault notice FIP investigate
+
+Priority: Med
+
+DETAILS
+Property: (au059) Lidcombe Business Park
+
+Property Address: 3 - 9 Birnie Ave, Lidcombe NSW, 2141
+
+
+Problem Description: Fault notice FIP investigate Building Manager: Hunter English Building Manager","PERFORMED",5,"39A418 AU059","","Goodman AU059 Lidcombe Business Park (Buildings A to F) - 3-29 Birnie Avenue  LIDCOMBE, 2141, NSW","","2021-05-23","","Goodman Property Services (Aust) Pty Limited SC01822","Hunter English","hunter.english@goodman.com","",460.0000,"Callout","","Site B 3-29 Birnie Avenue, Lidcombe, NSW, 2019, Australia","Lidcombe","2141","Darren Brailey","","Jamie Wright","Darren Brailey","","","","","2026-03-27 13:10:00","2026-04-08 12:20:56","","2026-03-27 13:00:11","","","","","","Work Order No: 339115  Purchase Order No: 592498","","","","Darren 27/3/26. 
+Arrived on site and found building D FIP having a OWS fault in unit D2 through to unit D4. 
+Checked in units D2,3,4 to look for any building work. 
+Requires two technicians to find fault.","","**Site Attendance – 27/03/26**
+
+A technician attended site and identified a fault on the FIP associated with the OWS system (Buildings D2–D4).
+
+A site walkthrough was conducted, including visual inspection of the OWS system, with no defects observed.
+
+Further fault-finding is required. This will involve two technicians for a minimum of four hours to investigate and attempt rectification. Should additional labour and/or materials be required, a separate quote will be provided prior to commencing further works.",-33.8555873,151.0604181,"","Hunter English
+Property manager
+hunter.english@goodman.com
+0409 307 005
+
+","","NR","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","","Jamie Wright","Casper Tavitian"," ",""
+36664,"T-36664","2026-03-27 09:28:00","2026-03-27 12:32:14","Faults on FIP","Faults on FIP","Require to investigate faults on FIP","PERFORMED",5,"39704","","Frutex - 20 St Albans Road, Kingsgrove, NSW 2208","","2020-05-20","1007","Sterilisation Technologies Australia Pty Ltd","Natural Food Technologies Pty Ltd","finance@frutex.com.au","",460.0000,"Callout","","18 St Albans Road, KINGSGROVE, NSW, 2208, Australia","Kingsgrove","2208","Darren Brailey","","Jamie Wright","Darren Brailey","","","","","2026-03-27 10:00:00","2026-03-27 12:32:14","","2026-03-27 10:58:29","","","","","","","","","","","","Darren 27/3/26. 
+Arrived found zone 13 in fault. 
+5 detectors in ladies toilet had on voltage. Found bad connection repaired and left system normal.
+See attached photo. 
+Also found two old smoke bases in disabled toilet and store room without detection being used as connection. See attached photo.",-33.9346547,151.0948527,"","Juan Piriz - 02-95026596 (Compliance Officer)
+Gate code: 4321
+Bottom Warehouse only","","NR","",True,"",False,"","CO-2179","Sterilisation Technologies Australia Pty Ltd","","[] ","R DETECTION","","","Jamie Wright","Darren Brailey"," ",""
+36637,"T-36637","2026-03-27 08:29:33","2026-03-31 07:19:40","isolated on Tuesday at 7:30 or earlier","isolated on Tuesday at 7:30 or earlier","Dik will be on site at 7.30 am on Monday. Could you please arrange access to the shop at that time. He will need the access key to the plant room.
+ 
+Also on Tuesday we will require the smoke alarm to be isolated as he needs to do some brazing please.
+ 
+","PERFORMED",5,"39964","","Ya Zhou Wen Hua Enterprises - 541-543 Kent Street, Sydney, NSW 2000 - NSW 2134","","2019-11-01","168","C/- ED Realty","Jason Wu","jason.wu@edrealty.com.au","",460.0000,"Callout","","541-543 Kent Street, SYDNEY, NSW, 2000, Australia","Sydney","2000","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-03-31 07:00:00","2026-03-31 07:19:40","","2026-03-31 07:19:25","","","","","","Jay Yao Wu","","","","","","isolated level six as per report",-33.8757078,151.2051691,"","142
+Jason Wu 0410 687 888
+8.30am start
+","","NR","",True,"",False,"","CO-1954","ED Realty","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+35837,"T-35837","2026-03-20 15:18:24","2026-04-09 20:58:03","Tower A – FEDEX. Isolations","Tower A – FEDEX. Isolations","The fire panel on Level 1 – South Side will need to be impaired during this period.
+Please attend to isolate and attend de isolate the system as required.
+Please see the attached document for further details 
+","PERFORMED",5,"39A434","","Metrolink Corporate Park - 197-201 Coward Street  Mascot, NSW 2020","","2023-10-27","","The Trust Company (Australia) Ltd ATF Ascendas Business Park Trust No.1 C/- Colliers","Colliers","jason.natoli@colliers.com","",6340.0000,"Callout","","197-201 Coward Street, Mascot, NSW, 2020, Australia","Mascot","2020","Nu Unasa","Darren Brailey, Gordon Jenkins, Jimmy Kak, Sydney Kak","Jamie Wright","Gordon Jenkins","","","","","2026-03-23 07:00:00","2026-03-23 15:24:17","","2026-03-23 08:36:19","","","","","","","","","","","","Darren 23/3/26. 
+Isolated zone 4 level 1 as per task.
+
+De isolated zone 4 level 1 as per task
+Jimmy 23/3/26
+Isolated zone 4 on the 24/3/26 at 6am as per task  De isolated zone 4 at 3.30 on the 24/326 Sydney   25/3/26 isolated level 4 and 5 at 610 am Sydney kak De isolated levels 4 and 5 at 530 pm on the 25/3/26 by Sydney kak isolated zone 4 on the 26/3/26 at 6am Sydney kak De isolated zone 4 on the 26/3/26 at 3.30 pm Sydney Kak  isolated zone 2/3/5 on the 27/3/26 at 6.15 am Sydney Kak De isolated zone 2/3/5 on the 27/3/26 at 3.30pm Sydney kak
+
+31/3/26 
+Isolated building A level 1 detection",-33.9249112,151.1882823,"","Contact Jason on Scott  **CALL then THE DAY BEFORE**
+**TaskFlo Inductions required**
+Access to Keys need to via the link below. Valid for 1 year - find PIN If unable to find site can resend pin, emailed upload loaded to keymaster profile must be company email
+<https://www.keymaas.com.au/userRegistration.html?site=a814b300-b267-4d66-ae08-1eea38ade79c>","","NR","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+35784,"T-35784","2026-03-19 15:40:53","2026-03-24 14:47:52","isolate the detectors at AU877-Bldg 3 Light and Wonder office","isolate the detectors at AU877-Bldg 3 Light and Wonder office","Please if you can book a tech to isolate the detectors at AU877-Bldg 3 Light and Wonder office.
+
+Our plumbers will be attending on the below date for the smoke test on the drainage system:
+
+•	24th March 2026 Tuesday @ 630am.
+
+Thanks.
+
+Angelo
+","PERFORMED",5,"39A114 AU877","","Goodman AU877 - Silverwater D/C - Light & Wonder - 4 Newington Road, Silverwater, NSW 1044","","","","Goodman Property Services (Aust) Pty Limited SC01822","Angelo Munozco","Angelo.Munozco@goodman.com","",460.0000,"Callout","","4 Newington Road, SILVERWATER, NSW,  2128, Australia","Silverwater","2128","Nu Unasa","Gordon Jenkins","Jamie Wright","Gordon Jenkins","","","","","2026-03-24 06:00:00","2026-03-24 14:47:52","","2026-03-24 06:58:12","","","","","","","","","","","","Isolated fire system for building works return later and deisolate
+
+Returned de isolated system  back online",-33.8287456,151.0532076,"","","4444#","NR","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+34783,"T-34783","2026-03-13 09:29:04","2026-03-16 10:41:33","Mechanical trip test","Mechanical trip test","Hi guys,
+
+ARA was unable to attend today’s systems interface test at 71 Owen Street.
+
+Is a tech available either tomorrow (anytime) or Monday (10am) to put a trip through?
+
+@'Fiorentino, Marco', noting that the tenant will need to be advised as well
+Hi Brad
+
+Apologies again for missing todays test as I had it in my schedule for tomorrow (Friday 13/03/2026)
+
+As discussed I will be away from Tuesday 17/03/2026 until the end of April (Hip replacement) but would like to see a quick test at the above address... I can do anytime tomorrow 13/03/2026 but if not possible my next only available is Monday 16/03/2026 at 1000hrs
+
+Thanks
+ 
+ 
+ 
+Ross Millar
+Essential Services Compliance Manager
+ 
+ 
+ 	 	 
+ 
+D: 1300 332 237
+M: 0402 223 706
+","PERFORMED",5,"39A273","","71 Owen Street, Glendenning, NSW 2761","","2019-05-03","","Lendlease Real Estate Investments Ltd C/- JLL","Lester Rodrigues","lester.rodrigues@jll.com","",460.0000,"Callout","","79 Owen Street (11 Lamb Street) , GLENDENNING, NSW, 2761, Australia","Glendenning","2761","John Minai","","Jamie Wright","John Minai","","","","","2026-03-16 09:45:00","2026-03-16 10:41:33","","2026-03-16 09:38:04","","","","","","","","","","","","Completed mech trip test with ARA Mechanical. System normal",-33.74573,150.8515984,"","Access via 79 Owen Street
+Marco Fiorentino (JLL) 0414 999 618  
+CM3 JLL Induction required","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","","Jamie Wright","John Minai"," ",""
+34662,"T-34662","2026-03-12 12:17:33","2026-03-13 08:54:28","Trip testing MWE","Trip testing MWE","Pat (0467 095 028) CC’d will meet John onsite, could you send through Johns contact details please.
+
+This is the drawing we have of your panel, from what I can see the pump room ventilation starts in a fire trip.  I just need to confirm if your supplying a dry contact or voltage to a relay coil.
+","PERFORMED",5,"39A733","","(AU642) 70 Euston Road, Alexandria","","","","FlameSafe Warranty (Contracts)","Jack Santangelo","","",130.0000,"Callout","","70 Euston Rd, Alexandria NSW 2015, Australia","Alexandria","2015","John Minai","","Jamie Wright","Jimmy Kak","","","","","2026-03-13 07:00:00","2026-03-13 08:54:28","","2026-03-13 07:21:04","","","","","","","","","","","","Checked program and module for pump room exhaust fan, made some slight changes in programming. Mech guy also changed his controls to be fail safe. Checked and tested trip. System is now working normal.",-33.9077352,151.1910536,"CA","Clay Hackett (Goodman) 0410 547 532
+
+Lock Box Code: 642","","BH","",True,"",False,"","","FlameSafe Warranty (Contracts)","","[] ","R DETECTION","","","Jamie Wright","Jimmy Kak"," ",""
+34400,"T-34400","2026-03-10 15:04:50","2026-03-11 13:54:18","Unit 9 smoke beam detector L11M014","Unit 9 smoke beam detector L11M014","Type	Common Areas : Fire Services (Equipment Failure)
+Exact Location	Unit 9 smoke beam detector L11M014
+Details	Essilor Unit 9 Smoke Beam detector L11M014 permanently in FAULT , unable to reset","PERFORMED",5,"39A208","","Gateway Business Park - Unit 3/9/10 - 63-79 Parramatta Road, Silverwater, NSW 2128","","2019-11-22","Knight Frank Australia Pty Ltd","Cambooya Properties C/o Knight Frank Australia Pty Ltd","Keith Barnett","keith.barnett@au.knightfrank.com","",460.0000,"Callout","","63-79 Parramatta Road, SILVERWATER, NSW, 2128, Australia","Silverwater","2128","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-03-11 13:00:00","2026-03-11 13:54:18","","2026-03-11 13:16:57","","","","","","Work Order Number	W15533477","","","","","","Checked beam detector will need man lift two men on a Saturday to get access to repair",-33.8449444,151.0428598,"","Knight Frank, Property manager: Keith Barnett 0414 377 100
+Building #4 (Under Construction)
+Building #8, #9 & #10 - Essilor","","NR","",True,"",False,"","CO-070","Knight Frank Australia Pty","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+34126,"T-34126","2026-03-09 08:29:37","2026-04-15 09:00:18","Alarm of FIP requires investigation","Alarm of FIP requires investigation","Simon called requesting attendance for the alarm of the FIP","PERFORMED",5,"39779","","By the Bay Investments - 2 Giffnock Avenue, North Ryde, 2113","","2024-05-29","","C/- Colliers Int’l Pty Ltd","Terry","Terry.X.Choi@colliers.com","",460.0000,"Callout","","2 Giffnock Avenue, North Ryde, NSW, 2113, Australia","Macquarie Park","2113","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-03-09 09:04:00","2026-03-09 09:13:16","","2026-03-09 09:11:11","","","","","","","","","","","","Turned up to site fault on ground floor concealed zone 13 reset fault cleared if returns will need two men",-33.785789,151.1260719,"","HR required - scissor lift (HR missed 2014)
+Terry Choi - 0401 455 191","","NR","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","","Jamie Wright","Jade Ogony"," ",""
+34124,"T-34124","2026-03-09 07:27:52","2026-03-12 10:00:48","Mechanical Testing","Mechanical Testing","Attend site to assist with the mechanical testing","PERFORMED",5,"39A426","","11-13 Orion Road, Lane Cove West, NSW 2066","","2021-04-28","","The Trustee for Gemstone Lane Cove Asset","Sajan Gill","Sajan.Gill@jll.com","",0.0000,"Callout","","11 Orion Road, Lane Cove West, NSW, 2066, Australia","Lane Cove West","2066","John Minai","","Jamie Wright","John Minai","","","","","2026-03-12 08:45:00","2026-03-12 10:00:48","","2026-03-12 09:16:43","","","","","","","","","","","","Completed FFFT with Crest Air. They could not access a few MSSBs and have failed it.
+3x existing detector faults on FIP. See photos.",-33.8080796,151.1495065,"","JLL:Sajan Gill0470 477 911
+
+JLL CM3 induction required","","NR","",True,"",False,"","CO-1513","Jones Lang Lasalle","","[] ","R DETECTION","","","Jamie Wright","John Minai"," ",""
+34024,"T-34024","2026-03-06 12:03:07","2026-03-06 18:13:12","training of isolation for security","training of isolation for security","Attend site to train security on how to conduct isolations of the fire detectors and reading of plans - call carmen when you get to site","PERFORMED",5,"39A671","","State Library of NSW - 1 Shakespeare Place, Sydney, NSW 2000","","2027-02-26","1124","State Library of NSW","Stephen Farrelly","Stephen.Farrelly@sl.nsw.gov.au","",0.0000,"Callout","","1 Shakespeare Place, Sydney, NSW, 2000, Australia","Sydney","2000","John Minai","","Jamie Wright","John Minai","","","","","2026-03-06 13:30:00","2026-03-06 18:13:12","","2026-03-06 14:15:17","","","","","","","","","","","","",-33.8663058,151.2132437,"","Stephen Farrelly 0481 478 256
+Katherine Prouting Smith 0410 734 461","","NR","",True,"",False,"","CO-2703","Library Council of NSW","","[] ","R DETECTION","","","Jamie Wright","John Minai"," ",""
+33795,"T-33795","2026-03-05 08:43:23","2026-03-05 20:35:54","secondary pump has a loss of mains flashing ","secondary pump has a loss of mains flashing ","While checking the diesel levels in the fire pumps this morning I noticed the secondary pump has a loss of mains flashing LED in red. 
+Can you please ask Flamesafe to attend and inspect, plus confirm day tanks are 100 percent full?
+Joel Ellis
+Facilities Manager – CFC NSW
+","PERFORMED",5,"39A537","","Coles CFC - 154 Cowpasture Road, Wetherill Park, NSW 2164","","","","The Trustee for Charter Hall Prime Industrial Fund C/- CBRE Pty Ltd CBRE","Alistair McKie","alistair.mckie@charterhallaccess.com.au","",460.0000,"Callout","","154 Cowpasture Road, Wetherill Park, NSW, 2164, Australia","Wetherill Park","2164","Nu Unasa","","Jamie Wright","Nu Unasa","","","","","2026-03-05 10:00:00","2026-03-05 20:30:16","","2026-03-05 20:29:00","","","","","","","","","","","","Reset power fail on pump . 
+
+Pump must of lost power but needed to be reset on display .
+
+This could have loss power due to other contractors onsite doing generator testing (not sure- possibility) 
+
+Spk pump all normal",-33.8419842,150.8766088,"","Sign in on Sine-Pro Ipad 
+- Stephen Barks - 0482934104","","NR","",True,"",False,"","CO-031","Charter Hall Holdings Pty Ltd","","[] ","R DETECTION","","","Jamie Wright","Nu Unasa"," ",""
+33436,"T-33436","2026-03-02 07:57:56","2026-03-03 10:06:13","fault notification from the fire panel inspection","fault notification from the fire panel inspection","Requested to investigate the faults coming through from Code red.  Possible EOIL FIP, detectors or Vesdas","PERFORMED",5,"39664","","Veolia Water Treatment Plant -  1 East Parade, Fairfield, NSW 2165","","2024-11-18","951","Veolia Water Operations Pty Ltd","","accounts.upload@flamesafe.com.au","",460.0000,"Callout","","1 East Parade (cnr North St), FAIRFIELD, NSW, 2165, Australia","Fairfield","2165","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-03-03 13:00:00","2026-03-03 10:06:13","","2026-03-03 09:39:35","","","","","","","","","","","","Found detector in filtration area going into analog fault if fault persists will need a boom to replace it",-33.8789857,150.952098,"","Long Sleeves/Pants & 1/2hr induction/on calendar year
+Email to dhaval.joshi@veolia.com Ph: 0433 730 886 No Friday’s for testing. 
+Site Contact - Phil Birkby 0422 547 252 (Primary Contact), Sonali Pinge 0468 768 702  (Secondary Contact)
+Normal Induction, and added Lock & Tag Induction","","NR","",True,"",False,"","CO-1732","Veolia Water Operation Pty Ltd","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+32636,"T-32636","2026-02-25 09:55:08","2026-02-25 12:18:02","investigate issues on FIP","investigate issues on FIP","Requested to investigate the issues with the FIP, as continuous faults
+
+1. obtain a copy of the program and faults and alarms
+2. Need to confirm issues with the FIP, as they are trying to blame a faulty FIP that has been installed","PERFORMED",5,"39A695","","Goodman - AU881- 65 Epping Road, Macquarie Park, NSW 2113","","","","Goodman Property Services (Aust) Pty Limited SC01822","Hunter English","hunter.english@goodman.com","",0.0000,"Callout","","65 Epping Rd, Macquarie Park NSW 2113, Australia","Macquarie Park","2113","John Minai","Nu Unasa","Jamie Wright","Nu Unasa","","","","","2026-02-25 12:00:00","2026-02-25 12:18:02","","2026-02-25 11:23:12","","","","","","","","","","","","Attended site - found multiple faults on FIP . 
+
+Cleared loop 1 fault . 
+
+Cleared intermittent earth fault .found the ase aerial connections , earthing onto FIP - sealed with tape . Photos attached . 
+
+Sprinkler pump fault and Lvl 1 speaker fault . On FIP . 
+
+Note - 24/2 , loop 3 everything went missing on loop . Restored itself . But with no open loop 3 fault.",-33.78855129999999,151.1286928,"","SINEPRO & VERIFIED","","NR","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","","Jamie Wright","Nu Unasa"," ",""
+32380,"T-32380","2026-02-24 08:56:44","2026-03-23 11:43:28","mechanical fire trip test ","mechanical fire trip test ","Please confirm whether you can arrange technician to attend site on Mar 23 Monday 10am to do mechanical fire trip test as per below request ","PERFORMED",5,"39A139","","POLYCELL - 20-22 Lidco Street, Arndell Park, NSW 2148","","2023-05-15","659","Polycell NSW Pty Ltd","Polycell NSW Pty Ltd","","",460.0000,"Callout","","20-22 Lidco Street, ARNDELL PARK, NSW, 2148, Australia","Arndell Park","2148","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-03-23 11:00:00","2026-03-23 11:43:28","","2026-03-23 09:57:22","","","","","","","","","","","","I’m tested fire system for mechanical contractor fans start in  Fire manual controls all operate",-33.7916107,150.8808849,"","Main Office now located next driveway. 18 Lidco St.","","NR","",True,"",False,"","CO-1993","Polycell NSW Pty Ltd","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+32190,"T-32190","2026-02-20 10:52:06","2026-02-20 18:45:39","Faults on the FIP require investigation","Faults on the FIP require investigation","Alan, has requested attendance to investigate the fire alarm system for the faults on the FIP, requested a report for the required repairs and recommendation","PERFORMED",5,"39978","","COLES RRM - 54 Templar Road, Erskine Park, NSW 2759","","2019-04-30","703","Retail Ready Operations Australia","Alan Vella","alan.vella@coles.com.au","",460.0000,"Callout","","54 Templar Road, ERSKINE PARK, NSW, 2759, Australia","Erskine Park","2759","Gordon Jenkins","","Jamie Wright","Gordon Jenkins","","","","","2026-02-20 12:00:00","2026-02-20 18:45:39","","2026-02-20 12:13:31","","","","","","Allan","","","","","","Found installation five low air alarm adjusted pressure alarm now clear
+Graphic system off-line checked cables rebooted system now online
+Adjusted airflow on two Wagners faults now clear
+Fire system now normal",-33.8218227,150.7967698,"","","","NR","",True,"",False,"","CO-2099","Retail Ready Operations Australia","","[] ","R DETECTION","","","Jamie Wright","Gordon Jenkins"," ",""
+27606,"T-27606","2026-01-07 08:01:21","2026-04-07 08:00:57","Replace 2 x 7ah Batteries to Level 1","Replace 2 x 7ah Batteries to Level 1","DETAILS
+Property: (au821) City West Office Park
+
+Property Address: 33 Saunders Street, Pyrmont NSW, 2009
+
+
+Problem Description: Replace 2 x 7ah Batteries to Level 1 Bld C Customer s Pre Action System Panel.
+","PERFORMED",5,"39A606","","Nine Radio L1 Building C - 33-35 Saunders Street, Pyrmont, NSW 2009","","2023-07-13","1103","Radio 2GB Sydney Pty Ltd","Radio 2GB Sydney Pty Ltd","","",460.0000,"Callout","","Level 1, Building C 33-35 Saunders Street, Pyrmont, NSW, 2009, Australia","Pyrmont","2009","Darren Brailey","","Jamie Wright","Darren Brailey","","","","","2026-01-16 11:00:00","2026-04-07 08:00:57","","2026-04-07 07:53:13","","","","","","Work Order No: 328471  Purchase Order No: 573207","","","","","","",-33.8696129,151.1901594,"","Engineering dept - 02 9134 0206 or Cameron Roberts 0406 541 019","","NR","",True,"",False,"","CO-2521","Radio 2GB Sydney Pty Ltd","","[] ","R DETECTION","","","Jamie Wright","Darren Brailey"," ",""
+26441,"T-26441","2025-12-19 09:46:56","2025-12-31 11:27:46","Fire Isolations 201 Coward Street Mascot (side A). Levels GF, 1, 3 and 4.","Fire Isolations 201 Coward Street Mascot (side A). Levels GF, 1, 3 and 4.","201 Coward Street Mascot (side A). Levels GF, 1, 3 and 4.
+Steam Cleaning of the bathrooms. 
+Corridors near the bathrooms within the FedEx leased premises. ","PERFORMED",5,"39A434","","Metrolink Corporate Park - 197-201 Coward Street  Mascot, NSW 2020","","2023-10-27","","The Trust Company (Australia) Ltd ATF Ascendas Business Park Trust No.1 C/- Colliers","Colliers","jason.natoli@colliers.com","",1160.0000,"Callout","","197-201 Coward Street, Mascot, NSW, 2020, Australia","Mascot","2020","Darren Brailey","","Jamie Wright","Nu Unasa","","","","","2025-12-20 07:30:00","2025-12-31 11:27:46","","2025-12-21 19:49:25","","","","","","","","","","","","",-33.9249112,151.1882823,"","Emma Cole **CALL HER THE DAY BEFORE**
+Access to Keys need to via the link below. 
+<https://www.keymaas.com.au/userRegistration.html?site=a814b300-b267-4d66-ae08-1eea38ade79c>","0197 Lock box code","NR","",True,"",False,"","CO-504","Colliers International","","[] ","R DETECTION","","","Jamie Wright","Jamie Wright"," ",""
+23206,"T-23206","2025-11-20 12:36:04","2026-04-20 07:21:36","AFSS Inspection Report November 2025 - FIP/EWIS (Quote QD-1754)","AFSS Inspection Report November 2025 - FIP/EWIS","As per scope of Works:
+
+Section 2 – Assessment results and observations
+
+2.  Automatic Fire Detection System
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The batteries in the fire alarm panel are out of date and need to be replaced.
+-  The demountable office in the warehouse has no fire detection or occupant warning installed. Detection is required in the demountable office.
+
+7.  Occupant Warning
+At the time of assessment, the following non-compliances were observed that are required to be rectified:
+-  The PA was stuck on when the system is in automatic, further investigation is required fix this issue.
+
+Further estimate maybe required after initial investigation due to End of Life FIP/EWIS","PERFORMED",5,"39A776","","28 Britton Street, Smithfield","","","","CBIIP 28B Pty Ltd","Keisha Casey","Keisha.Casey@centuria.com.au","",0.0000,"Repair","","28 Britton St, Smithfield NSW 2164, Australia","Smithfield","2164","Gordon Jenkins","","","Gordon Jenkins","","","","","2025-11-21 11:06:00","2026-04-20 07:21:36","","2025-11-21 12:48:55","","","","","","Job Code	A20060_2500039","2098.78","","","","As per accepted defect quote QD-1754 dated 17-11-2025.","Checked OWS found unable to deisolate PA when in manual will need replace warning  system photos in documents
+Due to the age of the warning system recommend replacing, unable to get parts
+Replaced batteries as per report photos in documents",-33.8437532,150.9431809,"","Romeo Correia - 0475 222 629","","NR","",True,"",False,"","CO-2122","Centuria Property Funds","","[] ","R DETECTION","","00:00:00","Jamie Wright","Gordon Jenkins"," ",""
+12700,"T-12700","2025-06-13 15:28:31","2026-04-21 09:56:21","Owners Agent defect 2025- Smoke Exhaust Panel (Quote QD-0769)","Owners Agent defect 2025- Smoke Exhaust Panel","Following on from Owner Agent Defect, please see below quote:
+- The smoke exhaust control panel (SSF1 – SSF6 & pump room) adjacent to the fire indicator panel does not operate and is to be removed. The fans operate from local
+switches. - A technician will attend site to safely disconnect all cabling related to the smoke exhaust panels and remove the panel from the premises.
+
+Labour: 8hours @$130 plus gst. 
+Total: $1040 plus gst.","PERFORMED",5,"39A577 AU099","","Goodman AU099 - 31 Heathcote Road, Moorebank, NSW, 2170","","2023-06-21","","Goodman Property Services (Aust) Pty Limited  SC01822","Lisa Harmer","Lisa.Harmer@goodman.com","",1040.0040,"Repair","","31 Heathcote Road, Moorebank, NSW, 2170, Australia","Moorebank","2170","Gordon Jenkins","Nu Unasa","","Gordon Jenkins","","","","","2026-02-05 12:00:00","2025-07-15 12:01:32","","2025-07-01 13:59:47","","","","","","Work Order No: 303018  Purchase Order No: 527304","1040.00","","","","As per accepted defect quote QD-0769 dated 07-05-2025.","Two men to trace cables to find out where fans are wired to remove fan control panel below Fire system
+Removed all Digitron panel from warehouse pictures in documents",-33.9370256,150.9349157,"","Goodman: Lisa Harmer 0482 919 973","","NR","",True,"",False,"","CO-074","Goodman Property Services (Aust) Pty Limited","","[] ","R DETECTION","","00:00:00","Jade Ogony","Gordon Jenkins"," ",""

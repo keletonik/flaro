@@ -69,13 +69,15 @@
   --accent-foreground: 221 83% 30%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --sidebar: 220 16% 8%;
-  --sidebar-foreground: 215 14% 78%;
-  --sidebar-border: 220 12% 15%;
-  --sidebar-primary: 221 83% 55%;
+  /* Light themes get a near-white sidebar so switching mode is visible.
+     Text reads mid-grey; active item uses primary, hover uses muted. */
+  --sidebar: 210 20% 97%;
+  --sidebar-foreground: 215 14% 32%;
+  --sidebar-border: 214 14% 88%;
+  --sidebar-primary: 221 83% 53%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 12% 14%;
-  --sidebar-accent-foreground: 215 14% 92%;
+  --sidebar-accent: 214 14% 92%;
+  --sidebar-accent-foreground: 220 14% 14%;
   --sidebar-ring: 221 83% 55%;
   --chart-1: 221 83% 53%;
   --chart-2: 160 55% 40%;
@@ -1302,6 +1304,16 @@
   border-radius: 2px !important;
 }
 
+/* ─── Nav icon / ASCII swap ─────────────────────────────────────────────
+   Non-terminal themes hide the ASCII prefix, show the lucide icon.
+   Terminal theme hides the icon and shows the ASCII glyph. One DOM,
+   zero JSX branching. */
+:root [data-nav-ascii] { display: none; }
+:root [data-nav-icon]  { display: inline-flex; }
+
+[data-theme="terminal"] [data-nav-ascii] { display: inline-block; }
+[data-theme="terminal"] [data-nav-icon]  { display: none; }
+
 /* ═══════════════════════════════════════════════════════════════════════════
    FORM CONTROLS — native select/option popups were rendering with the
    browser's default white chrome on dark themes (unreadable light-grey
@@ -1339,10 +1351,16 @@ select option {
    GLASS TIERS — heavier blur for modals, lighter for headers
    ═══════════════════════════════════════════════════════════════════════════ */
 .glass-1 {
-  background: hsl(var(--background) / 0.72);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  border-bottom: 1px solid hsl(var(--border) / 0.6);
+  /* Opaque enough to hide scrolling content bleeding through from below.
+     The subtle backdrop saturation still gives a glassy tint over any
+     coloured banner that scrolls past. */
+  background: hsl(var(--background) / 0.96);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid hsl(var(--border));
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-1 { background: hsl(var(--background)); }
 }
 .glass-2 {
   background: hsl(var(--card) / 0.78);

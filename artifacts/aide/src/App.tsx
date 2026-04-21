@@ -28,6 +28,11 @@ const PurchaseOrders = lazy(() => import("@/pages/purchase-orders"));
 const AidePopout = lazy(() => import("@/pages/aide-popout"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 // All Lucide nav icons replaced with text-based prefixes
+import {
+  LayoutDashboard, Activity, BarChart3, Briefcase, Calendar, CheckSquare,
+  Receipt, Package, FolderKanban, Notebook, Flame, Settings as SettingsIcon,
+  type LucideIcon,
+} from "lucide-react";
 import AIDEAssistant from "@/components/AIDEAssistant";
 import CommandPalette from "@/components/CommandPalette";
 import { KeyboardCheatSheet } from "@/components/KeyboardCheatSheet";
@@ -55,32 +60,42 @@ const queryClient = new QueryClient({
 // Metrics folded into Analytics. PA moved to the bottom tray — no separate page.
 // Boards placeholder removed. Toolbox merges into Notes (same concept, one surface).
 // All removed pages keep their routes for deep links; only the nav shortcut is gone.
-const navGroups = [
+interface NavItem {
+  path: string;
+  /** ASCII glyph shown only when theme=terminal. */
+  prefix: string;
+  /** Lucide icon shown in every non-terminal theme. */
+  icon: LucideIcon;
+  label: string;
+  exact?: boolean;
+}
+
+const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "cmd",
     items: [
-      { path: "/", prefix: "~", label: "Dashboard", exact: true },
-      { path: "/operations", prefix: "::", label: "Operations" },
-      { path: "/analytics", prefix: ">>", label: "Analytics" },
+      { path: "/",           prefix: "~",  icon: LayoutDashboard, label: "Dashboard", exact: true },
+      { path: "/operations", prefix: "::", icon: Activity,        label: "Operations" },
+      { path: "/analytics",  prefix: ">>", icon: BarChart3,       label: "Analytics" },
     ],
   },
   {
     label: "ops",
     items: [
-      { path: "/jobs", prefix: "--", label: "Jobs" },
-      { path: "/schedule", prefix: "..", label: "Schedule" },
-      { path: "/todos", prefix: "++", label: "Tasks" },
-      { path: "/purchase-orders", prefix: "[]", label: "POs" },
-      { path: "/suppliers", prefix: "<>", label: "Suppliers" },
-      { path: "/projects", prefix: "//", label: "Projects" },
+      { path: "/jobs",            prefix: "--", icon: Briefcase,    label: "Jobs" },
+      { path: "/schedule",        prefix: "..", icon: Calendar,     label: "Schedule" },
+      { path: "/todos",           prefix: "++", icon: CheckSquare,  label: "Tasks" },
+      { path: "/purchase-orders", prefix: "[]", icon: Receipt,      label: "POs" },
+      { path: "/suppliers",       prefix: "<>", icon: Package,      label: "Suppliers" },
+      { path: "/projects",        prefix: "//", icon: FolderKanban, label: "Projects" },
     ],
   },
   {
     label: "sys",
     items: [
-      { path: "/notes", prefix: "**", label: "Notebook" },
-      { path: "/fip", prefix: "{}", label: "FIP" },
-      { path: "/settings", prefix: "./", label: "Settings" },
+      { path: "/notes",    prefix: "**", icon: Notebook,     label: "Notebook" },
+      { path: "/fip",      prefix: "{}", icon: Flame,        label: "FIP" },
+      { path: "/settings", prefix: "./", icon: SettingsIcon, label: "Settings" },
     ],
   },
 ];
@@ -237,6 +252,7 @@ function SidebarNav() {
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const active = isActive(location, item);
+                const Icon = item.icon;
                 return (
                   <button
                     key={item.path}
@@ -245,22 +261,37 @@ function SidebarNav() {
                     title={collapsed ? item.label : undefined}
                     className={cn(
                       "w-full flex items-center rounded-md transition-all duration-100 text-left relative group",
-                      collapsed ? "justify-center px-0 py-2" : "gap-2 px-2 py-1.5",
+                      collapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2 py-1.5",
                       active
-                        ? "bg-sidebar-accent text-sidebar-foreground"
-                        : "text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
                     )}
                   >
-                    <span className={cn(
-                      "w-5 shrink-0 text-center font-mono text-[11px] leading-none transition-colors duration-100",
-                      active ? "text-primary" : "text-sidebar-foreground/25 group-hover:text-sidebar-foreground/50"
-                    )}>
+                    {/* Both slots rendered; CSS swaps which one is visible.
+                        Terminal theme shows ASCII via [data-theme=terminal];
+                        every other theme shows the lucide icon. */}
+                    <span
+                      data-nav-ascii=""
+                      className={cn(
+                        "w-5 shrink-0 text-center font-mono text-[11px] leading-none transition-colors",
+                        active ? "text-primary" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70",
+                      )}
+                    >
                       {item.prefix}
+                    </span>
+                    <span
+                      data-nav-icon=""
+                      className={cn(
+                        "w-5 h-5 shrink-0 inline-flex items-center justify-center transition-colors",
+                        active ? "text-primary" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground",
+                      )}
+                    >
+                      <Icon size={14} strokeWidth={active ? 2.25 : 1.75} />
                     </span>
                     {!collapsed && (
                       <span className={cn(
                         "text-[11px] tracking-wide truncate",
-                        active ? "font-semibold" : "font-medium"
+                        active ? "font-semibold" : "font-medium",
                       )}>{item.label}</span>
                     )}
                   </button>

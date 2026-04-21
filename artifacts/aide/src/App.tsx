@@ -32,6 +32,7 @@ import AidePA from "@/components/AidePA";
 import AIDEAssistant from "@/components/AIDEAssistant";
 import CommandPalette from "@/components/CommandPalette";
 import { KeyboardCheatSheet } from "@/components/KeyboardCheatSheet";
+import { FileIntakeDialog } from "@/components/FileIntakeDialog";
 
 const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>> }>({ collapsed: false, setCollapsed: () => {} });
 export function useSidebar() { return useContext(SidebarContext); }
@@ -51,34 +52,34 @@ const queryClient = new QueryClient({
   },
 });
 
+// Nav is the manager's hot loop: see jobs, dispatch, quote, invoice, reference.
+// Metrics folded into Analytics. PA moved to the bottom tray — no separate page.
+// Boards placeholder removed. Toolbox merges into Notes (same concept, one surface).
+// All removed pages keep their routes for deep links; only the nav shortcut is gone.
 const navGroups = [
   {
     label: "cmd",
     items: [
       { path: "/", prefix: "~", label: "Dashboard", exact: true },
-      { path: "/pa", prefix: ">_", label: "PA" },
       { path: "/operations", prefix: "::", label: "Operations" },
       { path: "/analytics", prefix: ">>", label: "Analytics" },
-      { path: "/metrics", prefix: "##", label: "Metrics" },
     ],
   },
   {
     label: "ops",
     items: [
-      { path: "/jobs", prefix: "--", label: "WIPs" },
-      { path: "/purchase-orders", prefix: "[]", label: "POs" },
+      { path: "/jobs", prefix: "--", label: "Jobs" },
+      { path: "/schedule", prefix: "..", label: "Schedule" },
       { path: "/todos", prefix: "++", label: "Tasks" },
-      { path: "/projects", prefix: "//", label: "Projects" },
-      { path: "/boards", prefix: "##", label: "Boards" },
+      { path: "/purchase-orders", prefix: "[]", label: "POs" },
       { path: "/suppliers", prefix: "<>", label: "Suppliers" },
+      { path: "/projects", prefix: "//", label: "Projects" },
     ],
   },
   {
     label: "sys",
     items: [
-      { path: "/schedule", prefix: "..", label: "Schedule" },
-      { path: "/notes", prefix: "**", label: "Notes" },
-      { path: "/toolbox", prefix: "&&", label: "Toolbox" },
+      { path: "/notes", prefix: "**", label: "Notebook" },
       { path: "/fip", prefix: "{}", label: "FIP" },
       { path: "/settings", prefix: "./", label: "Settings" },
     ],
@@ -95,33 +96,66 @@ function isActive(location: string, item: { path: string; exact?: boolean }) {
 function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
   const { theme, mode, setTheme, toggleMode } = useTheme();
   const [showPicker, setShowPicker] = useState(false);
+
+  // Primary click: flip light/dark. Secondary button: open palette picker.
+  // Split into two buttons so the one-click mode flip always works, without
+  // hiding behind a panel that needs dismissing.
+  const lightThemes = THEME_OPTIONS.filter(o => o.mode === "light");
+  const darkThemes = THEME_OPTIONS.filter(o => o.mode === "dark");
+
   return (
-    <div className="relative">
+    <div className="relative flex items-center gap-0.5">
       <button
         data-testid="button-theme-toggle"
-        onClick={() => collapsed ? toggleMode() : setShowPicker(v => !v)}
-        title="Change theme"
+        onClick={() => toggleMode()}
+        title={mode === "light" ? "Switch to dark" : "Switch to light"}
         className={cn(
           "flex items-center gap-2 rounded-md transition-all duration-200",
           collapsed
             ? "w-9 h-9 justify-center text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-            : "px-2 py-1.5 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs w-full font-medium"
+            : "px-2 py-1.5 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs font-medium flex-1",
         )}
       >
         <span className="font-mono text-[11px] w-5 text-center shrink-0">{mode === "light" ? "☀" : "◑"}</span>
-        {!collapsed && <span className="text-[11px]">Theme</span>}
+        {!collapsed && <span className="text-[11px] capitalize">{mode}</span>}
       </button>
+      {!collapsed && (
+        <button
+          data-testid="button-palette-picker"
+          onClick={() => setShowPicker(v => !v)}
+          title="Palette picker"
+          className="px-1.5 py-1.5 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent text-[11px]"
+        >
+          <span className="font-mono" style={{ color: THEME_OPTIONS.find(o => o.key === theme)?.accent }}>◉</span>
+        </button>
+      )}
       {showPicker && !collapsed && (
-        <div className="absolute bottom-full left-0 mb-1 w-full bg-sidebar-accent border border-sidebar-border rounded-md p-1.5 shadow-lg z-50">
-          {THEME_OPTIONS.map(opt => (
-            <button key={opt.key} onClick={() => { setTheme(opt.key); setShowPicker(false); }}
-              className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium transition-all",
-                theme === opt.key ? "text-sidebar-primary-foreground bg-sidebar-primary" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-              )}>
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: opt.accent }} />
-              {opt.label}
-            </button>
-          ))}
+        <div className="absolute bottom-full right-0 mb-1 w-48 bg-sidebar-accent border border-sidebar-border rounded-md p-1.5 shadow-lg z-50 space-y-2">
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-sidebar-foreground/40 px-2 mb-1">light</p>
+            {lightThemes.map(opt => (
+              <button key={opt.key} onClick={() => { setTheme(opt.key); setShowPicker(false); }}
+                className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium transition-all",
+                  theme === opt.key ? "text-sidebar-primary-foreground bg-sidebar-primary" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                )}>
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.accent }} />
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <div className="h-px bg-sidebar-border/60" />
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-sidebar-foreground/40 px-2 mb-1">dark</p>
+            {darkThemes.map(opt => (
+              <button key={opt.key} onClick={() => { setTheme(opt.key); setShowPicker(false); }}
+                className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium transition-all",
+                  theme === opt.key ? "text-sidebar-primary-foreground bg-sidebar-primary" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                )}>
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.accent }} />
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -350,6 +384,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       {location !== "/chat" && location !== "/pa" && <AIDEAssistant />}
       <CommandPalette />
       <KeyboardCheatSheet />
+      <FileIntakeDialog />
     </div>
   );
 }

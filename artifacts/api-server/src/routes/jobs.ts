@@ -6,6 +6,7 @@ import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { CreateJobBody, UpdateJobBody, ListJobsQueryParams, GetJobParams, UpdateJobParams, DeleteJobParams } from "@workspace/api-zod";
 import { randomUUID } from "crypto";
 import { deleteRow, softDeleteEnabled } from "../lib/soft-delete";
+import { pushJobToAirtable } from "../lib/airtable-sync";
 
 const router = Router();
 
@@ -150,6 +151,10 @@ router.patch("/jobs/:id", async (req, res, next) => {
       .set({ ...rest, uptickNotes: updatedUptickNotes, updatedAt: new Date() })
       .where(eq(jobs.id, paramsParsed.data.id))
       .returning();
+
+    // Fire-and-forget write-back to Airtable. Errors are logged inside the
+    // helper; we don't block the response on network IO.
+    void pushJobToAirtable(paramsParsed.data.id);
 
     res.json(serializeJob(updated));
   } catch (err) { next(err); }

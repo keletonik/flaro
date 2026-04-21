@@ -6,6 +6,7 @@ import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { randomUUID } from "crypto";
 import { deleteRow, deleteRows, softDeleteEnabled } from "../lib/soft-delete";
 import { logDataChange } from "../lib/change-log";
+import { pushQuoteToAirtable } from "../lib/airtable-sync";
 
 const MAX_IMPORT_ROWS = Number(process.env["MAX_IMPORT_ROWS"]) || 10000;
 
@@ -136,6 +137,7 @@ router.patch("/quotes/:id", async (req, res, next) => {
     if (contactEmail !== undefined) updates.contactEmail = contactEmail || null;
     if (notes !== undefined) updates.notes = notes || null;
     const [updated] = await db.update(quotes).set(updates).where(eq(quotes.id, req.params.id)).returning();
+    void pushQuoteToAirtable(req.params.id);
     res.json(serialize(updated));
   } catch (err) { next(err); }
 });

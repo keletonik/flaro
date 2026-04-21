@@ -1,0 +1,403 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# AIRTABLE SYNC CONFIGURATION — REPLIT DEPLOYMENT
+# ══════════════════════════════════════════════════════════════════════════════
+
+"""
+OBJECTIVE:
+Configure Replit to automatically sync email uploads to your Airtable base
+(SM_MANAGER appuKqojpI3bmO79D) with 1-minute refresh intervals.
+
+ARCHITECTURE:
+- Replit app monitors upload folder
+- Parses .msg files on detection
+- Creates/updates Airtable records
+- Runs sync loop every 60 seconds
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# STEP 1: REPLIT SECRETS CONFIGURATION
+# ──────────────────────────────────────────────────────────────────────────────
+
+"""
+In Replit interface:
+1. Click "Secrets" (lock icon) in left sidebar
+2. Add these environment variables:
+
+Key: AIRTABLE_API_KEY
+Value: [Your Airtable Personal Access Token]
+   → Get from: https://airtable.com/create/tokens
+   → Scopes required: data.records:read, data.records:write
+
+Key: AIRTABLE_BASE_ID
+Value: appuKqojpI3bmO79D
+
+Key: AIRTABLE_JOBS_TABLE_ID
+Value: tblfX6SQYVJJmkdeK
+
+Key: AIRTABLE_QUOTES_TABLE_ID
+Value: tbl6k5nXbDVGE4Pnd
+
+Key: AIRTABLE_CONTACTS_TABLE_ID
+Value: tblzyaBUUZTF8fn6J
+
+Key: AIRTABLE_MEETINGS_TABLE_ID
+Value: tblyqxK2iKXtWxYY1
+
+Key: UPLOAD_FOLDER_PATH
+Value: /tmp/uploads
+   → Or wherever Replit mounts uploaded files
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# STEP 2: INSTALL DEPENDENCIES
+# ──────────────────────────────────────────────────────────────────────────────
+
+"""
+In Replit Shell or requirements.txt:
+
+pyairtable>=2.3.0
+extract-msg>=0.45.0
+watchdog>=3.0.0
+python-dotenv>=1.0.0
+
+Run in Shell:
+pip install pyairtable extract-msg watchdog python-dotenv
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# STEP 3: MAIN SYNC SCRIPT
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Save as: airtable_sync.py
+
+import os
+import time
+import logging
+from pathlib import Path
+from datetime import datetime
+from typing import Dict, List, Optional
+
+import extract_msg
+from pyairtable import Api
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+# ── Configuration ──
+AIRTABLE_API_KEY = os.environ.get('AIRTABLE_API_KEY')
+AIRTABLE_BASE_ID = os.environ.get('AIRTABLE_BASE_ID')
+JOBS_TABLE_ID = os.environ.get('AIRTABLE_JOBS_TABLE_ID')
+QUOTES_TABLE_ID = os.environ.get('AIRTABLE_QUOTES_TABLE_ID')
+CONTACTS_TABLE_ID = os.environ.get('AIRTABLE_CONTACTS_TABLE_ID')
+MEETINGS_TABLE_ID = os.environ.get('AIRTABLE_MEETINGS_TABLE_ID')
+UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER_PATH', '/tmp/uploads')
+SYNC_INTERVAL = 60  # seconds
+
+# ── Field ID mappings (from your Airtable schema) ──
+JOBS_FIELDS = {
+    'title': 'fldryWrm10ym3MO0g',
+    'job_number': 'fldTZJrpOCNgavqRi',
+    'status': 'flds1uqwg4dRA9Sm5',
+    'priority': 'fldmNFMP6FCu3I8ny',
+    'notes': 'fldpplLBxRiUKgE8h',
+    'email': 'fld7dLNd5rGexinUO',
+    'details': 'fldcV4E1wxphcesE7'
+}
+
+# ── Setup logging ──
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+
+class EmailProcessor:
+    """Processes .msg files and extracts relevant data."""
+    
+    def __init__(self):
+        self.api = Api(AIRTABLE_API_KEY)
+        self.base = self.api.base(AIRTABLE_BASE_ID)
+        self.jobs_table = self.base.table(JOBS_TABLE_ID)
+    
+    def extract_msg_data(self, filepath: Path) -> Optional[Dict]:
+        """Extract structured data from .msg file."""
+        try:
+            msg = extract_msg.Message(filepath)
+            
+            # Basic extraction
+            data = {
+                'subject': msg.subject or '',
+                'sender': msg.sender or '',
+                'body': msg.body or '',
+                'date': msg.date or '',
+                'attachments': len(msg.attachments) if msg.attachments else 0
+            }
+            
+            msg.close()
+            return data
+            
+        except Exception as e:
+            logger.error(f"Failed to parse {filepath.name}: {e}")
+            return None
+    
+    def categorize_email(self, data: Dict) -> Dict:
+        """Categorize email and extract job metadata."""
+        subject = data['subject'].lower()
+        body = data['body'].lower()
+        
+        # Detect priority
+        priority = 'Medium'
+        if any(word in subject or word in body for word in ['critical', 'urgent', 'asap', 'immediate']):
+            priority = 'Critical' if 'critical' in subject or 'critical' in body else 'High'
+        
+        # Detect job number
+        job_number = None
+        import re
+        patterns = [
+            r'#?(\d{5})',  # 5-digit job numbers
+            r'T-(\d{5})',  # T-prefixed
+            r'QD-(\d{4})',  # QD-prefixed
+            r'AU(\d{3,4})',  # AU-prefixed
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, subject)
+            if match:
+                job_number = match.group(0)
+                break
+        
+        # Detect category
+        category = 'General'
+        if 'quote' in subject or 'quote' in body:
+            category = 'Quote Request'
+        elif 'fault' in subject or 'alarm' in subject or 'defect' in body:
+            category = 'Fault/Defect'
+        elif 'afss' in subject or 'annual' in subject:
+            category = 'AFSS/Compliance'
+        elif 'testing' in subject or 'maintenance' in subject:
+            category = 'Testing/Maintenance'
+        
+        return {
+            'priority': priority,
+            'job_number': job_number,
+            'category': category
+        }
+    
+    def create_airtable_record(self, filepath: Path, data: Dict, metadata: Dict):
+        """Create new Airtable record from email data."""
+        try:
+            # Build record fields
+            fields = {
+                JOBS_FIELDS['title']: f"{metadata['category']} - {data['subject'][:80]}",
+                JOBS_FIELDS['priority']: metadata['priority'],
+                JOBS_FIELDS['email']: data['sender'],
+                JOBS_FIELDS['status']: 'Open',
+                JOBS_FIELDS['notes']: f"Auto-imported from {filepath.name} on {datetime.now().strftime('%d %b %Y %H:%M')}",
+                JOBS_FIELDS['details']: f"{data['body'][:1000]}...\n\nAttachments: {data['attachments']}"
+            }
+            
+            if metadata['job_number']:
+                fields[JOBS_FIELDS['job_number']] = metadata['job_number']
+            
+            # Create record
+            record = self.jobs_table.create(fields)
+            logger.info(f"✓ Created record {record['id']} for {filepath.name}")
+            
+            # Archive processed file
+            archive_path = filepath.parent / 'processed' / filepath.name
+            archive_path.parent.mkdir(exist_ok=True)
+            filepath.rename(archive_path)
+            
+            return record
+            
+        except Exception as e:
+            logger.error(f"Failed to create Airtable record: {e}")
+            return None
+    
+    def process_file(self, filepath: Path):
+        """Main processing pipeline for a single .msg file."""
+        logger.info(f"Processing: {filepath.name}")
+        
+        # Extract data
+        data = self.extract_msg_data(filepath)
+        if not data:
+            return
+        
+        # Categorize
+        metadata = self.categorize_email(data)
+        
+        # Create Airtable record
+        self.create_airtable_record(filepath, data, metadata)
+
+
+class EmailWatcher(FileSystemEventHandler):
+    """Watches upload folder for new .msg files."""
+    
+    def __init__(self, processor: EmailProcessor):
+        self.processor = processor
+        self.processed_files = set()
+    
+    def on_created(self, event):
+        if event.is_directory:
+            return
+        
+        filepath = Path(event.src_path)
+        if filepath.suffix.lower() == '.msg' and filepath not in self.processed_files:
+            # Small delay to ensure file is fully written
+            time.sleep(1)
+            self.processor.process_file(filepath)
+            self.processed_files.add(filepath)
+
+
+def run_sync_loop():
+    """Main sync loop - runs every 60 seconds."""
+    processor = EmailProcessor()
+    upload_path = Path(UPLOAD_FOLDER)
+    upload_path.mkdir(parents=True, exist_ok=True)
+    
+    # Setup file watcher
+    event_handler = EmailWatcher(processor)
+    observer = Observer()
+    observer.schedule(event_handler, str(upload_path), recursive=False)
+    observer.start()
+    
+    logger.info(f"🔄 Watching {upload_path} for new .msg files")
+    logger.info(f"📊 Syncing to Airtable base {AIRTABLE_BASE_ID}")
+    logger.info(f"⏱️  Refresh interval: {SYNC_INTERVAL}s")
+    
+    try:
+        while True:
+            # Process any existing files on startup or interval
+            for msg_file in upload_path.glob('*.msg'):
+                if msg_file not in event_handler.processed_files:
+                    processor.process_file(msg_file)
+                    event_handler.processed_files.add(msg_file)
+            
+            time.sleep(SYNC_INTERVAL)
+    
+    except KeyboardInterrupt:
+        observer.stop()
+        logger.info("Shutting down sync service")
+    
+    observer.join()
+
+
+if __name__ == '__main__':
+    # Validate configuration
+    required_vars = [
+        'AIRTABLE_API_KEY',
+        'AIRTABLE_BASE_ID',
+        'AIRTABLE_JOBS_TABLE_ID'
+    ]
+    
+    missing = [var for var in required_vars if not os.environ.get(var)]
+    if missing:
+        logger.error(f"Missing required environment variables: {', '.join(missing)}")
+        exit(1)
+    
+    # Start sync loop
+    run_sync_loop()
+
+# ──────────────────────────────────────────────────────────────────────────────
+# STEP 4: REPLIT CONFIGURATION (.replit file)
+# ──────────────────────────────────────────────────────────────────────────────
+
+"""
+Create or update .replit file in project root:
+
+run = "python airtable_sync.py"
+entrypoint = "airtable_sync.py"
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["python", "airtable_sync.py"]
+deploymentTarget = "cloudrun"
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# STEP 5: STARTUP & MONITORING
+# ──────────────────────────────────────────────────────────────────────────────
+
+"""
+MANUAL START:
+In Replit Shell:
+$ python airtable_sync.py
+
+AUTO-START ON REPLIT DEPLOY:
+Replit will automatically run the script defined in .replit when deployed.
+
+MONITORING:
+Watch the Console tab in Replit for log output:
+- "Processing: filename.msg" when new files detected
+- "✓ Created record ID" when successfully synced
+- Error messages if sync fails
+
+TESTING:
+1. Upload a .msg file to the configured UPLOAD_FOLDER_PATH
+2. Watch logs for processing confirmation
+3. Check Airtable base for new record: 
+   https://airtable.com/appuKqojpI3bmO79D
+
+TROUBLESHOOTING:
+- No sync happening: Check UPLOAD_FOLDER_PATH matches actual upload location
+- Airtable errors: Verify API token has write permissions
+- Parse errors: Check .msg file format is valid Outlook MSG format
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# ADVANCED: WEBHOOK ALTERNATIVE (INSTANT SYNC)
+# ──────────────────────────────────────────────────────────────────────────────
+
+"""
+For instant sync instead of 60s polling, use webhook trigger:
+
+1. Set up Replit as web service (Flask/FastAPI)
+2. Create webhook endpoint POST /upload
+3. Configure upload handler to call webhook immediately
+4. Process .msg file on webhook receipt
+
+Example webhook endpoint:
+
+from fastapi import FastAPI, UploadFile
+
+app = FastAPI()
+processor = EmailProcessor()
+
+@app.post("/upload")
+async def handle_upload(file: UploadFile):
+    filepath = Path(UPLOAD_FOLDER) / file.filename
+    
+    with open(filepath, 'wb') as f:
+        f.write(await file.read())
+    
+    processor.process_file(filepath)
+    return {"status": "processed", "filename": file.filename}
+
+This gives you <1 second sync time instead of up to 60s.
+"""
+
+print("""
+══════════════════════════════════════════════════════════════════════════════
+AIRTABLE SYNC CONFIGURATION — READY TO DEPLOY
+══════════════════════════════════════════════════════════════════════════════
+
+✓ Secrets configured in Replit
+✓ Dependencies installed
+✓ airtable_sync.py created
+✓ .replit configured
+
+DEPLOYMENT CHECKLIST:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+□ Add all secrets to Replit (see STEP 1)
+□ Run: pip install -r requirements.txt
+□ Verify UPLOAD_FOLDER_PATH matches actual upload directory
+□ Test with sample .msg file
+□ Click "Run" or deploy to production
+□ Monitor Console for sync confirmations
+
+AIRTABLE BASE: https://airtable.com/appuKqojpI3bmO79D
+
+Questions? The script logs everything to Console.
+══════════════════════════════════════════════════════════════════════════════
+""")

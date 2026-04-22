@@ -879,6 +879,44 @@ export default function Chat() {
   const updateAttachmentBody = (id: string, body: string) =>
     setAttachments(prev => prev.map(a => a.id === id ? { ...a, emailBody: body } : a));
 
+  // ── Cross-route file handoff ─────────────────────────────────────────────────
+  // Files dropped on the global AIDE tray that aren't CSV/.msg get queued by
+  // FileIntakeDialog and we navigate here. Drain the queue on mount and on the
+  // CHAT_ATTACH_EVENT so multi-drop bursts and post-mount drops both land.
+  useEffect(() => {
+    const drain = async () => {
+      // Lazy import keeps the queue module out of the main page chunk.
+      const { drainChatFiles, CHAT_ATTACH_EVENT } = await import("@/lib/chat-attachment-queue");
+      const flush = async () => {
+        const files = drainChatFiles();
+        if (files.length === 0) return;
+        const results = await Promise.all(files.map(processFile));
+        const valid = results.filter((r): r is Attachment => r !== null);
+        if (valid.length > 0) {
+          setAttachments(prev => [...prev, ...valid]);
+          const imageCount = valid.filter(r => r.type === "image").length;
+          const otherCount = valid.length - imageCount;
+          toast({
+            title: `${valid.length} file${valid.length > 1 ? "s" : ""} ready to send`,
+            description: [
+              imageCount && `${imageCount} image${imageCount > 1 ? "s" : ""}`,
+              otherCount && `${otherCount} document${otherCount > 1 ? "s" : ""}`,
+            ].filter(Boolean).join(" · "),
+          });
+          textareaRef.current?.focus();
+        }
+      };
+      // Initial drain (covers files queued before this component mounted).
+      flush();
+      const handler = () => { void flush(); };
+      window.addEventListener(CHAT_ATTACH_EVENT, handler);
+      return () => window.removeEventListener(CHAT_ATTACH_EVENT, handler);
+    };
+    let cleanup: (() => void) | undefined;
+    drain().then(c => { cleanup = c; });
+    return () => { cleanup?.(); };
+  }, [processFile, toast]);
+
   // ── Action execution ─────────────────────────────────────────────────────────
 
   const executeAction = async (action: AideAction): Promise<ExecutedAction> => {

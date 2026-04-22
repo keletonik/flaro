@@ -5,9 +5,11 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
+import { useLocation } from "wouter";
 import { apiFetch, parseCSV } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { enqueueChatFiles, CHAT_ATTACH_EVENT } from "@/lib/chat-attachment-queue";
 
 type EntityKey = "jobs" | "wip" | "quotes" | "defects" | "invoices";
 
@@ -113,6 +115,7 @@ export function FileIntakeDialog() {
   const [override, setOverride] = useState<EntityKey | null>(null);
   const [importing, setImporting] = useState(false);
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -152,7 +155,22 @@ export function FileIntakeDialog() {
       }
 
       if (!lower.endsWith(".csv")) {
-        toast({ title: "Only CSV and .msg are supported right now", description: file.name, variant: "destructive" });
+        // Anything that isn't CSV/.msg goes to the chat as an attachment.
+        // PDFs, images, Word, Excel, etc. are all supported by chat.tsx's
+        // processFile pipeline. We queue the entire drop (so multi-file drops
+        // attach as a group) and route to /chat. The chat page drains the
+        // queue on mount and on the CHAT_ATTACH_EVENT.
+        enqueueChatFiles(files);
+        const isChatRoute = window.location.pathname.startsWith("/chat");
+        if (!isChatRoute) navigate("/chat");
+        // Fire after a tick so the chat page has a chance to mount its listener
+        // when we just navigated. If we're already on /chat the listener is up
+        // and this dispatch is what actually triggers processing.
+        setTimeout(() => window.dispatchEvent(new CustomEvent(CHAT_ATTACH_EVENT)), isChatRoute ? 0 : 50);
+        toast({
+          title: `${files.length} file${files.length > 1 ? "s" : ""} attached to chat`,
+          description: files.map(f => f.name).join(", ").slice(0, 120),
+        });
         return;
       }
       const reader = new FileReader();

@@ -883,38 +883,60 @@ export default function Chat() {
   // Files dropped on the global AIDE tray that aren't CSV/.msg get queued by
   // FileIntakeDialog and we navigate here. Drain the queue on mount and on the
   // CHAT_ATTACH_EVENT so multi-drop bursts and post-mount drops both land.
+  //
+  // Lifecycle is fiddly because the queue module is dynamically imported.
+  // Without a `disposed` guard the listener could be attached AFTER unmount and
+  // never removed — orphan listeners trigger ghost toasts and stale setState on
+  // remount. We also defensively clear the queue on unmount so files queued by
+  // a logged-out user can't bleed into a re-login in the same tab.
   useEffect(() => {
-    const drain = async () => {
-      // Lazy import keeps the queue module out of the main page chunk.
-      const { drainChatFiles, CHAT_ATTACH_EVENT } = await import("@/lib/chat-attachment-queue");
+    let disposed = false;
+    let attachedHandler: (() => void) | null = null;
+    let attachedEvent: string | null = null;
+
+    (async () => {
+      const mod = await import("@/lib/chat-attachment-queue");
+      if (disposed) return;
       const flush = async () => {
-        const files = drainChatFiles();
+        if (disposed) return;
+        const files = mod.drainChatFiles();
         if (files.length === 0) return;
         const results = await Promise.all(files.map(processFile));
+        if (disposed) return;
         const valid = results.filter((r): r is Attachment => r !== null);
-        if (valid.length > 0) {
-          setAttachments(prev => [...prev, ...valid]);
-          const imageCount = valid.filter(r => r.type === "image").length;
-          const otherCount = valid.length - imageCount;
-          toast({
-            title: `${valid.length} file${valid.length > 1 ? "s" : ""} ready to send`,
-            description: [
-              imageCount && `${imageCount} image${imageCount > 1 ? "s" : ""}`,
-              otherCount && `${otherCount} document${otherCount > 1 ? "s" : ""}`,
-            ].filter(Boolean).join(" · "),
-          });
-          textareaRef.current?.focus();
-        }
+        if (valid.length === 0) return;
+        setAttachments(prev => [...prev, ...valid]);
+        const imageCount = valid.filter(r => r.type === "image").length;
+        const otherCount = valid.length - imageCount;
+        toast({
+          title: `${valid.length} file${valid.length > 1 ? "s" : ""} ready to send`,
+          description: [
+            imageCount && `${imageCount} image${imageCount > 1 ? "s" : ""}`,
+            otherCount && `${otherCount} document${otherCount > 1 ? "s" : ""}`,
+          ].filter(Boolean).join(" · "),
+        });
+        textareaRef.current?.focus();
       };
-      // Initial drain (covers files queued before this component mounted).
-      flush();
+      void flush();
       const handler = () => { void flush(); };
-      window.addEventListener(CHAT_ATTACH_EVENT, handler);
-      return () => window.removeEventListener(CHAT_ATTACH_EVENT, handler);
+      window.addEventListener(mod.CHAT_ATTACH_EVENT, handler);
+      attachedHandler = handler;
+      attachedEvent = mod.CHAT_ATTACH_EVENT;
+      // If unmount happened while we were awaiting setup, tear down now.
+      if (disposed && attachedEvent && attachedHandler) {
+        window.removeEventListener(attachedEvent, attachedHandler);
+        mod.drainChatFiles(); // discard anything left
+      }
+    })();
+
+    return () => {
+      disposed = true;
+      if (attachedEvent && attachedHandler) {
+        window.removeEventListener(attachedEvent, attachedHandler);
+      }
+      // Defensive: prevent queued files from surviving an in-tab session change.
+      void import("@/lib/chat-attachment-queue").then(m => m.drainChatFiles());
     };
-    let cleanup: (() => void) | undefined;
-    drain().then(c => { cleanup = c; });
-    return () => { cleanup?.(); };
   }, [processFile, toast]);
 
   // ── Action execution ─────────────────────────────────────────────────────────

@@ -22,13 +22,23 @@ import {
   isRevenueInvoice,
   revenueDate,
   invoiceAmount as invAmt,
+  isOutstandingInvoice,
+  isOverdueInvoice,
 } from "../lib/division-filter";
 
 const router = Router();
 
+// Light cache so the dashboard's 20s refetch interval doesn't hammer the DB
+// with five full-table scans every tick on every open client.
+const kpiCache = new Map<string, { data: any; expires: number }>();
+export function invalidateKpiCache() { kpiCache.clear(); }
+
 router.get("/kpi/metrics", async (req, res, next) => {
   try {
     const unfiltered = isUnfiltered(req);
+    const cacheKey = unfiltered ? "kpi-all" : "kpi-mine";
+    const cached = kpiCache.get(cacheKey);
+    if (cached && Date.now() < cached.expires) { res.json(cached.data); return; }
     const [allJobsRaw, allWipRaw, allQuotesRaw, allDefects, allInvoicesRaw, allTodos] = await Promise.all([
       db.select().from(jobs),
       db.select().from(wipRecords),
@@ -70,9 +80,12 @@ router.get("/kpi/metrics", async (req, res, next) => {
     const openDefects = allDefects.filter(d => d.status === "Open" || d.status === "Quoted");
     const criticalDefects = allDefects.filter(d => d.severity === "Critical" && d.status !== "Resolved");
 
-    const outstandingInvoices = allInvoices.filter(i => i.status === "Sent" || i.status === "Overdue");
-    const overdueInvoices = allInvoices.filter(i => i.status === "Overdue");
-    const outstandingTotal = outstandingInvoices.reduce((sum, i) => sum + (i.totalAmount ? Number(i.totalAmount) : (i.amount ? Number(i.amount) : 0)), 0);
+    // Case-insensitive status match. Real Xero data has both AUTHORISED (modern)
+    // and Sent (legacy) for the "issued, not yet paid" state — using literal
+    // === "Sent" misses ~95% of outstanding invoices.
+    const outstandingInvoices = allInvoices.filter(isOutstandingInvoice);
+    const overdueInvoices = allInvoices.filter(isOverdueInvoice);
+    const outstandingTotal = outstandingInvoices.reduce((sum, i) => sum + invAmt(i), 0);
     // Canonical revenue-this-month comes from the metric registry.
     // Falls back to the legacy hand-rolled sum only if the registry
     // call errors — should never happen, but keeps the dashboard

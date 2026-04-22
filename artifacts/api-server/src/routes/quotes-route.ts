@@ -7,6 +7,7 @@ import { randomUUID } from "crypto";
 import { deleteRow, deleteRows, softDeleteEnabled } from "../lib/soft-delete";
 import { logDataChange } from "../lib/change-log";
 import { pushQuoteToAirtable } from "../lib/airtable-sync";
+import { invalidateAggregateCaches } from "../lib/aggregate-cache";
 
 const MAX_IMPORT_ROWS = Number(process.env["MAX_IMPORT_ROWS"]) || 10000;
 
@@ -55,6 +56,7 @@ router.post("/quotes", async (req, res, next) => {
       validUntil: validUntil || null, assignedTech: assignedTech || null, contactName: contactName || null,
       contactEmail: contactEmail || null, notes: notes || null, createdAt: now, updatedAt: now,
     }).returning();
+    invalidateAggregateCaches();
     res.status(201).json(serialize(record));
   } catch (err) { next(err); }
 });
@@ -64,6 +66,7 @@ router.post("/quotes/import", async (req, res, next) => {
     const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
     if (!rows?.length) { res.status(400).json({ error: "No data rows provided" }); return; }
     if (rows.length > MAX_IMPORT_ROWS) {
+      invalidateAggregateCaches();
       res.status(413).json({ error: `Too many rows (${rows.length}). Limit is ${MAX_IMPORT_ROWS}.` });
       return;
     }
@@ -100,6 +103,7 @@ router.patch("/quotes/bulk", async (req, res, next) => {
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (status) updates.status = status;
     for (const id of ids) { await db.update(quotes).set(updates).where(eq(quotes.id, id)); }
+    invalidateAggregateCaches();
     res.json({ updated: ids.length });
   } catch (err) { next(err); }
 });
@@ -109,6 +113,7 @@ router.delete("/quotes/bulk", async (req, res, next) => {
     const { ids } = req.body as { ids: string[] };
     if (!ids?.length) { res.status(400).json({ error: "ids array required" }); return; }
     await deleteRows(quotes, ids);
+    invalidateAggregateCaches();
     res.status(204).end();
   } catch (err) { next(err); }
 });
@@ -138,6 +143,7 @@ router.patch("/quotes/:id", async (req, res, next) => {
     if (notes !== undefined) updates.notes = notes || null;
     const [updated] = await db.update(quotes).set(updates).where(eq(quotes.id, req.params.id)).returning();
     void pushQuoteToAirtable(req.params.id);
+    invalidateAggregateCaches();
     res.json(serialize(updated));
   } catch (err) { next(err); }
 });
@@ -147,6 +153,7 @@ router.delete("/quotes/:id", async (req, res, next) => {
     const [existing] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!existing) { res.status(404).json({ error: "Quote not found" }); return; }
     await deleteRow(quotes, req.params.id);
+    invalidateAggregateCaches();
     res.status(204).end();
   } catch (err) { next(err); }
 });

@@ -39,10 +39,33 @@ export function rowServiceGroup(w: { rawData?: any }): string {
   }
 }
 
+/**
+ * True when the row belongs to my division.
+ *
+ * Rule: if serviceGroup is populated, it must contain one of MY_DIVISION_SERVICE_GROUPS.
+ * If serviceGroup is empty/missing (≈13% of prod WIP rows — Airtable hasn't tagged them
+ * yet), fall back to "yes" so newly-imported rows don't disappear before they're
+ * classified. The accompanying tech filter still gates them by crew membership, so
+ * this is safe — we won't show e.g. Hugo's untagged rows to Casper, only Casper's
+ * own crew's untagged rows.
+ */
 export function isMyDivision(w: { rawData?: any }): boolean {
   const sg = rowServiceGroup(w).toUpperCase();
-  if (!sg) return false;
+  if (!sg) return true;
   return MY_DIVISION_SERVICE_GROUPS.some(g => sg.includes(g));
+}
+
+/**
+ * Outstanding-invoice statuses (case-insensitive). AUTHORISED is on the books but
+ * unpaid. SENT is the older Xero label for the same thing. OVERDUE is past due-date.
+ * PARTIAL is partially paid. PAID/DRAFT/VOID are excluded.
+ */
+const OUTSTANDING_STATUSES = new Set(["AUTHORISED", "SENT", "OVERDUE", "PARTIAL"]);
+export function isOutstandingInvoice(inv: { status?: string | null }): boolean {
+  return OUTSTANDING_STATUSES.has(String(inv.status || "").toUpperCase());
+}
+export function isOverdueInvoice(inv: { status?: string | null }): boolean {
+  return String(inv.status || "").toUpperCase() === "OVERDUE";
 }
 
 export function isMyTech(tech: string | null | undefined): boolean {

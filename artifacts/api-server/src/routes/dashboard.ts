@@ -2,13 +2,17 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { jobs, notes } from "@workspace/db";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { isMyTech, isUnfiltered } from "../lib/division-filter";
 
 const router = Router();
 
 router.get("/dashboard/summary", async (req, res, next) => {
   try {
-    const allJobs = await db.select().from(jobs);
+    const unfiltered = isUnfiltered(req);
+    const allJobsRaw = await db.select().from(jobs);
     const allNotes = await db.select().from(notes);
+    // Scope to my crew unless ?division=all. Notes are personal already, no filter.
+    const allJobs = unfiltered ? allJobsRaw : allJobsRaw.filter(j => isMyTech(j.assignedTech));
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -27,8 +31,11 @@ router.get("/dashboard/summary", async (req, res, next) => {
 
 router.get("/dashboard/focus", async (req, res, next) => {
   try {
-    const allJobs  = await db.select().from(jobs);
+    const unfiltered = isUnfiltered(req);
+    const allJobsRaw  = await db.select().from(jobs);
     const allNotes = await db.select().from(notes);
+    // Same scope as /dashboard/summary so the AI bullets describe the same world.
+    const allJobs = unfiltered ? allJobsRaw : allJobsRaw.filter(j => isMyTech(j.assignedTech));
 
     const openJobs      = allJobs.filter(j => j.status !== "Done");
     const openNotesList = allNotes.filter(n => n.status === "Open");

@@ -6,6 +6,7 @@ import { parsePagination, paginatedResponse } from "../lib/pagination";
 import { logDataChange } from "../lib/change-log";
 import { randomUUID } from "crypto";
 import { deleteRow, softDeleteEnabled } from "../lib/soft-delete";
+import { invalidateAggregateCaches } from "../lib/aggregate-cache";
 
 const MAX_IMPORT_ROWS = Number(process.env["MAX_IMPORT_ROWS"]) || 10000;
 
@@ -52,6 +53,7 @@ router.post("/invoices", async (req, res, next) => {
       datePaid: datePaid || null, paymentTerms: paymentTerms || null, notes: notes || null,
       createdAt: now, updatedAt: now,
     }).returning();
+    invalidateAggregateCaches();
     res.status(201).json(serialize(record));
   } catch (err) { next(err); }
 });
@@ -61,6 +63,7 @@ router.post("/invoices/import", async (req, res, next) => {
     const { rows, columnMap } = req.body as { rows: Record<string, string>[]; columnMap: Record<string, string> };
     if (!rows?.length) { res.status(400).json({ error: "No data rows provided" }); return; }
     if (rows.length > MAX_IMPORT_ROWS) {
+      invalidateAggregateCaches();
       res.status(413).json({ error: `Too many rows (${rows.length}). Limit is ${MAX_IMPORT_ROWS}.` });
       return;
     }
@@ -98,6 +101,7 @@ router.patch("/invoices/bulk", async (req, res, next) => {
     if (status) updates.status = status;
     if (status === "Paid") updates.datePaid = new Date().toISOString().split("T")[0];
     for (const id of ids) { await db.update(invoices).set(updates).where(eq(invoices.id, id)); }
+    invalidateAggregateCaches();
     res.json({ updated: ids.length });
   } catch (err) { next(err); }
 });
@@ -124,6 +128,7 @@ router.patch("/invoices/:id", async (req, res, next) => {
     if (paymentTerms !== undefined) updates.paymentTerms = paymentTerms || null;
     if (notes !== undefined) updates.notes = notes || null;
     const [updated] = await db.update(invoices).set(updates).where(eq(invoices.id, req.params.id)).returning();
+    invalidateAggregateCaches();
     res.json(serialize(updated));
   } catch (err) { next(err); }
 });
@@ -133,6 +138,7 @@ router.delete("/invoices/:id", async (req, res, next) => {
     const [existing] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
     if (!existing) { res.status(404).json({ error: "Invoice not found" }); return; }
     await deleteRow(invoices, req.params.id);
+    invalidateAggregateCaches();
     res.status(204).end();
   } catch (err) { next(err); }
 });

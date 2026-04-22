@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { deleteRow, softDeleteEnabled } from "../lib/soft-delete";
 import { pushJobToAirtable } from "../lib/airtable-sync";
 import { isMyTech, isUnfiltered } from "../lib/division-filter";
+import { invalidateAggregateCaches } from "../lib/aggregate-cache";
 
 const router = Router();
 
@@ -103,6 +104,7 @@ router.post("/jobs/import", async (req, res, next) => {
       };
     });
     const inserted = await db.insert(jobs).values(records).returning();
+    invalidateAggregateCaches();
     res.status(201).json({ imported: inserted.length, records: inserted.map(serializeJob) });
   } catch (err) { next(err); }
 });
@@ -118,6 +120,7 @@ router.post("/jobs", async (req, res, next) => {
       id, ...parsed.data, uptickNotes: [], createdAt: now, updatedAt: now,
     }).returning();
 
+    invalidateAggregateCaches();
     res.status(201).json(serializeJob(job));
   } catch (err) { next(err); }
 });
@@ -159,6 +162,7 @@ router.patch("/jobs/:id", async (req, res, next) => {
     // helper; we don't block the response on network IO.
     void pushJobToAirtable(paramsParsed.data.id);
 
+    invalidateAggregateCaches();
     res.json(serializeJob(updated));
   } catch (err) { next(err); }
 });
@@ -172,6 +176,7 @@ router.delete("/jobs/:id", async (req, res, next) => {
     if (!existing) { res.status(404).json({ error: "Job not found" }); return; }
 
     await deleteRow(jobs, parsed.data.id);
+    invalidateAggregateCaches();
     res.status(204).end();
   } catch (err) { next(err); }
 });

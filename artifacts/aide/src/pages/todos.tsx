@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { Plus, X, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronsUpDown, Pencil, Download, Upload, MoreHorizontal, Trash2, Search, Filter, FilterX, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, X, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronsUpDown, Pencil, Download, Upload, MoreHorizontal, Trash2, Search, Filter, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import {
   useListTodos, useCreateTodo, useUpdateTodo, useDeleteTodo,
   getListTodosQueryKey
@@ -18,25 +18,40 @@ const PRIORITIES = ["Critical", "High", "Medium", "Low"] as const;
 const CATEGORIES = ["Work", "Personal", "Follow-up", "Compliance", "Admin"] as const;
 const TECHS = ["Casper", "Darren", "Gordon", "Haider", "John", "Nu"];
 
-type SortField = "text" | "priority" | "category" | "assignee" | "dueDate" | "status";
+type SortField = "text" | "priority" | "category" | "assignee" | "dueDate";
 type SortDir = "asc" | "desc";
+type ViewTab = "active" | "done" | "all";
+
 const PRIORITY_ORDER: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3 };
 
-const PRIORITY_STYLES: Record<string, { dot: string; text: string; bg: string }> = {
-  Critical: { dot: "bg-red-500", text: "text-red-600 dark:text-red-400", bg: "bg-red-50/80 dark:bg-red-900/20" },
-  High: { dot: "bg-orange-400", text: "text-orange-600 dark:text-orange-400", bg: "bg-orange-50/80 dark:bg-orange-900/20" },
-  Medium: { dot: "bg-blue-400", text: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50/80 dark:bg-blue-900/20" },
-  Low: { dot: "bg-slate-400", text: "text-slate-500 dark:text-slate-400", bg: "bg-slate-50/80 dark:bg-slate-900/20" },
+/**
+ * Single source of truth for priority colour. The dot drives the row's left
+ * accent stripe; the text colour is used in the inline pill. Kept neutral
+ * (no full background fills) so the table reads as a calm list, not a
+ * highlighter rainbow — which was the previous design's biggest readability
+ * problem.
+ */
+const PRIORITY_STYLES: Record<string, { dot: string; text: string }> = {
+  Critical: { dot: "bg-red-500",    text: "text-red-600 dark:text-red-400" },
+  High:     { dot: "bg-orange-400", text: "text-orange-600 dark:text-orange-400" },
+  Medium:   { dot: "bg-blue-400",   text: "text-blue-600 dark:text-blue-400" },
+  Low:      { dot: "bg-slate-400",  text: "text-slate-500 dark:text-slate-400" },
 };
 
-const CAT_STYLES: Record<string, string> = {
-  "Work": "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-800",
-  "Personal": "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
-  "Follow-up": "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800",
-  "Compliance": "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
-  "Admin": "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-700",
+const CAT_TEXT: Record<string, string> = {
+  "Work":       "text-violet-600 dark:text-violet-400",
+  "Personal":   "text-emerald-600 dark:text-emerald-400",
+  "Follow-up":  "text-amber-600 dark:text-amber-400",
+  "Compliance": "text-red-600 dark:text-red-400",
+  "Admin":      "text-slate-500 dark:text-slate-400",
 };
 
+/**
+ * Lightweight column-header dropdown filter (multi-select w/ search).
+ * Used for Category and Assignee where there can be many options. Status
+ * and Priority are handled by the primary Tabs + chip rail, so they no
+ * longer need a column filter — that was the source of duplicate UI.
+ */
 function ColumnFilter({ label, options, selected, onChange, onClear }: {
   label: string; options: string[]; selected: Set<string>;
   onChange: (val: Set<string>) => void; onClear: () => void;
@@ -75,11 +90,11 @@ function ColumnFilter({ label, options, selected, onChange, onClear }: {
         <Filter size={10} />
       </button>
       {open && (
-        <div className="fixed z-[100] bg-card border border-border rounded-lg shadow-xl min-w-[170px] max-h-[300px] overflow-hidden"
+        <div className="fixed z-[100] bg-card border border-border rounded-lg shadow-xl min-w-[180px] max-h-[300px] overflow-hidden"
           style={{ top: pos.top, left: pos.left }}
           onClick={e => e.stopPropagation()}>
           <div className="p-2 border-b border-border">
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ${label}...`}
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ${label}…`}
               className="w-full bg-muted border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" autoFocus />
           </div>
           <div className="max-h-[200px] overflow-y-auto p-1">
@@ -94,7 +109,7 @@ function ColumnFilter({ label, options, selected, onChange, onClear }: {
             {filtered.length === 0 && <p className="text-xs text-muted-foreground px-2 py-2">No matches</p>}
           </div>
           <div className="border-t border-border p-1.5 flex items-center justify-between">
-            <button onClick={() => onChange(new Set(options))} className="text-[10px] text-muted-foreground hover:text-foreground">Select All</button>
+            <button onClick={() => onChange(new Set(options))} className="text-[10px] text-muted-foreground hover:text-foreground">Select all</button>
             <button onClick={() => { onClear(); setOpen(false); }} className="text-[10px] text-primary hover:text-primary/80 font-medium">Clear</button>
           </div>
         </div>
@@ -127,25 +142,25 @@ function TaskModal({ todo, onClose, onSave }: { todo?: any; onClose: () => void;
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-card border border-border w-full md:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl md:rounded-2xl shadow-xl">
         <div className="sticky top-0 bg-card border-b border-border px-5 py-4 flex items-center justify-between">
-          <h2 className="font-bold text-foreground">{todo ? "Edit Task" : "New Task"}</h2>
+          <h2 className="font-bold text-foreground">{todo ? "Edit task" : "New task"}</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted"><X size={18} /></button>
         </div>
         <form onSubmit={e => { e.preventDefault(); if (form.text.trim()) onSave(form); }} className="px-5 py-4 space-y-4">
-          <div><label className={label}>Task *</label><textarea className={cn(field, "resize-none")} rows={2} value={form.text} onChange={e => set("text", e.target.value)} placeholder="What needs to be done..." required autoFocus /></div>
+          <div><label className={label}>Task *</label><textarea className={cn(field, "resize-none")} rows={2} value={form.text} onChange={e => set("text", e.target.value)} placeholder="What needs to be done…" required autoFocus /></div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className={label}>Priority</label><select className={field} value={form.priority} onChange={e => set("priority", e.target.value)}>{PRIORITIES.map(p => <option key={p}>{p}</option>)}</select></div>
             <div><label className={label}>Category</label><select className={field} value={form.category} onChange={e => set("category", e.target.value)}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className={label}>Due Date</label><input type="date" className={field} value={form.dueDate} onChange={e => set("dueDate", e.target.value)} /></div>
+            <div><label className={label}>Due date</label><input type="date" className={field} value={form.dueDate} onChange={e => set("dueDate", e.target.value)} /></div>
             <div><label className={label}>Assignee</label><select className={field} value={form.assignee} onChange={e => set("assignee", e.target.value)}><option value="">Unassigned</option>{TECHS.map(t => <option key={t}>{t}</option>)}</select></div>
           </div>
-          <div><label className={label}>Urgency Tag</label><input className={field} value={form.urgencyTag} onChange={e => set("urgencyTag", e.target.value)} placeholder="e.g. ASAP, EOD, Waiting on client" /></div>
-          <div><label className={label}>Notes</label><textarea className={cn(field, "resize-none")} rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Additional notes..." /></div>
-          <div><label className={label}>Next Steps</label><textarea className={cn(field, "resize-none")} rows={2} value={form.nextSteps} onChange={e => set("nextSteps", e.target.value)} placeholder="What needs to happen next..." /></div>
+          <div><label className={label}>Urgency tag</label><input className={field} value={form.urgencyTag} onChange={e => set("urgencyTag", e.target.value)} placeholder="e.g. ASAP, EOD, Waiting on client" /></div>
+          <div><label className={label}>Notes</label><textarea className={cn(field, "resize-none")} rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Additional notes…" /></div>
+          <div><label className={label}>Next steps</label><textarea className={cn(field, "resize-none")} rows={2} value={form.nextSteps} onChange={e => set("nextSteps", e.target.value)} placeholder="What needs to happen next…" /></div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 bg-muted text-muted-foreground rounded-lg text-sm font-medium hover:text-foreground">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90">{todo ? "Save Changes" : "Add Task"}</button>
+            <button type="submit" className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90">{todo ? "Save changes" : "Add task"}</button>
           </div>
         </form>
       </div>
@@ -162,7 +177,7 @@ function ActionMenu({ todo, onEdit, onToggle, onDelete }: { todo: any; onEdit: (
     e.stopPropagation();
     if (btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      const menuH = 120; // approximate menu height
+      const menuH = 120;
       const spaceBelow = window.innerHeight - r.bottom;
       setPos({
         top: spaceBelow < menuH ? r.top - menuH : r.bottom + 4,
@@ -175,15 +190,15 @@ function ActionMenu({ todo, onEdit, onToggle, onDelete }: { todo: any; onEdit: (
   return (
     <div className="relative">
       <button ref={btnRef} onClick={openMenu} className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-        <MoreHorizontal size={13} />
+        <MoreHorizontal size={14} />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
-          <div className="fixed z-[100] bg-card border border-border rounded-lg shadow-lg py-1 min-w-[130px]"
+          <div className="fixed z-[100] bg-card border border-border rounded-lg shadow-lg py-1 min-w-[140px]"
             style={{ top: pos.top, left: pos.left }}>
             <button onClick={() => { onToggle(); setOpen(false); }} className="w-full px-3 py-1.5 text-left text-xs text-foreground hover:bg-muted flex items-center gap-2">
-              {todo.completed ? <Circle size={11} /> : <CheckCircle2 size={11} />} {todo.completed ? "Mark Active" : "Mark Done"}
+              {todo.completed ? <Circle size={11} /> : <CheckCircle2 size={11} />} {todo.completed ? "Mark active" : "Mark done"}
             </button>
             <button onClick={() => { onEdit(); setOpen(false); }} className="w-full px-3 py-1.5 text-left text-xs text-foreground hover:bg-muted flex items-center gap-2"><Pencil size={11} /> Edit</button>
             <div className="border-t border-border my-0.5" />
@@ -195,7 +210,7 @@ function ActionMenu({ todo, onEdit, onToggle, onDelete }: { todo: any; onEdit: (
   );
 }
 
-const PAGE_SIZES = [0, 25, 50, 100]; // 0 = All
+const PAGE_SIZES = [25, 50, 100, 0]; // 0 = All
 
 export default function Todos() {
   const [search, setSearch] = useState("");
@@ -206,12 +221,12 @@ export default function Todos() {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [importOpen, setImportOpen] = useState(false);
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(0); // 0 = All
+  const [pageSize, setPageSize] = useState(50);
 
+  const [view, setView] = useState<ViewTab>("active");
   const [filterPriority, setFilterPriority] = useState<Set<string>>(new Set());
   const [filterCategory, setFilterCategory] = useState<Set<string>>(new Set());
   const [filterAssignee, setFilterAssignee] = useState<Set<string>>(new Set());
-  const [filterStatus, setFilterStatus] = useState<Set<string>>(new Set());
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -230,19 +245,22 @@ export default function Todos() {
   const uniqueAssignees = useMemo(() => [...new Set(allTodos.map(t => t.assignee || "Unassigned"))].sort(), [allTodos]);
   const uniqueCategories = useMemo(() => [...new Set(allTodos.map(t => t.category || "Uncategorised").filter(Boolean))].sort(), [allTodos]);
 
-  const activeFilterCount = [filterPriority, filterCategory, filterAssignee, filterStatus].filter(s => s.size > 0).length;
+  const isOverdue = (d?: string | null) => !!d && new Date(d) < new Date();
 
+  /**
+   * View tab gates first (status), then column-style filters refine. Search
+   * runs last so the result reflects what's literally on screen — a key
+   * readability principle: "what I see is what I'm searching".
+   */
   const filtered = useMemo(() => {
     let list = allTodos;
+    if (view === "active") list = list.filter(t => !t.completed);
+    else if (view === "done") list = list.filter(t => t.completed);
+
     if (filterPriority.size > 0) list = list.filter(t => filterPriority.has(t.priority));
     if (filterCategory.size > 0) list = list.filter(t => filterCategory.has(t.category || "Uncategorised"));
     if (filterAssignee.size > 0) list = list.filter(t => filterAssignee.has(t.assignee || "Unassigned"));
-    if (filterStatus.size > 0) {
-      list = list.filter(t => {
-        const s = t.completed ? "Done" : "Active";
-        return filterStatus.has(s);
-      });
-    }
+
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(t =>
@@ -252,19 +270,18 @@ export default function Todos() {
       );
     }
     return list;
-  }, [allTodos, filterPriority, filterCategory, filterAssignee, filterStatus, search]);
+  }, [allTodos, view, filterPriority, filterCategory, filterAssignee, search]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
     arr.sort((a, b) => {
       let cmp = 0;
       switch (sortField) {
-        case "text": cmp = (a.text || "").localeCompare(b.text || ""); break;
+        case "text":     cmp = (a.text || "").localeCompare(b.text || ""); break;
         case "priority": cmp = (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9); break;
         case "category": cmp = (a.category || "").localeCompare(b.category || ""); break;
         case "assignee": cmp = (a.assignee || "zzz").localeCompare(b.assignee || "zzz"); break;
-        case "dueDate": cmp = (a.dueDate ? new Date(a.dueDate).getTime() : Infinity) - (b.dueDate ? new Date(b.dueDate).getTime() : Infinity); break;
-        case "status": cmp = (a.completed ? 1 : 0) - (b.completed ? 1 : 0); break;
+        case "dueDate":  cmp = (a.dueDate ? new Date(a.dueDate).getTime() : Infinity) - (b.dueDate ? new Date(b.dueDate).getTime() : Infinity); break;
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -291,10 +308,10 @@ export default function Todos() {
     setSelectedRows(next);
   };
 
+  const activeFilterCount = filterPriority.size + filterCategory.size + filterAssignee.size + (search ? 1 : 0);
   const clearAllFilters = () => {
     setFilterPriority(new Set()); setFilterCategory(new Set());
-    setFilterAssignee(new Set()); setFilterStatus(new Set());
-    setSearch(""); setPage(0);
+    setFilterAssignee(new Set()); setSearch(""); setPage(0);
   };
 
   const handleAdd = async (data: any) => {
@@ -325,10 +342,7 @@ export default function Todos() {
 
   /**
    * patchField — commit a single-field inline edit from EditableCell.
-   *
-   * Returns a promise<boolean> matching EditableCell's onCommit contract
-   * so the cell can render saving + failure states correctly. Empty
-   * strings on optional fields are normalised to undefined so the API
+   * Empty strings on optional fields normalise to undefined so the API
    * clears the value instead of storing "".
    */
   const patchField = async (
@@ -370,7 +384,7 @@ export default function Todos() {
     try {
       await Promise.all([...selectedRows].map(id => updateTodo.mutateAsync({ id, data: { completed: true } })));
       queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() });
-      toast({ title: `${selectedRows.size} tasks → Done` });
+      toast({ title: `${selectedRows.size} task${selectedRows.size === 1 ? "" : "s"} → Done` });
       setSelectedRows(new Set());
     } catch { toast({ title: "Error updating", variant: "destructive" }); }
   };
@@ -380,7 +394,7 @@ export default function Todos() {
     try {
       await Promise.all([...selectedRows].map(id => deleteTodo.mutateAsync({ id })));
       queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() });
-      toast({ title: `${selectedRows.size} tasks deleted` });
+      toast({ title: `${selectedRows.size} task${selectedRows.size === 1 ? "" : "s"} deleted` });
       setSelectedRows(new Set());
     } catch { toast({ title: "Error deleting", variant: "destructive" }); }
   };
@@ -395,264 +409,252 @@ export default function Todos() {
     toast({ title: `Exported ${allTodos.length} tasks` });
   };
 
-  const isOverdue = (d?: string | null) => !!d && new Date(d) < new Date();
-  const completionPct = allTodos.length ? Math.round((doneTodos.length / allTodos.length) * 100) : 0;
+  const overdueCount = useMemo(() => activeTodos.filter(t => isOverdue(t.dueDate)).length, [activeTodos]);
+  const criticalCount = useMemo(() => activeTodos.filter(t => t.priority === "Critical").length, [activeTodos]);
 
-  const stats = useMemo(() => {
-    const critical = filtered.filter(t => t.priority === "Critical" && !t.completed).length;
-    const overdue = filtered.filter(t => isOverdue(t.dueDate) && !t.completed).length;
-    return { critical, overdue };
-  }, [filtered]);
+  const tabBtn = (id: ViewTab, label: string, count: number) => (
+    <button
+      key={id}
+      onClick={() => { setView(id); setPage(0); }}
+      className={cn(
+        "relative px-3 py-1.5 text-xs font-medium transition-colors",
+        view === id
+          ? "text-foreground"
+          : "text-muted-foreground hover:text-foreground"
+      )}
+    >
+      <span>{label}</span>
+      <span className={cn(
+        "ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 rounded text-[10px] tabular-nums",
+        view === id ? "bg-primary/15 text-primary font-semibold" : "bg-muted text-muted-foreground"
+      )}>{count}</span>
+      {view === id && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-primary rounded-full" />}
+    </button>
+  );
 
-  const thBase = "px-2 py-1.5 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none whitespace-nowrap border border-neutral-600 dark:border-neutral-500";
-  const tdBase = "px-2 py-1.5 border border-neutral-600 dark:border-neutral-500 text-xs";
+  const priorityChip = (p: string) => {
+    const ps = PRIORITY_STYLES[p];
+    const count = activeTodos.filter(t => t.priority === p).length;
+    const active = filterPriority.has(p);
+    return (
+      <button
+        key={p}
+        onClick={() => {
+          setFilterPriority(prev => {
+            const next = new Set(prev);
+            if (next.has(p)) next.delete(p); else next.add(p);
+            return next;
+          });
+          setPage(0);
+        }}
+        className={cn(
+          "inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs transition-all",
+          active
+            ? "bg-primary/10 border-primary/40 text-foreground"
+            : "bg-transparent border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
+        )}
+        title={`${count} active ${p} task${count === 1 ? "" : "s"}`}
+      >
+        <span className={cn("w-2 h-2 rounded-full", ps.dot)} />
+        <span>{p}</span>
+        <span className="tabular-nums text-[10px] text-muted-foreground">{count}</span>
+      </button>
+    );
+  };
 
   return (
-      <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
+    <div className="flex-1 min-w-0 min-h-screen bg-background flex flex-col">
       <PageHeader
         prefix="++"
         title="Tasks"
-        subtitle={`${allTodos.length} total · ${completionPct}% complete`}
+        subtitle={`${allTodos.length} total · ${activeTodos.length} active${overdueCount ? ` · ${overdueCount} overdue` : ""}${criticalCount ? ` · ${criticalCount} critical` : ""}`}
         actions={
           <>
-            {allTodos.length > 0 && (
-              <div className="hidden sm:flex items-center gap-2 mr-1">
-                <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${completionPct}%` }} />
-                </div>
-                <span className="text-[10px] text-muted-foreground font-medium">{completionPct}%</span>
-              </div>
-            )}
-            {activeFilterCount > 0 && (
-              <button onClick={clearAllFilters} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium text-primary hover:bg-primary/10">
-                <FilterX size={11} /> Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
-              </button>
-            )}
             <LiveToggle onTick={() => queryClient.invalidateQueries({ queryKey: getListTodosQueryKey() })} interval={10_000} />
-            <button onClick={handleExport} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted border border-border">
-              <Download size={11} /> Export
+            <button onClick={handleExport} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors">
+              <Download size={12} /> Export
             </button>
-            <button onClick={() => setImportOpen(true)} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted border border-border">
-              <Upload size={11} /> Import
+            <button onClick={() => setImportOpen(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors">
+              <Upload size={12} /> Import
             </button>
             <button onClick={() => { setEditingTodo(undefined); setShowModal(true); }}
-              className="flex items-center gap-1 px-2.5 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded hover:opacity-90">
-              <Plus size={12} />Add Task
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-md hover:opacity-90 transition-opacity">
+              <Plus size={12} />New task
             </button>
           </>
         }
-        below={
-          <div className="space-y-2">
-            <div className="relative max-w-sm">
-              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
-                placeholder="Search all fields..."
-                className="w-full bg-muted/50 border border-border rounded pl-7 pr-7 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:bg-background transition-all" />
-              {search && <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X size={10} /></button>}
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">priority</span>
-          {PRIORITIES.map((p) => {
-            const ps = PRIORITY_STYLES[p];
-            const count = allTodos.filter((t: any) => t.priority === p && !t.completed).length;
-            return (
-              <button
-                key={p}
-                type="button"
-                onClick={() => {
-                  setFilterPriority((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(p)) next.delete(p); else next.add(p);
-                    return next;
-                  });
-                  setPage(0);
-                }}
-                title={`${count} open ${p} task${count === 1 ? "" : "s"}. Click to filter.`}
-                className={cn(
-                  "inline-flex items-center gap-1 text-[10px] transition-opacity",
-                  filterPriority.size > 0 && !filterPriority.has(p) ? "opacity-40 hover:opacity-80" : "opacity-100",
-                )}
-              >
-                <span className={cn("w-1.5 h-1.5 rounded-full", ps.dot)} />
-                <span className={cn("font-medium", ps.text)}>{p}</span>
-                <span className="font-mono text-[9px] text-muted-foreground">{count}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {(activeFilterCount > 0 || search) && (
-          <div className="flex items-center gap-1.5 px-3 pb-2 flex-wrap">
-            {search && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800">
-                Search: "{search}" <button onClick={() => setSearch("")}><X size={9} /></button>
-              </span>
-            )}
-            {filterPriority.size > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800">
-                Priority: {[...filterPriority].join(", ")} <button onClick={() => setFilterPriority(new Set())}><X size={9} /></button>
-              </span>
-            )}
-            {filterCategory.size > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-800">
-                Category: {[...filterCategory].join(", ")} <button onClick={() => setFilterCategory(new Set())}><X size={9} /></button>
-              </span>
-            )}
-            {filterAssignee.size > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800">
-                Assignee: {[...filterAssignee].join(", ")} <button onClick={() => setFilterAssignee(new Set())}><X size={9} /></button>
-              </span>
-            )}
-            {filterStatus.size > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
-                Status: {[...filterStatus].join(", ")} <button onClick={() => setFilterStatus(new Set())}><X size={9} /></button>
-              </span>
-            )}
-          </div>
-        )}
-
-            <div className="flex items-center gap-3 px-2 py-1 -mx-2 bg-muted/30 border-t border-border text-[10px] text-muted-foreground">
-              <span className="font-medium text-foreground">{filtered.length}</span> of {allTodos.length} tasks
-              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{doneTodos.length} done</span>
-              <span className="flex items-center gap-1">{activeTodos.length} active</span>
-              {stats.critical > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />{stats.critical} critical</span>}
-              {stats.overdue > 0 && <span className="text-red-500 font-semibold">{stats.overdue} overdue</span>}
-            </div>
-          </div>
-        }
       />
 
+      {/* Single, calm filter bar — view tabs (left), search (centre), priority chips (right). */}
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
+        <div className="flex items-center gap-3 px-4 pt-2">
+          <div className="flex items-center gap-1 border-b border-transparent">
+            {tabBtn("active", "Active", activeTodos.length)}
+            {tabBtn("done", "Done", doneTodos.length)}
+            {tabBtn("all", "All", allTodos.length)}
+          </div>
+          <div className="flex-1" />
+          <div className="relative w-56">
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
+              placeholder="Search tasks…"
+              className="w-full bg-muted/40 border border-border rounded-md pl-7 pr-7 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:bg-background transition-all" />
+            {search && <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X size={11} /></button>}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 px-4 py-2 flex-wrap">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-medium mr-1">Priority</span>
+          {PRIORITIES.map(priorityChip)}
+          {activeFilterCount > 0 && (
+            <button onClick={clearAllFilters} className="ml-2 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-primary hover:bg-primary/10 transition-colors">
+              <X size={11} /> Clear {activeFilterCount}
+            </button>
+          )}
+          <div className="flex-1" />
+          <span className="text-[11px] text-muted-foreground tabular-nums">
+            Showing <span className="text-foreground font-medium">{sorted.length}</span> of {allTodos.length}
+          </span>
+        </div>
+      </div>
+
+      {/* Bulk-action strip — only visible when selecting. Slim, no bright bg. */}
       {selectedRows.size > 0 && (
-        <div className="sticky top-[88px] z-10 bg-primary/10 border-b border-primary/20 px-3 py-1.5 flex items-center gap-2">
-          <span className="text-[10px] font-bold text-primary">{selectedRows.size} selected</span>
-          <button onClick={handleBulkDone} className="px-2 py-0.5 rounded text-[9px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800 hover:opacity-80">
-            <CheckCircle2 size={10} className="inline mr-0.5" />Done
+        <div className="sticky top-[88px] z-10 bg-card border-b border-border px-4 py-2 flex items-center gap-3">
+          <span className="text-xs font-semibold text-foreground">{selectedRows.size} selected</span>
+          <button onClick={handleBulkDone} className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20 transition-colors">
+            <CheckCircle2 size={12} /> Mark done
           </button>
-          <button onClick={handleBulkDelete} className="px-2 py-0.5 rounded text-[9px] font-medium bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 hover:opacity-80">
-            <Trash2 size={10} className="inline mr-0.5" />Delete
+          <button onClick={handleBulkDelete} className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors">
+            <Trash2 size={12} /> Delete
           </button>
-          <button onClick={() => setSelectedRows(new Set())} className="ml-auto text-[10px] text-muted-foreground hover:text-foreground">Clear</button>
+          <button onClick={() => setSelectedRows(new Set())} className="ml-auto text-xs text-muted-foreground hover:text-foreground">Cancel</button>
         </div>
       )}
 
       <div className="flex-1 overflow-hidden">
         {isLoading ? (
-          <div className="p-2 space-y-1">
+          <div className="p-4 space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-2 py-2 border-b border-border/40">
+              <div key={i} className="flex items-center gap-3 px-2 py-2.5 rounded-md">
                 <div className="h-3 w-3 bg-muted/60 rounded skeleton-pulse" />
-                <div className="h-3 flex-1 max-w-[280px] bg-muted/50 rounded skeleton-pulse" />
-                <div className="h-3 w-16 bg-muted/40 rounded-full skeleton-pulse" />
+                <div className="h-3.5 w-3.5 bg-muted/60 rounded-full skeleton-pulse" />
+                <div className="h-3 flex-1 max-w-[300px] bg-muted/50 rounded skeleton-pulse" />
+                <div className="h-3 w-16 bg-muted/40 rounded skeleton-pulse" />
                 <div className="h-3 w-20 bg-muted/40 rounded skeleton-pulse" />
                 <div className="h-3 w-[90px] bg-muted/40 rounded skeleton-pulse" />
-                <div className="h-3 w-16 bg-muted/50 rounded skeleton-pulse ml-auto" />
+                <div className="h-3 w-16 bg-muted/40 rounded skeleton-pulse ml-auto" />
               </div>
             ))}
           </div>
         ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <CheckCircle2 size={24} className="text-emerald-500/30 mb-3" />
-            <p className="text-sm text-foreground font-medium">{activeFilterCount > 0 || search ? "No tasks match your filters" : "No tasks yet"}</p>
+            <CheckCircle2 size={28} className="text-emerald-500/30 mb-3" />
+            <p className="text-sm text-foreground font-medium">{activeFilterCount > 0 || search ? "No tasks match your filters" : view === "done" ? "Nothing done yet" : "No tasks yet"}</p>
             <p className="text-xs text-muted-foreground mt-1">{activeFilterCount > 0 ? "Try adjusting your filters" : "Add your first task to get started"}</p>
             {activeFilterCount > 0 && <button onClick={clearAllFilters} className="mt-3 text-xs text-primary hover:underline">Clear all filters</button>}
             <button onClick={() => { setEditingTodo(undefined); setShowModal(true); }}
-              className="mt-3 px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90">+ Add Task</button>
+              className="mt-3 px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-md hover:opacity-90">+ Add task</button>
           </div>
         ) : (
-          <div className="overflow-auto h-[calc(100vh-140px)] px-2">
-            <table className="w-full border-collapse border border-neutral-600 dark:border-neutral-500">
-              <thead className="sticky top-0 z-10">
-                <tr className="bg-muted">
-                  <th className={cn(thBase, "w-8 text-center")}>
+          /*
+           * Borderless table: just a 1px row divider between rows. No
+           * cell-by-cell borders (those were creating a "spreadsheet grid"
+           * effect that fought the eye). Priority is shown as a 2px left
+           * accent stripe on the row plus a small inline pill — same
+           * information, half the visual weight.
+           */
+          <div className="overflow-auto h-[calc(100vh-180px)]">
+            <table className="w-full">
+              <thead className="sticky top-0 z-10 bg-background">
+                <tr className="border-b border-border">
+                  <th className="w-10 px-3 py-2 text-left">
                     <input type="checkbox" checked={selectedRows.size === paged.length && paged.length > 0} onChange={toggleSelectAll}
-                      className="w-3 h-3 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+                      className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
                   </th>
-                  <th className={cn(thBase, "w-8 text-center")}></th>
-                  <th className={cn(thBase, "cursor-pointer hover:text-foreground min-w-[200px]")} onClick={() => toggleSort("text")}>
-                    <div className="flex items-center gap-1">Task <SortIcon field="text" sortField={sortField} sortDir={sortDir} /></div>
+                  <th className="w-8"></th>
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground select-none cursor-pointer hover:text-foreground" onClick={() => toggleSort("text")}>
+                    <span className="inline-flex items-center gap-1">Task <SortIcon field="text" sortField={sortField} sortDir={sortDir} /></span>
                   </th>
-                  <th className={cn(thBase, "cursor-pointer hover:text-foreground w-[85px]")}>
-                    <div className="flex items-center gap-1" onClick={() => toggleSort("priority")}>
-                      Priority <SortIcon field="priority" sortField={sortField} sortDir={sortDir} />
-                      <ColumnFilter label="Priority" options={[...PRIORITIES]} selected={filterPriority} onChange={v => { setFilterPriority(v); setPage(0); }} onClear={() => setFilterPriority(new Set())} />
+                  <th className="w-[100px] px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground select-none cursor-pointer hover:text-foreground" onClick={() => toggleSort("priority")}>
+                    <span className="inline-flex items-center gap-1">Priority <SortIcon field="priority" sortField={sortField} sortDir={sortDir} /></span>
+                  </th>
+                  <th className="w-[110px] px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
+                    <div className="inline-flex items-center gap-1">
+                      <span className="cursor-pointer hover:text-foreground" onClick={() => toggleSort("category")}>Category</span>
+                      <SortIcon field="category" sortField={sortField} sortDir={sortDir} />
+                      <ColumnFilter label="category" options={uniqueCategories} selected={filterCategory} onChange={v => { setFilterCategory(v); setPage(0); }} onClear={() => setFilterCategory(new Set())} />
                     </div>
                   </th>
-                  <th className={cn(thBase, "cursor-pointer hover:text-foreground w-[90px]")}>
-                    <div className="flex items-center gap-1" onClick={() => toggleSort("category")}>
-                      Category <SortIcon field="category" sortField={sortField} sortDir={sortDir} />
-                      <ColumnFilter label="Category" options={uniqueCategories} selected={filterCategory} onChange={v => { setFilterCategory(v); setPage(0); }} onClear={() => setFilterCategory(new Set())} />
+                  <th className="w-[110px] px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
+                    <div className="inline-flex items-center gap-1">
+                      <span className="cursor-pointer hover:text-foreground" onClick={() => toggleSort("assignee")}>Assignee</span>
+                      <SortIcon field="assignee" sortField={sortField} sortDir={sortDir} />
+                      <ColumnFilter label="assignee" options={uniqueAssignees} selected={filterAssignee} onChange={v => { setFilterAssignee(v); setPage(0); }} onClear={() => setFilterAssignee(new Set())} />
                     </div>
                   </th>
-                  <th className={cn(thBase, "cursor-pointer hover:text-foreground w-[85px]")}>
-                    <div className="flex items-center gap-1" onClick={() => toggleSort("assignee")}>
-                      Assignee <SortIcon field="assignee" sortField={sortField} sortDir={sortDir} />
-                      <ColumnFilter label="Assignee" options={uniqueAssignees} selected={filterAssignee} onChange={v => { setFilterAssignee(v); setPage(0); }} onClear={() => setFilterAssignee(new Set())} />
-                    </div>
+                  <th className="w-[90px] px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground select-none cursor-pointer hover:text-foreground" onClick={() => toggleSort("dueDate")}>
+                    <span className="inline-flex items-center gap-1">Due <SortIcon field="dueDate" sortField={sortField} sortDir={sortDir} /></span>
                   </th>
-                  <th className={cn(thBase, "cursor-pointer hover:text-foreground w-[75px]")} onClick={() => toggleSort("dueDate")}>
-                    <div className="flex items-center gap-1">Due <SortIcon field="dueDate" sortField={sortField} sortDir={sortDir} /></div>
-                  </th>
-                  <th className={cn(thBase, "cursor-pointer hover:text-foreground w-[70px]")}>
-                    <div className="flex items-center gap-1" onClick={() => toggleSort("status")}>
-                      Status <SortIcon field="status" sortField={sortField} sortDir={sortDir} />
-                      <ColumnFilter label="Status" options={["Active", "Done"]} selected={filterStatus} onChange={v => { setFilterStatus(v); setPage(0); }} onClear={() => setFilterStatus(new Set())} />
-                    </div>
-                  </th>
-                  <th className={cn(thBase, "hidden lg:table-cell min-w-[120px]")}>Notes</th>
-                  <th className={cn(thBase, "w-8 text-center")}></th>
+                  <th className="w-10"></th>
                 </tr>
               </thead>
               <tbody>
-                {paged.map((todo, i) => {
+                {paged.map((todo) => {
                   const ps = PRIORITY_STYLES[todo.priority] || PRIORITY_STYLES.Medium;
                   const overdue = isOverdue(todo.dueDate) && !todo.completed;
+                  const selected = selectedRows.has(todo.id);
                   return (
                     <tr key={todo.id}
                       className={cn(
-                        "hover:bg-primary/5 transition-colors",
-                        selectedRows.has(todo.id) && "bg-primary/8",
-                        todo.completed && "opacity-50",
-                        overdue && !selectedRows.has(todo.id) && "bg-red-950/10",
-                        i % 2 === 1 && !selectedRows.has(todo.id) && !overdue && "bg-muted/15"
+                        "border-b border-border/40 transition-colors group",
+                        "hover:bg-muted/30",
+                        selected && "bg-primary/5 hover:bg-primary/10",
+                        todo.completed && "text-muted-foreground"
                       )}
                     >
-                      <td className={cn(tdBase, "w-8 text-center")}>
-                        <input type="checkbox" checked={selectedRows.has(todo.id)} onChange={() => toggleSelect(todo.id)} className="w-3 h-3 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+                      {/* Left accent stripe carries the priority colour without screaming. */}
+                      <td className="w-10 px-3 py-2.5 relative">
+                        <span className={cn("absolute left-0 top-0 bottom-0 w-[2px]", ps.dot)} aria-hidden />
+                        <input type="checkbox" checked={selected} onChange={() => toggleSelect(todo.id)} className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
                       </td>
-                      <td className={cn(tdBase, "w-8 text-center")}>
-                        <button onClick={() => handleToggle(todo)} className="hover:scale-110 transition-transform">
-                          {todo.completed ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Circle size={16} className="text-muted-foreground/30 hover:text-primary transition-colors" />}
+                      <td className="w-8 px-1 py-2.5 text-center">
+                        <button onClick={() => handleToggle(todo)} className="hover:scale-110 transition-transform" title={todo.completed ? "Mark active" : "Mark done"}>
+                          {todo.completed ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Circle size={16} className="text-muted-foreground/40 hover:text-primary transition-colors" />}
                         </button>
                       </td>
-                      <td className={cn(tdBase, todo.completed && "line-through text-muted-foreground")}>
+                      <td className="px-2 py-2.5 min-w-[260px]">
                         <EditableCell
                           type="text"
                           value={todo.text || ""}
                           onCommit={(next) => patchField(todo.id, "text", next)}
                           display={
-                            <div className="truncate max-w-[280px] font-medium text-foreground" title={todo.text}>
+                            <div className={cn("text-sm leading-snug truncate max-w-[440px]", todo.completed ? "line-through" : "text-foreground")} title={todo.text}>
                               {todo.text}
                             </div>
                           }
                         />
                         {todo.urgencyTag && (
-                          <span className="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-bold bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">{todo.urgencyTag}</span>
+                          <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-medium text-red-600 dark:text-red-400">
+                            <AlertCircle size={9} /> {todo.urgencyTag}
+                          </span>
                         )}
                       </td>
-                      <td className={tdBase}>
+                      <td className="px-2 py-2.5">
                         <EditableCell
                           type="select"
                           value={todo.priority || "Medium"}
                           options={PRIORITIES.map((p) => ({ value: p }))}
                           onCommit={(next) => patchField(todo.id, "priority", next)}
                           display={
-                            <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold", ps.text, ps.bg)}>
-                              <span className={cn("w-1.5 h-1.5 rounded-full", ps.dot)} />{todo.priority}
+                            <span className={cn("inline-flex items-center gap-1.5 text-xs", ps.text)}>
+                              <span className={cn("w-1.5 h-1.5 rounded-full", ps.dot)} />
+                              <span className="font-medium">{todo.priority}</span>
                             </span>
                           }
                         />
                       </td>
-                      <td className={tdBase}>
+                      <td className="px-2 py-2.5">
                         <EditableCell
                           type="select"
                           value={todo.category || ""}
@@ -660,49 +662,38 @@ export default function Todos() {
                           onCommit={(next) => patchField(todo.id, "category", next)}
                           display={
                             todo.category ? (
-                              <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-semibold border", CAT_STYLES[todo.category] || CAT_STYLES.Work)}>
-                                {todo.category}
-                              </span>
-                            ) : undefined
+                              <span className={cn("text-xs font-medium", CAT_TEXT[todo.category] || "text-muted-foreground")}>{todo.category}</span>
+                            ) : <span className="text-xs text-muted-foreground/50">—</span>
                           }
                         />
                       </td>
-                      <td className={tdBase}>
+                      <td className="px-2 py-2.5">
                         <EditableCell
                           type="select"
                           value={todo.assignee || ""}
                           options={[...TECHS.map((t) => ({ value: t }))]}
                           placeholder="Unassigned"
                           onCommit={(next) => patchField(todo.id, "assignee", next)}
+                          display={
+                            todo.assignee ? (
+                              <span className="text-xs text-foreground">{todo.assignee}</span>
+                            ) : <span className="text-xs text-muted-foreground/50">Unassigned</span>
+                          }
                         />
                       </td>
-                      <td className={cn(tdBase, "tabular-nums", overdue ? "text-red-500 font-bold" : "text-muted-foreground")}>
+                      <td className={cn("px-2 py-2.5 tabular-nums text-xs", overdue ? "text-red-500 font-semibold" : "text-muted-foreground")}>
                         <EditableCell
                           type="date"
                           value={todo.dueDate ? String(todo.dueDate).split("T")[0] : ""}
                           onCommit={(next) => patchField(todo.id, "dueDate", next)}
-                          display={todo.dueDate ? new Date(todo.dueDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short" }) : undefined}
-                        />
-                      </td>
-                      <td className={tdBase}>
-                        <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-semibold",
-                          todo.completed ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
-                        )}>{todo.completed ? "Done" : "Active"}</span>
-                      </td>
-                      <td className={cn(tdBase, "hidden lg:table-cell text-muted-foreground")}>
-                        <EditableCell
-                          type="text"
-                          multiline
-                          value={todo.notes || ""}
-                          onCommit={(next) => patchField(todo.id, "notes", next)}
                           display={
-                            <div className="truncate max-w-[150px]" title={todo.notes || ""}>
-                              {todo.notes || "—"}
-                            </div>
+                            todo.dueDate
+                              ? <span>{new Date(todo.dueDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short" })}</span>
+                              : <span className="text-muted-foreground/40">—</span>
                           }
                         />
                       </td>
-                      <td className={cn(tdBase, "w-8 text-center")}>
+                      <td className="w-10 px-2 py-2.5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
                         <ActionMenu todo={todo}
                           onEdit={() => { setEditingTodo(todo); setShowModal(true); }}
                           onToggle={() => handleToggle(todo)}
@@ -719,29 +710,23 @@ export default function Todos() {
       </div>
 
       {sorted.length > 0 && (
-        <div className="sticky bottom-0 bg-background border-t border-border px-3 py-1.5 flex items-center justify-between text-[10px] text-muted-foreground z-10">
+        <div className="sticky bottom-0 bg-background border-t border-border px-4 py-2 flex items-center justify-between text-xs text-muted-foreground z-10">
           <div className="flex items-center gap-2">
-            <span>Rows per page:</span>
+            <span>Rows:</span>
             <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(0); }}
-              className="bg-muted border border-border rounded px-1.5 py-0.5 text-[10px] text-foreground focus:outline-none">
+              className="bg-muted/50 border border-border rounded px-1.5 py-0.5 text-xs text-foreground focus:outline-none">
               {PAGE_SIZES.map(s => <option key={s} value={s}>{s === 0 ? "All" : s}</option>)}
             </select>
           </div>
           <div className="flex items-center gap-3">
-            <span>{pageSize === 0 ? `${sorted.length} rows` : `${page * pageSize + 1}–${Math.min((page + 1) * pageSize, sorted.length)} of ${sorted.length}`}</span>
+            <span className="tabular-nums">{pageSize === 0 ? `${sorted.length} rows` : `${page * pageSize + 1}–${Math.min((page + 1) * pageSize, sorted.length)} of ${sorted.length}`}</span>
             <div className="flex items-center gap-0.5">
-              <button onClick={() => setPage(0)} disabled={page === 0} className={cn("px-1 py-0.5 rounded hover:bg-muted", page === 0 && "opacity-30 cursor-not-allowed")}>
-                <ChevronLeft size={12} /><ChevronLeft size={12} className="-ml-2" />
+              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className={cn("px-1.5 py-0.5 rounded hover:bg-muted", page === 0 && "opacity-30 cursor-not-allowed")}>
+                <ChevronLeft size={13} />
               </button>
-              <button onClick={() => setPage(p => p - 1)} disabled={page === 0} className={cn("px-1 py-0.5 rounded hover:bg-muted", page === 0 && "opacity-30 cursor-not-allowed")}>
-                <ChevronLeft size={12} />
-              </button>
-              <span className="px-2 text-foreground font-medium">Page {page + 1} of {totalPages || 1}</span>
-              <button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1} className={cn("px-1 py-0.5 rounded hover:bg-muted", page >= totalPages - 1 && "opacity-30 cursor-not-allowed")}>
-                <ChevronRight size={12} />
-              </button>
-              <button onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1} className={cn("px-1 py-0.5 rounded hover:bg-muted", page >= totalPages - 1 && "opacity-30 cursor-not-allowed")}>
-                <ChevronRight size={12} /><ChevronRight size={12} className="-ml-2" />
+              <span className="px-2 text-foreground font-medium tabular-nums">{page + 1} / {totalPages || 1}</span>
+              <button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1} className={cn("px-1.5 py-0.5 rounded hover:bg-muted", page >= totalPages - 1 && "opacity-30 cursor-not-allowed")}>
+                <ChevronRight size={13} />
               </button>
             </div>
           </div>
@@ -768,6 +753,6 @@ export default function Todos() {
         ]}
         title="Import Tasks"
       />
-      </div>
+    </div>
   );
 }

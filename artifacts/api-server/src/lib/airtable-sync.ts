@@ -362,13 +362,13 @@ async function syncMeetings(records: AirtableRecord[]): Promise<TableSyncResult>
 
   for (const rec of records) {
     const f = rec.fields;
-    const title: string = (f["Name"] || f["Title"] || f["Meeting"] || f["Subject"] || "").toString().trim();
+    const title: string = (f["Meeting Title"] || f["Name"] || f["Title"] || f["Meeting"] || f["Subject"] || "").toString().trim();
     if (!title) continue;
-    const startAt = (f["Start"] || f["Start Date"] || f["Date"] || f["When"] || null) as any;
+    const startAt = (f["Date"] || f["Start"] || f["Start Date"] || f["When"] || null) as any;
     const endAt = (f["End"] || f["End Date"] || null) as any;
-    const location = (f["Location"] || f["Where"] || null) as any;
-    const attendees = Array.isArray(f["Attendees"]) ? f["Attendees"].join(", ") : (f["Attendees"] || null);
-    const notes = (f["Notes"] || f["Agenda"] || null) as any;
+    const location = (f["Site"] || f["Location"] || f["Where"] || null) as any;
+    const attendees = Array.isArray(f["Attendees"]) ? f["Attendees"].join(", ") : (f["Attendees"] || f["Contact"] || null);
+    const notes = (f["Purpose"] || f["Notes"] || f["Agenda"] || null) as any;
 
     const values = {
       title,

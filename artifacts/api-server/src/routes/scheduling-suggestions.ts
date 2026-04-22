@@ -25,35 +25,75 @@ import { isMyTech, isUnfiltered, isDoneStatus, MY_TECHS } from "../lib/division-
 
 const router = Router();
 
+// Ranks include an explicit "Untriaged" below Low so jobs with no
+// priority set don't get silently promoted to "Low" by the reverse
+// lookup. Keep Untriaged = 0 so it sorts last naturally.
 const PRIORITY_RANK: Record<string, number> = {
-  Critical: 4, High: 3, Medium: 2, Low: 1,
+  Critical: 4, High: 3, Medium: 2, Low: 1, Untriaged: 0,
 };
 const RUN_CAP = 8;
 
+function priorityRankOf(p: string | null | undefined): number {
+  if (!p) return 0;
+  // Accept any case — Uptick imports arrive uppercase, Airtable title case,
+  // hand-typed entries lowercase. Canonicalise before lookup.
+  const key = p.trim().toLowerCase();
+  if (key === "critical" || key === "urgent") return 4;
+  if (key === "high") return 3;
+  if (key === "medium") return 2;
+  if (key === "low") return 1;
+  return 0;
+}
+
+function labelFromRank(rank: number): string {
+  if (rank >= 4) return "Critical";
+  if (rank >= 3) return "High";
+  if (rank >= 2) return "Medium";
+  if (rank >= 1) return "Low";
+  return "Untriaged";
+}
+
 /**
  * Extract the suburb from an Australian address. Examples handled:
- *   "12 Smith St, Parramatta NSW 2150"     → "Parramatta"
- *   "Unit 5, 100 George St, Sydney NSW"    → "Sydney"
- *   "Lvl 2, 88 Phillip St, Sydney 2000"    → "Sydney"
- *   "Bankstown"                            → "Bankstown"
- * Falls back to "Unknown" when nothing extractable.
+ *   "12 Smith St, Parramatta NSW 2150"        → "Parramatta"
+ *   "Unit 5, 100 George St, Sydney NSW"       → "Sydney"
+ *   "Lvl 2, 88 Phillip St, Sydney 2000"       → "Sydney"
+ *   "Shop 3, Westfield, Parramatta NSW 2150"  → "Parramatta"  (was "Westfield")
+ *   "Bankstown"                               → "Bankstown"
+ * Falls back to "No address" when the input is falsy so the manager
+ * sees it as a data-quality signal instead of a silent "Unknown" bucket.
  */
 function extractSuburb(address: string | null | undefined): string {
-  if (!address) return "Unknown";
-  const cleaned = address
+  if (!address) return "No address";
+  let cleaned = address
     .replace(/\s+/g, " ")
     .replace(/,?\s*Australia\s*$/i, "")
     .trim();
-  if (!cleaned) return "Unknown";
+  if (!cleaned) return "No address";
+
+  // Strip retail/tenancy prefixes up front — "Shop 3, Westfield, Parramatta"
+  // used to pick "Westfield" as the suburb. Drop any leading comma-chunk
+  // that starts with a known retail token. We loop in case multiple
+  // chunks at the front are prefixes (e.g. "Suite 5, Lvl 2, 100 George St …").
+  const RETAIL_PREFIX = /^(shop|unit|ste|suite|lvl|level|apt|apartment|floor|fl)\b/i;
+  const RETAIL_CONTAINS = /^(westfield|myer|westpoint|chatswood chase|bondi junction)\b/i;
+  const segments = cleaned.split(",").map(s => s.trim());
+  while (segments.length > 1 && (RETAIL_PREFIX.test(segments[0]) || RETAIL_CONTAINS.test(segments[0]))) {
+    segments.shift();
+  }
+  cleaned = segments.join(", ");
 
   // Strip trailing postcode (4 digits) — both ", 2150" and " 2150" forms.
   const noPostcode = cleaned.replace(/[,\s]+\d{4}\s*$/, "").trim();
   // Strip trailing state token if present.
   const noState = noPostcode.replace(/[,\s]+(?:NSW|VIC|QLD|ACT|SA|WA|TAS|NT)\s*$/i, "").trim();
-  // Suburb is the last non-empty comma chunk of what's left.
+  // Suburb is the last non-empty comma chunk of what's left — but skip
+  // any trailing retail chunk there too (e.g. "..., Westfield").
   const parts = noState.split(",").map(p => p.trim()).filter(Boolean);
-  const suburb = parts[parts.length - 1];
-  return suburb ? titleCase(suburb) : "Unknown";
+  let idx = parts.length - 1;
+  while (idx > 0 && RETAIL_CONTAINS.test(parts[idx])) idx--;
+  const suburb = parts[idx];
+  return suburb ? titleCase(suburb) : "No address";
 }
 
 function titleCase(s: string): string {
@@ -134,8 +174,8 @@ router.get("/scheduling-suggestions", async (req, res, next) => {
       for (const [suburb, suburbJobs] of bySuburb.entries()) {
         // Sort within suburb: priority desc, then due date asc (nulls last).
         const sorted = [...suburbJobs].sort((a, b) => {
-          const pa = PRIORITY_RANK[a.priority ?? ""] ?? 0;
-          const pb = PRIORITY_RANK[b.priority ?? ""] ?? 0;
+          const pa = priorityRankOf(a.priority);
+          const pb = priorityRankOf(b.priority);
           if (pa !== pb) return pb - pa;
           const da = a.dueDate ? Date.parse(a.dueDate) : Number.POSITIVE_INFINITY;
           const db_ = b.dueDate ? Date.parse(b.dueDate) : Number.POSITIVE_INFINITY;
@@ -149,10 +189,9 @@ router.get("/scheduling-suggestions", async (req, res, next) => {
         }
         chunks.forEach((chunk, idx) => {
           const topPriorityRank = chunk.reduce(
-            (acc, j) => Math.max(acc, PRIORITY_RANK[j.priority ?? ""] ?? 0), 0,
+            (acc, j) => Math.max(acc, priorityRankOf(j.priority)), 0,
           );
-          const topPriority =
-            Object.entries(PRIORITY_RANK).find(([, v]) => v === topPriorityRank)?.[0] ?? "Low";
+          const topPriority = labelFromRank(topPriorityRank);
           runs.push({
             runId: `${techKey}::${suburb}::${idx + 1}`.toLowerCase().replace(/\s+/g, "-"),
             suburb: chunks.length > 1 ? `${suburb} #${idx + 1}` : suburb,

@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 
 /**
  * Scheduling Assistant — beta
@@ -92,6 +93,9 @@ export default function Scheduling() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  // Airtable edits → SSE → refetch. Keeps the runs current without
+  // forcing the user to hit Refresh after every status change.
+  useLiveUpdates(() => { void load(); });
 
   const toggleTech = (tech: string) =>
     setCollapsed(prev => ({ ...prev, [tech]: !prev[tech] }));
@@ -222,7 +226,7 @@ export default function Scheduling() {
                                 <tr
                                   key={job.id}
                                   className="border-t border-border/40 hover:bg-muted/20 cursor-pointer transition-colors"
-                                  onClick={() => setLocation(`/job-detail/${job.id}`)}
+                                  onClick={() => setLocation(`/jobs/${job.id}`)}
                                 >
                                   <td className="px-2 py-1.5 font-mono text-foreground">
                                     {job.taskNumber || "—"}

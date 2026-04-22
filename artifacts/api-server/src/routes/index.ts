@@ -40,6 +40,7 @@ import paCommandRouter from "./pa-command";
 import diagRouter from "./diag";
 import agentErrorLogRouter from "./agent-error-log";
 import msgIntakeRouter from "./msg-intake";
+import schedulingSuggestionsRouter from "./scheduling-suggestions";
 
 const router: IRouter = Router();
 
@@ -84,5 +85,6 @@ router.use(paCommandRouter);
 router.use(diagRouter);
 router.use(agentErrorLogRouter);
 router.use(msgIntakeRouter);
+router.use(schedulingSuggestionsRouter);
 
 export default router;

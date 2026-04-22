@@ -15,6 +15,7 @@ const Notes = lazy(() => import("@/pages/notes"));
 const Toolbox = lazy(() => import("@/pages/toolbox"));
 const JobDetail = lazy(() => import("@/pages/job-detail"));
 const Schedule = lazy(() => import("@/pages/schedule"));
+const Scheduling = lazy(() => import("@/pages/scheduling"));
 const Todos = lazy(() => import("@/pages/todos"));
 const Projects = lazy(() => import("@/pages/projects"));
 const Operations = lazy(() => import("@/pages/operations"));
@@ -30,7 +31,7 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 // All Lucide nav icons replaced with text-based prefixes
 import {
   LayoutDashboard, Activity, BarChart3, Briefcase, Calendar, CheckSquare,
-  Receipt, Package, FolderKanban, Notebook, Flame, Settings as SettingsIcon,
+  Receipt, Package, FolderKanban, Notebook, Flame, Users, Settings as SettingsIcon,
   type LucideIcon,
 } from "lucide-react";
 import AIDEAssistant from "@/components/AIDEAssistant";
@@ -94,6 +95,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { path: "/jobs",            prefix: "--", icon: Briefcase,    label: "Jobs" },
       { path: "/schedule",        prefix: "..", icon: Calendar,     label: "Schedule" },
+      { path: "/scheduling",      prefix: "?>", icon: Users,        label: "Scheduling" },
       { path: "/todos",           prefix: "++", icon: CheckSquare,  label: "Tasks" },
       { path: "/purchase-orders", prefix: "[]", icon: Receipt,      label: "POs" },
       { path: "/suppliers",       prefix: "<>", icon: Package,      label: "Suppliers" },
@@ -494,6 +496,7 @@ function Router() {
           <Route path="/analytics"><Analytics /></Route>
           <Route path="/metrics"><Metrics /></Route>
           <Route path="/schedule"><Schedule /></Route>
+          <Route path="/scheduling"><Scheduling /></Route>
           <Route path="/jobs"><Jobs /></Route>
           <Route path="/jobs/:id"><JobDetail /></Route>
           <Route path="/purchase-orders"><PurchaseOrders /></Route>

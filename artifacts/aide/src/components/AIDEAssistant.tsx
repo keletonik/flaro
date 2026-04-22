@@ -218,7 +218,7 @@ export default function AIDEAssistant() {
     window.dispatchEvent(new CustomEvent("aide-files-dropped", { detail: { files } }));
   }, []);
 
-  const sidebarW = sidebarCollapsed ? 60 : 210;
+  const sidebarW = sidebarCollapsed ? 60 : 224;
   const effectiveHeight = open ? height : COLLAPSED_HEIGHT;
 
   const openPopout = useCallback(() => {
@@ -283,20 +283,20 @@ export default function AIDEAssistant() {
         </div>
 
         {/* Header bar — always visible; clicking the title area toggles */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border shrink-0 bg-card">
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0 bg-card">
           <button
             onClick={() => setOpen(v => !v)}
-            className="flex items-center gap-2.5 flex-1 hover:opacity-80 transition-opacity text-left"
+            className="flex items-center gap-2 flex-1 hover:opacity-80 transition-opacity text-left min-w-0"
           >
-            <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-primary">
+            <span className="relative inline-flex w-2 h-2 rounded-full bg-primary shrink-0">
               <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-60" />
             </span>
-            <span className="font-mono text-[11px] font-bold text-foreground tracking-tight">PA · Command Centre</span>
-            <span className="font-mono text-[10px] text-muted-foreground">· {title}</span>
+            <span className="font-mono text-[11px] font-bold text-foreground tracking-tight shrink-0">PA</span>
+            <span className="font-mono text-[10px] text-muted-foreground truncate">/ {title}</span>
           </button>
-          <div className="flex items-center gap-1.5">
-            <span className="hidden md:inline font-mono text-[9px] text-muted-foreground/60 tracking-wider uppercase mr-2">
-              ⌘ · tray · ⌥↗ pop-out
+          <div className="flex items-center gap-0.5">
+            <span className="hidden lg:inline font-mono text-[9px] text-muted-foreground/60 tracking-wider uppercase mr-2">
+              ⌘· toggle
             </span>
             <button
               onClick={openPopout}

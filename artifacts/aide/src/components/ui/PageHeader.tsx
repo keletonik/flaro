@@ -30,20 +30,22 @@ export function PageHeader({
     <div
       className={cn(
         sticky && "sticky top-0 z-20",
-        "glass-1 px-4 sm:px-6 py-3.5 page-reveal",
+        // Subtle shadow below the sticky bar so scrolled content reads as
+        // clearly underneath, not overlapping.
+        "glass-1 px-4 sm:px-6 py-3 page-reveal shadow-[0_1px_0_0_hsl(var(--border))]",
         className,
       )}
     >
       <div
         className={cn(
-          "flex items-center justify-between gap-4 min-h-[36px]",
+          "flex items-center justify-between gap-4 min-h-[40px]",
           wrap && "flex-wrap",
         )}
       >
         <div className="min-w-0 flex-1">
-          <h1 className="text-foreground font-semibold text-[15px] tracking-tight flex items-center gap-2 leading-none">
+          <h1 className="text-foreground font-bold text-[17px] tracking-tight flex items-center gap-2 leading-tight">
             {prefix && (
-              <span className="font-mono text-[13px] text-primary/60 shrink-0">
+              <span className="font-mono text-[13px] text-primary/70 shrink-0">
                 {prefix}
               </span>
             )}
@@ -51,13 +53,13 @@ export function PageHeader({
             {meta && <span className="ml-1 flex items-center gap-1.5">{meta}</span>}
           </h1>
           {subtitle && (
-            <div className="font-mono text-[10px] text-muted-foreground mt-1 truncate">
+            <div className="font-mono text-[10px] text-muted-foreground/90 mt-1 truncate tracking-wide">
               {subtitle}
             </div>
           )}
         </div>
         {actions && (
-          <div className="flex items-center gap-1.5 shrink-0">{actions}</div>
+          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">{actions}</div>
         )}
       </div>
       {below && <div className="mt-3">{below}</div>}

@@ -214,34 +214,45 @@ function SidebarNav() {
   return (
     <aside className={cn(
       "hidden md:flex fixed left-0 top-0 bottom-0 flex-col z-50 bg-sidebar sidebar-shadow transition-all duration-300",
-      collapsed ? "w-[60px]" : "w-[210px]"
+      collapsed ? "w-[60px]" : "w-[224px]"
     )}>
-      {/* Logo — typographic wordmark. Terminal theme shows the chevron +
-          lowercase `aide` + signal-green cursor block from the brand mockup. */}
+      {/* Logo — chevron monogram across every theme, signal-green cursor
+          block reserved for the terminal register. Gives the app a
+          consistent brand mark regardless of which palette is active. */}
       <div className={cn("flex items-center pt-5 pb-4", collapsed ? "px-3 justify-center" : "px-4")}>
-        <button onClick={() => setLocation("/")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          {isTerminal ? (
-            // Chevron monogram — > shape in foreground colour.
-            <svg viewBox="0 0 100 100" width={collapsed ? 20 : 18} height={collapsed ? 20 : 18} className="shrink-0">
-              <path d="M 28 22 L 60 50 L 28 78" fill="none" stroke="currentColor" strokeWidth="14" strokeLinecap="square" strokeLinejoin="miter" className="text-sidebar-foreground" />
-            </svg>
-          ) : (
-            <span className="font-mono text-[15px] font-bold tracking-tighter text-primary shrink-0">A</span>
-          )}
+        <button onClick={() => setLocation("/")} className="flex items-center gap-2.5 hover:opacity-85 transition-opacity group">
+          <svg viewBox="0 0 100 100" width={collapsed ? 22 : 20} height={collapsed ? 22 : 20} className="shrink-0">
+            <path
+              d="M 28 22 L 60 50 L 28 78"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="14"
+              strokeLinecap="square"
+              strokeLinejoin="miter"
+              className={cn(
+                "transition-colors",
+                isTerminal ? "text-sidebar-foreground" : "text-primary",
+              )}
+            />
+            {isTerminal && <rect x="68" y="42" width="14" height="16" fill="currentColor" className="text-primary" />}
+          </svg>
           {!collapsed && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 leading-none">
               <span className={cn(
-                "font-mono text-[14px] font-bold tracking-tight text-sidebar-foreground leading-none",
-                isTerminal && "lowercase",
+                "font-mono font-bold tracking-tight text-sidebar-foreground",
+                isTerminal ? "text-[15px] lowercase" : "text-[14px]",
               )}>
                 {isTerminal ? "aide" : "AIDE"}
               </span>
-              {isTerminal && (
-                <span className="inline-block w-[8px] h-[14px] bg-primary"
-                      style={{ animation: "terminal-block-blink 1.1s steps(2) infinite" }} />
-              )}
-              {!isTerminal && (
-                <span className="font-mono text-[9px] text-sidebar-foreground/55 tracking-widest uppercase ml-1">service ops</span>
+              {isTerminal ? (
+                <span
+                  className="inline-block w-[7px] h-[13px] bg-primary"
+                  style={{ animation: "terminal-block-blink 1.1s steps(2) infinite" }}
+                />
+              ) : (
+                <span className="font-mono text-[9px] text-sidebar-foreground/55 tracking-widest uppercase ml-0.5">
+                  service ops
+                </span>
               )}
             </div>
           )}
@@ -252,16 +263,16 @@ function SidebarNav() {
       <div className={cn("h-px bg-sidebar-border mb-2", collapsed ? "mx-2" : "mx-3")} />
 
       {/* Nav groups */}
-      <nav className="flex-1 overflow-y-auto px-2 space-y-5 scrollbar-hide">
+      <nav className="flex-1 overflow-y-auto px-2 space-y-4 scrollbar-hide">
         {navGroups.map(group => (
           <div key={group.label}>
             {!collapsed && (
-              <div className="flex items-center gap-2 px-2 mb-1.5">
-                <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-sidebar-foreground/25">{group.label}</span>
+              <div className="flex items-center gap-2 px-2 mb-1">
+                <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-sidebar-foreground/40">{group.label}</span>
                 <div className="h-px flex-1 bg-sidebar-border/50" />
               </div>
             )}
-            <div className="space-y-0.5">
+            <div className="space-y-[2px]">
               {group.items.map((item) => {
                 const active = isActive(location, item);
                 const Icon = item.icon;
@@ -272,11 +283,13 @@ function SidebarNav() {
                     onClick={() => setLocation(item.path)}
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      "w-full flex items-center rounded-md transition-all duration-100 text-left relative group",
-                      collapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2 py-1.5",
+                      "w-full flex items-center rounded-md transition-all duration-150 text-left relative group",
+                      collapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2.5 py-2",
+                      // Active: stronger background tint + accent-foreground + left
+                      // primary stripe. Reads as "you are here" at a glance.
                       active
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:left-0 before:top-1 before:bottom-1 before:w-[3px] before:rounded-r-sm before:bg-primary before:content-['']"
+                        : "text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
                     )}
                   >
                     {/* Both slots rendered; CSS swaps which one is visible.
@@ -412,7 +425,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
   // Compute content margins based on sidebar + AIDE panel state
-  const sidebarW = collapsed ? 60 : 210;
+  const sidebarW = collapsed ? 60 : 224;
   const mlTotal = sidebarW + (aideState.open && aideState.dock === "left" ? aideState.width : 0);
   const mrTotal = aideState.open && aideState.dock === "right" ? aideState.width : 0;
   const pbTotal = 16 + (aideState.open && aideState.dock === "bottom" ? aideState.height : 0); // 16 = mobile bottom nav

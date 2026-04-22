@@ -575,27 +575,58 @@ export async function pushQuoteToAirtable(quoteId: string): Promise<void> {
 
 let pollTimer: NodeJS.Timeout | null = null;
 
+/**
+ * Liveness probe. Hits /meta/bases which is the cheapest authenticated
+ * endpoint Airtable exposes — 200 means the PAT is valid and can see at
+ * least one base. The /status route calls this to tell apart "code never
+ * ran" from "credentials are wrong".
+ */
+export async function probeAirtable(): Promise<{ ok: boolean; status: number; detail?: string }> {
+  if (!AIRTABLE_PAT) return { ok: false, status: 0, detail: "AIRTABLE_PAT not set" };
+  try {
+    const resp = await fetch("https://api.airtable.com/v0/meta/bases", {
+      headers: { Authorization: `Bearer ${AIRTABLE_PAT}` },
+    });
+    const detail = resp.ok ? undefined : await resp.text().catch(() => undefined);
+    return { ok: resp.ok, status: resp.status, detail };
+  } catch (err: any) {
+    return { ok: false, status: 0, detail: err?.message || String(err) };
+  }
+}
+
 export function startAirtableSync() {
   if (!AIRTABLE_PAT) {
-    console.log("[airtable-sync] AIRTABLE_PAT not set, sync disabled");
+    console.log("[airtable-sync] AIRTABLE_PAT (or AIRTABLE_API_KEY) is not set; sync is DISABLED. Add it in Replit Deployments → Secrets to enable.");
     return;
   }
   if (pollTimer) return;
-  console.log(`[airtable-sync] polling every ${POLL_INTERVAL_MS}ms against ${AIRTABLE_BASE_ID}`);
+  console.log(`[airtable-sync] STARTED · base=${AIRTABLE_BASE_ID} · interval=${POLL_INTERVAL_MS}ms · tables=${Object.keys(TABLES).join(",")}`);
 
   const runSync = async () => {
+    const startedAt = Date.now();
     try {
       const r = await syncAirtableAll();
       const summary = Object.entries(r).map(([k, v]) => `${k}:+${v.inserted}/~${v.updated}/?${v.orphaned}`).join(" ");
       const total = Object.values(r).reduce((s, v) => s + v.inserted + v.updated, 0);
-      if (total > 0) console.log(`[airtable-sync] ${summary}`);
+      const errs = Object.values(r).filter(v => v.error).length;
+      const durMs = Date.now() - startedAt;
+      // Always log every poll so "is it running?" is one glance in the
+      // Replit Logs, not a silence that could mean either running-idle
+      // or crashed.
+      if (total > 0 || errs > 0) {
+        console.log(`[airtable-sync] poll · ${summary} · ${durMs}ms${errs > 0 ? ` · ${errs} table error(s)` : ""}`);
+      } else {
+        console.log(`[airtable-sync] poll · no changes · ${durMs}ms`);
+      }
     } catch (err: any) {
       status.lastError = err?.message || String(err);
-      console.error("[airtable-sync] Error:", status.lastError);
+      console.error("[airtable-sync] POLL FAILED:", status.lastError);
     }
   };
 
-  setTimeout(runSync, 5000);
+  // Run the first sync immediately on startup (no 5s delay) so /status
+  // has real data available for the first user that hits it after boot.
+  void runSync();
   pollTimer = setInterval(runSync, POLL_INTERVAL_MS);
 }
 

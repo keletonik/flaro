@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { db, jobs } from "@workspace/db";
-import { isNull } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import { softDeleteEnabled } from "../lib/soft-delete";
 import { isMyTech, isUnfiltered, isDoneStatus, MY_TECHS } from "../lib/division-filter";
+import { pushJobToAirtable } from "../lib/airtable-sync";
+import { broadcastEvent } from "../lib/events";
 
 /**
  * Scheduling Assistant — beta
@@ -139,16 +141,17 @@ router.get("/scheduling-suggestions", async (req, res, next) => {
       : await db.select().from(jobs);
 
     // Open = not in any done-state. CANCELLED is not "open work to schedule".
-    const openJobs = all.filter(j => {
+    type JobRow = typeof jobs.$inferSelect;
+    const openJobs = (all as JobRow[]).filter((j: JobRow) => {
       if (isDoneStatus(j.status)) return false;
       if ((j.status ?? "").toUpperCase() === "CANCELLED") return false;
       return true;
     });
 
     // My-crew filter — but keep unassigned jobs visible so we can suggest who picks them up.
-    const myJobs = unfiltered
+    const myJobs: JobRow[] = unfiltered
       ? openJobs
-      : openJobs.filter(j => !j.assignedTech || isMyTech(j.assignedTech));
+      : openJobs.filter((j: JobRow) => !j.assignedTech || isMyTech(j.assignedTech));
 
     // Bucket by tech.
     const byTech = new Map<string, typeof myJobs>();
@@ -227,18 +230,79 @@ router.get("/scheduling-suggestions", async (req, res, next) => {
       });
     }
 
-    // Order tech buckets: real techs first (alpha), unassigned last.
+    // Order tech buckets: heaviest workload first (so the 1500-job tech
+    // surfaces ahead of the 10-job tech). Unassigned is always last — it's
+    // a destination bucket for dispatch, not a working tech.
     buckets.sort((a, b) => {
       if (a.isUnassigned !== b.isUnassigned) return a.isUnassigned ? 1 : -1;
+      if (a.totalOpenJobs !== b.totalOpenJobs) return b.totalOpenJobs - a.totalOpenJobs;
       return a.tech.localeCompare(b.tech);
     });
 
     res.json({
       generatedAt: new Date().toISOString(),
-      version: "beta-1",
+      version: "beta-2",
       totalOpenJobs: myJobs.length,
       knownCrew: MY_TECHS,
       buckets,
+    });
+  } catch (err) { next(err); }
+});
+
+// ── Reassign ─────────────────────────────────────────────────────────────
+// Drag-to-reassign from the Scheduling page fires POST /reassign with
+// { jobId, newTech }. newTech must be one of MY_TECHS or the sentinel
+// "Unassigned" (which clears the column). Writes to DB, triggers Airtable
+// write-back, broadcasts a data_change so every open tab refetches.
+
+const KNOWN_TECHS = [
+  "Gordon Jenkins",
+  "Darren Brailey",
+  "Haider Al-Heyoury",
+  "John Minai",
+  "Nu Unasa",
+  "TBC",
+];
+
+router.post("/scheduling-suggestions/reassign", async (req, res, next) => {
+  try {
+    const { jobId, newTech } = (req.body ?? {}) as { jobId?: string; newTech?: string | null };
+    if (!jobId || typeof jobId !== "string") {
+      res.status(400).json({ error: "jobId is required" });
+      return;
+    }
+
+    // Normalise + validate the target tech. null/""/Unassigned all clear
+    // the column; anything else must match a known tech name exactly.
+    let assignedTech: string | null = null;
+    if (newTech && newTech.trim() && newTech.trim().toLowerCase() !== "unassigned") {
+      const match = KNOWN_TECHS.find(t => t.toLowerCase() === newTech.trim().toLowerCase());
+      if (!match) {
+        res.status(400).json({
+          error: `Unknown tech "${newTech}". Allowed: ${KNOWN_TECHS.join(", ")} or "Unassigned".`,
+        });
+        return;
+      }
+      assignedTech = match;
+    }
+
+    const [existing] = await db.select().from(jobs).where(eq(jobs.id, jobId));
+    if (!existing) { res.status(404).json({ error: "Job not found" }); return; }
+
+    const [updated] = await db.update(jobs)
+      .set({ assignedTech, updatedAt: new Date() })
+      .where(eq(jobs.id, jobId))
+      .returning();
+
+    // Fire-and-forget write-back to Airtable. Errors are logged inside
+    // the helper and don't block the response.
+    void pushJobToAirtable(jobId);
+    broadcastEvent("data_change", { source: "scheduling-reassign", jobId, assignedTech });
+
+    res.json({
+      jobId: updated.id,
+      taskNumber: updated.taskNumber,
+      assignedTech: updated.assignedTech,
     });
   } catch (err) { next(err); }
 });

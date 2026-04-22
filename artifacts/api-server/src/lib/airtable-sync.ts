@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { todos, jobs, quotes, contacts, meetings } from "@workspace/db";
-import { eq, isNotNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { broadcastEvent } from "./events";
 
@@ -158,11 +158,43 @@ async function fetchAllAirtableRecords(tableId: string): Promise<AirtableRecord[
   return records;
 }
 
+/**
+ * Shallow field-equality check used by every sync to skip no-op updates.
+ * The previous loop UPDATE'd every matched row on every poll, generating
+ * ~350 sequential queries and 100+ seconds of DB time per cycle. With
+ * this helper the sync only writes rows whose mapped values actually
+ * changed since last poll — typically zero in steady state.
+ */
+function shallowEqual(a: Record<string, any>, b: Record<string, any>, keys: string[]): boolean {
+  for (const k of keys) {
+    const av = a[k] === undefined || a[k] === "" ? null : a[k];
+    const bv = b[k] === undefined || b[k] === "" ? null : b[k];
+    if (av instanceof Date) {
+      if (!(bv instanceof Date) || av.getTime() !== bv.getTime()) return false;
+      continue;
+    }
+    if (typeof av === "object" && av !== null) {
+      if (JSON.stringify(av) !== JSON.stringify(bv)) return false;
+      continue;
+    }
+    if (av !== bv) return false;
+  }
+  return true;
+}
+
+const TODO_DIFF_KEYS = ["text", "completed", "priority", "notes", "assignee", "dueDate"];
+
 async function syncTodos(records: AirtableRecord[]): Promise<TableSyncResult> {
   const airtableIds = new Set(records.map((r) => r.id));
   let inserted = 0;
   let updated = 0;
   const now = new Date();
+
+  // Batch-load once instead of per-record SELECT — the previous pattern
+  // issued 2 queries per Airtable record, which dominated the sync duration.
+  const all = await db.select().from(todos);
+  const byAirtable = new Map<string, typeof all[number]>();
+  for (const t of all) if (t.airtableRecordId) byAirtable.set(t.airtableRecordId, t);
 
   for (const rec of records) {
     const f = rec.fields;
@@ -174,20 +206,18 @@ async function syncTodos(records: AirtableRecord[]): Promise<TableSyncResult> {
     const notes: string | null = f["Notes"] ? String(f["Notes"]).trim() : null;
     const assignee: string | null = f["Tech Assigned"] || f["Assignee"]?.name
       || (typeof f["Assignee"] === "string" ? f["Assignee"] : null);
-    const dueDate: string | null = f["Scheduled Date"] || f["Due"] || null;
+    const dueDate: string | null = typeof (f["Scheduled Date"] || f["Due"]) === "string"
+      ? (f["Scheduled Date"] || f["Due"]) : null;
 
-    const [existing] = await db.select().from(todos).where(eq(todos.airtableRecordId, rec.id));
+    const values = { text: name, completed, priority, notes, assignee, dueDate };
+    const existing = byAirtable.get(rec.id);
     if (existing) {
-      await db.update(todos).set({
-        text: name, completed, priority, notes,
-        assignee, dueDate: typeof dueDate === "string" ? dueDate : null,
-        updatedAt: now,
-      }).where(eq(todos.id, existing.id));
+      if (shallowEqual(existing as any, values, TODO_DIFF_KEYS)) continue; // no-op
+      await db.update(todos).set({ ...values, updatedAt: now }).where(eq(todos.id, existing.id));
       updated++;
     } else {
       await db.insert(todos).values({
-        id: randomUUID(), text: name, completed, priority, category: "Work",
-        notes, assignee, dueDate: typeof dueDate === "string" ? dueDate : null,
+        id: randomUUID(), ...values, category: "Work",
         dependencies: [], airtableRecordId: rec.id, createdAt: now, updatedAt: now,
       });
       inserted++;
@@ -195,19 +225,34 @@ async function syncTodos(records: AirtableRecord[]): Promise<TableSyncResult> {
   }
 
   // Non-destructive: count orphans but never delete. Replit data-safety rule.
-  const synced = await db.select().from(todos).where(isNotNull(todos.airtableRecordId));
-  const orphans = synced.filter((t: { airtableRecordId: string | null }) => t.airtableRecordId && !airtableIds.has(t.airtableRecordId));
+  const orphans = all.filter((t: typeof all[number]) => t.airtableRecordId && !airtableIds.has(t.airtableRecordId));
   if (orphans.length > 0) {
-    console.warn(`[airtable-sync] ${orphans.length} todos no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: { airtableRecordId: string | null }) => o.airtableRecordId).join(", ")}`);
+    console.warn(`[airtable-sync] ${orphans.length} todos no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: typeof all[number]) => o.airtableRecordId).join(", ")}`);
   }
   return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
 }
+
+const JOB_DIFF_KEYS = [
+  "taskNumber", "site", "address", "client", "contactName", "contactNumber", "contactEmail",
+  "actionRequired", "priority", "status", "assignedTech", "dueDate", "notes",
+];
 
 async function syncJobs(records: AirtableRecord[]): Promise<TableSyncResult> {
   const airtableIds = new Set(records.map((r) => r.id));
   let inserted = 0;
   let updated = 0;
   const now = new Date();
+
+  // Batch-load all existing jobs once. Index by airtable_record_id and by
+  // task_number (for the first-time-linking case where an Airtable row
+  // matches a historical Uptick-imported row with the same task number).
+  const all = await db.select().from(jobs);
+  const byAirtable = new Map<string, typeof all[number]>();
+  const byTaskNumber = new Map<string, typeof all[number]>();
+  for (const j of all) {
+    if (j.airtableRecordId) byAirtable.set(j.airtableRecordId, j);
+    if (j.taskNumber) byTaskNumber.set(j.taskNumber, j);
+  }
 
   for (const rec of records) {
     const f = rec.fields;
@@ -216,7 +261,7 @@ async function syncJobs(records: AirtableRecord[]): Promise<TableSyncResult> {
     const action: string = (f["Scope"] || f["Notes"] || f["Name"] || "").toString().trim();
     if (!site || !action) continue;
 
-    const values = {
+    const values: Record<string, any> = {
       taskNumber: f["Task Number"] || null,
       site,
       address: f["Site Address"] || null,
@@ -230,16 +275,20 @@ async function syncJobs(records: AirtableRecord[]): Promise<TableSyncResult> {
       assignedTech: f["Tech Assigned"] || f["Assignee"]?.name || null,
       dueDate: f["Scheduled Date"] || null,
       notes: f["Notes"] || null,
-      updatedAt: now,
     };
 
-    let [existing] = await db.select().from(jobs).where(eq(jobs.airtableRecordId, rec.id));
-    if (!existing && values.taskNumber) {
-      const [byTaskNum] = await db.select().from(jobs).where(eq(jobs.taskNumber, values.taskNumber));
-      if (byTaskNum) existing = byTaskNum;
-    }
+    const existing = byAirtable.get(rec.id)
+      || (values.taskNumber ? byTaskNumber.get(values.taskNumber) : undefined);
+
     if (existing) {
-      await db.update(jobs).set({ ...values, airtableRecordId: rec.id }).where(eq(jobs.id, existing.id));
+      // Change detection: skip the UPDATE if every mapped field already matches.
+      // The existing airtableRecordId may be null on a freshly-linked historical
+      // row — treat that as a change so the first sync attaches the id.
+      const sameIdLinked = existing.airtableRecordId === rec.id;
+      if (sameIdLinked && shallowEqual(existing as any, values, JOB_DIFF_KEYS)) continue;
+      await db.update(jobs)
+        .set({ ...values, airtableRecordId: rec.id, updatedAt: now })
+        .where(eq(jobs.id, existing.id));
       updated++;
     } else {
       await db.insert(jobs).values({
@@ -248,18 +297,23 @@ async function syncJobs(records: AirtableRecord[]): Promise<TableSyncResult> {
         uptickNotes: [],
         airtableRecordId: rec.id,
         createdAt: now,
+        updatedAt: now,
       });
       inserted++;
     }
   }
 
-  const synced = await db.select().from(jobs).where(isNotNull(jobs.airtableRecordId));
-  const orphans = synced.filter((j: { airtableRecordId: string | null }) => j.airtableRecordId && !airtableIds.has(j.airtableRecordId));
+  const orphans = all.filter((j: typeof all[number]) => j.airtableRecordId && !airtableIds.has(j.airtableRecordId));
   if (orphans.length > 0) {
-    console.warn(`[airtable-sync] ${orphans.length} jobs no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: { airtableRecordId: string | null }) => o.airtableRecordId).join(", ")}`);
+    console.warn(`[airtable-sync] ${orphans.length} jobs no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: typeof all[number]) => o.airtableRecordId).join(", ")}`);
   }
   return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
 }
+
+const QUOTE_DIFF_KEYS = [
+  "quoteNumber", "site", "client", "description", "status", "validUntil",
+  "contactName", "contactEmail", "notes",
+];
 
 async function syncQuotes(records: AirtableRecord[]): Promise<TableSyncResult> {
   const airtableIds = new Set(records.map((r) => r.id));
@@ -267,13 +321,17 @@ async function syncQuotes(records: AirtableRecord[]): Promise<TableSyncResult> {
   let updated = 0;
   const now = new Date();
 
+  const all = await db.select().from(quotes);
+  const byAirtable = new Map<string, typeof all[number]>();
+  for (const q of all) if (q.airtableRecordId) byAirtable.set(q.airtableRecordId, q);
+
   for (const rec of records) {
     const f = rec.fields;
     const site: string = (f["Site"] || "").toString().trim();
     const client: string = (f["Client"] || "Unknown").toString().trim();
     if (!site) continue;
 
-    const values = {
+    const values: Record<string, any> = {
       quoteNumber: f["Quote Reference"] || null,
       site,
       client,
@@ -283,12 +341,12 @@ async function syncQuotes(records: AirtableRecord[]): Promise<TableSyncResult> {
       contactName: f["Contact"] || null,
       contactEmail: f["Contact Email"] || null,
       notes: f["Notes"] || null,
-      updatedAt: now,
     };
 
-    const [existing] = await db.select().from(quotes).where(eq(quotes.airtableRecordId, rec.id));
+    const existing = byAirtable.get(rec.id);
     if (existing) {
-      await db.update(quotes).set(values).where(eq(quotes.id, existing.id));
+      if (shallowEqual(existing as any, values, QUOTE_DIFF_KEYS)) continue;
+      await db.update(quotes).set({ ...values, updatedAt: now }).where(eq(quotes.id, existing.id));
       updated++;
     } else {
       await db.insert(quotes).values({
@@ -296,18 +354,20 @@ async function syncQuotes(records: AirtableRecord[]): Promise<TableSyncResult> {
         ...values,
         airtableRecordId: rec.id,
         createdAt: now,
+        updatedAt: now,
       });
       inserted++;
     }
   }
 
-  const synced = await db.select().from(quotes).where(isNotNull(quotes.airtableRecordId));
-  const orphans = synced.filter((q: { airtableRecordId: string | null }) => q.airtableRecordId && !airtableIds.has(q.airtableRecordId));
+  const orphans = all.filter((q: typeof all[number]) => q.airtableRecordId && !airtableIds.has(q.airtableRecordId));
   if (orphans.length > 0) {
-    console.warn(`[airtable-sync] ${orphans.length} quotes no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: { airtableRecordId: string | null }) => o.airtableRecordId).join(", ")}`);
+    console.warn(`[airtable-sync] ${orphans.length} quotes no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: typeof all[number]) => o.airtableRecordId).join(", ")}`);
   }
   return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
 }
+
+const CONTACT_DIFF_KEYS = ["name", "company", "role", "email", "mobile", "type", "notes"];
 
 async function syncContacts(records: AirtableRecord[]): Promise<TableSyncResult> {
   const airtableIds = new Set(records.map((r) => r.id));
@@ -315,12 +375,16 @@ async function syncContacts(records: AirtableRecord[]): Promise<TableSyncResult>
   let updated = 0;
   const now = new Date();
 
+  const all = await db.select().from(contacts);
+  const byAirtable = new Map<string, typeof all[number]>();
+  for (const c of all) if (c.airtableRecordId) byAirtable.set(c.airtableRecordId, c);
+
   for (const rec of records) {
     const f = rec.fields;
     const name: string = (f["Name"] || "").toString().trim();
     if (!name) continue;
 
-    const values = {
+    const values: Record<string, any> = {
       name,
       company: f["Company"] || null,
       role: f["Role"] || null,
@@ -328,12 +392,12 @@ async function syncContacts(records: AirtableRecord[]): Promise<TableSyncResult>
       mobile: f["Mobile"] || null,
       type: f["Type"] || null,
       notes: f["Notes"] || null,
-      updatedAt: now,
     };
 
-    const [existing] = await db.select().from(contacts).where(eq(contacts.airtableRecordId, rec.id));
+    const existing = byAirtable.get(rec.id);
     if (existing) {
-      await db.update(contacts).set(values).where(eq(contacts.id, existing.id));
+      if (shallowEqual(existing as any, values, CONTACT_DIFF_KEYS)) continue;
+      await db.update(contacts).set({ ...values, updatedAt: now }).where(eq(contacts.id, existing.id));
       updated++;
     } else {
       await db.insert(contacts).values({
@@ -341,24 +405,30 @@ async function syncContacts(records: AirtableRecord[]): Promise<TableSyncResult>
         ...values,
         airtableRecordId: rec.id,
         createdAt: now,
+        updatedAt: now,
       });
       inserted++;
     }
   }
 
-  const synced = await db.select().from(contacts).where(isNotNull(contacts.airtableRecordId));
-  const orphans = synced.filter((c: { airtableRecordId: string | null }) => c.airtableRecordId && !airtableIds.has(c.airtableRecordId));
+  const orphans = all.filter((c: typeof all[number]) => c.airtableRecordId && !airtableIds.has(c.airtableRecordId));
   if (orphans.length > 0) {
-    console.warn(`[airtable-sync] ${orphans.length} contacts no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: { airtableRecordId: string | null }) => o.airtableRecordId).join(", ")}`);
+    console.warn(`[airtable-sync] ${orphans.length} contacts no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: typeof all[number]) => o.airtableRecordId).join(", ")}`);
   }
   return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
 }
+
+const MEETING_DIFF_KEYS = ["title", "startAt", "endAt", "location", "attendees", "notes"];
 
 async function syncMeetings(records: AirtableRecord[]): Promise<TableSyncResult> {
   const airtableIds = new Set(records.map((r) => r.id));
   let inserted = 0;
   let updated = 0;
   const now = new Date();
+
+  const all = await db.select().from(meetings);
+  const byAirtable = new Map<string, typeof all[number]>();
+  for (const m of all) if (m.airtableRecordId) byAirtable.set(m.airtableRecordId, m);
 
   for (const rec of records) {
     const f = rec.fields;
@@ -370,46 +440,69 @@ async function syncMeetings(records: AirtableRecord[]): Promise<TableSyncResult>
     const attendees = Array.isArray(f["Attendees"]) ? f["Attendees"].join(", ") : (f["Attendees"] || f["Contact"] || null);
     const notes = (f["Purpose"] || f["Notes"] || f["Agenda"] || null) as any;
 
-    const values = {
+    const values: Record<string, any> = {
       title,
       startAt: startAt ? String(startAt) : null,
       endAt: endAt ? String(endAt) : null,
       location: location ? String(location) : null,
       attendees: attendees ? String(attendees) : null,
       notes: notes ? String(notes) : null,
-      rawData: f,
-      updatedAt: now,
     };
 
-    const [existing] = await db.select().from(meetings).where(eq(meetings.airtableRecordId, rec.id));
+    const existing = byAirtable.get(rec.id);
     if (existing) {
-      await db.update(meetings).set(values).where(eq(meetings.id, existing.id));
+      if (shallowEqual(existing as any, values, MEETING_DIFF_KEYS)) continue;
+      await db.update(meetings).set({ ...values, rawData: f, updatedAt: now }).where(eq(meetings.id, existing.id));
       updated++;
     } else {
       await db.insert(meetings).values({
         id: randomUUID(),
         ...values,
+        rawData: f,
         airtableRecordId: rec.id,
         createdAt: now,
+        updatedAt: now,
       });
       inserted++;
     }
   }
 
-  const synced = await db.select().from(meetings).where(isNotNull(meetings.airtableRecordId));
-  const orphans = synced.filter((m: { airtableRecordId: string | null }) => m.airtableRecordId && !airtableIds.has(m.airtableRecordId));
+  const orphans = all.filter((m: typeof all[number]) => m.airtableRecordId && !airtableIds.has(m.airtableRecordId));
   if (orphans.length > 0) {
-    console.warn(`[airtable-sync] ${orphans.length} meetings no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: { airtableRecordId: string | null }) => o.airtableRecordId).join(", ")}`);
+    console.warn(`[airtable-sync] ${orphans.length} meetings no longer in Airtable (kept in DB): ${orphans.slice(0, 5).map((o: typeof all[number]) => o.airtableRecordId).join(", ")}`);
   }
   return { inserted, updated, orphaned: orphans.length, total: records.length, error: null };
 }
 
+// Mutex guard. If a poll is still running when the next interval fires
+// the new one exits immediately instead of piling on the DB. Belt-and-
+// braces for future regressions: the sync should normally finish in
+// <30s with the batched-read refactor, but load spikes can happen.
+let syncInFlight = false;
+
 export async function syncAirtableAll(): Promise<SyncStatus["tables"]> {
+  if (syncInFlight) {
+    console.warn("[airtable-sync] skipped: previous poll still running");
+    return status.tables;
+  }
+  syncInFlight = true;
+  try {
+    return await _doSyncAirtableAll();
+  } finally {
+    syncInFlight = false;
+  }
+}
+
+async function _doSyncAirtableAll(): Promise<SyncStatus["tables"]> {
   const startedAt = Date.now();
   const results = status.tables;
   let mutations = 0;
 
-  for (const [key, tableId] of Object.entries(TABLES)) {
+  // Run all four tables concurrently. The previous sequential loop took
+  // ~106s for 118 rows because every row round-tripped the DB twice.
+  // With in-memory matching + change-detection + concurrency the whole
+  // sync drops to well under the 30s poll interval.
+  await Promise.all(Object.entries(TABLES).map(async ([key, tableId]) => {
     try {
       const records = await fetchAllAirtableRecords(tableId);
       let r: TableSyncResult;
@@ -430,7 +523,7 @@ export async function syncAirtableAll(): Promise<SyncStatus["tables"]> {
       console.error(`[airtable-sync] ${key} ERROR:`, err);
       results[key] = { ...results[key], tableId, error: `${err?.code || ""} ${err?.detail || err?.message || String(err)}`.trim() };
     }
-  }
+  }));
 
   status.lastSyncAt = new Date().toISOString();
   status.lastSyncDurationMs = Date.now() - startedAt;

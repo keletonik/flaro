@@ -76,7 +76,39 @@ export default function AIDEAssistant() {
   const [height, setHeight] = useState<number>(loadHeight);
   const [dragging, setDragging] = useState(false);
   const [fileHover, setFileHover] = useState(false);
+  const [popoutActive, setPopoutActive] = useState(false);
   const dragStartRef = useRef<{ y: number; h: number } | null>(null);
+
+  // Popout liveness via BroadcastChannel. The popout page announces on
+  // mount and heartbeats every 4s. If we haven't heard a heartbeat in 8s,
+  // we assume the popout is gone (crash, OS-level close, no beforeunload)
+  // and show the tray again.
+  useEffect(() => {
+    if (typeof BroadcastChannel === "undefined") return;
+    const ch = new BroadcastChannel("aide-pa");
+    let lastSeen = 0;
+    const onMsg = (ev: MessageEvent) => {
+      if (ev.data?.type === "popout-opened") {
+        lastSeen = Date.now();
+        setPopoutActive(true);
+      } else if (ev.data?.type === "popout-closed") {
+        setPopoutActive(false);
+      }
+    };
+    ch.addEventListener("message", onMsg);
+    ch.postMessage({ type: "tray-hello" });
+    const watchdog = window.setInterval(() => {
+      if (lastSeen && Date.now() - lastSeen > 8000) {
+        lastSeen = 0;
+        setPopoutActive(false);
+      }
+    }, 2000);
+    return () => {
+      ch.removeEventListener("message", onMsg);
+      ch.close();
+      window.clearInterval(watchdog);
+    };
+  }, []);
 
   // Persist open state.
   useEffect(() => { try { localStorage.setItem(OPEN_KEY, open ? "1" : "0"); } catch {} }, [open]);
@@ -88,11 +120,16 @@ export default function AIDEAssistant() {
   }, [height, dragging]);
 
   // Broadcast size to the Layout so the main content reserves vertical space.
-  // Mobile (<768px): tray overlays, no reserved space, matching desktop-less UX.
+  // When the popout is active we report zero so the layout doesn't leave a
+  // gap for a tray that isn't rendering.
   useEffect(() => {
-    const reported = open ? height : COLLAPSED_HEIGHT;
-    setAideState({ open, dock: "bottom", width: 0, height: reported });
-  }, [open, height, setAideState]);
+    if (popoutActive) {
+      setAideState({ open: false, dock: "bottom", width: 0, height: 0 });
+    } else {
+      const reported = open ? height : COLLAPSED_HEIGHT;
+      setAideState({ open, dock: "bottom", width: 0, height: reported });
+    }
+  }, [open, height, popoutActive, setAideState]);
 
   // Cmd/Ctrl+. toggles tray; Esc collapses from expanded to bar.
   useEffect(() => {
@@ -195,8 +232,14 @@ export default function AIDEAssistant() {
       `width=${w},height=${h},left=${sx},top=${sy},menubar=no,toolbar=no,location=no,status=no`,
     );
     // Collapse the tray so the popout has the focus, not two competing surfaces.
+    // The BroadcastChannel handshake will also mark the popout as active,
+    // which hides the tray entirely below.
     setOpen(false);
   }, [section, title]);
+
+  // Hide the tray entirely when the popout is alive. Placed after all hooks
+  // are declared so the rules of hooks aren't violated.
+  if (popoutActive) return null;
 
   return (
     <>

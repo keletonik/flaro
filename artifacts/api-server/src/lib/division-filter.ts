@@ -1,21 +1,21 @@
 /**
- * Division/team filter for FlameSafe — Casper's BR-DETECTION division.
+ * Division/team filter for FlameSafe — Casper's R-DETECTION service division.
  *
- * Casper's working surface is "dry fire and electrical" = the DETECTION service
- * groups (R/A/M DETECTION) plus a small allowlist of techs in his crew.
- * Anything outside that is somebody else's problem and shouldn't bloat his
- * dashboards.
+ * STRICT POLICY (per Casper, 22 Apr 2026): only rows tagged with the R-DETECTION
+ * service group count for analytics, KPIs, WIP and anywhere else. A-DETECTION,
+ * M-DETECTION, and untagged rows are excluded entirely — they belong to other
+ * divisions and must not bloat Casper's numbers.
  *
  * Configurable via env vars in case the team or scope changes:
  *   MY_DIVISION_SERVICE_GROUPS  comma-separated, matched as substrings (case-insensitive).
- *                                Default: "DETECTION" (catches R/A/M DETECTION).
+ *                                Default: "R-DETECTION" (Casper's division only).
  *   MY_TECHS                    comma-separated, matched as substrings (case-insensitive).
  *                                Default: Gordon, Johnny (= John Minai), Nu, Haidar, Darren.
  *
  * Bypass with `?division=all` on any analytics/wip endpoint.
  */
 
-const DEFAULT_GROUPS = ["DETECTION"];
+const DEFAULT_GROUPS = ["R-DETECTION"];
 const DEFAULT_TECHS = ["Gordon", "John", "Nu", "Haid", "Darren"];
 
 function parseList(envVar: string | undefined, fallback: string[]): string[] {
@@ -42,17 +42,24 @@ export function rowServiceGroup(w: { rawData?: any }): string {
 /**
  * True when the row belongs to my division.
  *
- * Rule: if serviceGroup is populated, it must contain one of MY_DIVISION_SERVICE_GROUPS.
- * If serviceGroup is empty/missing (≈13% of prod WIP rows — Airtable hasn't tagged them
- * yet), fall back to "yes" so newly-imported rows don't disappear before they're
- * classified. The accompanying tech filter still gates them by crew membership, so
- * this is safe — we won't show e.g. Hugo's untagged rows to Casper, only Casper's
- * own crew's untagged rows.
+ * STRICT: serviceGroup MUST be populated and MUST contain one of
+ * MY_DIVISION_SERVICE_GROUPS (default "RDETECTION"). Untagged rows are
+ * excluded — per Casper's directive, only R-Detection counts for analytics
+ * and dashboards. Rows missing serviceGroup belong to other divisions or are
+ * unclassified and must not bleed into the numbers.
+ *
+ * Both sides are normalised by stripping non-alphanumerics so the filter
+ * matches the Airtable label regardless of whether it's "R-DETECTION",
+ * "R DETECTION" (the actual prod value), "R_DETECTION", etc.
  */
+function normaliseServiceGroup(s: string): string {
+  return s.toUpperCase().replace(/[^A-Z0-9]+/g, "");
+}
+
 export function isMyDivision(w: { rawData?: any }): boolean {
-  const sg = rowServiceGroup(w).toUpperCase();
-  if (!sg) return true;
-  return MY_DIVISION_SERVICE_GROUPS.some(g => sg.includes(g));
+  const sg = normaliseServiceGroup(rowServiceGroup(w));
+  if (!sg) return false;
+  return MY_DIVISION_SERVICE_GROUPS.some(g => sg.includes(normaliseServiceGroup(g)));
 }
 
 /**

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { wipRecords, quotes, defects, invoices, suppliers, supplierProducts, jobs } from "@workspace/db";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { isActiveStatus } from "../lib/division-filter";
 
 const router = Router();
 

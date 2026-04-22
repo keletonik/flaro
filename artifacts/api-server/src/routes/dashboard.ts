@@ -19,8 +19,10 @@ router.get("/dashboard/summary", async (req, res, next) => {
 
     // Status check is now case-insensitive across "Done"/"Complete"/"COMPLETE"/
     // "PERFORMED"/"OFFICEREVIEW" — see lib/division-filter#isDoneStatus.
-    const critical  = allJobs.filter(j => j.priority === "Critical" && !isDoneStatus(j.status)).length;
-    const high      = allJobs.filter(j => j.priority === "High"     && !isDoneStatus(j.status)).length;
+    // Use isActiveStatus so cancelled jobs are also excluded from the priority
+    // counts (consistent with the active total below).
+    const critical  = allJobs.filter(j => j.priority === "Critical" && isActiveStatus(j.status)).length;
+    const high      = allJobs.filter(j => j.priority === "High"     && isActiveStatus(j.status)).length;
     const open      = allJobs.filter(j => j.status === "Open").length;
     const active    = allJobs.filter(j => isActiveStatus(j.status)).length;
     const doneToday = allJobs.filter(j => isDoneStatus(j.status) && j.updatedAt >= today).length;

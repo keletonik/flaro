@@ -42,6 +42,7 @@ import {
 import { pool } from "@workspace/db";
 import { TABLE_ALLOWLIST, type AgentTable } from "./chat-tools";
 import { broadcastEvent } from "./events";
+import { isActiveStatus } from "./division-filter";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Table registry — one entry per allowlisted table
@@ -345,8 +346,8 @@ export async function getKpiSummary(): Promise<any> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const activeJobs = allJobs.filter((j) => j.status !== "Done").length;
-  const criticalJobs = allJobs.filter((j) => j.priority === "Critical" && j.status !== "Done").length;
+  const activeJobs = allJobs.filter((j) => isActiveStatus(j.status)).length;
+  const criticalJobs = allJobs.filter((j) => j.priority === "Critical" && isActiveStatus(j.status)).length;
   const wipRevenue = allWip.reduce((sum, w) => sum + (w.quoteAmount ? Number(w.quoteAmount) : 0), 0);
   const openQuotes = allQuotes.filter((q) => q.status === "Sent" || q.status === "Draft").length;
   const pendingValue = allQuotes

@@ -9,6 +9,8 @@ import {
   isRevenueInvoice,
   revenueDate,
   invoiceAmount,
+  isDoneStatus,
+  isActiveStatus,
 } from "../lib/division-filter";
 
 const router = Router();
@@ -215,7 +217,7 @@ router.get("/analytics/wip", async (req, res, next) => {
 
     // Tasks completed over time (last 30 days)
     const completedByDay: { date: string; completed: number }[] = [];
-    const completedJobs = allJobs.filter(j => j.status === "Done");
+    const completedJobs = allJobs.filter(j => isDoneStatus(j.status));
     for (let i = 29; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
@@ -267,7 +269,7 @@ router.get("/analytics/wip", async (req, res, next) => {
       .reduce((s, i) => s + invoiceAmount(i), 0);
 
     // WIP pipeline total
-    const wipPipelineTotal = allWip.filter(w => w.status !== "Completed").reduce((s, w) => s + (w.quoteAmount ? Number(w.quoteAmount) : 0), 0);
+    const wipPipelineTotal = allWip.filter(w => isActiveStatus(w.status)).reduce((s, w) => s + (w.quoteAmount ? Number(w.quoteAmount) : 0), 0);
 
     const result = {
       revenue: {
@@ -283,7 +285,7 @@ router.get("/analytics/wip", async (req, res, next) => {
       },
       wip: {
         total: allWip.length,
-        active: allWip.filter(w => w.status !== "Completed").length,
+        active: allWip.filter(w => isActiveStatus(w.status)).length,
         pipelineValue: wipPipelineTotal,
         byStatus: wipByStatus,
         byTech: Object.entries(wipByTech).map(([tech, d]) => ({ tech, ...d })),
@@ -311,7 +313,7 @@ router.get("/analytics/wip", async (req, res, next) => {
       },
       tasks: {
         totalCompleted: completedJobs.length,
-        activeJobs: allJobs.filter(j => j.status !== "Done").length,
+        activeJobs: allJobs.filter(j => isActiveStatus(j.status)).length,
         avgCompletionDays,
         completedByDay,
       },
@@ -349,7 +351,7 @@ router.get("/analytics/pipeline-gaps", async (req, res, next) => {
     const quotesWithoutWip = acceptedQuotes.filter(q => q.taskNumber && !wipTaskNumbers.has(q.taskNumber));
 
     // Gap B: Completed WIP with no invoice raised
-    const completedWip = allWip.filter(w => w.status === "Completed");
+    const completedWip = allWip.filter(w => isDoneStatus(w.status));
     const invoiceTaskNumbers = new Set(allInvoices.map(i => i.taskNumber).filter(Boolean));
     const wipWithoutInvoice = completedWip.filter(w => w.taskNumber && !invoiceTaskNumbers.has(w.taskNumber));
 

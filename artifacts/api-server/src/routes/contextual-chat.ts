@@ -120,7 +120,7 @@ async function fetchSectionData(section: SectionType): Promise<string> {
         db.select().from(jobs), db.select().from(wipRecords), db.select().from(quotes),
         db.select().from(defects), db.select().from(invoices),
       ]);
-      return `Dashboard Overview:\nJobs: ${allJobs.length} total, ${allJobs.filter(j => j.status !== "Done").length} active\nWIP: ${allWip.length} records, ${allWip.filter(w => w.status !== "Completed").length} active\nQuotes: ${allQuotes.length} total, ${allQuotes.filter(q => q.status === "Sent" || q.status === "Draft").length} pending\nDefects: ${allDefects.length} total, ${allDefects.filter(d => d.status === "Open").length} open\nInvoices: ${allInvoices.length} total, ${allInvoices.filter(i => i.status === "Sent" || i.status === "Overdue").length} outstanding`;
+      return `Dashboard Overview:\nJobs: ${allJobs.length} total, ${allJobs.filter(j => isActiveStatus(j.status)).length} active\nWIP: ${allWip.length} records, ${allWip.filter(w => isActiveStatus(w.status)).length} active\nQuotes: ${allQuotes.length} total, ${allQuotes.filter(q => q.status === "Sent" || q.status === "Draft").length} pending\nDefects: ${allDefects.length} total, ${allDefects.filter(d => d.status === "Open").length} open\nInvoices: ${allInvoices.length} total, ${allInvoices.filter(i => i.status === "Sent" || i.status === "Overdue").length} outstanding`;
     }
     case "tasks": {
       return "Task data is provided in the user's message context.";

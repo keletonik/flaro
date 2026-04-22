@@ -24,6 +24,8 @@ import {
   invoiceAmount as invAmt,
   isOutstandingInvoice,
   isOverdueInvoice,
+  isDoneStatus,
+  isActiveStatus,
 } from "../lib/division-filter";
 
 const router = Router();
@@ -64,11 +66,12 @@ router.get("/kpi/metrics", async (req, res, next) => {
     weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    const activeJobs = allJobs.filter(j => j.status !== "Done");
-    const completedThisWeek = allJobs.filter(j => j.status === "Done" && j.updatedAt >= weekStart);
-    const completedToday = allJobs.filter(j => j.status === "Done" && j.updatedAt >= today);
+    // Done = Done | Complete | COMPLETE | PERFORMED | OFFICEREVIEW (Uptick / Airtable variants).
+    const activeJobs = allJobs.filter(j => isActiveStatus(j.status));
+    const completedThisWeek = allJobs.filter(j => isDoneStatus(j.status) && j.updatedAt >= weekStart);
+    const completedToday = allJobs.filter(j => isDoneStatus(j.status) && j.updatedAt >= today);
 
-    const activeWip = allWip.filter(w => w.status !== "Completed");
+    const activeWip = allWip.filter(w => isActiveStatus(w.status));
     const wipRevenue = allWip.reduce((sum, w) => sum + (w.quoteAmount ? Number(w.quoteAmount) : 0), 0);
     const wipInvoiced = allWip.reduce((sum, w) => sum + (w.invoiceAmount ? Number(w.invoiceAmount) : 0), 0);
 

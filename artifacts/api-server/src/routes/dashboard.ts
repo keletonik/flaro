@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { jobs, notes } from "@workspace/db";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
-import { isMyTech, isUnfiltered } from "../lib/division-filter";
+import { isMyTech, isUnfiltered, isDoneStatus, isActiveStatus } from "../lib/division-filter";
 
 const router = Router();
 
@@ -17,11 +17,13 @@ router.get("/dashboard/summary", async (req, res, next) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const critical  = allJobs.filter(j => j.priority === "Critical" && j.status !== "Done").length;
-    const high      = allJobs.filter(j => j.priority === "High"     && j.status !== "Done").length;
+    // Status check is now case-insensitive across "Done"/"Complete"/"COMPLETE"/
+    // "PERFORMED"/"OFFICEREVIEW" — see lib/division-filter#isDoneStatus.
+    const critical  = allJobs.filter(j => j.priority === "Critical" && !isDoneStatus(j.status)).length;
+    const high      = allJobs.filter(j => j.priority === "High"     && !isDoneStatus(j.status)).length;
     const open      = allJobs.filter(j => j.status === "Open").length;
-    const active    = allJobs.filter(j => j.status !== "Done").length;
-    const doneToday = allJobs.filter(j => j.status === "Done" && j.updatedAt >= today).length;
+    const active    = allJobs.filter(j => isActiveStatus(j.status)).length;
+    const doneToday = allJobs.filter(j => isDoneStatus(j.status) && j.updatedAt >= today).length;
     const totalJobs = active;
     const openNotes = allNotes.filter(n => n.status === "Open").length;
 
@@ -37,7 +39,7 @@ router.get("/dashboard/focus", async (req, res, next) => {
     // Same scope as /dashboard/summary so the AI bullets describe the same world.
     const allJobs = unfiltered ? allJobsRaw : allJobsRaw.filter(j => isMyTech(j.assignedTech));
 
-    const openJobs      = allJobs.filter(j => j.status !== "Done");
+    const openJobs      = allJobs.filter(j => isActiveStatus(j.status));
     const openNotesList = allNotes.filter(n => n.status === "Open");
 
     if (!openJobs.length && !openNotesList.length) {

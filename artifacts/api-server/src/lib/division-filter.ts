@@ -56,6 +56,25 @@ export function isMyDivision(w: { rawData?: any }): boolean {
 }
 
 /**
+ * "This job is finished" — case-insensitive across every status string we've
+ * seen. Uptick uses COMPLETE / PERFORMED / OFFICEREVIEW (work done, sitting in
+ * office review/sign-off). The legacy CSV importer used "Done". The Airtable
+ * sync uses "Complete". All of these mean the tech is finished and the job
+ * shouldn't be on the active board.
+ *
+ * Without this, completedToday/completedThisWeek/active counts are off by ~10x
+ * because the dashboard was matching only literal "Done" while production has
+ * 11 Done rows vs 96 truly-finished rows for the same period.
+ */
+const DONE_STATUSES = new Set(["DONE", "COMPLETE", "COMPLETED", "PERFORMED", "OFFICEREVIEW"]);
+export function isDoneStatus(status: string | null | undefined): boolean {
+  return DONE_STATUSES.has(String(status || "").toUpperCase());
+}
+export function isActiveStatus(status: string | null | undefined): boolean {
+  return !isDoneStatus(status) && String(status || "").toUpperCase() !== "CANCELLED";
+}
+
+/**
  * Outstanding-invoice statuses (case-insensitive). AUTHORISED is on the books but
  * unpaid. SENT is the older Xero label for the same thing. OVERDUE is past due-date.
  * PARTIAL is partially paid. PAID/DRAFT/VOID are excluded.

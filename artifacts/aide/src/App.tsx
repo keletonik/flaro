@@ -11,13 +11,14 @@ import { cn } from "@/lib/utils";
 // page file remains on disk so this is reversible; they're simply not
 // routed or linked from anywhere. Anyone who hits /jobs, /analytics,
 // etc. gets redirected to /fip.
+const DashboardHub = lazy(() => import("@/pages/dashboard-hub"));
 const FIP = lazy(() => import("@/pages/fip"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const Chat = lazy(() => import("@/pages/chat"));
 const AidePopout = lazy(() => import("@/pages/aide-popout"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
-import { Flame, Settings as SettingsIcon, type LucideIcon } from "lucide-react";
+import { Home, Flame, Settings as SettingsIcon, type LucideIcon } from "lucide-react";
 import AIDEAssistant from "@/components/AIDEAssistant";
 import CommandPalette from "@/components/CommandPalette";
 import { KeyboardCheatSheet } from "@/components/KeyboardCheatSheet";
@@ -68,9 +69,10 @@ interface NavItem {
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
-    label: "knowledge",
+    label: "toolkit",
     items: [
-      { path: "/fip", prefix: "{}", icon: Flame, label: "FIP Knowledge Base", exact: false },
+      { path: "/",    prefix: "~",  icon: Home,  label: "Dashboard", exact: true },
+      { path: "/fip", prefix: "{}", icon: Flame, label: "FIP" },
     ],
   },
   {
@@ -441,7 +443,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
  */
 function HomeRedirect() {
   const [, setLocation] = useLocation();
-  React.useEffect(() => { setLocation("/fip"); }, [setLocation]);
+  React.useEffect(() => { setLocation("/"); }, [setLocation]);
   return null;
 }
 
@@ -451,18 +453,17 @@ function Router() {
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Switch>
-          {/* Root redirects to FIP. The old Dashboard/Jobs/etc. pages
-              still exist on disk but aren't routed in the Dry Fire
-              technical-assistance pivot. */}
-          <Route path="/"><HomeRedirect /></Route>
+          {/* Root is the Fire Safety toolkit hub — grid of tools, FIP
+              live, rest marked 'soon'. */}
+          <Route path="/"><DashboardHub /></Route>
           <Route path="/fip"><FIP /></Route>
           <Route path="/settings"><SettingsPage /></Route>
           {/* Chat + popout kept because the AIDE PA tray can open a
               full-page or pop-out conversation for technical support. */}
           <Route path="/chat"><Chat /></Route>
           <Route path="/aide-popout"><AidePopout /></Route>
-          {/* Anything else (old bookmarks to /jobs, /analytics, …)
-              falls through to a redirect home. */}
+          {/* Any other path (old bookmarks to /jobs, /analytics, …)
+              falls through to the hub, no 404s. */}
           <Route><HomeRedirect /></Route>
         </Switch>
       </Suspense>

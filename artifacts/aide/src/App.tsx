@@ -6,34 +6,18 @@ import React, { lazy, Suspense, useState, createContext, useContext, useCallback
 import { ThemeProvider, useTheme, THEME_OPTIONS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-// Lazy-loaded pages for code splitting
-const Dashboard = lazy(() => import("@/pages/dashboard"));
-const Chat = lazy(() => import("@/pages/chat"));
-const PA = lazy(() => import("@/pages/pa"));
-const Jobs = lazy(() => import("@/pages/jobs"));
-const Notes = lazy(() => import("@/pages/notes"));
-const Toolbox = lazy(() => import("@/pages/toolbox"));
-const JobDetail = lazy(() => import("@/pages/job-detail"));
-const Schedule = lazy(() => import("@/pages/schedule"));
-const Scheduling = lazy(() => import("@/pages/scheduling"));
-const Todos = lazy(() => import("@/pages/todos"));
-const Projects = lazy(() => import("@/pages/projects"));
-const Operations = lazy(() => import("@/pages/operations"));
-const Suppliers = lazy(() => import("@/pages/suppliers"));
-const Analytics = lazy(() => import("@/pages/analytics"));
-const Metrics = lazy(() => import("@/pages/metrics"));
-const SettingsPage = lazy(() => import("@/pages/settings"));
-const PM = lazy(() => import("@/pages/pm"));
+// Pivot (2026-04-22): app is now focused purely on Dry Fire technical
+// assistance. Only FIP + Settings are exposed in the nav. Every other
+// page file remains on disk so this is reversible; they're simply not
+// routed or linked from anywhere. Anyone who hits /jobs, /analytics,
+// etc. gets redirected to /fip.
 const FIP = lazy(() => import("@/pages/fip"));
-const PurchaseOrders = lazy(() => import("@/pages/purchase-orders"));
+const SettingsPage = lazy(() => import("@/pages/settings"));
+const Chat = lazy(() => import("@/pages/chat"));
 const AidePopout = lazy(() => import("@/pages/aide-popout"));
 const NotFound = lazy(() => import("@/pages/not-found"));
-// All Lucide nav icons replaced with text-based prefixes
-import {
-  LayoutDashboard, Activity, BarChart3, Briefcase, Calendar, CheckSquare,
-  Receipt, Package, FolderKanban, Notebook, Flame, Users, Settings as SettingsIcon,
-  type LucideIcon,
-} from "lucide-react";
+
+import { Flame, Settings as SettingsIcon, type LucideIcon } from "lucide-react";
 import AIDEAssistant from "@/components/AIDEAssistant";
 import CommandPalette from "@/components/CommandPalette";
 import { KeyboardCheatSheet } from "@/components/KeyboardCheatSheet";
@@ -68,9 +52,10 @@ const queryClient = new QueryClient({
 });
 
 // Nav is the manager's hot loop: see jobs, dispatch, quote, invoice, reference.
-// Metrics folded into Analytics. PA moved to the bottom tray — no separate page.
-// Boards placeholder removed. Toolbox merges into Notes (same concept, one surface).
-// All removed pages keep their routes for deep links; only the nav shortcut is gone.
+// App is now a Dry Fire technical-assistance tool. Nav surfaces FIP
+// (the knowledge base) and Settings. Everything else has been removed
+// from the nav; old page files stay on disk for reversibility but aren't
+// routed — see the router below.
 interface NavItem {
   path: string;
   /** ASCII glyph shown only when theme=terminal. */
@@ -83,30 +68,14 @@ interface NavItem {
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
-    label: "cmd",
+    label: "knowledge",
     items: [
-      { path: "/",           prefix: "~",  icon: LayoutDashboard, label: "Dashboard", exact: true },
-      { path: "/operations", prefix: "::", icon: Activity,        label: "Operations" },
-      { path: "/analytics",  prefix: ">>", icon: BarChart3,       label: "Analytics" },
-    ],
-  },
-  {
-    label: "ops",
-    items: [
-      { path: "/jobs",            prefix: "--", icon: Briefcase,    label: "Jobs" },
-      { path: "/schedule",        prefix: "..", icon: Calendar,     label: "Schedule" },
-      { path: "/scheduling",      prefix: "?>", icon: Users,        label: "Scheduling" },
-      { path: "/todos",           prefix: "++", icon: CheckSquare,  label: "Tasks" },
-      { path: "/purchase-orders", prefix: "[]", icon: Receipt,      label: "POs" },
-      { path: "/suppliers",       prefix: "<>", icon: Package,      label: "Suppliers" },
-      { path: "/projects",        prefix: "//", icon: FolderKanban, label: "Projects" },
+      { path: "/fip", prefix: "{}", icon: Flame, label: "FIP Knowledge Base", exact: false },
     ],
   },
   {
     label: "sys",
     items: [
-      { path: "/notes",    prefix: "**", icon: Notebook,     label: "Notebook" },
-      { path: "/fip",      prefix: "{}", icon: Flame,        label: "FIP" },
       { path: "/settings", prefix: "./", icon: SettingsIcon, label: "Settings" },
     ],
   },
@@ -374,48 +343,21 @@ function SidebarNav() {
 
 function BottomNav() {
   const [location, setLocation] = useLocation();
-  const [moreOpen, setMoreOpen] = useState(false);
-  const PRIMARY_PATHS = ["/", "/pa", "/operations", "/analytics"];
-  const primaryItems = allNavItems.filter(i => PRIMARY_PATHS.includes(i.path));
-  const moreItems = allNavItems.filter(i => !PRIMARY_PATHS.includes(i.path));
-
   return (
-    <>
-      {moreOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden" onClick={() => setMoreOpen(false)}>
-          <div className="absolute bottom-16 left-0 right-0 bg-sidebar border-t border-sidebar-border rounded-t-2xl p-3 shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="grid grid-cols-4 gap-2">
-              {moreItems.map(item => (
-                <button key={item.path} onClick={() => { setLocation(item.path); setMoreOpen(false); }}
-                  className="flex flex-col items-center gap-1 py-2 rounded-xl text-sidebar-foreground/50 hover:text-primary transition-colors">
-                  <span className="font-mono text-[13px] leading-none text-sidebar-foreground/30">{item.prefix}</span>
-                  <span className="text-[8px] font-bold tracking-wider uppercase">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
-        <div className="flex items-center justify-around px-1 py-1.5 safe-area-inset-bottom">
-          {primaryItems.map((item) => {
-            const active = isActive(location, item);
-            return (
-              <button key={item.path} onClick={() => setLocation(item.path)}
-                className={cn("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]", active ? "text-primary" : "text-sidebar-foreground/35")}>
-                <span className={cn("font-mono text-[14px] leading-none", active ? "text-primary font-bold" : "opacity-60")}>{item.prefix}</span>
-                <span className="text-[9px] font-bold tracking-wider uppercase">{item.label}</span>
-              </button>
-            );
-          })}
-          <button onClick={() => setMoreOpen(v => !v)}
-            className={cn("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]", moreOpen ? "text-primary" : "text-sidebar-foreground/35")}>
-            <span className="font-mono text-[14px] leading-none">···</span>
-            <span className="text-[9px] font-bold tracking-wider uppercase">More</span>
-          </button>
-        </div>
-      </nav>
-    </>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
+      <div className="flex items-center justify-around px-1 py-1.5 safe-area-inset-bottom">
+        {allNavItems.map((item) => {
+          const active = isActive(location, item);
+          return (
+            <button key={item.path} onClick={() => setLocation(item.path)}
+              className={cn("flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-all duration-200", active ? "text-primary" : "text-sidebar-foreground/60")}>
+              <span className={cn("font-mono text-[14px] leading-none", active ? "text-primary font-bold" : "opacity-80")}>{item.prefix}</span>
+              <span className="text-[9px] font-bold tracking-wider uppercase">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
@@ -492,37 +434,36 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
+/**
+ * Redirect component for routes that no longer have their own page. Fires
+ * a one-shot setLocation on mount. Used for `/` and for any unknown path
+ * so the app always lands on the FIP knowledge base.
+ */
+function HomeRedirect() {
+  const [, setLocation] = useLocation();
+  React.useEffect(() => { setLocation("/fip"); }, [setLocation]);
+  return null;
+}
+
 function Router() {
   return (
     <Layout>
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Switch>
-          <Route path="/"><Dashboard /></Route>
-          <Route path="/pa"><PA /></Route>
-          {/* /chat is kept as the legacy read-only viewer for the
-              historical anthropic_conversations rows. The new PA
-              surface lives at /pa. */}
-          <Route path="/chat"><Chat /></Route>
-          <Route path="/aide-popout"><AidePopout /></Route>
-          <Route path="/operations"><Operations /></Route>
-          <Route path="/analytics"><Analytics /></Route>
-          <Route path="/metrics"><Metrics /></Route>
-          <Route path="/schedule"><Schedule /></Route>
-          <Route path="/scheduling"><Scheduling /></Route>
-          <Route path="/jobs"><Jobs /></Route>
-          <Route path="/jobs/:id"><JobDetail /></Route>
-          <Route path="/purchase-orders"><PurchaseOrders /></Route>
-          <Route path="/notes"><Notes /></Route>
-          <Route path="/todos"><Todos /></Route>
-          <Route path="/projects"><Projects /></Route>
-          <Route path="/boards"><PM /></Route>
-          <Route path="/boards/:id"><PM /></Route>
-          <Route path="/toolbox"><Toolbox /></Route>
-          <Route path="/suppliers"><Suppliers /></Route>
+          {/* Root redirects to FIP. The old Dashboard/Jobs/etc. pages
+              still exist on disk but aren't routed in the Dry Fire
+              technical-assistance pivot. */}
+          <Route path="/"><HomeRedirect /></Route>
           <Route path="/fip"><FIP /></Route>
           <Route path="/settings"><SettingsPage /></Route>
-          <Route><NotFound /></Route>
+          {/* Chat + popout kept because the AIDE PA tray can open a
+              full-page or pop-out conversation for technical support. */}
+          <Route path="/chat"><Chat /></Route>
+          <Route path="/aide-popout"><AidePopout /></Route>
+          {/* Anything else (old bookmarks to /jobs, /analytics, …)
+              falls through to a redirect home. */}
+          <Route><HomeRedirect /></Route>
         </Switch>
       </Suspense>
       </ErrorBoundary>

@@ -39,6 +39,13 @@ const TOOLS: Tool[] = [
     href: "/fip",
   },
   {
+    key: "fault-finding",
+    icon: Wrench,
+    title: "Fault Finding",
+    description: "Realistic field troubleshooting for shorts, opens, comms, alarms.",
+    href: "/fault-finding",
+  },
+  {
     key: "standards",
     icon: BookOpen,
     title: "AS Standards",

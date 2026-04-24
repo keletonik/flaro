@@ -12,7 +12,7 @@
 import { useLocation } from "wouter";
 import {
   Flame, Calculator, BookOpen, ClipboardCheck, Gauge, Wrench,
-  Zap, Wifi, Siren, Waves, CircuitBoard, FileText,
+  Zap, Wifi, Siren, Waves, CircuitBoard, FileText, GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -44,6 +44,13 @@ const TOOLS: Tool[] = [
     title: "Fault Finding",
     description: "Realistic field troubleshooting for shorts, opens, comms, alarms.",
     href: "/fault-finding",
+  },
+  {
+    key: "training",
+    icon: GraduationCap,
+    title: "Training",
+    description: "Field-voice learning tracks for FIP, VESDA and EWIS.",
+    href: "/training",
   },
   {
     key: "standards",

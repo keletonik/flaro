@@ -13,7 +13,8 @@
 import { useMemo, useState } from "react";
 import {
   Cpu, Info, AlertTriangle, Wrench, BookOpen, ExternalLink,
-  ChevronRight, ChevronDown, ShieldCheck, Factory, type LucideIcon,
+  ChevronRight, ChevronDown, ShieldCheck, Factory, Search,
+  type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
@@ -354,23 +355,71 @@ function BrandRail({
   );
 }
 
+// ── Sorting + search ────────────────────────────────────────────────────
+
+const STATUS_ORDER: Record<LifecycleStatus, number> = {
+  current: 0,
+  legacy: 1,
+  discontinued: 2,
+};
+
+function sortModels(models: PanelModel[]): PanelModel[] {
+  return [...models].sort((a, b) => {
+    const s = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+    if (s !== 0) return s;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+function brandMatchesQuery(brand: Brand, query: string, brandModels: PanelModel[]): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  if (brand.name.toLowerCase().includes(q)) return true;
+  if (brand.productLines.some((p) => p.toLowerCase().includes(q))) return true;
+  return brandModels.some((m) => m.name.toLowerCase().includes(q));
+}
+
 // ── Page ────────────────────────────────────────────────────────────────
 
 export default function Panels() {
   const [activeBrandId, setActiveBrandId] = useState<string>(BRANDS[0]?.id ?? "");
-  const activeBrand = BRANDS.find((b) => b.id === activeBrandId);
-  const models = modelsForBrand(activeBrandId);
+  const [query, setQuery] = useState("");
+
+  const visibleBrands = useMemo(() => {
+    if (!query) return BRANDS;
+    return BRANDS.filter((b) => brandMatchesQuery(b, query, modelsForBrand(b.id)));
+  }, [query]);
+
+  // If the current brand is filtered out, jump to the first visible brand.
+  const effectiveBrandId =
+    visibleBrands.find((b) => b.id === activeBrandId)?.id ?? visibleBrands[0]?.id ?? "";
+
+  const activeBrand = BRANDS.find((b) => b.id === effectiveBrandId);
+  const allBrandModels = sortModels(modelsForBrand(effectiveBrandId));
+
+  // Within the active brand, prefer models matching the query when one is set.
+  const visibleModels = useMemo(() => {
+    if (!query) return allBrandModels;
+    const q = query.toLowerCase();
+    const matches = allBrandModels.filter((m) => m.name.toLowerCase().includes(q));
+    return matches.length > 0 ? matches : allBrandModels;
+  }, [allBrandModels, query]);
+
   const [activeModelId, setActiveModelId] = useState<string | null>(
-    models[0]?.id ?? null,
+    allBrandModels[0]?.id ?? null,
   );
+
+  // Keep the selected model in sync with whichever models are currently shown.
+  const effectiveModelId =
+    visibleModels.find((m) => m.id === activeModelId)?.id ?? visibleModels[0]?.id ?? null;
 
   function handleBrandChange(id: string) {
     setActiveBrandId(id);
-    const next = modelsForBrand(id);
+    const next = sortModels(modelsForBrand(id));
     setActiveModelId(next[0]?.id ?? null);
   }
 
-  const activeModel = models.find((m) => m.id === activeModelId);
+  const activeModel = visibleModels.find((m) => m.id === effectiveModelId);
 
   return (
     <div className="flex-1 min-w-0 min-h-screen bg-background">
@@ -381,7 +430,7 @@ export default function Panels() {
       />
 
       <div className="px-4 sm:px-6 py-5 max-w-[1400px]">
-        <div className="rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2 mb-5">
+        <div className="rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2 mb-4">
           <p className="text-[12px] leading-relaxed text-foreground/90">
             Architectural reference authored in tech voice. The panel's
             current installation and programming manual is always the
@@ -389,16 +438,42 @@ export default function Panels() {
           </p>
         </div>
 
+        <div className="relative max-w-lg mb-5">
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search brand, model or product line..."
+            className="w-full rounded-md border border-border bg-card pl-9 pr-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30"
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-[240px_240px_1fr] gap-5">
           <aside>
             <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2 px-1">
               Brands
+              {query && visibleBrands.length !== BRANDS.length && (
+                <span className="ml-2 text-muted-foreground/70 tabular-nums">
+                  {visibleBrands.length} / {BRANDS.length}
+                </span>
+              )}
             </div>
-            <BrandRail
-              brands={BRANDS}
-              activeId={activeBrandId}
-              onSelect={handleBrandChange}
-            />
+            {visibleBrands.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border/70 bg-card/30 p-4 text-center">
+                <p className="font-mono text-[11px] text-muted-foreground">
+                  No brands match.
+                </p>
+              </div>
+            ) : (
+              <BrandRail
+                brands={visibleBrands}
+                activeId={effectiveBrandId}
+                onSelect={handleBrandChange}
+              />
+            )}
           </aside>
 
           <aside>
@@ -406,8 +481,8 @@ export default function Panels() {
               Models
             </div>
             <ModelList
-              models={models}
-              activeId={activeModelId}
+              models={visibleModels}
+              activeId={effectiveModelId}
               onSelect={setActiveModelId}
             />
           </aside>

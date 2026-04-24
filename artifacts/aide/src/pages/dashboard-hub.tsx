@@ -12,8 +12,8 @@
 import { useLocation } from "wouter";
 import {
   Flame, Calculator, BookOpen, ClipboardCheck, Gauge, Wrench,
-  Zap, Wifi, Siren, Waves, CircuitBoard, FileText,
-  type LucideIcon,
+  Zap, Wifi, Siren, Waves, CircuitBoard, FileText, GraduationCap,
+  Cpu, type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,27 @@ const TOOLS: Tool[] = [
     title: "FIP Knowledge Base",
     description: "Manufacturers, panel models, standards, fault codes, datasheets.",
     href: "/fip",
+  },
+  {
+    key: "fault-finding",
+    icon: Wrench,
+    title: "Fault Finding",
+    description: "Realistic field troubleshooting for shorts, opens, comms, alarms.",
+    href: "/fault-finding",
+  },
+  {
+    key: "training",
+    icon: GraduationCap,
+    title: "Training",
+    description: "Field-voice learning tracks for FIP, VESDA and EWIS.",
+    href: "/training",
+  },
+  {
+    key: "panels",
+    icon: Cpu,
+    title: "Panels",
+    description: "Brand and model reference for Pertronic, Ampac, Fire Sense and more.",
+    href: "/panels",
   },
   {
     key: "standards",

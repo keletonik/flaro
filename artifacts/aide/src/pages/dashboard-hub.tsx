@@ -13,7 +13,7 @@ import { useLocation } from "wouter";
 import {
   Flame, Calculator, BookOpen, ClipboardCheck, Gauge, Wrench,
   Zap, Wifi, Siren, Waves, CircuitBoard, FileText, GraduationCap,
-  type LucideIcon,
+  Cpu, type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
@@ -51,6 +51,13 @@ const TOOLS: Tool[] = [
     title: "Training",
     description: "Field-voice learning tracks for FIP, VESDA and EWIS.",
     href: "/training",
+  },
+  {
+    key: "panels",
+    icon: Cpu,
+    title: "Panels",
+    description: "Brand and model reference for Pertronic, Ampac, Fire Sense and more.",
+    href: "/panels",
   },
   {
     key: "standards",

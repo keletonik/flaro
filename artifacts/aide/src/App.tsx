@@ -15,6 +15,7 @@ const DashboardHub = lazy(() => import("@/pages/dashboard-hub"));
 const FIP = lazy(() => import("@/pages/fip"));
 const FaultFinding = lazy(() => import("@/pages/fault-finding"));
 const Training = lazy(() => import("@/pages/training"));
+const Panels = lazy(() => import("@/pages/panels"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const Chat = lazy(() => import("@/pages/chat"));
 const AidePopout = lazy(() => import("@/pages/aide-popout"));
@@ -461,6 +462,7 @@ function Router() {
           <Route path="/fip"><FIP /></Route>
           <Route path="/fault-finding"><FaultFinding /></Route>
           <Route path="/training"><Training /></Route>
+          <Route path="/panels"><Panels /></Route>
           <Route path="/settings"><SettingsPage /></Route>
           {/* Chat + popout kept because the AIDE PA tray can open a
               full-page or pop-out conversation for technical support. */}

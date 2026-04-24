@@ -124,11 +124,17 @@ export const BRANDS: Brand[] = [
   },
   {
     id: "fire-sense",
-    name: "Fire Sense",
+    name: "FireSense",
     country: "Australia",
     marketNote:
-      "AU-based supplier with a focus on conventional and small addressable panels. Common on smaller commercial and residential fit-outs.",
-    productLines: ["SenseKey conventional range", "SenseKey addressable range"],
+      "AU-based supplier with a focus on conventional fire panels, EWIS, gas control and a full range of detectors and field devices. Common on smaller commercial and industrial fit-outs.",
+    productLines: [
+      "1600 Series conventional panel",
+      "Addressable panel range",
+      "EWIS / OWS systems",
+      "Gas control panels",
+      "VESDA accessories",
+    ],
     strengths: [
       "Straightforward conventional panels suited to smaller sites.",
       "AU stock availability reduces lead times on common models.",
@@ -144,61 +150,243 @@ export const BRANDS: Brand[] = [
   },
   {
     id: "incite",
-    name: "Incite",
+    name: "Incite Fire",
     country: "Australia",
     marketNote:
-      "AU panel brand encountered on smaller commercial, industrial and retrofit sites. Lower-profile than Pertronic and Ampac but present in the installed base.",
-    productLines: ["Incite conventional panels", "Incite addressable panels"],
+      "AU distributor and system integrator based in Sydney with offices in Melbourne, Brisbane and Perth. Incite is not a panel manufacturer - on an Incite-supplied site the tech typically finds Kentec panels running the Hochiki ESP protocol, Hochiki detection, Securiton aspirating, and QE90 EWIS.",
+    productLines: [
+      "Kentec Syncro AS (addressable)",
+      "Kentec Taktis (addressable)",
+      "Conventional panels (rebranded / customised)",
+      "Hochiki detection range",
+      "Securiton aspirating",
+      "QE90 EWIS",
+    ],
     strengths: [
-      "Locally supported with AU-based technical help for installed sites.",
+      "National footprint with a Sydney assembly facility and AU-based technical support for the distributed brands.",
+      "Hochiki ESP is a well-supported protocol with a broad device ecosystem.",
     ],
     gotchas: [
-      "Public technical information is limited compared to majors - always work from the site-supplied manual, not third-party summaries.",
-      "Confirm approval status and current certifying laboratory for the specific model before any type-sensitive work.",
+      "Always identify the underlying panel brand on the plate before ordering spares - Incite is the supplier, not the manufacturer.",
+      "Kentec firmware and programming tools differ between Syncro AS and Taktis - do not assume parts or procedures interchange.",
+      "Confirm protocol on the loop before fitting detectors - Kentec panels support multiple protocols and the loop card is protocol-specific.",
     ],
     supportNote:
-      "Contact Incite directly for current manuals, firmware and spares. Treat third-party sources as non-authoritative.",
-    officialSite: "",
-    confidence: "pending",
+      "Route technical questions through Incite for AU-distributed Kentec and Hochiki products. For Kentec-specific programming, the Kentec manual for the installed revision is authoritative.",
+    officialSite: "https://www.incitefire.com.au",
+    confidence: "general",
   },
   {
     id: "fusion",
-    name: "Fusion",
+    name: "Fusion Fire Systems",
     country: "Australia",
     marketNote:
-      "AU panel manufacturer seen on commercial and institutional sites. Product mix includes conventional and addressable hardware.",
-    productLines: ["Fusion conventional panels", "Fusion addressable panels"],
+      "AU panel manufacturer formed in 2012 with UK-based Advanced as a major shareholder. Product mix centres on the AXIS AU 5000 analogue addressable range.",
+    productLines: [
+      "AXIS AU 5000 (1-4 loop analogue addressable)",
+      "AU 5000M-EX (Advanced protocol, auto-learn addressing)",
+      "Conventional panel range",
+      "Gas detection panels",
+    ],
     strengths: [
-      "AU-based manufacturer with local product support.",
+      "AXIS AU 5000 complies with EN 54-13, AS 1670.1:2018 and NZS 4512:2010.",
+      "Auto-learn addressing reduces commissioning time on the AU 5000M-EX.",
+      "Rack-mount cabinet options to suit a range of site footprints.",
     ],
     gotchas: [
-      "Model names and firmware have evolved across generations - always cross-check against the panel plate, not memory.",
-      "Specification detail is model-specific; do not assume cross-compatibility across the range without verifying.",
+      "Confirm the protocol running on the loop card before swapping devices - the AU 5000 range has supported more than one protocol across revisions.",
+      "Firmware across AXIS AU 5000 generations is not interchangeable; check the version on the panel plate before pulling a manual.",
     ],
     supportNote:
-      "Source current manuals, wiring diagrams and firmware directly from the manufacturer. Keep the site commissioning pack with the panel.",
-    officialSite: "",
-    confidence: "pending",
+      "Fusion Fire Systems AU directly, or through authorised distributors. Keep the site commissioning pack with the panel for tool and protocol identification.",
+    officialSite: "https://fusionfire.com.au",
+    confidence: "general",
   },
   {
     id: "brooks",
-    name: "Brooks",
+    name: "Brooks Australia",
     country: "Australia",
     marketNote:
-      "Best known in AU for smoke alarms and ancillary detection. Encountered on residential and small-commercial fire work; FIP range is narrower than the specialist manufacturers.",
-    productLines: ["Brooks detection range", "Brooks alarm panels"],
+      "Long-standing AU supplier best known for residential and small-commercial smoke alarms and Residential Fire Panels. Present on NSW apartment buildings and boarding houses where AS 3786 residential detection is the specification.",
+    productLines: [
+      "RFP V2 Series Residential Fire Panel",
+      "RFP12 / RFP18 Residential Fire Panel (legacy)",
+      "RFP6 Residential Fire Panel (legacy)",
+      "230 V photoelectric smoke alarms (interconnected)",
+      "RadioLINK wireless smoke alarm modules",
+    ],
     strengths: [
-      "Wide AU distribution for detection and alarm products.",
-      "Strong residential presence gives techs familiarity with the device range.",
+      "Full residential-class product set, commonly specified on Class 2 and Class 3 buildings under NCC.",
+      "AS 3786:2014 compliant smoke alarm range.",
+      "Wide AU distribution through electrical wholesalers.",
     ],
     gotchas: [
-      "Do not assume domestic detector wiring conventions apply to commercial FIPs - always read the current installation manual.",
-      "Product range has evolved; confirm current supported models before ordering spares or swapping hardware.",
+      "RFP panels are residential-class fire indicator panels; do not specify or wire them as AS 7240 commercial FIPs.",
+      "Legacy RFP6 and RFP12/18 have documentation and spares distinct from the current RFP V2 - confirm the exact model on the panel plate.",
+      "Interconnected smoke alarms still need a plan for power-fail behaviour; confirm base type and battery backup arrangement.",
     ],
     supportNote:
-      "Brooks Australia technical support is the authoritative source for current product information, manuals and firmware.",
+      "Brooks Australia technical support is the authoritative source for RFP manuals, current product spec and firmware.",
     officialSite: "https://www.brooks.com.au",
-    confidence: "pending",
+    confidence: "general",
+  },
+  {
+    id: "vigilant",
+    name: "Vigilant (Johnson Controls)",
+    country: "Australia / Global",
+    marketNote:
+      "Very common across NSW commercial, government and institutional sites. Distributed in AU by FlameStop and through Wormald service. The MX1 is the workhorse analogue-addressable panel on a huge proportion of mid-to-large NSW buildings.",
+    productLines: [
+      "MX1 Fire Indicator Panel (analogue addressable)",
+      "T-Gen tone generator (EWIS)",
+      "FP0927 / FP0948 cabinet variants",
+      "Vigilant advanced distributed-computer FIP platforms",
+    ],
+    strengths: [
+      "MX1 is AS 4428.3 and AS 7240.4 compliant and widely specified in NSW tender documents.",
+      "Networkable via I-Hub RS485 / fibre or PIB IP communications module.",
+      "Up to 40 Ah of backup battery supported in the standard cabinet.",
+    ],
+    gotchas: [
+      "Confirm the exact MX1 firmware revision before commissioning or config changes - tools and behaviour differ across revisions.",
+      "The MX protocol loop is specific to the MX device family - do not mix non-MX devices without an approved interface module.",
+      "Networking topology and addressing must be designed up-front; do not retrofit networking onto a live MX1 without proper planning.",
+    ],
+    supportNote:
+      "Johnson Controls ANZ Tyco Safety Products for current MX1 documentation and firmware. FlameStop is the principal AU distributor. Wormald carries service history on a large slice of the installed base.",
+    officialSite: "https://www.johnsoncontrols.com.au",
+    confidence: "general",
+  },
+  {
+    id: "simplex",
+    name: "Simplex (Johnson Controls)",
+    country: "USA / Global",
+    marketNote:
+      "Encountered on larger NSW commercial and institutional sites, particularly where voice-evacuation is specified. AU-programming-guide exists for the 4100ES and 4010ES complying with AS 4428.1.",
+    productLines: [
+      "4010ES Addressable Fire Alarm Control Unit",
+      "4100ES Fire Alarm Control Unit",
+      "TrueAlarm addressable sensors",
+      "TrueAlert ES notification appliances",
+    ],
+    strengths: [
+      "4100ES supports networked voice evacuation at scale across multi-building campuses.",
+      "4010ES is a strong fit for mid-size buildings up to around 1000 points.",
+      "Programming guides are published with AU-specific compliance notes.",
+    ],
+    gotchas: [
+      "Simplex programming tools are licensed per-technician and version-matched to the panel firmware - plan tool access before site attendance.",
+      "Device compatibility is tightly scoped to the TrueAlarm and TrueAlert ES families - substituting non-approved devices invalidates type approval.",
+      "AU-specific programming differs from the US defaults; always use the AU programming guide for NSW sites.",
+    ],
+    supportNote:
+      "Johnson Controls Simplex division for current documentation, firmware and training. AU programming guides and approvals are available through JCI ANZ.",
+    officialSite: "https://www.simplexfire.com",
+    confidence: "general",
+  },
+  {
+    id: "notifier",
+    name: "Notifier (Honeywell)",
+    country: "USA / Global",
+    marketNote:
+      "Global Honeywell brand present on NSW commercial and institutional work. ONYX Series panels are the most-seen deployments in AU.",
+    productLines: [
+      "NFS2-640 (ONYX, mid-size)",
+      "NFS2-3030 (ONYX, large)",
+      "NOTI-FIRE-NET networking",
+      "ONYX Intelligent Sensing detector range",
+    ],
+    strengths: [
+      "NFS2-3030 scales up to 3180 addressable devices across 10 SLCs on a single panel.",
+      "NOTI-FIRE-NET supports campus-scale networked installations.",
+      "ONYX Intelligent Sensing reduces nuisance alarms via advanced drift compensation.",
+    ],
+    gotchas: [
+      "Not every Notifier accessory is AU-approved; confirm ActivFire listing before specifying devices on a new NSW project.",
+      "Firmware updates on ONYX Series panels must be performed with the correct license and programming tool - not a field task without authorisation.",
+    ],
+    supportNote:
+      "Honeywell Building Solutions AU for current Notifier product information, firmware and training. Route technical escalations through Honeywell's AU distribution network.",
+    officialSite: "https://buildings.honeywell.com/us/en/brands/our-brands/notifier",
+    confidence: "general",
+  },
+  {
+    id: "morley-ias",
+    name: "Morley-IAS (Honeywell)",
+    country: "UK / Global",
+    marketNote:
+      "Honeywell's UK-origin addressable range. Seen on smaller NSW commercial sites where a cost-effective Honeywell platform is specified over Notifier.",
+    productLines: [
+      "DXc / DXc2 (small-to-medium addressable)",
+      "ZXSe (scalable addressable)",
+      "DXc Network card (peer-to-peer networking)",
+    ],
+    strengths: [
+      "AUTOLEARN feature auto-discovers loop devices and speeds commissioning.",
+      "DXc peer-to-peer networking supports shared zone and keyboard operation across panels.",
+      "Modular, scalable hardware with a small footprint for tenant-fit-out work.",
+    ],
+    gotchas: [
+      "Public AU-specific documentation is thinner than for Notifier; confirm ActivFire approvals for the specific model revision.",
+      "Protocol compatibility with third-party devices is limited - use the Morley-IAS detection family unless the manual lists an approved alternative.",
+    ],
+    supportNote:
+      "Honeywell Building Solutions AU and the UK Morley-IAS documentation set. Cross-check any AU-approval claim against the current ActivFire register.",
+    officialSite: "https://www.morley-ias.co.uk",
+    confidence: "general",
+  },
+  {
+    id: "flamestop",
+    name: "FlameStop Australia",
+    country: "Australia",
+    marketNote:
+      "Largest independent AU fire-equipment manufacturer and wholesaler. Carries own-brand conventional and addressable panels (PFS200, FlameStop conventional series) and distributes EST3X addressable and Vigilant MX1.",
+    productLines: [
+      "FlameStop PFS200 addressable panel range",
+      "FlameStop conventional fire alarm panel series",
+      "EST3X addressable systems (distributed)",
+      "Vigilant MX1 (distributed)",
+    ],
+    strengths: [
+      "National distribution network with a Sydney head office; strong NSW coverage.",
+      "Own-brand conventional panels compliant with AS 1670.1 (2004 and 2015 editions).",
+      "Multiple brands under one roof means one supplier call often resolves cross-brand compatibility questions.",
+    ],
+    gotchas: [
+      "Identify which underlying brand a FlameStop-supplied panel belongs to before ordering spares - FlameStop is both a manufacturer and a distributor.",
+      "FlameStop-branded and third-party-branded panels use different documentation - do not cross-apply manuals.",
+    ],
+    supportNote:
+      "FlameStop AU technical support for own-brand (PFS200, FlameStop conventional). For distributed brands (EST3X, Vigilant), escalate to the manufacturer's AU support.",
+    officialSite: "https://www.flamestop.com.au",
+    confidence: "general",
+  },
+  {
+    id: "kentec-hochiki",
+    name: "Kentec / Hochiki",
+    country: "UK (Kentec) / Japan (Hochiki)",
+    marketNote:
+      "Kentec panels running the Hochiki ESP protocol, with Hochiki detection, are distributed nationally in AU by Incite Fire. Encountered on NSW small-to-medium commercial and institutional sites where cost-effective addressable detection is specified.",
+    productLines: [
+      "Kentec Syncro AS (1 or 2 loop analogue addressable)",
+      "Kentec Taktis (multi-loop addressable)",
+      "Hochiki ESP analogue sensors",
+      "Hochiki addressable field modules",
+    ],
+    strengths: [
+      "Multi-protocol Kentec panels support Apollo, Argus Vega and Hochiki detection.",
+      "Hochiki ESP is a mature protocol with a broad AU-approved device ecosystem.",
+      "Compact single-loop Syncro AS suits small sites; Taktis scales up without a protocol change.",
+    ],
+    gotchas: [
+      "Protocol must match the loop card - the same Kentec chassis supports multiple protocols but not simultaneously on one loop.",
+      "Syncro AS and Taktis use different programming software and firmware families - do not assume tool interchange.",
+      "Hochiki Australia's own AS-approved detectors are the safer choice for compatibility - verify against the approvals register.",
+    ],
+    supportNote:
+      "Incite Fire for AU distribution and technical support. Kentec UK and Hochiki Australia for manufacturer-level documentation.",
+    officialSite: "https://www.kentec.co.uk",
+    confidence: "general",
   },
 ];
 export const MODELS: PanelModel[] = [
@@ -311,11 +499,11 @@ export const MODELS: PanelModel[] = [
     brandId: "pertronic",
     name: "F120A",
     category: "addressable",
-    status: "current",
+    status: "discontinued",
     capacity:
-      "Addressable panel sized for mid-range commercial sites. Loop and device capacity specified in the current datasheet.",
+      "Addressable panel sized for mid-range commercial sites. Discontinued in 2021 and superseded by the F220; still present across the installed base.",
     summary:
-      "Mid-range addressable platform. Common on commercial offices and mixed-use buildings where F220 scale is not required.",
+      "Legacy mid-range addressable panel now found on maintenance sites. New projects specify the F220 in its place.",
     commissioningNotes: [
       "Program device addresses and labels to match the site schedule before energising the loop.",
       "Set cause-and-effect to match the approved fire engineering report; do not assume defaults fit the site.",
@@ -492,12 +680,12 @@ export const MODELS: PanelModel[] = [
     id: "pertronic-f1",
     brandId: "pertronic",
     name: "F1",
-    category: "addressable",
+    category: "conventional",
     status: "legacy",
     capacity:
-      "Compact single-loop addressable panel. Encountered on older small-site installations.",
+      "Compact conventional panel. Encountered on smaller older installations across AU and NZ.",
     summary:
-      "Legacy Pertronic single-loop panel still present on maintenance rounds. Confirm firmware and supported device families from the manual before any hardware change.",
+      "Legacy Pertronic conventional panel still present on maintenance rounds. Confirm firmware and supported device families from the manual before any hardware change.",
     commissioningNotes: [
       "Treat as a legacy panel - confirm firmware and tool compatibility before connecting.",
       "Back up the configuration first; legacy configs are often poorly documented on site.",
@@ -803,15 +991,15 @@ export const MODELS: PanelModel[] = [
 
   // ── Fire Sense ──────────────────────────────────────────────────────
   {
-    id: "fire-sense-sensekey-conv",
+    id: "fire-sense-1600",
     brandId: "fire-sense",
-    name: "SenseKey (conventional)",
+    name: "1600 Series (conventional)",
     category: "conventional",
     status: "current",
     capacity:
-      "Conventional zone panel for small-to-mid commercial sites. Zone count per current datasheet.",
+      "8-zone conventional panel expandable to 16 zones, 650 mm cabinet, 80-character LCD with programmable zone descriptors.",
     summary:
-      "Fire Sense conventional panel in the SenseKey range. Common on smaller commercial and residential fit-outs.",
+      "FireSense's 1600 Series conventional panel. Common on smaller NSW commercial and industrial fit-outs where a straightforward zone panel meets the brief.",
     commissioningNotes: [
       "Fit correct EOL values as specified in the panel manual. Do not substitute values from other brands.",
       "Witness-test each zone with the operator. Confirm brigade output and sounder circuits per AS 1670.",
@@ -856,8 +1044,671 @@ export const MODELS: PanelModel[] = [
       },
     ],
     manualHint:
-      "Obtain the current SenseKey conventional panel manual direct from Fire Sense for the installed revision.",
-    confidence: "pending",
+      "Obtain the current 1600 Series conventional panel manual direct from FireSense for the installed revision.",
+    confidence: "general",
+  },
+
+  // ── Vigilant / Johnson Controls ────────────────────────────────────
+  {
+    id: "vigilant-mx1",
+    brandId: "vigilant",
+    name: "MX1",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "Analogue addressable panel, up to 250 MX devices per loop, single- or multi-loop variants. 5 A or 14 A integrated PSU, up to 40 Ah battery capacity in the standard cabinet.",
+    summary:
+      "Networkable multi-loop analogue addressable panel complying with AS 7240.2, AS 7240.4 and AS 4428.3. One of the most commonly encountered FIPs across NSW commercial and institutional sites.",
+    commissioningNotes: [
+      "Program MX device addresses against the site schedule before energising the loop. Use the approved MX1 programming tool matched to the installed firmware.",
+      "Plan networking topology up-front - I-Hub RS485/fibre or PIB IP module is a hardware choice, not a later toggle.",
+      "Witness-test every zone with the operator; record brigade signalling interactions in the commissioning pack.",
+    ],
+    wiringQuirks: [
+      "MX loop cabling follows the documented loop-loading envelope - do not assume other brands' conventions apply.",
+      "I-Hub networking uses its own cable plant separate from the loop wiring - keep physically separated in the cabinet.",
+      "Earth shielded loop cable at the panel end only unless the installation manual explicitly calls out otherwise.",
+    ],
+    programmingNotes: [
+      "Back up the site configuration before any change. Keep a copy on the site record and off-site.",
+      "MX device labelling carries across from design - invest the time up front to match the as-built exactly.",
+      "Network-level changes affect every connected panel; plan and stage them rather than making ad-hoc edits.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck:
+          "Isolate the affected loop and megger each conductor to earth. Damp J-boxes and damaged insulation are the usual cause.",
+      },
+      {
+        code: "LOOP FAULT",
+        meaning: "MX loop integrity compromised - specific detail in the event log.",
+        firstCheck:
+          "Read the event log for the reporting device or isolator; bisect the loop from that point.",
+      },
+      {
+        code: "DEVICE MISSING",
+        meaning: "An MX device has stopped responding to polls.",
+        firstCheck:
+          "Confirm the physical device, its programmed address, and the state of the upstream isolator.",
+      },
+      {
+        code: "NETWORK FAULT",
+        meaning: "Inter-panel or head-end comms failed.",
+        firstCheck:
+          "Check the I-Hub / PIB status LEDs, confirm network cabling, and verify topology matches the site design.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test under a simulated alarm; replace as a matched pair if out of spec.",
+      },
+      {
+        code: "BRIGADE COMMS FAULT",
+        meaning: "ASE or monitoring path has failed polling.",
+        firstCheck:
+          "Check signalling unit status and confirm the last successful poll with the monitoring station.",
+      },
+      {
+        code: "SOUNDER CIRCUIT FAULT",
+        meaning: "Open or short on a monitored output circuit.",
+        firstCheck:
+          "Disconnect at the panel and measure; compare against the documented EOL value.",
+      },
+    ],
+    manualHint:
+      "Refer to the current Vigilant MX1 installation and commissioning manual matched to the firmware on the panel plate. Johnson Controls ANZ is the authoritative source.",
+    confidence: "general",
+  },
+
+  // ── Simplex / Johnson Controls ─────────────────────────────────────
+  {
+    id: "simplex-4010es",
+    brandId: "simplex",
+    name: "4010ES",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "Addressable, networkable fire alarm control unit. Up to approximately 1000 points per panel, suited to mid-size commercial sites.",
+    summary:
+      "Simplex's mid-range addressable control unit. Encountered on NSW commercial buildings where Simplex is the specified platform.",
+    commissioningNotes: [
+      "Use the approved Simplex ES programming tool licensed to the panel firmware. Tool and firmware must match exactly.",
+      "Follow the AU-specific programming guide (AS 4428.1) for NSW deployments rather than the US defaults.",
+      "Witness-test every zone with the operator and record the commissioning pack at handover.",
+    ],
+    wiringQuirks: [
+      "TrueAlarm sensor and TrueAlert ES notification wiring follows Simplex-specific conventions - do not assume other brands' rules.",
+      "Networking between 4010ES panels uses Simplex-specific protocols that demand careful cable plant planning.",
+    ],
+    programmingNotes: [
+      "Back up the configuration file before any change; keep the backup under version control.",
+      "Point types in the programming tool map to physical behaviours - selecting the wrong type changes alarm response.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate affected circuits and megger to earth.",
+      },
+      {
+        code: "SLC FAULT",
+        meaning: "Signalling Line Circuit integrity lost - addressable loop equivalent.",
+        firstCheck:
+          "Read the event log for the reporting device and bisect the SLC to localise the fault.",
+      },
+      {
+        code: "DEVICE MISSING",
+        meaning: "Addressable device no longer responding to polls.",
+        firstCheck:
+          "Confirm the physical device, the programmed address and any isolators between panel and device.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; replace as a matched pair.",
+      },
+      {
+        code: "NAC FAULT",
+        meaning: "Notification Appliance Circuit open or short.",
+        firstCheck: "Measure across the NAC at the panel and compare against the documented EOL value.",
+      },
+    ],
+    manualHint:
+      "Refer to the Simplex 4010ES installation and programming manual for the installed firmware, plus the AU programming guide.",
+    confidence: "general",
+  },
+  {
+    id: "simplex-4100es",
+    brandId: "simplex",
+    name: "4100ES",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "Large-scale addressable fire alarm control unit. Supports up to approximately 3000 addressable points, networked voice notification, and multi-hazard release control per the current datasheet.",
+    summary:
+      "Simplex flagship addressable platform for large NSW sites with voice evacuation and networked campus deployments.",
+    commissioningNotes: [
+      "Voice notification commissioning is specialist work - confirm the zoning plan and messaging schedule before recording any custom audio.",
+      "Use the licensed AU-specific programming tool. The AU programming guide differs materially from US defaults.",
+      "Network topology must be planned and documented; retrofitting network changes to a live 4100ES is high-risk.",
+    ],
+    wiringQuirks: [
+      "Voice notification circuits carry their own wiring requirements distinct from conventional NACs.",
+      "Cross-panel networking uses Simplex-specific hardware - do not substitute generic network kit.",
+    ],
+    programmingNotes: [
+      "Version-control every configuration change; keep the backup file accessible to the next tech on site.",
+      "Treat AU point-type defaults as the starting position; US-sourced config examples can mislead on AS 4428.1 compliance.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate affected circuits and megger to earth.",
+      },
+      {
+        code: "SLC FAULT",
+        meaning: "SLC integrity lost on one of the panel's loops.",
+        firstCheck: "Read the event log for the specific SLC and reporting device; bisect to localise.",
+      },
+      {
+        code: "NETWORK FAULT",
+        meaning: "Inter-panel network comms failed.",
+        firstCheck:
+          "Verify network cabling at both ends and confirm topology matches the site design.",
+      },
+      {
+        code: "VOICE CIRCUIT FAULT",
+        meaning: "Voice notification amplifier or circuit fault.",
+        firstCheck:
+          "Check the amplifier status, confirm the speaker circuit impedance, verify total load against amp rating.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test under simulated alarm; replace as a matched pair.",
+      },
+    ],
+    manualHint:
+      "Refer to the Simplex 4100ES ES Panel Programmer's Manual (panel-firmware matched) plus the AU programming guide LT0400.",
+    confidence: "general",
+  },
+
+  // ── Notifier (Honeywell) ───────────────────────────────────────────
+  {
+    id: "notifier-nfs2-640",
+    brandId: "notifier",
+    name: "NFS2-640",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "ONYX Series intelligent addressable FACP. Sized for medium installations; expandable via NOTI-FIRE-NET for larger sites.",
+    summary:
+      "Notifier's mid-size ONYX platform. Modular architecture suited to NSW commercial fit-outs that may need to scale through networking.",
+    commissioningNotes: [
+      "Use the licensed Notifier programming tool matched to panel firmware.",
+      "ONYX Intelligent Sensing detectors require baseline establishment after commissioning; follow the panel's documented procedure.",
+      "Confirm ActivFire approval status for every device specified before commissioning a NSW site.",
+    ],
+    wiringQuirks: [
+      "SLC wiring follows the ONYX Series loading envelope; do not extrapolate from other addressable brands.",
+      "NOTI-FIRE-NET uses its own cable plant; plan network wiring separately from SLC.",
+    ],
+    programmingNotes: [
+      "Back up before any change. Keep the configuration file under version control.",
+      "Cause-and-effect logic maps into ONYX Series programming tool constructs - familiarise with the tool's terminology.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate affected circuits and megger to earth.",
+      },
+      {
+        code: "SLC FAULT",
+        meaning: "Signalling Line Circuit integrity lost.",
+        firstCheck: "Read event log for reporting device; bisect the SLC.",
+      },
+      {
+        code: "DEVICE MISSING",
+        meaning: "Intelligent device no longer responding to polls.",
+        firstCheck: "Verify physical device, programmed address, and upstream isolator state.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; replace as a matched pair.",
+      },
+      {
+        code: "NETWORK FAULT",
+        meaning: "NOTI-FIRE-NET inter-panel comms failed.",
+        firstCheck: "Check network cabling and confirm addressing across all connected panels.",
+      },
+    ],
+    manualHint:
+      "Refer to the Notifier NFS2-640 installation and programming manual for the firmware revision on the panel plate. Honeywell Building Solutions AU is the authoritative source.",
+    confidence: "general",
+  },
+  {
+    id: "notifier-nfs2-3030",
+    brandId: "notifier",
+    name: "NFS2-3030",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "ONYX Series large-scale FACP. Up to 10 SLCs supporting approximately 3180 addressable devices. 640-character LCD.",
+    summary:
+      "Notifier's large-scale ONYX platform for medium-to-large NSW facilities. Campus-scale deployments use NOTI-FIRE-NET to link multiple NFS2-3030 panels.",
+    commissioningNotes: [
+      "Plan SLC loading carefully - 10 loops at ~318 devices is a design envelope, not a target.",
+      "Voice notification integration where fitted requires careful zoning and level setting.",
+      "Network-level C&E spans panels; test across the network, not just on the local panel.",
+    ],
+    wiringQuirks: [
+      "SLC wiring loading rules are per-loop; do not treat the panel's device count as freely reassignable across loops.",
+      "Earth shielded loop cable at the panel end only unless the manual states otherwise.",
+    ],
+    programmingNotes: [
+      "Version-control every configuration change across the whole network.",
+      "Use ONYXWorks or current Notifier site software for network-level visibility and coordinated updates.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate affected circuits and megger to earth.",
+      },
+      {
+        code: "SLC FAULT",
+        meaning: "SLC integrity lost on one of the 10 loops.",
+        firstCheck: "Read event log for the specific SLC and reporting device.",
+      },
+      {
+        code: "NETWORK FAULT",
+        meaning: "NOTI-FIRE-NET comms failed between panels or to ONYXWorks.",
+        firstCheck: "Verify network cabling and addressing across the network.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test under simulated alarm; replace as a matched pair.",
+      },
+      {
+        code: "VOICE CIRCUIT FAULT",
+        meaning: "Where voice notification is fitted, amp or circuit fault.",
+        firstCheck: "Check amp status and speaker circuit impedance.",
+      },
+    ],
+    manualHint:
+      "Refer to the NFS2-3030 installation and programming manual plus current ONYXWorks documentation for network-level configuration.",
+    confidence: "general",
+  },
+
+  // ── Morley-IAS (Honeywell) ─────────────────────────────────────────
+  {
+    id: "morley-dxc",
+    brandId: "morley-ias",
+    name: "DXc / DXc2",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "Addressable panel for small-to-medium buildings. Multi-loop variants (DXc2 is 2 loop, DXc1 is single loop) with peer-to-peer networking via the DXc Network card.",
+    summary:
+      "Morley-IAS's entry-level and mid-range addressable platform. Seen on smaller NSW commercial sites where a cost-effective Honeywell platform is specified.",
+    commissioningNotes: [
+      "AUTOLEARN can accelerate initial device discovery but the as-built labelling still needs manual review before handover.",
+      "Peer-to-peer networking via DXc Network card supports shared zones - confirm the zone sharing plan before enabling.",
+      "Confirm ActivFire approval for the specific model revision before commissioning a NSW site.",
+    ],
+    wiringQuirks: [
+      "Loop wiring follows Morley's documented envelope; do not cross-apply Notifier loop rules despite shared parent company.",
+      "Network card cabling is separate from the loop wiring - plan cabinet layout accordingly.",
+    ],
+    programmingNotes: [
+      "Back up before any change. Re-run AUTOLEARN after device additions and then review.",
+      "Shared-zone behaviour on a DXc peer-to-peer network can surprise an unwary operator - document which zone lives where.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate affected loop and megger to earth.",
+      },
+      {
+        code: "LOOP FAULT",
+        meaning: "Loop integrity lost.",
+        firstCheck: "Event log first; bisect the loop from the reporting device.",
+      },
+      {
+        code: "DEVICE MISSING",
+        meaning: "Addressable device no longer responding to polls.",
+        firstCheck: "Verify physical device and programmed address.",
+      },
+      {
+        code: "NETWORK FAULT",
+        meaning: "DXc peer-to-peer network comms failed.",
+        firstCheck: "Check network card status, network cabling, and addressing.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; replace as a matched pair.",
+      },
+    ],
+    manualHint:
+      "Refer to the Morley-IAS DXc / DXc2 installation and programming manual for the installed firmware.",
+    confidence: "general",
+  },
+  {
+    id: "morley-zxse",
+    brandId: "morley-ias",
+    name: "ZXSe",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "Modular, scalable addressable FACP. Capacity scales with loop cards fitted per the current datasheet.",
+    summary:
+      "Morley-IAS's scalable platform. Modular chassis supports a range of small-to-medium NSW deployments.",
+    commissioningNotes: [
+      "Confirm the loop card count and type before commissioning - the chassis modularity drives both capacity and approval envelope.",
+      "AUTOLEARN accelerates device discovery; manual review of the as-built is still required before handover.",
+    ],
+    wiringQuirks: [
+      "Loop loading is per-card; treat each card as its own budget rather than a shared pool.",
+      "Earth shielded loop cable at the panel end only unless the manual states otherwise.",
+    ],
+    programmingNotes: [
+      "Back up before any change.",
+      "Label zones and devices to match the as-built exactly - ZXSe's flexibility makes mismatched labelling easy to introduce.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate affected loop and megger to earth.",
+      },
+      {
+        code: "LOOP FAULT",
+        meaning: "Loop integrity lost on a specific loop card.",
+        firstCheck: "Event log identifies the loop; bisect from the reporting device.",
+      },
+      {
+        code: "DEVICE MISSING",
+        meaning: "Addressable device no longer responding to polls.",
+        firstCheck: "Verify physical device and programmed address.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; replace as a matched pair.",
+      },
+    ],
+    manualHint:
+      "Refer to the Morley-IAS ZXSe installation and programming manual for the installed firmware.",
+    confidence: "general",
+  },
+
+  // ── FlameStop Australia ────────────────────────────────────────────
+  {
+    id: "flamestop-pfs200",
+    brandId: "flamestop",
+    name: "PFS200 (addressable)",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "FlameStop own-brand addressable fire alarm panel. Capacity per the current FlameStop datasheet.",
+    summary:
+      "FlameStop's own-brand addressable platform. Encountered on FlameStop-supplied commercial sites across NSW.",
+    commissioningNotes: [
+      "Use the FlameStop-approved programming tool matched to the panel firmware.",
+      "Confirm AS 1670.1 compliance scope at specification stage; the PFS200 is commonly specified to the 2004 and 2015 editions.",
+      "Witness-test each zone with the operator and record the commissioning pack at handover.",
+    ],
+    wiringQuirks: [
+      "Loop loading and isolator placement per FlameStop's documented rules for the PFS200 - do not extrapolate from other brands.",
+      "Earth shielded loop cable at the panel end only unless the installation manual states otherwise.",
+    ],
+    programmingNotes: [
+      "Back up before any change; FlameStop can assist with configuration recovery from their archive if the site record is lost.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate the loop and megger to earth.",
+      },
+      {
+        code: "LOOP FAULT",
+        meaning: "Loop integrity lost.",
+        firstCheck: "Event log first; bisect from the reporting device.",
+      },
+      {
+        code: "DEVICE MISSING",
+        meaning: "Addressable device no longer responding to polls.",
+        firstCheck: "Verify physical device and programmed address.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; replace as a matched pair.",
+      },
+    ],
+    manualHint:
+      "Obtain the current PFS200 installation and programming manual directly from FlameStop Australia.",
+    confidence: "general",
+  },
+  {
+    id: "flamestop-conventional",
+    brandId: "flamestop",
+    name: "FlameStop Conventional Series",
+    category: "conventional",
+    status: "current",
+    capacity:
+      "Conventional zone panel range compliant with AS 1670.1 (2004 and 2015 editions). Zone count per variant.",
+    summary:
+      "FlameStop's own-brand conventional panel range. Common on smaller NSW commercial fit-outs where a zone-based system meets the brief.",
+    commissioningNotes: [
+      "Fit correct EOL values as specified in the FlameStop installation manual.",
+      "Witness-test each zone with the operator; document brigade output behaviour.",
+    ],
+    wiringQuirks: [
+      "Conventional zones are 2-wire radial runs - daisy-chain detectors rather than star-wiring.",
+      "Verify detector family compatibility against the FlameStop compatibility schedule before swapping heads.",
+    ],
+    programmingNotes: [
+      "Configuration on a conventional panel is zone labelling, C&E, and brigade output. Consult the manual for the specific sequence.",
+    ],
+    commonFaults: [
+      {
+        code: "ZONE OPEN",
+        meaning: "Open circuit on a conventional zone.",
+        firstCheck: "Measure across the zone at the panel; expect the documented EOL value.",
+      },
+      {
+        code: "ZONE SHORT",
+        meaning: "Resistance well below the documented EOL value.",
+        firstCheck: "Disconnect the zone and walk the run for pinched cable or a stuck-alarm device.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; replace as a matched pair.",
+      },
+      {
+        code: "SOUNDER FAULT",
+        meaning: "Monitored sounder circuit open or short.",
+        firstCheck: "Measure across the circuit; compare against the documented EOL value.",
+      },
+    ],
+    manualHint:
+      "Obtain the current FlameStop Conventional Series installation manual directly from FlameStop Australia.",
+    confidence: "general",
+  },
+
+  // ── Kentec / Hochiki ───────────────────────────────────────────────
+  {
+    id: "kentec-syncro-as",
+    brandId: "kentec-hochiki",
+    name: "Kentec Syncro AS",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "Analogue addressable panel in 1 or 2 loop configurations. Multi-protocol - supports Apollo, Argus Vega and Hochiki detection.",
+    summary:
+      "Kentec's mid-range addressable panel commonly fitted with Hochiki ESP devices in AU via Incite Fire. Suits small-to-medium NSW sites.",
+    commissioningNotes: [
+      "Confirm the protocol running on each loop card - Syncro AS is multi-protocol but each loop is protocol-specific.",
+      "Hochiki ESP devices sourced via Hochiki Australia carry AS approval; confirm approval status for any substituted device.",
+      "Witness-test each zone and record the commissioning pack at handover.",
+    ],
+    wiringQuirks: [
+      "Follow Kentec's documented loop-loading rules for the fitted loop card.",
+      "Isolator placement per AS 1670 and Kentec's guidance.",
+    ],
+    programmingNotes: [
+      "Use the Kentec programming tool matched to the Syncro AS firmware; do not assume interchangeability with the Taktis tool.",
+      "Back up before any change.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate the loop and megger to earth.",
+      },
+      {
+        code: "LOOP FAULT",
+        meaning: "Loop integrity lost - specific detail in the event log.",
+        firstCheck: "Read the event log; bisect from the reporting device.",
+      },
+      {
+        code: "DEVICE MISSING",
+        meaning: "Addressable device no longer responding to polls.",
+        firstCheck: "Verify physical device, programmed address and upstream isolator.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; replace as a matched pair.",
+      },
+      {
+        code: "SOUNDER CIRCUIT FAULT",
+        meaning: "Monitored sounder circuit open or short.",
+        firstCheck: "Measure across the circuit; compare against the documented EOL value.",
+      },
+    ],
+    manualHint:
+      "Refer to the Kentec Syncro AS installation and programming manual. Incite Fire is the AU distributor and support channel.",
+    confidence: "general",
+  },
+  {
+    id: "kentec-taktis",
+    brandId: "kentec-hochiki",
+    name: "Kentec Taktis",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "Multi-loop analogue addressable platform. Supported protocols and loop count per the Taktis datasheet.",
+    summary:
+      "Kentec's scalable addressable platform, fitted for larger AU sites via Incite Fire. Similar protocol support story to the Syncro AS but with more loops and features.",
+    commissioningNotes: [
+      "Confirm protocol per loop card and against the fitted detection family.",
+      "Taktis programming tool and firmware are separate from the Syncro AS - plan tool access before site attendance.",
+    ],
+    wiringQuirks: [
+      "Loop-loading rules are Taktis-specific; do not cross-apply Syncro AS rules.",
+      "Networked Taktis deployments use their own cable plant and topology - plan up-front.",
+    ],
+    programmingNotes: [
+      "Back up before any change.",
+      "Cause-and-effect modelling on Taktis offers flexibility that rewards careful documentation.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate affected loop and megger to earth.",
+      },
+      {
+        code: "LOOP FAULT",
+        meaning: "Loop integrity lost.",
+        firstCheck: "Event log first; bisect from the reporting device.",
+      },
+      {
+        code: "DEVICE MISSING",
+        meaning: "Addressable device no longer responding to polls.",
+        firstCheck: "Verify device, programmed address and upstream isolator.",
+      },
+      {
+        code: "NETWORK FAULT",
+        meaning: "Inter-panel comms failed on a networked Taktis deployment.",
+        firstCheck: "Check network cabling and addressing.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; replace as a matched pair.",
+      },
+    ],
+    manualHint:
+      "Refer to the Kentec Taktis installation and programming manual. Incite Fire is the AU distributor.",
+    confidence: "general",
+  },
+
+  // ── Ampac ZoneSense PLUS (conventional) ────────────────────────────
+  {
+    id: "ampac-zonesense-plus",
+    brandId: "ampac",
+    name: "ZoneSense PLUS",
+    category: "conventional",
+    status: "current",
+    capacity:
+      "4 or 8 zone conventional panel, up to 40 conventional detectors per zone. Available in ABS (BX1) and metal (BX20) cabinet variants.",
+    summary:
+      "Ampac's conventional zone panel. Common on smaller NSW commercial and industrial sites where a conventional zone architecture meets the brief.",
+    commissioningNotes: [
+      "Fit the correct EOL value specified in the ZoneSense PLUS manual - do not substitute from another brand.",
+      "Witness-test each zone with an alarm device and confirm the correct zone lights on the HMI.",
+      "Commission brigade outputs and sounder circuits per AS 1670 and the site fire engineering report.",
+    ],
+    wiringQuirks: [
+      "Conventional zones are 2-wire radial runs; up to 40 detectors per zone per the Ampac spec.",
+      "ABS (BX1) and metal (BX20) cabinets have different knockout patterns - plan cable entry at commissioning.",
+    ],
+    programmingNotes: [
+      "Conventional panel configuration is zone labelling, cause-and-effect, brigade output. Follow the ZoneSense PLUS manual exactly.",
+    ],
+    commonFaults: [
+      {
+        code: "ZONE OPEN",
+        meaning: "Open circuit on a conventional zone - EOL not seen.",
+        firstCheck: "Measure across the zone at the panel; expect the documented EOL value.",
+      },
+      {
+        code: "ZONE SHORT",
+        meaning: "Resistance across the zone well below the EOL value.",
+        firstCheck: "Disconnect the zone, walk the run, inspect for pinched cable or stuck-alarm device.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; replace as a matched pair.",
+      },
+      {
+        code: "MAINS FAULT",
+        meaning: "Panel has lost mains supply and is running on battery.",
+        firstCheck: "Check supplying breaker and panel fuse; confirm the site-wide mains state.",
+      },
+      {
+        code: "SOUNDER FAULT",
+        meaning: "Monitored sounder circuit open or short.",
+        firstCheck: "Disconnect at the panel and measure; compare against the EOL value.",
+      },
+    ],
+    manualHint:
+      "Refer to the Ampac ZoneSense PLUS installation manual for the current firmware and wiring requirements.",
+    confidence: "general",
   },
 ];
 

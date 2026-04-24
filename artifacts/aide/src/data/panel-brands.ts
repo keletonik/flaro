@@ -236,16 +236,70 @@ export const MODELS: PanelModel[] = [
           "Check the event log for the specific poll failure or short indication, then follow the loop fault procedure in the panel manual.",
       },
       {
+        code: "LOOP SHORT",
+        meaning: "Short across the loop conductors, typically between two isolator segments.",
+        firstCheck:
+          "Read the event log for the reporting isolator; bisect the loop at that isolator to localise the short.",
+      },
+      {
+        code: "LOOP OPEN",
+        meaning: "Loop integrity broken - polling stops beyond the break point.",
+        firstCheck:
+          "Check the first address reported missing; the break sits upstream of that device.",
+      },
+      {
         code: "EARTH FAULT",
         meaning: "Leakage detected between a field conductor and protective earth.",
         firstCheck:
           "Isolate the loop from the panel and megger each conductor to earth. Fault usually sits in a wet J-box or damaged cable.",
       },
       {
+        code: "DEVICE MISSING",
+        meaning: "Panel stopped receiving responses from a specific address.",
+        firstCheck:
+          "Confirm the address matches the programmed schedule, check the physical device, then check the last isolator upstream.",
+      },
+      {
+        code: "ANALOGUE HIGH",
+        meaning: "Detector reporting analogue value above healthy range - approaching alarm threshold.",
+        firstCheck:
+          "Inspect the detector for dust or contamination; clean or replace. Verify no actual fire condition first.",
+      },
+      {
         code: "BATTERY FAULT",
         meaning: "Standby battery has failed a periodic load test or voltage check.",
         firstCheck:
           "Measure battery float voltage, confirm date-code, load-test under simulated alarm. Replace as a matched pair if out of spec.",
+      },
+      {
+        code: "CHARGER FAULT",
+        meaning: "Panel PSU charger output outside expected range.",
+        firstCheck:
+          "Measure charger output across the battery terminals; compare against the panel's documented float voltage.",
+      },
+      {
+        code: "SOUNDER CIRCUIT FAULT",
+        meaning: "Open or short on a monitored sounder output.",
+        firstCheck:
+          "Disconnect at the panel and measure; expect the circuit's EOL value. Investigate accordingly.",
+      },
+      {
+        code: "BRIGADE COMMS FAULT",
+        meaning: "Signalling path to the monitoring station has failed polling.",
+        firstCheck:
+          "Check the signalling unit status, confirm line or IP path, then check with the monitoring station for last successful poll.",
+      },
+      {
+        code: "NETWORK FAULT",
+        meaning: "Connection between networked panels or to a head-end has failed.",
+        firstCheck:
+          "Verify network cabling at both ends; confirm addressing and topology match the site design.",
+      },
+      {
+        code: "ZONE ISOLATED",
+        meaning: "A zone or device has been manually isolated - compliance flag.",
+        firstCheck:
+          "Identify who isolated it, why, and whether it should be returned to service. Document in the logbook.",
       },
     ],
     manualHint:
@@ -282,10 +336,35 @@ export const MODELS: PanelModel[] = [
         firstCheck: "Megger each loop conductor to earth with the loop disconnected at the panel.",
       },
       {
+        code: "LOOP FAULT",
+        meaning: "Generic loop integrity flag - specific cause in the event log.",
+        firstCheck: "Read the event log for the reporting address or isolator before walking the loop.",
+      },
+      {
         code: "DEVICE MISSING",
         meaning: "Panel has stopped receiving polls from a specific address.",
         firstCheck:
           "Check physical connection at the flagged device, confirm address DIP or programmed address matches, check the last isolator upstream.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test the batteries; replace as a matched pair if out of spec.",
+      },
+      {
+        code: "CHARGER FAULT",
+        meaning: "Mains or charger output outside expected range.",
+        firstCheck: "Confirm mains at the panel input; measure charger output at the battery terminals.",
+      },
+      {
+        code: "SOUNDER CIRCUIT FAULT",
+        meaning: "Open or short on a monitored sounder output.",
+        firstCheck: "Disconnect at the panel, measure across the circuit, compare to the documented EOL value.",
+      },
+      {
+        code: "ZONE ISOLATED",
+        meaning: "A zone or device has been manually isolated - compliance flag.",
+        firstCheck: "Identify the isolation, confirm it should still be in place, document in the logbook.",
       },
     ],
     manualHint:
@@ -316,19 +395,140 @@ export const MODELS: PanelModel[] = [
     ],
     commonFaults: [
       {
-        code: "ZONE FAULT",
-        meaning: "Open circuit or EOL issue on a zone.",
+        code: "ZONE OPEN",
+        meaning: "Open circuit on a conventional zone - EOL not seen.",
         firstCheck:
-          "Measure across the zone pair at the panel - expect the EOL value. Infinite resistance is an open; well below EOL value suggests a short or extra load on the line.",
+          "Measure across the zone pair at the panel, expect the documented EOL value. Infinite resistance points to a break in the field wiring or a missing EOL.",
+      },
+      {
+        code: "ZONE SHORT",
+        meaning: "Resistance across the zone is well below the EOL value.",
+        firstCheck:
+          "Disconnect the zone, walk the run, inspect for pinched cable, wet J-boxes, and stuck-alarm devices.",
+      },
+      {
+        code: "ZONE IN TEST",
+        meaning: "A zone has been placed in engineer test mode.",
+        firstCheck:
+          "Confirm test mode is intentional and scheduled. If work has finished, return the zone to normal and log it.",
       },
       {
         code: "BATTERY FAULT",
         meaning: "Standby battery failing voltage or load criteria.",
         firstCheck: "Load-test the batteries; replace as a matched pair if out of spec.",
       },
+      {
+        code: "MAINS FAULT",
+        meaning: "Panel has lost mains supply and is running on battery.",
+        firstCheck:
+          "Check the supplying breaker and panel fuse; confirm whether the site-wide mains is live.",
+      },
+      {
+        code: "SOUNDER FAULT",
+        meaning: "Monitored sounder output open or short.",
+        firstCheck:
+          "Disconnect at the panel and measure across the circuit. Expect the documented EOL value.",
+      },
     ],
     manualHint:
       "Refer to the F16e installation manual for the panel's firmware and wiring requirements.",
+    confidence: "general",
+  },
+
+  {
+    id: "pertronic-f100a",
+    brandId: "pertronic",
+    name: "F100A",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "Compact addressable panel suited to smaller commercial sites. Loop and device capacity per current datasheet.",
+    summary:
+      "Smaller addressable Pertronic panel. Common on boutique commercial fit-outs and retail where F120A or F220 scale is not required.",
+    commissioningNotes: [
+      "Program addresses against the site schedule; label devices clearly on the as-built before energising.",
+      "Witness-test each zone with the operator; record the commissioning pack.",
+    ],
+    wiringQuirks: [
+      "Respect loop loading rules for the panel's loop card variant.",
+      "Earth shielded loop cable at the panel end only unless the manual states otherwise.",
+    ],
+    programmingNotes: [
+      "Use the approved Pertronic programming tool for the installed firmware.",
+      "Back up the configuration before any change.",
+    ],
+    commonFaults: [
+      {
+        code: "LOOP FAULT",
+        meaning: "Integrity lost on the addressable loop.",
+        firstCheck: "Read the event log for the reporting address, bisect to localise.",
+      },
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate the loop and megger each conductor to earth.",
+      },
+      {
+        code: "DEVICE MISSING",
+        meaning: "Address no longer responding to polls.",
+        firstCheck: "Verify physical connection and programmed address; check the upstream isolator.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; replace as a matched pair.",
+      },
+      {
+        code: "SOUNDER CIRCUIT FAULT",
+        meaning: "Monitored sounder output open or short.",
+        firstCheck: "Measure across the circuit; expect the documented EOL value.",
+      },
+    ],
+    manualHint:
+      "Refer to the F100A installation and programming manual for the installed firmware revision.",
+    confidence: "general",
+  },
+  {
+    id: "pertronic-f1",
+    brandId: "pertronic",
+    name: "F1",
+    category: "addressable",
+    status: "legacy",
+    capacity:
+      "Compact single-loop addressable panel. Encountered on older small-site installations.",
+    summary:
+      "Legacy Pertronic single-loop panel still present on maintenance rounds. Confirm firmware and supported device families from the manual before any hardware change.",
+    commissioningNotes: [
+      "Treat as a legacy panel - confirm firmware and tool compatibility before connecting.",
+      "Back up the configuration first; legacy configs are often poorly documented on site.",
+    ],
+    wiringQuirks: [
+      "Older loop card may not support current device families - verify compatibility before swapping heads.",
+      "Earthing and shield practice per the original installation manual, not current conventions.",
+    ],
+    programmingNotes: [
+      "Use the programming tool matched to the panel's firmware. Newer tools may not connect.",
+      "Keep the existing config on hand before making any change.",
+    ],
+    commonFaults: [
+      {
+        code: "LOOP FAULT",
+        meaning: "Integrity lost on the addressable loop.",
+        firstCheck: "Read the event log and bisect the loop.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test; on legacy sites batteries are often long overdue for replacement.",
+      },
+      {
+        code: "MAINS FAULT",
+        meaning: "Panel has lost mains supply.",
+        firstCheck: "Confirm supplying breaker and panel fuse.",
+      },
+    ],
+    manualHint:
+      "Refer to the original F1 installation manual for the revision stamped on the panel plate. Pertronic support can assist with legacy documentation.",
     confidence: "general",
   },
 
@@ -368,6 +568,45 @@ export const MODELS: PanelModel[] = [
         firstCheck:
           "Inspect the event log for the specific fault, then follow the loop fault diagnostic in the FireFinder Plus manual.",
       },
+      {
+        code: "DEVICE MISSING",
+        meaning: "Specific addressable device has stopped responding to polls.",
+        firstCheck:
+          "Confirm address and physical presence; inspect last isolator upstream before swapping hardware.",
+      },
+      {
+        code: "ANALOGUE OUT OF RANGE",
+        meaning: "A detector is reporting an analogue value outside its healthy envelope.",
+        firstCheck:
+          "Inspect the detector for contamination; confirm no real fire event; clean or replace.",
+      },
+      {
+        code: "ZONE FAULT (conventional card)",
+        meaning: "Conventional zone card has flagged a fault - open, short, or EOL issue.",
+        firstCheck:
+          "Measure across the zone pair at the panel; expect the documented EOL value.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test under a simulated alarm; replace as a matched pair if out of spec.",
+      },
+      {
+        code: "CHARGER FAULT",
+        meaning: "Charger output outside expected range.",
+        firstCheck: "Measure charger output at the battery terminals; verify against the panel spec.",
+      },
+      {
+        code: "SOUNDER CIRCUIT FAULT",
+        meaning: "Open or short on a monitored output circuit.",
+        firstCheck: "Disconnect at the panel and measure; expect the circuit's documented EOL value.",
+      },
+      {
+        code: "BRIGADE COMMS FAULT",
+        meaning: "Signalling path to the monitoring station failed polling.",
+        firstCheck:
+          "Check signalling unit LEDs; confirm carrier line or IP link; contact the station for last good poll.",
+      },
     ],
     manualHint:
       "Refer to the FireFinder Plus installation and programming manual current for the firmware revision on the panel plate.",
@@ -401,6 +640,33 @@ export const MODELS: PanelModel[] = [
         meaning: "Generic system-level fault, specific cause indicated in the event log or secondary indicator.",
         firstCheck:
           "Read the event log and the panel's LED indicators together; the specific fault detail is needed before any action.",
+      },
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate affected circuits at the panel and megger to earth.",
+      },
+      {
+        code: "LOOP FAULT",
+        meaning: "Integrity lost on an addressable loop.",
+        firstCheck: "Read the event log for the reporting address or isolator; bisect and test.",
+      },
+      {
+        code: "ZONE FAULT",
+        meaning: "Conventional zone flagged as faulted.",
+        firstCheck: "Measure the zone pair at the panel; expect the documented EOL value.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck:
+          "Load-test the batteries; replace as a matched pair. Legacy panels are often running on long-overdue batteries.",
+      },
+      {
+        code: "CHARGER FAULT",
+        meaning: "Mains or charger output out of range.",
+        firstCheck:
+          "Confirm mains and measure charger output; legacy chargers may need calibration or replacement.",
       },
     ],
     manualHint:
@@ -437,9 +703,101 @@ export const MODELS: PanelModel[] = [
         firstCheck:
           "Check speaker load total against amp rating, measure circuit impedance, inspect for shorts or failed speaker transformers.",
       },
+      {
+        code: "SPEAKER CIRCUIT OPEN",
+        meaning: "Monitored 100 V line has lost continuity.",
+        firstCheck:
+          "Bisect the run, measure each half, inspect terminations at speakers.",
+      },
+      {
+        code: "SPEAKER CIRCUIT SHORT",
+        meaning: "100 V line conductors shorted together.",
+        firstCheck:
+          "Isolate the line, walk it, inspect for pinched cable or failed speaker transformer.",
+      },
+      {
+        code: "WIP LINE FAULT",
+        meaning: "Warden intercom handset line has failed supervision.",
+        firstCheck:
+          "Check handset wiring and the specific WIP location flagged in the event log.",
+      },
+      {
+        code: "AMP OVERTEMP",
+        meaning: "Zone amp in thermal protection.",
+        firstCheck:
+          "Check ventilation in the EWIS cabinet; reduce sustained tone duration during testing; verify fan operation if fitted.",
+      },
+      {
+        code: "INPUT FAULT (FIP alarm)",
+        meaning: "Alarm input from the associated FIP has failed supervision.",
+        firstCheck:
+          "Check the interfacing cable between FIP output and EWIS input; confirm EOL values per the installation drawings.",
+      },
     ],
     manualHint:
       "Refer to the Ampac EV3000 installation and commissioning manual for the current firmware revision.",
+    confidence: "general",
+  },
+
+  {
+    id: "ampac-loopsense",
+    brandId: "ampac",
+    name: "LoopSense",
+    category: "addressable",
+    status: "current",
+    capacity:
+      "Addressable panel in the Ampac range sized for mid-commercial sites. Loop and device capacity per current datasheet.",
+    summary:
+      "Ampac addressable platform encountered across AU commercial work. Used where a dedicated addressable panel is required and a hybrid platform is not needed.",
+    commissioningNotes: [
+      "Confirm firmware revision and supported device families before commissioning.",
+      "Program addresses against the site schedule; record the commissioning pack at handover.",
+      "Witness-test each zone and each output rule with the operator.",
+    ],
+    wiringQuirks: [
+      "Follow the panel's loop topology rules - Class A and Class B are not interchangeable without hardware changes.",
+      "Isolator placement follows AS 1670 plus Ampac's loop-loading rules.",
+      "Earth shielded loop cable at the panel end only unless the installation manual says otherwise.",
+    ],
+    programmingNotes: [
+      "Use the Ampac-approved programming tool matched to the installed firmware.",
+      "Back up before any change; keep the config under version control.",
+    ],
+    commonFaults: [
+      {
+        code: "EARTH FAULT",
+        meaning: "Leakage between a field conductor and protective earth.",
+        firstCheck: "Isolate the loop and megger each conductor to earth.",
+      },
+      {
+        code: "LOOP FAULT",
+        meaning: "Poll integrity lost on the addressable loop.",
+        firstCheck: "Event log first - identify the reporting address or isolator before walking the loop.",
+      },
+      {
+        code: "DEVICE MISSING",
+        meaning: "Specific address not responding to polls.",
+        firstCheck: "Verify physical presence, programmed address, and upstream isolator.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed voltage or load criteria.",
+        firstCheck: "Load-test under simulated alarm; replace as a matched pair.",
+      },
+      {
+        code: "SOUNDER CIRCUIT FAULT",
+        meaning: "Monitored sounder output open or short.",
+        firstCheck: "Measure across the circuit; expect the documented EOL value.",
+      },
+      {
+        code: "BRIGADE COMMS FAULT",
+        meaning: "Signalling path failed polling.",
+        firstCheck:
+          "Check signalling unit status and the last successful poll with the monitoring station.",
+      },
+    ],
+    manualHint:
+      "Refer to the LoopSense installation and programming manual for the firmware on the panel plate.",
     confidence: "general",
   },
 
@@ -467,10 +825,34 @@ export const MODELS: PanelModel[] = [
     ],
     commonFaults: [
       {
-        code: "ZONE FAULT",
-        meaning: "Open or abnormal resistance on a zone.",
+        code: "ZONE OPEN",
+        meaning: "Open circuit on a conventional zone.",
         firstCheck:
-          "Measure the zone pair at the panel; expect the documented EOL value. Repair the open or short in the field.",
+          "Measure across the zone at the panel; expect the documented EOL value. Investigate the field wiring for a break or missing EOL.",
+      },
+      {
+        code: "ZONE SHORT",
+        meaning: "Resistance across the zone well below the documented EOL value.",
+        firstCheck:
+          "Disconnect the zone, walk the run, inspect for pinched cable or a stuck-alarm device.",
+      },
+      {
+        code: "BATTERY FAULT",
+        meaning: "Standby battery failed a voltage or load check.",
+        firstCheck:
+          "Load-test under a simulated alarm; replace as a matched pair if out of spec.",
+      },
+      {
+        code: "MAINS FAULT",
+        meaning: "Panel running on battery - mains has failed.",
+        firstCheck:
+          "Check the supplying breaker and panel fuse before assuming a charger fault.",
+      },
+      {
+        code: "SOUNDER FAULT",
+        meaning: "Monitored sounder output open or short.",
+        firstCheck:
+          "Disconnect at the panel and measure; expect the documented EOL value.",
       },
     ],
     manualHint:

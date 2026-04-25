@@ -413,8 +413,15 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-[50vh]">
-    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+    <div className="relative w-12 h-12 flex items-center justify-center">
+      <div className="absolute inset-0 rounded-full bg-primary/15 warm-breathe" />
+      <div className="absolute inset-2 rounded-full bg-primary/30" />
+      <div className="absolute inset-[14px] rounded-full bg-primary" />
+    </div>
+    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+      Loading
+    </span>
   </div>
 );
 

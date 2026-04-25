@@ -157,19 +157,19 @@ function ToolTile({ tool, onClick }: { tool: Tool; onClick: () => void }) {
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "group relative text-left rounded-xl border p-4 transition-all",
+        "group relative text-left rounded-xl border p-4 transition-all duration-200",
         disabled
           ? "border-border/50 bg-card/40 cursor-default"
-          : "border-border bg-card hover:border-primary/50 hover:bg-muted/30 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+          : "border-border bg-card hover:border-primary/50 hover:bg-muted/30 hover:shadow-[0_8px_24px_-12px_hsl(var(--primary)/0.35)] hover:-translate-y-0.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
       )}
     >
       <div className="flex items-start justify-between mb-3">
         <div
           className={cn(
-            "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+            "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
             disabled
               ? "bg-muted/40 text-muted-foreground/40"
-              : "bg-primary/10 text-primary group-hover:bg-primary/15",
+              : "bg-primary/10 text-primary group-hover:bg-primary/20 group-hover:scale-105",
           )}
         >
           <Icon size={18} />

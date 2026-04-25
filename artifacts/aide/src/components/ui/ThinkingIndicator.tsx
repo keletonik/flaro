@@ -63,15 +63,17 @@ export function ThinkingIndicator({
   const text = size === "sm" ? "text-[11px]" : "text-[12px]";
 
   return (
-    <div className={cn("inline-flex items-center gap-2", className)}>
-      <span className="relative inline-flex">
+    <div className={cn("inline-flex items-center gap-2.5", className)}>
+      <span className={cn("relative inline-flex items-center justify-center", size === "sm" ? "w-3 h-3" : "w-4 h-4")}>
         <span
           className={cn(
-            "absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping",
+            "absolute inline-flex h-full w-full rounded-full opacity-50 animate-ping",
             TONE_BG[tone],
           )}
         />
-        <span className={cn("relative inline-flex rounded-full", orb, TONE_BG[tone])} />
+        <span
+          className={cn("relative inline-flex rounded-full warm-glow", orb, TONE_BG[tone])}
+        />
       </span>
       <span
         key={idx}

@@ -94,10 +94,13 @@ function StatusBadge({ status }: { status: LifecycleStatus }) {
 // ── Section primitive ───────────────────────────────────────────────────
 
 function Section({
-  icon: Icon, label, children,
-}: { icon: LucideIcon; label: string; children: React.ReactNode }) {
+  icon: Icon, label, children, delay = 0,
+}: { icon: LucideIcon; label: string; children: React.ReactNode; delay?: number }) {
   return (
-    <section className="mb-5">
+    <section
+      className="mb-5 message-rise"
+      style={{ animationDelay: `${delay}ms` }}
+    >
       <div className="flex items-center gap-2 mb-2">
         <Icon size={13} className="text-primary/70" />
         <h3 className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
@@ -151,19 +154,19 @@ function ModelDetail({ model }: { model: PanelModel }) {
         </p>
       </header>
 
-      <Section icon={Wrench} label="Commissioning notes">
+      <Section icon={Wrench} label="Commissioning notes" delay={0}>
         <BulletList items={model.commissioningNotes} />
       </Section>
 
-      <Section icon={Cpu} label="Wiring quirks">
+      <Section icon={Cpu} label="Wiring quirks" delay={60}>
         <BulletList items={model.wiringQuirks} />
       </Section>
 
-      <Section icon={ShieldCheck} label="Programming notes">
+      <Section icon={ShieldCheck} label="Programming notes" delay={120}>
         <BulletList items={model.programmingNotes} />
       </Section>
 
-      <Section icon={AlertTriangle} label="Common fault hints">
+      <Section icon={AlertTriangle} label="Common fault hints" delay={180}>
         <ul className="space-y-3">
           {model.commonFaults.map((f, i) => (
             <li key={i}>
@@ -183,7 +186,7 @@ function ModelDetail({ model }: { model: PanelModel }) {
         </ul>
       </Section>
 
-      <Section icon={BookOpen} label="Manual pointer">
+      <Section icon={BookOpen} label="Manual pointer" delay={240}>
         <p className="text-[13px] leading-relaxed text-foreground/90">
           {model.manualHint}
         </p>

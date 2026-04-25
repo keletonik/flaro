@@ -344,7 +344,7 @@ function ModuleReader({ module }: { module: TrainingModule }) {
   }
 
   return (
-    <article>
+    <article key={module.id} className="message-rise">
       <header className="mb-4">
         <div className="flex items-center gap-2 mb-2">
           <LevelBadge level={module.level} />

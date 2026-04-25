@@ -1,15 +1,18 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 export type ThemeVariant =
+  | "salmon" | "salmon-dark"
   | "blue-white" | "blue-orange" | "blue-green"
   | "deep-navy" | "slate-dark" | "graphite-green"
   | "operator" | "fieldkit" | "atelier" | "circuit" | "terminal";
 type Mode = "light" | "dark";
 
-const LIGHT_THEMES: ThemeVariant[] = ["blue-white", "blue-orange", "blue-green"];
-const DARK_THEMES: ThemeVariant[] = ["deep-navy", "slate-dark", "graphite-green", "operator", "fieldkit", "atelier", "circuit", "terminal"];
+const LIGHT_THEMES: ThemeVariant[] = ["salmon", "blue-white", "blue-orange", "blue-green"];
+const DARK_THEMES: ThemeVariant[] = ["salmon-dark", "deep-navy", "slate-dark", "graphite-green", "operator", "fieldkit", "atelier", "circuit", "terminal"];
 
 export const THEME_OPTIONS: { key: ThemeVariant; label: string; mode: Mode; accent: string }[] = [
+  { key: "salmon", label: "Salmon", mode: "light", accent: "#E58A6E" },
+  { key: "salmon-dark", label: "Salmon Dark", mode: "dark", accent: "#F4A082" },
   { key: "blue-white", label: "Enterprise", mode: "light", accent: "#2563EB" },
   { key: "blue-orange", label: "Action", mode: "light", accent: "#F97316" },
   { key: "blue-green", label: "Industrial", mode: "light", accent: "#6B8E23" },
@@ -41,7 +44,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeVariant>(() => {
     const saved = localStorage.getItem("ops-theme-variant");
     if (saved && [...LIGHT_THEMES, ...DARK_THEMES].includes(saved as ThemeVariant)) return saved as ThemeVariant;
-    return "deep-navy";
+    return "salmon";
   });
 
   const mode: Mode = DARK_THEMES.includes(theme) ? "dark" : "light";
@@ -60,9 +63,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const toggleMode = () => {
     if (mode === "light") {
-      setThemeState("deep-navy");
+      setThemeState("salmon-dark");
     } else {
-      setThemeState("blue-white");
+      setThemeState("salmon");
     }
   };
 

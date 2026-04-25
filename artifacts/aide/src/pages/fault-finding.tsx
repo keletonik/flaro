@@ -122,10 +122,13 @@ function ScenarioCard({
 // ── Section primitives for detail view ──────────────────────────────────
 
 function Section({
-  icon: Icon, label, children,
-}: { icon: LucideIcon; label: string; children: React.ReactNode }) {
+  icon: Icon, label, children, delay = 0,
+}: { icon: LucideIcon; label: string; children: React.ReactNode; delay?: number }) {
   return (
-    <section className="mb-6">
+    <section
+      className="mb-6 message-rise"
+      style={{ animationDelay: `${delay}ms` }}
+    >
       <div className="flex items-center gap-2 mb-2">
         <Icon size={13} className="text-primary/70" />
         <h2 className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
@@ -179,11 +182,11 @@ function ScenarioDetail({
           {scenario.summary}
         </p>
 
-        <Section icon={AlertTriangle} label="Symptoms on arrival">
+        <Section icon={AlertTriangle} label="Symptoms on arrival" delay={0}>
           <BulletList items={scenario.symptoms} />
         </Section>
 
-        <Section icon={Lightbulb} label="Likely causes (ranked)">
+        <Section icon={Lightbulb} label="Likely causes (ranked)" delay={60}>
           <ol className="space-y-4">
             {scenario.likelyCauses.map((c, i) => (
               <li key={i} className="flex gap-3">
@@ -203,7 +206,7 @@ function ScenarioDetail({
           </ol>
         </Section>
 
-        <Section icon={ListOrdered} label="Field procedure">
+        <Section icon={ListOrdered} label="Field procedure" delay={120}>
           <ol className="space-y-3">
             {scenario.fieldProcedure.map((step, i) => (
               <li key={i} className="flex gap-3">
@@ -226,11 +229,11 @@ function ScenarioDetail({
           </ol>
         </Section>
 
-        <Section icon={AlertTriangle} label="Gotchas">
+        <Section icon={AlertTriangle} label="Gotchas" delay={180}>
           <BulletList items={scenario.gotchas} />
         </Section>
 
-        <Section icon={ShieldAlert} label="Safety">
+        <Section icon={ShieldAlert} label="Safety" delay={240}>
           <BulletList items={scenario.safety} />
         </Section>
 

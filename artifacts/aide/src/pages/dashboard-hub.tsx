@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { InstallBanner } from "@/components/InstallBanner";
+import { Bookmarks } from "@/components/mobile/Bookmarks";
 import { cn } from "@/lib/utils";
 
 interface Tool {
@@ -215,6 +216,7 @@ export default function DashboardHub() {
 
       <div className="px-4 sm:px-6 py-5 max-w-[1280px]">
         <InstallBanner className="mb-4" />
+        <Bookmarks className="mb-4" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {TOOLS.map((tool) => (
             <ToolTile

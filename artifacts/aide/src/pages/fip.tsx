@@ -19,11 +19,14 @@ import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
   Shield, FileText, BookOpen, Building2, Cpu, Loader2, AlertTriangle,
-  Search, ExternalLink, Network, FileCog, ChevronDown, X, Mic,
+  Search, ExternalLink, Network, FileCog, ChevronDown, X, Mic, Camera,
   type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useVoiceInput } from "@/lib/speech";
+import { PanelIdCapture } from "@/components/mobile/PanelIdCapture";
+import { isCameraAvailable } from "@/lib/camera";
+import { Bookmarks } from "@/components/mobile/Bookmarks";
 import {
   FipDetectorTypeBrowser,
   FipDetectorTypeDetail,
@@ -445,6 +448,7 @@ export default function FIPKnowledgeBase() {
   const [search, setSearch] = useState("");
   const [commandPanelSlug, setCommandPanelSlug] = useState<string>("");
   const [selectedDetector, setSelectedDetector] = useState<DetectorType | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   // Status gate — block render until we know whether FIP is on.
   const [status, setStatus] = useState<FipStatus | null>(null);
@@ -575,8 +579,31 @@ export default function FIPKnowledgeBase() {
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1280px]">
 
+        {/* On-site quick actions: identify a panel by photo. Hidden when
+            getUserMedia is not available (typically desktop without a
+            camera). The capture component handles permission UX. */}
+        {isCameraAvailable() && (
+          <button
+            type="button"
+            onClick={() => setCameraOpen(true)}
+            className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-left hover:bg-primary/10 transition-colors min-h-[56px]"
+          >
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/15 text-primary shrink-0">
+              <Camera size={18} />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-[13px] font-semibold text-foreground">Identify a panel</span>
+              <span className="block text-[11px] text-muted-foreground">Snap a photo and AIDE matches the manufacturer and model.</span>
+            </span>
+          </button>
+        )}
+
+        <Bookmarks />
+
         {/* Global search — one field, searches every dataset. */}
         <FipGlobalSearch search={search} setSearch={setSearch} />
+
+        <PanelIdCapture open={cameraOpen} onClose={() => setCameraOpen(false)} />
 
         {/* Search results — only when there's a query. */}
         {search.trim().length >= 2 && (

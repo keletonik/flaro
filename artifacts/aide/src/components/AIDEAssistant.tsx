@@ -10,7 +10,10 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
+import { Sparkles } from "lucide-react";
 import EmbeddedAgentChat from "@/components/EmbeddedAgentChat";
+import { MobileBottomSheet } from "@/components/mobile/MobileBottomSheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useAIDE, useSidebar } from "@/App";
 
@@ -67,6 +70,7 @@ export default function AIDEAssistant() {
   const [location] = useLocation();
   const { setAideState } = useAIDE();
   const { collapsed: sidebarCollapsed } = useSidebar();
+  const isMobile = useIsMobile();
 
   const { section, title, suggestions } = useMemo(() => sectionFromPath(location), [location]);
 
@@ -121,15 +125,16 @@ export default function AIDEAssistant() {
 
   // Broadcast size to the Layout so the main content reserves vertical space.
   // When the popout is active we report zero so the layout doesn't leave a
-  // gap for a tray that isn't rendering.
+  // gap for a tray that isn't rendering. On mobile the sheet floats over
+  // content rather than pushing it, so report zero there too.
   useEffect(() => {
-    if (popoutActive) {
+    if (popoutActive || isMobile) {
       setAideState({ open: false, dock: "bottom", width: 0, height: 0 });
     } else {
       const reported = open ? height : COLLAPSED_HEIGHT;
       setAideState({ open, dock: "bottom", width: 0, height: reported });
     }
-  }, [open, height, popoutActive, setAideState]);
+  }, [open, height, popoutActive, isMobile, setAideState]);
 
   // Cmd/Ctrl+. toggles tray; Esc collapses from expanded to bar.
   useEffect(() => {
@@ -240,6 +245,46 @@ export default function AIDEAssistant() {
   // Hide the tray entirely when the popout is alive. Placed after all hooks
   // are declared so the rules of hooks aren't violated.
   if (popoutActive) return null;
+
+  // On mobile: floating salmon launcher when closed, bottom-sheet when open.
+  // Layout reports zero height so the sheet floats over content rather than
+  // pushing it. BroadcastChannel popout logic still applies the same way.
+  if (isMobile) {
+    return (
+      <>
+        {!open && (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Open AIDE assistant"
+            className={cn(
+              "fixed z-[55] flex items-center justify-center",
+              "right-4 bottom-20 w-14 h-14 rounded-full",
+              "bg-primary text-primary-foreground",
+              "shadow-[0_10px_24px_-8px_hsl(var(--primary)/0.6)]",
+              "warm-glow",
+              "active:scale-95 transition-transform",
+            )}
+          >
+            <Sparkles size={20} />
+          </button>
+        )}
+        <MobileBottomSheet
+          open={open}
+          onClose={() => setOpen(false)}
+          title={`AIDE · ${title}`}
+          initialSnap="half"
+        >
+          <EmbeddedAgentChat
+            section={section}
+            title={title}
+            suggestions={suggestions}
+            hideHeader
+          />
+        </MobileBottomSheet>
+      </>
+    );
+  }
 
   return (
     <>

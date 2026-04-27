@@ -1,0 +1,51 @@
+{
+  "name": "AIDE FIP Assistant",
+  "short_name": "AIDE FIP",
+  "description": "On-site fire panel technical assistant for dry fire technicians.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#E58A6E",
+  "background_color": "#FAF7F4",
+  "categories": ["utilities", "productivity", "reference"],
+  "lang": "en-AU",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Panel lookup",
+      "short_name": "Panels",
+      "description": "Browse FIP brands and models with fault hints.",
+      "url": "/panels?source=pwa-shortcut",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Fault finder",
+      "short_name": "Faults",
+      "description": "Realistic field troubleshooting scenarios.",
+      "url": "/fault-finding?source=pwa-shortcut",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "FIP knowledge base",
+      "short_name": "FIP",
+      "description": "Battery calculator, panel reference, defect analysis.",
+      "url": "/fip?source=pwa-shortcut",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}

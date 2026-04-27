@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BookmarkStar } from "@/components/mobile/BookmarkStar";
 import { cn } from "@/lib/utils";
 import {
   TRACKS,
@@ -351,6 +352,7 @@ function ModuleReader({ module }: { module: TrainingModule }) {
           <span className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
             <Clock size={10} /> ~{module.durationMin} min
           </span>
+          <BookmarkStar kind="module" refId={module.id} label={module.title} className="ml-auto -my-2" />
         </div>
         <h1 className="text-[20px] font-bold tracking-tight text-foreground mb-1">
           {module.title}

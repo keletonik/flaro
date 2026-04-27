@@ -15,6 +15,7 @@ import {
   ListOrdered, ShieldAlert, Lightbulb, type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BookmarkStar } from "@/components/mobile/BookmarkStar";
 import { cn } from "@/lib/utils";
 import {
   CATEGORIES,
@@ -167,13 +168,16 @@ function ScenarioDetail({
         title={scenario.title}
         subtitle={`${scenario.category} · ${scenario.estimatedTimeMin} min · ${DIFFICULTY_STYLE[scenario.difficulty].label}`}
         actions={
-          <button
-            onClick={onBack}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground hover:bg-muted/40 transition-colors"
-          >
-            <ChevronLeft size={12} />
-            <span>Back</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <BookmarkStar kind="scenario" refId={scenario.id} label={scenario.title} />
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground hover:bg-muted/40 transition-colors"
+            >
+              <ChevronLeft size={12} />
+              <span>Back</span>
+            </button>
+          </div>
         }
       />
 

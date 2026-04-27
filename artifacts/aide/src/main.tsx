@@ -1,7 +1,15 @@
 import { createRoot } from "react-dom/client";
 import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
+import { registerSW } from "virtual:pwa-register";
 import App from "./App";
 import "./index.css";
+
+// Service worker: production-only registration. Auto-update on new builds.
+// `registerSW` is virtual-injected by vite-plugin-pwa; types come from the
+// generated client via the `vite-plugin-pwa/client` reference in vite-env.d.ts.
+if (import.meta.env.PROD) {
+  registerSW({ immediate: true });
+}
 
 // Point the generated api-client-react hooks at a remote backend when the
 // frontend is deployed on a different origin from the api server (e.g. the

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTheme, THEME_OPTIONS, type ThemeVariant } from "@/lib/theme";
+import { useGloveMode } from "@/lib/glove-mode";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +38,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function SettingsPage() {
   const { theme, setTheme, mode } = useTheme();
+  const glove = useGloveMode();
   const [activeSection, setActiveSection] = useState("appearance");
   const [revenueTarget, setRevenueTarget] = useState("180000");
   const [compactMode, setCompactMode] = useState(false);
@@ -146,6 +148,9 @@ export default function SettingsPage() {
                 </SettingRow>
                 <SettingRow label="Compact mode" description="Reduce spacing and padding for denser layouts">
                   <Toggle checked={compactMode} onChange={v => { setCompactMode(v); saveSettings(); }} />
+                </SettingRow>
+                <SettingRow label="Glove mode" description="Bigger tap targets for on-site work with gloves on">
+                  <Toggle checked={glove.enabled} onChange={v => { glove.set(v); saveSettings(); }} />
                 </SettingRow>
               </div>
             </div>

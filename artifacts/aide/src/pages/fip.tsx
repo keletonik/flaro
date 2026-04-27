@@ -19,10 +19,15 @@ import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
   Shield, FileText, BookOpen, Building2, Cpu, Loader2, AlertTriangle,
-  Search, ExternalLink, Network, FileCog, ChevronDown, X,
+  Search, ExternalLink, Network, FileCog, ChevronDown, X, Mic, Camera,
   type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { useVoiceInput } from "@/lib/speech";
+import { PanelIdCapture } from "@/components/mobile/PanelIdCapture";
+import { isCameraAvailable } from "@/lib/camera";
+import { Bookmarks } from "@/components/mobile/Bookmarks";
+import { MyManuals } from "@/components/mobile/MyManuals";
 import {
   FipDetectorTypeBrowser,
   FipDetectorTypeDetail,
@@ -135,6 +140,73 @@ function ReferenceSection({
         </div>
       )}
     </section>
+  );
+}
+
+// ── Global search input with voice input ──────────────────────────────
+
+function FipGlobalSearch({
+  search, setSearch,
+}: { search: string; setSearch: (v: string) => void }) {
+  const voice = useVoiceInput();
+
+  // When the recogniser finishes a phrase, swap into the search field
+  // and reset the hook so the next press starts fresh.
+  useEffect(() => {
+    if (voice.state === "confirm" && voice.transcript) {
+      setSearch(voice.transcript);
+      voice.accept();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice.state]);
+
+  // Show interim transcript live in the field while the user is speaking.
+  const showInterim = voice.state === "listening" && voice.transcript;
+  const display = showInterim ? voice.transcript : search;
+
+  return (
+    <div className="relative">
+      <Search
+        size={14}
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+      />
+      <input
+        type="text"
+        value={display}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search panels, manufacturers, standards, documents..."
+        className="w-full pl-10 pr-20 py-2.5 rounded-lg bg-card border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all min-h-[44px]"
+        aria-busy={voice.state === "listening"}
+      />
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            aria-label="Clear search"
+            className="inline-flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+          >
+            <X size={12} />
+          </button>
+        )}
+        {voice.available && (
+          <button
+            type="button"
+            onClick={() => (voice.state === "listening" ? voice.stop() : voice.start())}
+            aria-label={voice.state === "listening" ? "Stop voice search" : "Voice search"}
+            title={voice.state === "listening" ? "Stop voice search" : "Voice search"}
+            className={cn(
+              "inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors",
+              voice.state === "listening"
+                ? "bg-primary text-primary-foreground warm-glow"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
+            )}
+          >
+            <Mic size={14} />
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -377,6 +449,7 @@ export default function FIPKnowledgeBase() {
   const [search, setSearch] = useState("");
   const [commandPanelSlug, setCommandPanelSlug] = useState<string>("");
   const [selectedDetector, setSelectedDetector] = useState<DetectorType | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   // Status gate — block render until we know whether FIP is on.
   const [status, setStatus] = useState<FipStatus | null>(null);
@@ -507,25 +580,33 @@ export default function FIPKnowledgeBase() {
 
       <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1280px]">
 
+        {/* On-site quick actions: identify a panel by photo. Hidden when
+            getUserMedia is not available (typically desktop without a
+            camera). The capture component handles permission UX. */}
+        {isCameraAvailable() && (
+          <button
+            type="button"
+            onClick={() => setCameraOpen(true)}
+            className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-left hover:bg-primary/10 transition-colors min-h-[56px]"
+          >
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/15 text-primary shrink-0">
+              <Camera size={18} />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-[13px] font-semibold text-foreground">Identify a panel</span>
+              <span className="block text-[11px] text-muted-foreground">Snap a photo and AIDE matches the manufacturer and model.</span>
+            </span>
+          </button>
+        )}
+
+        <Bookmarks />
+
+        <MyManuals />
+
         {/* Global search — one field, searches every dataset. */}
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search panels, manufacturers, standards, documents…"
-            className="w-full pl-10 pr-9 py-2.5 rounded-lg bg-card border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
+        <FipGlobalSearch search={search} setSearch={setSearch} />
+
+        <PanelIdCapture open={cameraOpen} onClose={() => setCameraOpen(false)} />
 
         {/* Search results — only when there's a query. */}
         {search.trim().length >= 2 && (

@@ -17,6 +17,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BookmarkStar } from "@/components/mobile/BookmarkStar";
+import { MyManuals } from "@/components/mobile/MyManuals";
+import { SiteNotes } from "@/components/mobile/SiteNotes";
 import { cn } from "@/lib/utils";
 import {
   BRANDS,
@@ -140,6 +143,7 @@ function ModelDetail({ model }: { model: PanelModel }) {
           <h2 className="text-[16px] font-bold tracking-tight text-foreground">
             {model.name}
           </h2>
+          <BookmarkStar kind="panel" refId={model.id} label={model.name} className="-my-2" />
           <StatusBadge status={model.status} />
           <span className="inline-flex items-center rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
             {CATEGORY_LABEL[model.category]}
@@ -191,6 +195,20 @@ function ModelDetail({ model }: { model: PanelModel }) {
           {model.manualHint}
         </p>
       </Section>
+
+      <SiteNotes
+        scope="panel"
+        scopeId={model.id}
+        label={`Site notes - ${model.name}`}
+        placeholder={`Anything specific about ${model.name} you want to remember next visit. On-device only.`}
+        className="mb-5"
+      />
+
+      <MyManuals
+        brandId={model.brandId}
+        modelId={model.id}
+        className="mb-5"
+      />
     </article>
   );
 }

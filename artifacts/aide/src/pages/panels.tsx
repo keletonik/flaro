@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { BookmarkStar } from "@/components/mobile/BookmarkStar";
+import { MyManuals } from "@/components/mobile/MyManuals";
+import { SiteNotes } from "@/components/mobile/SiteNotes";
 import { cn } from "@/lib/utils";
 import {
   BRANDS,
@@ -193,6 +195,20 @@ function ModelDetail({ model }: { model: PanelModel }) {
           {model.manualHint}
         </p>
       </Section>
+
+      <SiteNotes
+        scope="panel"
+        scopeId={model.id}
+        label={`Site notes - ${model.name}`}
+        placeholder={`Anything specific about ${model.name} you want to remember next visit. On-device only.`}
+        className="mb-5"
+      />
+
+      <MyManuals
+        brandId={model.brandId}
+        modelId={model.id}
+        className="mb-5"
+      />
     </article>
   );
 }

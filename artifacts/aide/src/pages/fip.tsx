@@ -27,6 +27,7 @@ import { useVoiceInput } from "@/lib/speech";
 import { PanelIdCapture } from "@/components/mobile/PanelIdCapture";
 import { isCameraAvailable } from "@/lib/camera";
 import { Bookmarks } from "@/components/mobile/Bookmarks";
+import { MyManuals } from "@/components/mobile/MyManuals";
 import {
   FipDetectorTypeBrowser,
   FipDetectorTypeDetail,
@@ -599,6 +600,8 @@ export default function FIPKnowledgeBase() {
         )}
 
         <Bookmarks />
+
+        <MyManuals />
 
         {/* Global search — one field, searches every dataset. */}
         <FipGlobalSearch search={search} setSearch={setSearch} />
